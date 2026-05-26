@@ -64,31 +64,15 @@ if (function_exists('show_blocks')) {
 <div class="clr"></div>
 </div><!-- /#main -->
 
-
-
 <div id="footer">
-	<div class="l_bar">
-		<div class="padi_l justify">
-			Файлы для обмена предоставлены пользователями,<br>
-			Администрация не несет ответственности за их содержание.<br>
-			Просьба не заливать файлы, защищенные авторскими правами.<br>
-			[ <a class="sba" href="/doku.php">Общие правила</a> ]
-			[ <a class="sba" href="/copyright.php">Для правообладателей</a> ]
-			@2006 - <?= $year ?>
-		</div>
+	<div class="footer_inner justify">
+		Файлы для обмена предоставлены пользователями,<br>
+		Администрация не несет ответственности за их содержание.<br>
+		Просьба не заливать файлы, защищенные авторскими правами.<br>
+		[ <a class="sba" href="/doku.php">Общие правила</a> ]
+		[ <a class="sba" href="/photo.php">Доступные фотохостинги</a> ]
+		@2006 - <?= $year ?>
 	</div>
-
-	<div class="r_bar">
-		<div class="padi_r">
-			<?php if ($version !== '') { ?>
-				<?= $version ?><?= $beta ?><br>
-			<?php } ?>
-
-			<?= $page_generated ?>
-		</div>
-	</div>
-
-	<div class="clear"></div>
 </div>
 
 </div><!-- /#body_wrapper -->

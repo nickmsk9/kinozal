@@ -1,3 +1,4 @@
+html, body { min-height: 100%; }
 body { min-width: 1000px; background-color: #ffffff; color: #000000; margin: 0 0 0 0; text-align: left; direction: ltr;}
 body, th, td {
 	font-family: tahoma,arial,verdana,sans-serif,Lucida Sans;
@@ -346,11 +347,10 @@ table.brd td { border-width: 1px; padding: 5px; border-style: solid; border-colo
 .mn3_menu {width:200px; float:right;padding: 0 5px 5px 5px;}
 .mn3_content {margin-right: 210px;}
 
-#footer {  margin: 5px 0 0 0; background: #fdefce; min-height: 95px; min-width: 1000px; }
-#footer .l_bar { float:right; width:40%; }
-#footer .r_bar { float:left; width:60%;}
-#footer .padi_l { padding: 20px 20px 0 10px; max-width: 550px; }
-#footer .padi_r {  padding: 20px 20px 0 20px; min-width: 550px; max-width: 750px; }
+#body_wrapper { min-height: 100vh; display: flex; flex-direction: column; background: #ffffff; }
+#main { flex: 1 0 auto; }
+#footer { flex: 0 0 auto; margin: 0; background: #fdefce; min-height: 0; min-width: 1000px; }
+#footer .footer_inner { padding: 20px 20px 12px 20px; width: 740px; margin: 0 20px 0 auto; text-align: left; }
 
 .tp1_border { border: 3px solid #f1d29c; border-top-width: 0; padding: 0; margin-bottom: 5px; overflow: hidden;}
 .tp1_title {padding: 4px 5px; background: #f1d29c;}

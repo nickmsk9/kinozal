@@ -1032,6 +1032,50 @@ function pager($rpp, $count, $href, $opts = array()) {
 	return array($pagertop, $pagerbottom, "LIMIT $start,$rpp");
 }
 
+function kz_page_online_box($url_patterns, $empty_text = 'никого нет на странице')
+{
+	if (!is_array($url_patterns)) {
+		$url_patterns = array($url_patterns);
+	}
+
+	$where = array();
+	foreach ($url_patterns as $pattern) {
+		$pattern = trim((string)$pattern);
+		if ($pattern === '') {
+			continue;
+		}
+		$where[] = 'url LIKE ' . sqlesc($pattern);
+	}
+
+	if (!$where) {
+		$where[] = '1 = 0';
+	}
+
+	$dt = time() - 300;
+	$res = sql_query("
+		SELECT uid, username, class
+		FROM sessions
+		WHERE time >= $dt
+		  AND uid > 0
+		  AND (" . implode(' OR ', $where) . ")
+		GROUP BY uid, username, class
+		ORDER BY username ASC
+	") or sqlerr(__FILE__, __LINE__);
+
+	$users = array();
+	while ($row = mysqli_fetch_assoc($res)) {
+		$username = get_user_class_color((int)$row['class'], htmlspecialchars_uni($row['username']));
+		$users[] = '<a href="userdetails.php?id=' . (int)$row['uid'] . '">' . $username . '</a>';
+	}
+
+	$content = $users ? implode(', ', $users) : htmlspecialchars_uni($empty_text);
+
+	return "<table class=\"tables2 w100p\" style=\"background:#EEF7FF;\">\n"
+		. "<tr><td class=\"center\" style=\"padding:6px 8px;\">Кто ОнЛайн здесь, на этой странице [ <a class=\"sba\" href=\"javascript:void(0)\">помочь проекту</a> ]</td></tr>\n"
+		. "<tr><td style=\"padding:6px 8px; color:#E47D00; font-weight:bold;\">$content</td></tr>\n"
+		. "</table>\n";
+}
+
 function downloaderdata($res) {
 	$rows = array();
 	$ids = array();
