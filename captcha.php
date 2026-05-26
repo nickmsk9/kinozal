@@ -30,6 +30,9 @@ require_once("include/bittorrent.php");
 require_once("include/captcha.php");
 dbconn(false);
 
+// В бинарный поток изображения не должны попадать предупреждения PHP.
+@ini_set('display_errors', '0');
+
 $img_width = 201;
 $img_height = 61;
 
@@ -40,10 +43,12 @@ $max_size = 32;
 $min_angle = -30;
 $max_angle = 30;
 
-if($_GET['imagehash'] == "test" || strlen($_GET['imagehash']) != 32) {
+$imagehash = isset($_GET['imagehash']) ? (string)$_GET['imagehash'] : '';
+
+if($imagehash == "test" || strlen($imagehash) != 32) {
 	$imagestring = "Yuna";
 } else {
-	$query = sql_query("SELECT * FROM captcha WHERE imagehash=".sqlesc($_GET['imagehash'])." LIMIT 1");
+	$query = sql_query("SELECT * FROM captcha WHERE imagehash=" . sqlesc($imagehash) . " LIMIT 1");
 	if (!$query)
 		die('Something bad hapened...');
 	$regimage = mysqli_fetch_array($query);
@@ -122,6 +127,15 @@ while ($notdone AND !empty($backgrounds)) {
 if (TIMENOW & 2 && function_exists('imagerotate'))
 	$im = imagerotate($im, 180, 0);
 
+// Если фон не загрузился, рисуем каптчу на пустом холсте.
+if (empty($im)) {
+	if (function_exists('imagecreatetruecolor')) {
+		$im = imagecreatetruecolor($img_width, $img_height);
+	} else {
+		$im = imagecreate($img_width, $img_height);
+	}
+}
+
 // Check for GD >= 2, create base image
 /*if(gd_version() >= 2) {
 	$im = imagecreatetruecolor($img_width, $img_height);
@@ -162,7 +176,7 @@ imagerectangle($im, 0, 0, $img_width-1, $img_height-1, $border_color);
 header("Content-type: image/png");
 header('Cache-control: max-age=31536000');
 header('Expires: ' . gmdate('D, d M Y H:i:s', (TIMENOW + 31536000)) . ' GMT');
-header('Content-disposition: inline; filename=' . $imageinfo['filename']);
+header('Content-Disposition: inline; filename=captcha.png');
 header('Content-transfer-encoding: binary');
 header('Last-Modified: ' . gmdate('D, d M Y H:i:s', TIMENOW) . ' GMT');
 header('ETag: "' . TIMENOW . '-' . session_id() . '"');
@@ -292,21 +306,21 @@ function draw_string(&$im, $string) {
 			}
 
 			// Draw a shadow
-			$shadow_x = rand(-3, 3) + $pos_x;
-			$shadow_y = rand(-3, 3) + $pos_y;
+			$shadow_x = (int)(rand(-3, 3) + $pos_x);
+			$shadow_y = (int)(rand(-3, 3) + $pos_y);
 			$shadow_color = imagecolorallocate($im, $r+20, $g+20, $b+20);
 			imagefttext($im, $font_size, $rotation, $shadow_x, $shadow_y, $shadow_color, $font, $string[$i], array());
 			
 			// Write the character to the image
-			imagefttext($im, $font_size, $rotation, $pos_x, $pos_y, $color, $font, $string[$i], array());
+			imagefttext($im, $font_size, $rotation, (int)$pos_x, (int)$pos_y, $color, $font, $string[$i], array());
 		} else {
 			// Get width/height of the character
 			$string_width = imagefontwidth(5);
 			$string_height = imagefontheight(5);
 
 			// Calculate character offsets
-			$pos_x = $spacing / 4 + $i * $spacing;
-			$pos_y = $img_height / 2 - $string_height -10 + rand(-3, 3);
+			$pos_x = (int)($spacing / 4 + $i * $spacing);
+			$pos_y = (int)($img_height / 2 - $string_height -10 + rand(-3, 3));
 			
 			// Create a temporary image for this character
 			if(gd_version() >= 2) {
