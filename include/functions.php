@@ -592,7 +592,7 @@ function getip() {
 }
 
 function autoclean() {
-	global $autoclean_interval, $rootpath;
+	global $autoclean_interval, $rootpath, $link;
 
 	$now = time();
 	$docleanup = 0;
@@ -611,7 +611,7 @@ function autoclean() {
 		return;
 	}
 	sql_query("UPDATE avps SET value_u=$now WHERE arg='lastcleantime' AND value_u = $ts");
-	if (!mysqli_affected_rows())
+	if (!mysqli_affected_rows($link))
 		return;
 
 	require_once($rootpath . 'include/cleanup.php');

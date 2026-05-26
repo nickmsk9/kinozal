@@ -33,6 +33,38 @@ dbconn(false);
 //loggedinorreturn();
 parked();
 
+function browse_fmt_added($datetime) {
+    if (empty($datetime) || $datetime === '0000-00-00 00:00:00') {
+        return 'неизвестно';
+    }
+
+    $ts = strtotime($datetime);
+    if (!$ts) {
+        return htmlspecialchars_uni($datetime);
+    }
+
+    $today = date('Y-m-d');
+    $valueDay = date('Y-m-d', $ts);
+
+    if ($valueDay === $today) {
+        return 'сегодня в ' . date('H:i', $ts);
+    }
+
+    return date('d.m.y в H:i', $ts);
+}
+
+function browse_year_options($selected = 0) {
+    $options = '<option value="0">все года</option>';
+    $currentYear = (int)date('Y');
+
+    for ($year = $currentYear; $year >= 1950; $year--) {
+        $isSelected = ((int)$selected === $year) ? ' selected="selected"' : '';
+        $options .= '<option value="' . $year . '"' . $isSelected . '>' . $year . '</option>';
+    }
+
+    return $options;
+}
+
 $cats = genrelist();
 
 $searchstr = '';
@@ -266,179 +298,200 @@ if (isset($cleansearchstr))
     stdhead($tracker_lang['search_results_for'] . " \"$cleansearchstr\""); else
     stdhead($tracker_lang['browse']);
 
+$selectedCat = isset($_GET['cat']) ? (int)$_GET['cat'] : 0;
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : 0;
+$searchMode = isset($_GET['where']) ? (string)$_GET['where'] : 'name';
+$sortField = isset($_GET['sort_view']) ? (string)$_GET['sort_view'] : 'added';
+$formatSelected = isset($_GET['format']) ? (string)$_GET['format'] : '';
+$filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
 ?>
-<table class="embedded" cellspacing="0" cellpadding="5" width="95%" align="center">
-    <tr>
-        <td class="colhead" align="center" colspan="12">Список торрентов</td>
-    </tr>
-
-    <tr>
-        <td colspan="12" align="center">
-
+<div class="mn_wrap">
+    <div class="bx2_0">
+        <div class="pad5x5" style="background:#EEF7FF;">
             <form method="get" action="browse.php">
-
-                <table class="embedded" cellspacing="0" cellpadding="3" align="center" width="95%">
+                <table class="tables2 w100p">
                     <tr>
-                        <td align="center">
-
-                            <table class="embedded" cellspacing="0" cellpadding="2" align="center">
-                                <tr>
-                                    <?php
-                                    $i = 0;
-                                    $catsperrow = 5;
-                                    $wherecatina = isset($wherecatina) && is_array($wherecatina) ? $wherecatina : [];
-
-                                    foreach ($cats as $cat) {
-                                        $catId = (int)$cat['id'];
-                                        $catName = htmlspecialchars_uni($cat['name']);
-
-                                        if ($i > 0 && $i % $catsperrow === 0) {
-                                            print '</tr><tr>';
-                                        }
-
-                                        $checked = in_array($catId, array_map('intval', $wherecatina), true)
-                                            ? ' checked="checked"'
-                                            : '';
-
-                                        print '<td align="left" style="padding: 0 7px 2px 7px;">';
-                                        print '<input name="c' . $catId . '" type="checkbox" value="1"' . $checked . '> ';
-                                        print '<a href="browse.php?cat=' . $catId . '">' . $catName . '</a>';
-                                        print '</td>';
-
-                                        $i++;
-                                    }
-
-                                    $lastrowcols = $i % $catsperrow;
-
-                                    if ($lastrowcols !== 0) {
-                                        for ($j = $lastrowcols; $j < $catsperrow; $j++) {
-                                            print '<td>&nbsp;</td>';
-                                        }
-                                    }
-                                    ?>
-                                </tr>
-                            </table>
-
+                        <td colspan="3" style="color:#000000; padding-bottom:4px;">
+                            <b>Поиск раздач</b> (
+                            <a class="sba" href="faq.php">Как пользоваться поиском?</a>
+                            )
+                        </td>
+                        <td class="w300" style="padding-bottom:4px;">
+                            <b>Где именно</b>
                         </td>
                     </tr>
-
                     <tr>
-                        <td align="center">
-                            <br>
-
-                            <?php echo htmlspecialchars_uni($tracker_lang['search'] ?? 'Поиск'); ?>:
-
+                        <td colspan="3">
                             <input
                                 type="text"
                                 id="searchinput"
                                 name="search"
-                                size="40"
+                                class="w100p"
                                 autocomplete="off"
                                 ondblclick="suggest(event.keyCode, this.value);"
                                 onkeyup="suggest(event.keyCode, this.value);"
                                 onkeypress="return noenter(event.keyCode);"
-                                value="<?php echo htmlspecialchars_uni($searchstr ?? ''); ?>"
-                            >
-
-                            <?php echo htmlspecialchars_uni($tracker_lang['in'] ?? 'в'); ?>
-
-                            <select name="incldead">
-                                <option value="0"<?php echo ((int)($incldead ?? 0) === 0 ? ' selected="selected"' : ''); ?>>
-                                    <?php echo htmlspecialchars_uni($tracker_lang['active'] ?? 'Активные'); ?>
-                                </option>
-
-                                <option value="1"<?php echo ((int)($incldead ?? 0) === 1 ? ' selected="selected"' : ''); ?>>
-                                    <?php echo htmlspecialchars_uni($tracker_lang['including_dead'] ?? 'Включая мёртвые'); ?>
-                                </option>
-
-                                <option value="2"<?php echo ((int)($incldead ?? 0) === 2 ? ' selected="selected"' : ''); ?>>
-                                    <?php echo htmlspecialchars_uni($tracker_lang['only_dead'] ?? 'Только мёртвые'); ?>
-                                </option>
-
-                                <option value="3"<?php echo ((int)($incldead ?? 0) === 3 ? ' selected="selected"' : ''); ?>>
-                                    <?php echo htmlspecialchars_uni($tracker_lang['golden_torrents'] ?? 'Золотые торренты'); ?>
-                                </option>
-
-                                <option value="4"<?php echo ((int)($incldead ?? 0) === 4 ? ' selected="selected"' : ''); ?>>
-                                    <?php echo htmlspecialchars_uni($tracker_lang['no_seeds'] ?? 'Без сидов'); ?>
-                                </option>
+                                value="<?= htmlspecialchars_uni($searchstr ?? ''); ?>"
+                                style="height:22px;"
+                            />
+                        </td>
+                        <td class="nowrap">
+                            <select name="where" class="w100">
+                                <option value="name"<?= $searchMode === 'name' ? ' selected="selected"' : '' ?>>в названии</option>
+                                <option value="descr"<?= $searchMode === 'descr' ? ' selected="selected"' : '' ?>>в описании</option>
                             </select>
-
-                            <select name="cat">
-                                <option value="0">
-                                    (<?php echo htmlspecialchars_uni($tracker_lang['all_types'] ?? 'Все категории'); ?>)
-                                </option>
-
-                                <?php
-                                $selectedCat = isset($_GET['cat']) ? (int)$_GET['cat'] : 0;
-
-                                foreach ($cats as $cat) {
-                                    $catId = (int)$cat['id'];
-                                    $catName = htmlspecialchars_uni($cat['name']);
-                                    $selected = ($catId === $selectedCat) ? ' selected="selected"' : '';
-
-                                    print '<option value="' . $catId . '"' . $selected . '>' . $catName . '</option>';
-                                }
-                                ?>
+                            <input class="buttonS" type="submit" value="Поиск раздач" style="margin-left:4px;" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="small" style="padding-bottom:2px;">Выбор раздела</td>
+                        <td class="small" style="padding-bottom:2px;">Выбор формата</td>
+                        <td class="small" style="padding-bottom:2px;">Год выхода</td>
+                        <td class="small" style="padding-bottom:2px;">Фильтр поиска</td>
+                        <td class="small" style="padding-bottom:2px;">Сортировка результата</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <select name="cat" class="w190">
+                                <option value="0">Поиск по разделам</option>
+                                <?php foreach ($cats as $cat) { ?>
+                                    <option value="<?= (int)$cat['id'] ?>"<?= $selectedCat === (int)$cat['id'] ? ' selected="selected"' : '' ?>>
+                                        <?= htmlspecialchars_uni($cat['name']) ?>
+                                    </option>
+                                <?php } ?>
                             </select>
-
-                            <input class="buttonS" type="submit" value="<?php echo htmlspecialchars_uni($tracker_lang['search'] ?? 'Поиск'); ?>!">
-
-                            &nbsp;
-
-                            <a href="browse.php?all=1">
-                                <b><?php echo htmlspecialchars_uni($tracker_lang['show_all'] ?? 'Показать всё'); ?></b>
-                            </a>
-
-                            <div id="suggcontainer" style="text-align: left; width: 520px; display: none; margin: 0 auto;">
-                                <div
-                                    id="suggestions"
-                                    style="cursor: default; position: absolute; background-color: #FFFFFF; border: 1px solid #777777;"
-                                ></div>
-                            </div>
-
+                        </td>
+                        <td>
+                            <select name="format" class="w190">
+                                <option value=""<?= $formatSelected === '' ? ' selected="selected"' : '' ?>>Все форматы</option>
+                                <option value="bdremux"<?= $formatSelected === 'bdremux' ? ' selected="selected"' : '' ?>>BDRemux</option>
+                                <option value="bluray"<?= $formatSelected === 'bluray' ? ' selected="selected"' : '' ?>>Blu-Ray</option>
+                                <option value="webdl"<?= $formatSelected === 'webdl' ? ' selected="selected"' : '' ?>>WEB-DL</option>
+                                <option value="webrip"<?= $formatSelected === 'webrip' ? ' selected="selected"' : '' ?>>WEBRip</option>
+                                <option value="dvdrip"<?= $formatSelected === 'dvdrip' ? ' selected="selected"' : '' ?>>DVDRip</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="year" class="w90">
+                                <?= browse_year_options($selectedYear) ?>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="incldead" class="w100">
+                                <option value="0"<?= $filterSelected === 0 ? ' selected="selected"' : '' ?>>не выбран</option>
+                                <option value="1"<?= $filterSelected === 1 ? ' selected="selected"' : '' ?>>включая мёртвые</option>
+                                <option value="2"<?= $filterSelected === 2 ? ' selected="selected"' : '' ?>>только мёртвые</option>
+                                <option value="3"<?= $filterSelected === 3 ? ' selected="selected"' : '' ?>>золотые</option>
+                                <option value="4"<?= $filterSelected === 4 ? ' selected="selected"' : '' ?>>без сидов</option>
+                            </select>
+                        </td>
+                        <td class="nowrap">
+                            <select name="sort_view" class="w80">
+                                <option value="added"<?= $sortField === 'added' ? ' selected="selected"' : '' ?>>Залит</option>
+                                <option value="size"<?= $sortField === 'size' ? ' selected="selected"' : '' ?>>Размер</option>
+                                <option value="seeders"<?= $sortField === 'seeders' ? ' selected="selected"' : '' ?>>Сидов</option>
+                                <option value="comments"<?= $sortField === 'comments' ? ' selected="selected"' : '' ?>>Комм.</option>
+                            </select>
+                            <select name="type" class="w60">
+                                <option value="desc"<?= (!isset($_GET['type']) || $_GET['type'] === 'desc') ? ' selected="selected"' : '' ?>>Убыв.</option>
+                                <option value="asc"<?= (isset($_GET['type']) && $_GET['type'] === 'asc') ? ' selected="selected"' : '' ?>>Возр.</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="padding-top:4px;">
+                            <span style="color:#000000;">
+                                ► Найдено <?= number_format((int)$num_torrents, 0, '.', ' ') ?> раздач, в списке отображается только 5000. Пожалуйста, уточните параметры поиска.
+                            </span>
                         </td>
                     </tr>
                 </table>
 
+                <div id="suggcontainer" style="text-align:left; width:520px; display:none; margin:0 auto;">
+                    <div id="suggestions" style="cursor:default; position:absolute; background-color:#FFFFFF; border:1px solid #777777;"></div>
+                </div>
             </form>
+        </div>
+    </div>
 
-            <script src="js/suggest.js" type="text/javascript"></script>
+    <div class="center" style="padding:6px 0 8px 0;">
+        <img src="pic/pay_bn2.png" alt="Меценат" style="display:inline-block;">
+    </div>
 
-        </td>
-    </tr>
-</table>
-<?
+    <div class="bx2_0">
+        <div class="pad5x5" style="padding-top:4px;">
+            <table class="tables2 w100p" style="table-layout:fixed;">
+                <tr style="background:#F1D29C;">
+                    <td style="width:1330px;"></td>
+                    <td class="center nowrap" style="width:45px; font-weight:bold;">Комм.</td>
+                    <td class="center nowrap" style="width:65px; font-weight:bold;">Размер</td>
+                    <td class="center nowrap" style="width:40px; font-weight:bold;">Сидов</td>
+                    <td class="center nowrap" style="width:40px; font-weight:bold;">Пиров</td>
+                    <td class="center nowrap" style="width:120px; font-weight:bold;">Залит</td>
+                    <td class="center nowrap" style="width:110px; font-weight:bold;">Раздает</td>
+                </tr>
+                <?php if ($num_torrents && isset($res)) { ?>
+                    <?php while ($row = mysqli_fetch_assoc($res)) { ?>
+                        <?php
+                        $title = htmlspecialchars_uni($row['name']);
+                        $catPic = !empty($row['cat_pic']) ? htmlspecialchars_uni($row['cat_pic']) : '';
+                        $catName = !empty($row['cat_name']) ? htmlspecialchars_uni($row['cat_name']) : '';
+                        $comments = (int)$row['comments'];
+                        $sizeText = mksize((int)$row['size']);
+                        $seeders = (int)$row['seeders'];
+                        $leechers = (int)$row['leechers'];
+                        $addedText = browse_fmt_added($row['added']);
+                        $uploader = isset($row['username']) ? get_user_class_color((int)$row['class'], htmlspecialchars_uni($row['username'])) : '<i>(unknown)</i>';
+                        $freeColor = '';
 
-if (isset($cleansearchstr))
-    print('<tr><td class="index" colspan="12">' . $tracker_lang['search_results_for'] . ' "' . htmlspecialchars_uni($searchstr) . '"</td></tr>');
+                        if ($row['free'] === 'yes') {
+                            $freeColor = '#D38A00';
+                        } elseif ($row['free'] === 'silver') {
+                            $freeColor = '#5A71B0';
+                        }
+                        ?>
+                        <tr class="bov">
+                            <td style="padding:3px 0;">
+                                <table class="tables2 w100p">
+                                    <tr>
+                                        <td style="width:90px; padding-right:8px; vertical-align:top;">
+                                            <?php if ($catPic !== '') { ?>
+                                                <img src="pic/cats/<?= $catPic ?>" alt="<?= $catName ?>" style="display:block; max-width:88px;">
+                                            <?php } else { ?>
+                                                <div style="width:88px; height:31px; background:#f5e0b1;"></div>
+                                            <?php } ?>
+                                        </td>
+                                        <td style="vertical-align:middle;">
+                                            <a href="details.php?id=<?= (int)$row['id'] ?>&amp;hit=1" style="<?= $freeColor !== '' ? 'color:' . $freeColor . ';' : '' ?>">
+                                                <b><?= $title ?></b>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td class="center" style="vertical-align:middle;"><?= $comments ?></td>
+                            <td class="center nowrap" style="vertical-align:middle;"><?= $sizeText ?></td>
+                            <td class="center" style="vertical-align:middle;"><span style="color:green; font-weight:bold;"><?= $seeders ?></span></td>
+                            <td class="center" style="vertical-align:middle;"><span style="color:red; font-weight:bold;"><?= $leechers ?></span></td>
+                            <td class="center nowrap" style="vertical-align:middle;"><?= $addedText ?></td>
+                            <td class="center nowrap" style="vertical-align:middle;"><a href="userdetails.php?id=<?= (int)$row['owner'] ?>"><?= $uploader ?></a></td>
+                        </tr>
+                    <?php } ?>
+                <?php } else { ?>
+                    <tr>
+                        <td colspan="7" class="center" style="padding:18px 8px;"><?= htmlspecialchars_uni($tracker_lang['nothing_found'] ?? 'Ничего не найдено') ?></td>
+                    </tr>
+                <?php } ?>
+            </table>
+        </div>
+    </div>
 
-echo '</td></tr>';
+    <?php if ($num_torrents && isset($pagertop) && $pagertop) { ?>
+        <div class="small center" style="padding:6px 0 0 0;"><?= $pagertop ?></div>
+    <?php } ?>
+</div>
 
-if ($num_torrents) {
-
-    echo '<tr><td class="index" colspan="12">';
-    echo $pagertop;
-    echo '</td></tr>';
-
-    torrenttable($res, "index");
-
-    echo '<tr><td class="index" colspan="12">';
-    echo $pagerbottom;
-    echo '</td></tr>';
-
-} else {
-    if (isset($cleansearchstr)) {
-        print("<tr><td class=\"index\" colspan=\"12\">" . $tracker_lang['nothing_found'] . "</td></tr>\n");
-        //print("<p>Попробуйте изменить запрос поиска.</p>\n");
-    } else {
-        print("<tr><td class=\"index\" colspan=\"12\">" . $tracker_lang['nothing_found'] . "</td></tr>\n");
-        //print("<p>Извините, данная категория пустая.</p>\n");
-    }
-}
-
-echo '</table>';
-
+<script src="js/suggest.js" type="text/javascript"></script>
+<?php
 stdfoot();
-
 ?>

@@ -1576,3 +1576,59 @@ Stack trace:
 [26-May-2026 10:59:33 Europe/Moscow] PHP Warning:  Undefined variable $invitetree in C:\OSPanel\domains\kinozal.lv\userdetails.php on line 510
 [26-May-2026 11:03:29 Europe/Moscow] PHP Warning:  Undefined array key -1 in C:\OSPanel\domains\kinozal.lv\include\functions_global.php on line 1126
 [26-May-2026 11:03:29 Europe/Moscow] PHP Warning:  Undefined array key "" in C:\OSPanel\domains\kinozal.lv\include\functions_global.php on line 1127
+[26-May-2026 11:39:01 Europe/Moscow] PHP Warning:  Undefined array key "multi" in C:\OSPanel\domains\kinozal.lv\takeupload.php on line 95
+[26-May-2026 11:39:01 Europe/Moscow] PHP Notice:  Only variables should be passed by reference in C:\OSPanel\domains\kinozal.lv\takeupload.php on line 249
+[26-May-2026 11:39:01 Europe/Moscow] PHP Warning:  Undefined array key 1 in C:\OSPanel\domains\kinozal.lv\takeupload.php on line 267
+[26-May-2026 11:39:01 Europe/Moscow] PHP Warning:  Undefined array key 2 in C:\OSPanel\domains\kinozal.lv\takeupload.php on line 267
+[26-May-2026 11:39:01 Europe/Moscow] PHP Warning:  Undefined array key 3 in C:\OSPanel\domains\kinozal.lv\takeupload.php on line 267
+[26-May-2026 11:39:01 Europe/Moscow] PHP Warning:  Undefined array key 4 in C:\OSPanel\domains\kinozal.lv\takeupload.php on line 267
+[26-May-2026 11:39:01 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Column 'image2' cannot be null in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\takeupload.php(267): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 11:39:04 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 11:39:04 Europe/Moscow] PHP Fatal error:  Uncaught ArgumentCountError: mysqli_affected_rows() expects exactly 1 argument, 0 given in C:\OSPanel\domains\kinozal.lv\include\functions.php:614
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(614): mysqli_affected_rows()
+#1 [internal function]: autoclean()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 614
+[26-May-2026 11:43:36 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 11:43:53 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 11:46:39 Europe/Moscow] PHP Warning:  Undefined array key "id" in C:\OSPanel\domains\kinozal.lv\friends.php on line 33
+[26-May-2026 11:46:39 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\friends.php on line 34
+[26-May-2026 11:47:49 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_error() in C:\OSPanel\domains\kinozal.lv\details.php:441
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\details.php on line 441
+[26-May-2026 11:47:51 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 11:48:10 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 11:48:13 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 11:48:44 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 11:49:23 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 11:49:36 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 11:51:56 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 11:51:58 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 11:51:59 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
