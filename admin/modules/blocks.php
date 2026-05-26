@@ -254,7 +254,8 @@ function BlocksNew() {
 	while ($file = readdir($handle)) {
 		if (preg_match("/^block\-(.+)\.php/", $file, $matches)) {
 			$found = str_replace("_", " ", $matches[1]);
-			if (mysql_num_rows(sql_query("SELECT * FROM ".$prefix."_blocks WHERE blockfile='$file'")) == 0) echo "<option value=\"$file\">$found</option>\n";
+			$check = sql_query("SELECT bid FROM ".$prefix."_blocks WHERE blockfile=" . sqlesc($file) . " LIMIT 1");
+			if ($check && mysqli_num_rows($check) == 0) echo "<option value=\"$file\">$found</option>\n";
 		}
 	}
 	closedir($handle);
@@ -325,21 +326,21 @@ function BlocksFixweight() {
 	$centerpos = "c";
 	$result = sql_query("SELECT bid FROM ".$prefix."_blocks WHERE bposition='$leftpos' ORDER BY weight ASC");
 	$weight = 0;
-	while ($row = mysql_fetch_assoc($result)) {
+	while ($row = mysqli_fetch_assoc($result)) {
 		$bid = intval($row['bid']);
 		$weight++;
 		sql_query("UPDATE ".$prefix."_blocks SET weight='$weight' WHERE bid='$bid'");
 	}
 	$result2 = sql_query("SELECT bid FROM ".$prefix."_blocks WHERE bposition='$rightpos' ORDER BY weight ASC");
 	$weight = 0;
-	while ($row2 = mysql_fetch_assoc($result2)) {
+	while ($row2 = mysqli_fetch_assoc($result2)) {
 		$bid = intval($row2['bid']);
 		$weight++;
 		sql_query("UPDATE ".$prefix."_blocks SET weight='$weight' WHERE bid='$bid'");
 	}
 	$result3 = sql_query("SELECT bid FROM ".$prefix."_blocks WHERE bposition='$centerpos' ORDER BY weight ASC");
 	$weight = 0;
-	while ($row3 = mysql_fetch_assoc($result3)) {
+	while ($row3 = mysqli_fetch_assoc($result3)) {
 		$bid = intval($row3['bid']);
 		$weight++;
 		sql_query("UPDATE ".$prefix."_blocks SET weight='$weight' WHERE bid='$bid'");
@@ -349,10 +350,12 @@ function BlocksFixweight() {
 
 function BlocksAdd($title, $content, $bposition, $active, $hide, $blockfile, $view, $expire, $action) {
 	global $prefix, $admin_file;
-	list($weight) = mysql_fetch_row(sql_query("SELECT weight FROM ".$prefix."_blocks WHERE bposition=".sqlesc($bposition)." ORDER BY weight DESC"));
-	$weight++;
+	$weight_res = sql_query("SELECT weight FROM ".$prefix."_blocks WHERE bposition=".sqlesc($bposition)." ORDER BY weight DESC LIMIT 1");
+	$weight_row = $weight_res ? mysqli_fetch_row($weight_res) : false;
+	$weight = (int)($weight_row[0] ?? 0) + 1;
 	$bkey = "";
 	$btime = "";
+	$which = "";
 	if ($blockfile != "") {
 		$url = "";
 		if ($title == "") {
@@ -372,11 +375,10 @@ function BlocksAdd($title, $content, $bposition, $active, $hide, $blockfile, $vi
 		}
 		if (isset($_POST['blockwhere'])) {
 			$blockwhere = $_POST['blockwhere'];
-			$which = "";
 			$which = (in_array("all", $blockwhere)) ? "all" : $which;
 			$which = (in_array("home", $blockwhere)) ? "home" : $which;
 			if ($which == "") {
-				while(list($key, $val) = each($blockwhere)) {
+				foreach ($blockwhere as $val) {
 					$which .= "{$val},";
 				}
 			}
@@ -390,7 +392,9 @@ function BlocksEdit($bid) {
 	global $prefix, $admin_file;
 	BlocksNavi();
 	$bid = intval($bid);
-	list($bkey, $title, $content, $bposition, $weight, $active, $hide, $blockfile, $view, $expire, $action, $which) = mysql_fetch_row(sql_query("SELECT bkey, title, content, bposition, weight, active, allow_hide, blockfile, view, expire, action, which FROM ".$prefix."_blocks WHERE bid='$bid'"));
+	$edit_res = sql_query("SELECT bkey, title, content, bposition, weight, active, allow_hide, blockfile, view, expire, action, which FROM ".$prefix."_blocks WHERE bid='$bid'");
+	$edit_row = $edit_res ? mysqli_fetch_row($edit_res) : false;
+	list($bkey, $title, $content, $bposition, $weight, $active, $hide, $blockfile, $view, $expire, $action, $which) = $edit_row ?: array("", "", "", "l", 0, 0, "yes", "", 0, 0, "d", "");
 	if ($blockfile != "") {
 		$type = "(Файловый блок)";
 	} else {
@@ -454,6 +458,7 @@ function BlocksEdit($bid) {
 	$where_mas = explode(",", $which);
     $cel = "";
     $hel = "";
+    $fel = "";
 	switch ($where_mas[0]) {
 		case "all":
 		$cel = " checked";
@@ -516,8 +521,7 @@ function BlocksEditSave($newexpire, $bid, $bkey, $title, $content, $oldposition,
 		$which = (in_array("all", $blockwhere)) ? "all" : $which;
 		$which = (in_array("home", $blockwhere)) ? "home" : $which;
 		if ($which == "") {
-			print $which;
-			while(list($key, $val) = each($blockwhere)) {
+			foreach ($blockwhere as $val) {
 				$which .= "{$val},";
 			}
 		}
@@ -529,16 +533,20 @@ function BlocksEditSave($newexpire, $bid, $bkey, $title, $content, $oldposition,
 			$result5 = sql_query("SELECT bid FROM ".$prefix."_blocks WHERE weight>=".sqlesc($weight)." AND bposition=".sqlesc($bposition));
 			$fweight = $weight;
 			$oweight = $weight;
-			while (list($nbid) = mysql_fetch_row($result5)) {
+			while ($row5 = mysqli_fetch_row($result5)) {
+				$nbid = $row5[0];
 				$weight++;
 				sql_query("UPDATE ".$prefix."_blocks SET weight=".sqlesc($weight)." WHERE bid=".sqlesc($nbid)) or sqlerr(__FILE__,__LINE__);
 			}
 			$result6 = sql_query("SELECT bid FROM ".$prefix."_blocks WHERE weight>".sqlesc($oweight)." AND bposition=".sqlesc($oldposition)) or sqlerr(__FILE__,__LINE__);
-			while (list($obid) = mysql_fetch_row($result6)) {
+			while ($row6 = mysqli_fetch_row($result6)) {
+				$obid = $row6[0];
 				sql_query("UPDATE ".$prefix."_blocks SET weight=".sqlesc($oweight)." WHERE bid=".sqlesc($obid));
 				$oweight++;
 			}
-			list($lastw) = mysql_fetch_row(sql_query("SELECT weight FROM ".$prefix."_blocks WHERE bposition=".sqlesc($bposition)." ORDER BY weight DESC LIMIT 0,1"));
+			$lastw_res = sql_query("SELECT weight FROM ".$prefix."_blocks WHERE bposition=".sqlesc($bposition)." ORDER BY weight DESC LIMIT 0,1");
+			$lastw_row = $lastw_res ? mysqli_fetch_row($lastw_res) : false;
+			$lastw = (int)($lastw_row[0] ?? 0);
 			if ($lastw <= $fweight) {
 				$lastw++;
 				sql_query("UPDATE ".$prefix."_blocks SET title=".sqlesc($title).", content=".sqlesc($content).", bposition=".sqlesc($bposition).", weight=".sqlesc($lastw).", active=".sqlesc($active).", allow_hide=".sqlesc($hide).", blockfile=".sqlesc($blockfile).", view=".sqlesc($view)." WHERE bid=".sqlesc($bid)) or sqlerr(__FILE__,__LINE__);
@@ -556,7 +564,9 @@ function BlocksEditSave($newexpire, $bid, $bkey, $title, $content, $oldposition,
 function BlocksShow($bid) {
 	global $prefix, $db, $admin_file;
 	BlocksNavi();
-	list($bid, $bkey, $title, $content, $bposition, $blockfile) = mysql_fetch_row(sql_query("SELECT bid, bkey, title, content, bposition, blockfile FROM ".$prefix."_blocks WHERE bid='$bid'"));
+	$show_res = sql_query("SELECT bid, bkey, title, content, bposition, blockfile FROM ".$prefix."_blocks WHERE bid='$bid'");
+	$show_row = $show_res ? mysqli_fetch_row($show_res) : false;
+	list($bid, $bkey, $title, $content, $bposition, $blockfile) = $show_row ?: array(0, "", "", "", "c", "");
 	$bid = intval($bid);
 	echo "<p />";
 	render_blocks($blockfile, $title, $content, $bid, 'c', 'no');
@@ -577,7 +587,8 @@ function BlocksFileEdit() {
 	while ($file = readdir($handle)) {
 		if (preg_match("/^block\-(.+)\.php/", $file, $matches)) {
 			$found = str_replace("-", " ", $matches[1]);
-			if (mysql_num_rows(sql_query("SELECT * FROM ".$prefix."_blocks WHERE blockfile='$file'")) > 0) echo "<option value=\"$file\">$found</option>\n";
+			$check = sql_query("SELECT bid FROM ".$prefix."_blocks WHERE blockfile=" . sqlesc($file) . " LIMIT 1");
+			if ($check && mysqli_num_rows($check) > 0) echo "<option value=\"$file\">$found</option>\n";
 		}
 	}
 	closedir($handle);
@@ -588,7 +599,8 @@ function BlocksFileEdit() {
 function BlocksChange($bid, $ok=0) {
 	global $prefix, $admin_file;
 	$bid = intval($bid);
-	$row = mysql_fetch_array(sql_query("SELECT active FROM ".$prefix."_blocks WHERE bid='$bid'"));
+	$change_res = sql_query("SELECT active FROM ".$prefix."_blocks WHERE bid='$bid'");
+	$row = $change_res ? mysqli_fetch_assoc($change_res) : array('active' => 0);
 	$active = intval($row['active']);
 	if (($ok) || ($active == 0)) {
 		if ($active == 0) {
@@ -599,7 +611,9 @@ function BlocksChange($bid, $ok=0) {
 		$result = sql_query("UPDATE ".$prefix."_blocks SET active='$active' WHERE bid='$bid'");
 		Header("Location: ".$admin_file.".php?op=BlocksAdmin");
 	} else {
-		list($title, $content, $active) = mysql_fetch_row(sql_query("SELECT title, content, active FROM ".$prefix."_blocks WHERE bid='$bid'"));
+		$title_res = sql_query("SELECT title, content, active FROM ".$prefix."_blocks WHERE bid='$bid'");
+		$title_row = $title_res ? mysqli_fetch_row($title_res) : false;
+		list($title, $content, $active) = $title_row ?: array('', '', 0);
 		if ($active == 0) {
 			echo "<center>Активировать блок \"$title\"?<br /><br />";
 		} else {
@@ -703,14 +717,19 @@ switch($op) {
 	break;
 	
 	case "BlocksChange":
-	BlocksChange($bid, $ok, $de);
+	$bid = isset($_REQUEST['bid']) ? (int)$_REQUEST['bid'] : 0;
+	$ok = isset($_REQUEST['ok']) ? (int)$_REQUEST['ok'] : 0;
+	BlocksChange($bid, $ok);
 	break;
 	
 	case "BlocksDelete":
 	$bid = intval($_REQUEST['bid']);
-	list($bposition, $weight) = mysql_fetch_row(sql_query("SELECT bposition, weight FROM ".$prefix."_blocks WHERE bid='$bid'"));
+	$delete_res = sql_query("SELECT bposition, weight FROM ".$prefix."_blocks WHERE bid='$bid'");
+	$delete_row = $delete_res ? mysqli_fetch_row($delete_res) : false;
+	list($bposition, $weight) = $delete_row ?: array('', 0);
 	$result = sql_query("SELECT bid FROM ".$prefix."_blocks WHERE weight>'$weight' AND bposition='$bposition'");
-	while (list($nbid) = mysql_fetch_row($result)) {
+	while ($delete_shift_row = mysqli_fetch_row($result)) {
+		$nbid = $delete_shift_row[0];
 		sql_query("UPDATE ".$prefix."_blocks SET weight='$weight' WHERE bid='$nbid'");
 		$weight++;
 	}

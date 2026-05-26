@@ -1689,3 +1689,18 @@ Stack trace:
 #2 C:\OSPanel\domains\kinozal.lv\admincp.php(36): include_once('C:\\OSPanel\\doma...')
 #3 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php on line 591
+[26-May-2026 12:38:51 Europe/Moscow] PHP Warning:  Undefined variable $ok in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php on line 706
+[26-May-2026 12:38:51 Europe/Moscow] PHP Warning:  Undefined variable $de in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php on line 706
+[26-May-2026 12:38:51 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_array() in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php:591
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php(706): BlocksChange()
+#1 C:\OSPanel\domains\kinozal.lv\admin\admin.php(100): require_once('C:\\OSPanel\\doma...')
+#2 C:\OSPanel\domains\kinozal.lv\admincp.php(36): include_once('C:\\OSPanel\\doma...')
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php on line 591
+[26-May-2026 12:39:20 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_array() in C:\OSPanel\domains\kinozal.lv\include\cleanup.php:42
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(619): docleanup()
+#1 [internal function]: autoclean()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\cleanup.php on line 42
