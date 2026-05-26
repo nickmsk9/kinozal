@@ -41,8 +41,8 @@ if (@ini_get('output_handler') == 'ob_gzhandler' AND @ob_get_length() !== false)
 /*if (!preg_match(':^/(\d{1,10})/(.+)\.torrent$:', $_SERVER["PATH_INFO"], $matches))
 	httperr();*/
 
-$id = (int) $_GET["id"];
-if (!is_numeric($id))
+$id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
+if (!is_valid_id($id))
 	stderr($tracker_lang['error'],$tracker_lang['invalid_id']);
 
 /*$id = 0 + $matches[1];
@@ -50,7 +50,7 @@ if (!$id)
 	httperr();*/
 
 $res = sql_query("SELECT name, filename, owner, banned FROM torrents WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-$row = mysql_fetch_assoc($res);
+$row = mysqli_fetch_assoc($res);
 if (!$row)
 	stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
 
@@ -64,6 +64,14 @@ if (!$row || !is_file($fn) || !is_readable($fn))
 if ($row['banned'] == 'yes' && $row['owner'] != $CURUSER['id'] && get_user_class() < UC_MODERATOR)
 	stderr($tracker_lang['error'], 'Упс, а торрентик-то забанен!');
 
+$download_limit = kz_user_effective_torrent_limit($CURUSER);
+$downloaded_today = kz_torrent_downloads_today((int)$CURUSER['id']);
+$already_downloaded_today = kz_torrent_download_seen_today((int)$CURUSER['id'], $id);
+
+if (!$already_downloaded_today && $downloaded_today >= $download_limit) {
+	stderr($tracker_lang['error'], "Ваш суточный лимит раздач исчерпан. Доступно в сутки: $download_limit.");
+}
+
 sql_query("UPDATE torrents SET hits = hits + 1 WHERE id = ".sqlesc($id));
 
 $name = str_replace(array(',', ';'), '', $name);
@@ -73,7 +81,7 @@ require_once "include/BEncode.php";
 
 if (strlen($CURUSER['passkey']) != 32) {
 	$CURUSER['passkey'] = md5($CURUSER['username'].get_date_time().$CURUSER['passhash']);
-	sql_query("UPDATE users SET passkey=".sqlesc($CURUSER[passkey])." WHERE id=".sqlesc($CURUSER[id]));
+	sql_query("UPDATE users SET passkey=".sqlesc($CURUSER['passkey'])." WHERE id=".sqlesc($CURUSER['id']));
 }
 
 $dict = bdecode(file_get_contents($fn));
@@ -84,6 +92,8 @@ if (!empty($dict['announce-list'])) {
 	$dict['announce-list'][][0] = $announce_urls[0]."?passkey=$CURUSER[passkey]"; // Just add one tracker for multitrackers, we are the last
 } else
 	$dict['announce'] = $announce_urls[0]."?passkey=$CURUSER[passkey]";//"$DEFAULTBASEURL/announce.php?passkey=$CURUSER[passkey]";
+
+kz_torrent_download_register((int)$CURUSER['id'], $id);
 
 header ("Expires: Tue, 1 Jan 1980 00:00:00 GMT");
 header ("Last-Modified: ".gmdate("D, d M Y H:i:s")." GMT");

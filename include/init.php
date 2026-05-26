@@ -67,10 +67,13 @@ define ('COOKIE_PASSHASH', 'pass'); // Имя куки для пароля
 // DEFINE TRACKER GROUPS
 define ("UC_USER", 0);
 define ("UC_POWER_USER", 1);
-define ("UC_VIP", 2);
-define ("UC_UPLOADER", 3);
-define ("UC_MODERATOR", 4);
-define ("UC_ADMINISTRATOR", 5);
-define ("UC_SYSOP", 6);
+define ("UC_HONOR_USER", 2);
+define ("UC_VIP", 3);
+define ("UC_UPLOADER", 4);
+define ("UC_SENIOR_UPLOADER", 5);
+define ("UC_MANAGER", 6);
+define ("UC_MODERATOR", 7);
+define ("UC_ADMINISTRATOR", 8);
+define ("UC_SYSOP", 9);
 
 ?>

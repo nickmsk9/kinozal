@@ -159,7 +159,7 @@ CREATE TABLE `cups` (
   `cup_key` varchar(40) NOT NULL,
   `title` varchar(100) NOT NULL,
   `profile_title` varchar(100) NOT NULL,
-  `icon` varchar(16) NOT NULL default '🏆',
+  `icon` varchar(16) NOT NULL default 'cb1',
   `sort` int unsigned NOT NULL default '0',
   `active` tinyint unsigned NOT NULL default '1',
   PRIMARY KEY (`id`),
@@ -691,7 +691,7 @@ CREATE TABLE `users` (
   `deletepms` enum('yes','no') NOT NULL default 'yes',
   `savepms` enum('yes','no') NOT NULL default 'no',
   `gender` enum('1','2','3') NOT NULL default '1',
-  `birthday` date default '0000-00-00',
+  `birthday` date DEFAULT NULL,
   `city` varchar(100) NOT NULL default '',
   `favorite_movie` varchar(255) NOT NULL default '',
   `favorite_persons` varchar(255) NOT NULL default '',
@@ -714,6 +714,72 @@ CREATE TABLE `users` (
   KEY `passkey` (`passkey`),
   KEY `user` (`id`,`status`,`enabled`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `user_statuses` table :
+#
+
+DROP TABLE IF EXISTS `user_statuses`;
+
+CREATE TABLE `user_statuses` (
+  `status_key` varchar(40) NOT NULL,
+  `title` varchar(100) NOT NULL,
+  `icon_class` varchar(40) NOT NULL,
+  `sort` int unsigned NOT NULL default '0',
+  `active` tinyint unsigned NOT NULL default '1',
+  `auto` tinyint unsigned NOT NULL default '0',
+  PRIMARY KEY (`status_key`),
+  KEY `sort` (`sort`),
+  KEY `active` (`active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `user_status_assignments` table :
+#
+
+DROP TABLE IF EXISTS `user_status_assignments`;
+
+CREATE TABLE `user_status_assignments` (
+  `userid` int unsigned NOT NULL,
+  `status_key` varchar(40) NOT NULL,
+  `assigned_by` int unsigned NOT NULL default '0',
+  `assigned_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`userid`,`status_key`),
+  KEY `status_key` (`status_key`),
+  KEY `assigned_at` (`assigned_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `user_torrent_downloads` table :
+#
+
+DROP TABLE IF EXISTS `user_torrent_downloads`;
+
+CREATE TABLE `user_torrent_downloads` (
+  `userid` int unsigned NOT NULL,
+  `torrent` int unsigned NOT NULL,
+  `download_date` date NOT NULL,
+  `downloaded_at` datetime NOT NULL,
+  PRIMARY KEY (`userid`,`torrent`,`download_date`),
+  KEY `download_date` (`download_date`),
+  KEY `torrent` (`torrent`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Data for the `user_statuses` table :
+#
+
+INSERT INTO `user_statuses` (`status_key`, `title`, `icon_class`, `sort`, `active`, `auto`) VALUES
+  ('patron','Меценат','s1',1,1,1),
+  ('girl','Девушка','s_dv',2,1,1),
+  ('king','Коро(ль,лева)','s9-10',3,1,0),
+  ('loyal_seed','Верный сид','s4',4,1,0),
+  ('rhetoric','Риторик','s5',5,1,0),
+  ('keeper','Хранитель раздач','s6',6,1,0),
+  ('birthday','День рождения','s_bday',7,1,1),
+  ('warned','Предупрежден','s2',8,1,1),
+  ('low_ratio','Предупрежден 1 Торрент','s7',9,1,1),
+  ('disabled','Отключен','s_dis',10,1,1);
 
 #
 # Structure for the `user_cups` table :
@@ -809,14 +875,14 @@ COMMIT;
 #
 
 INSERT INTO `cups` (`id`, `cup_key`, `title`, `profile_title`, `icon`, `sort`, `active`) VALUES
-  (1,'best_release','Кубок за лучшую раздачу','За самую лучшую раздачу','🏆',1,1),
-  (2,'popular_release','Кубок за популярную раздачу','За популярную раздачу','🏆',2,1),
-  (3,'active_seeder','Кубок самому активному раздающему','Самому активному раздающему','🏆',3,1),
-  (4,'discussed_release','Кубок за самую обсуждаемую раздачу','За самую обсуждаемую раздачу','🏆',4,1),
-  (5,'best_commentator','Кубок лучшему комментатору','Лучшему комментатору','🏆',5,1),
-  (6,'active_patron','Кубок активному Меценату','Активному Меценату','🏆',6,1),
-  (7,'best_patron','Кубок лучшему Меценату','Лучшему Меценату','🏆',7,1),
-  (8,'best_dj','Кубок лучшему ДиДжею','Лучшему ДиДжею','🏆',8,1);
+  (1,'best_release','Кубок за лучшую раздачу','За самую лучшую раздачу','cb1',1,1),
+  (2,'popular_release','Кубок за популярную раздачу','За популярную раздачу','cb2',2,1),
+  (3,'active_seeder','Кубок самому активному раздающему','Самому активному раздающему','cb3',3,1),
+  (4,'discussed_release','Кубок за самую обсуждаемую раздачу','За самую обсуждаемую раздачу','cb4',4,1),
+  (5,'best_commentator','Кубок лучшему комментатору','Лучшему комментатору','cb5',5,1),
+  (6,'active_patron','Кубок активному Меценату','Активному Меценату','cb6',6,1),
+  (7,'best_patron','Кубок лучшему Меценату','Лучшему Меценату','cb7',7,1),
+  (8,'best_dj','Кубок лучшему ДиДжею','Лучшему ДиДжею','cb8',8,1);
 
 COMMIT;
 

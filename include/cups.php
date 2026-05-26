@@ -12,14 +12,14 @@ function kz_cups_h($value)
 function kz_cups_catalog()
 {
     return array(
-        1 => array('id' => 1, 'cup_key' => 'best_release', 'title' => 'Кубок за лучшую раздачу', 'profile_title' => 'За самую лучшую раздачу', 'icon' => '🏆', 'sort' => 1),
-        2 => array('id' => 2, 'cup_key' => 'popular_release', 'title' => 'Кубок за популярную раздачу', 'profile_title' => 'За популярную раздачу', 'icon' => '🏆', 'sort' => 2),
-        3 => array('id' => 3, 'cup_key' => 'active_seeder', 'title' => 'Кубок самому активному раздающему', 'profile_title' => 'Самому активному раздающему', 'icon' => '🏆', 'sort' => 3),
-        4 => array('id' => 4, 'cup_key' => 'discussed_release', 'title' => 'Кубок за самую обсуждаемую раздачу', 'profile_title' => 'За самую обсуждаемую раздачу', 'icon' => '🏆', 'sort' => 4),
-        5 => array('id' => 5, 'cup_key' => 'best_commentator', 'title' => 'Кубок лучшему комментатору', 'profile_title' => 'Лучшему комментатору', 'icon' => '🏆', 'sort' => 5),
-        6 => array('id' => 6, 'cup_key' => 'active_patron', 'title' => 'Кубок активному Меценату', 'profile_title' => 'Активному Меценату', 'icon' => '🏆', 'sort' => 6),
-        7 => array('id' => 7, 'cup_key' => 'best_patron', 'title' => 'Кубок лучшему Меценату', 'profile_title' => 'Лучшему Меценату', 'icon' => '🏆', 'sort' => 7),
-        8 => array('id' => 8, 'cup_key' => 'best_dj', 'title' => 'Кубок лучшему ДиДжею', 'profile_title' => 'Лучшему ДиДжею', 'icon' => '🏆', 'sort' => 8),
+        1 => array('id' => 1, 'cup_key' => 'best_release', 'title' => 'Кубок за лучшую раздачу', 'profile_title' => 'За самую лучшую раздачу', 'icon' => 'cb1', 'sort' => 1),
+        2 => array('id' => 2, 'cup_key' => 'popular_release', 'title' => 'Кубок за популярную раздачу', 'profile_title' => 'За популярную раздачу', 'icon' => 'cb2', 'sort' => 2),
+        3 => array('id' => 3, 'cup_key' => 'active_seeder', 'title' => 'Кубок самому активному раздающему', 'profile_title' => 'Самому активному раздающему', 'icon' => 'cb3', 'sort' => 3),
+        4 => array('id' => 4, 'cup_key' => 'discussed_release', 'title' => 'Кубок за самую обсуждаемую раздачу', 'profile_title' => 'За самую обсуждаемую раздачу', 'icon' => 'cb4', 'sort' => 4),
+        5 => array('id' => 5, 'cup_key' => 'best_commentator', 'title' => 'Кубок лучшему комментатору', 'profile_title' => 'Лучшему комментатору', 'icon' => 'cb5', 'sort' => 5),
+        6 => array('id' => 6, 'cup_key' => 'active_patron', 'title' => 'Кубок активному Меценату', 'profile_title' => 'Активному Меценату', 'icon' => 'cb6', 'sort' => 6),
+        7 => array('id' => 7, 'cup_key' => 'best_patron', 'title' => 'Кубок лучшему Меценату', 'profile_title' => 'Лучшему Меценату', 'icon' => 'cb7', 'sort' => 7),
+        8 => array('id' => 8, 'cup_key' => 'best_dj', 'title' => 'Кубок лучшему ДиДжею', 'profile_title' => 'Лучшему ДиДжею', 'icon' => 'cb8', 'sort' => 8),
     );
 }
 
@@ -258,7 +258,22 @@ function kz_cups_candidate($cup_key)
             ");
 
         case 'best_dj':
-            return null;
+            return kz_cups_fetch_one("
+                SELECT t.owner AS userid,
+                       COUNT(t.id) AS metric
+                FROM torrents AS t
+                INNER JOIN users AS u ON u.id = t.owner
+                INNER JOIN categories AS c ON c.id = t.category
+                WHERE t.owner > 0
+                  AND t.visible = 'yes'
+                  AND t.banned != 'yes'
+                  AND t.added >= $since
+                  AND c.name LIKE 'Музыка%'
+                  AND $active_user_where
+                GROUP BY t.owner
+                ORDER BY metric DESC, SUM(t.times_completed) DESC, SUM(t.views) DESC, t.owner ASC
+                LIMIT 1
+            ");
     }
 
     return null;
@@ -439,7 +454,7 @@ function kz_cups_user_profile_html($userid)
     $parts = array();
 
     foreach ($cups as $cup) {
-        $parts[] = kz_cups_h($cup['icon']) . ' <span style="color:#8B2F2F; font-weight:bold;">' . kz_cups_h($cup['profile_title']) . '</span>';
+        $parts[] = '<i class="i1 ' . kz_cups_h($cup['icon']) . '"></i> <span class="u9">' . kz_cups_h($cup['profile_title']) . '</span>';
     }
 
     return implode('<br />', $parts);

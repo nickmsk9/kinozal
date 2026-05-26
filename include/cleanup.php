@@ -215,8 +215,17 @@ function docleanup() {
 	$msg = sqlesc("Наши поздравления, вы были авто-повышены до ранга [b]Опытный Зритель[/b].");
 	$subject = sqlesc("Вы были повышены");
 	$modcomment = sqlesc(date("Y-m-d") . " - Повышен до уровня \"".$tracker_lang["class_power_user"]."\" системой.\n");
-	sql_query("INSERT INTO messages (sender, receiver, added, msg, poster, subject) SELECT 0, id, $now, $msg, 0, $subject FROM users WHERE class = ".UC_USER." AND uploaded >= $limit AND uploaded / downloaded >= $minratio AND added < $maxdt") or sqlerr(__FILE__,__LINE__);
-	sql_query("UPDATE users SET class = ".UC_POWER_USER.", modcomment = CONCAT($modcomment, modcomment) WHERE class = ".UC_USER." AND uploaded >= $limit AND uploaded / downloaded >= $minratio AND added < $maxdt") or sqlerr(__FILE__,__LINE__);
+	$ratio_where = "(downloaded = 0 OR uploaded / downloaded >= $minratio)";
+	sql_query("INSERT INTO messages (sender, receiver, added, msg, poster, subject) SELECT 0, id, $now, $msg, 0, $subject FROM users WHERE class = ".UC_USER." AND status='confirmed' AND enabled='yes' AND uploaded >= $limit AND $ratio_where AND added < $maxdt") or sqlerr(__FILE__,__LINE__);
+	sql_query("UPDATE users SET class = ".UC_POWER_USER.", modcomment = CONCAT($modcomment, modcomment) WHERE class = ".UC_USER." AND status='confirmed' AND enabled='yes' AND uploaded >= $limit AND $ratio_where AND added < $maxdt") or sqlerr(__FILE__,__LINE__);
+
+	// promote old viewers to honored viewers
+	$maxdt = sqlesc(get_date_time(gmtime() - 86400*365*3));
+	$msg = sqlesc("Наши поздравления, вы были авто-повышены до ранга [b]Заслуженный Зритель[/b].");
+	$subject = sqlesc("Вы были повышены");
+	$modcomment = sqlesc(date("Y-m-d") . " - Повышен до уровня \"".get_user_class_name(UC_HONOR_USER)."\" системой.\n");
+	sql_query("INSERT INTO messages (sender, receiver, added, msg, poster, subject) SELECT 0, id, $now, $msg, 0, $subject FROM users WHERE class IN (".UC_USER.", ".UC_POWER_USER.") AND status='confirmed' AND enabled='yes' AND added < $maxdt") or sqlerr(__FILE__,__LINE__);
+	sql_query("UPDATE users SET class = ".UC_HONOR_USER.", modcomment = CONCAT($modcomment, modcomment) WHERE class IN (".UC_USER.", ".UC_POWER_USER.") AND status='confirmed' AND enabled='yes' AND added < $maxdt") or sqlerr(__FILE__,__LINE__);
 
 	// demote from power users
 	$minratio = 0.95;
@@ -224,8 +233,8 @@ function docleanup() {
 	$msg = sqlesc("Вы были авто-понижены с ранга [b]Опытный Зритель[/b] до ранга [b]Зритель[/b] потому-что ваш рейтинг упал ниже [b]{$minratio}[/b].");
 	$subject = sqlesc("Вы были понижены");
 	$modcomment = sqlesc(date("Y-m-d") . " - Понижен до уровня \"".$tracker_lang["class_user"]."\" системой.\n");
-	sql_query("INSERT INTO messages (sender, receiver, added, msg, poster, subject) SELECT 0, id, $now, $msg, 0, $subject FROM users WHERE class = ".UC_POWER_USER." AND uploaded / downloaded < $minratio") or sqlerr(__FILE__,__LINE__);
-	sql_query("UPDATE users SET class = ".UC_USER.", modcomment = CONCAT($modcomment, modcomment) WHERE class = ".UC_POWER_USER." AND uploaded / downloaded < $minratio") or sqlerr(__FILE__,__LINE__);
+	sql_query("INSERT INTO messages (sender, receiver, added, msg, poster, subject) SELECT 0, id, $now, $msg, 0, $subject FROM users WHERE class = ".UC_POWER_USER." AND downloaded > 0 AND uploaded / downloaded < $minratio") or sqlerr(__FILE__,__LINE__);
+	sql_query("UPDATE users SET class = ".UC_USER.", modcomment = CONCAT($modcomment, modcomment) WHERE class = ".UC_POWER_USER." AND downloaded > 0 AND uploaded / downloaded < $minratio") or sqlerr(__FILE__,__LINE__);
 
 	// delete old torrents
 	if ($use_ttl) {

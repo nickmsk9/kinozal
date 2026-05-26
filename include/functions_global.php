@@ -31,31 +31,12 @@ if (!defined('IN_TRACKER'))
 	die('Hacking attempt!');
 
 function get_user_class_color($class, $username) {
-	global $tracker_lang;
-	switch ($class) {
-		case UC_SYSOP:
-			return "<span style=\"color:#5B2B2B\" title=\"" . $tracker_lang['class_sysop'] . "\">" . $username . "</span>";
-			break;
-		case UC_ADMINISTRATOR:
-			return "<span style=\"color:#9B8CD8\" title=\"" . $tracker_lang['class_administrator'] . "\">" . $username . "</span>";
-			break;
-		case UC_MODERATOR:
-			return "<span style=\"color:#D02BC0\" title=\"" . $tracker_lang['class_moderator'] . "\">" . $username . "</span>";
-			break;
-		case UC_UPLOADER:
-			return "<span style=\"color:#8C8CB5\" title=\"" . $tracker_lang['class_uploader'] . "\">" . $username . "</span>";
-			break;
-		case UC_VIP:
-			return "<span style=\"color:#BEA000\" title=\"" . $tracker_lang['class_vip'] . "\">" . $username . "</span>";
-			break;
-		case UC_POWER_USER:
-			return "<span style=\"color:#E08A00\" title=\"" . $tracker_lang['class_power_user'] . "\">" . $username . "</span>";
-			break;
-		case UC_USER:
-			return "<span style=\"color:#000000\" title=\"" . $tracker_lang['class_user'] . "\">" . $username . "</span>";
-			break;
+	$class = (int)$class;
+	if (!is_valid_user_class($class)) {
+		return (string)$username;
 	}
-	return "$username";
+
+	return '<span class="u' . $class . '" title="' . htmlspecialchars_uni(get_user_class_name($class)) . '">' . $username . '</span>';
 }
 
 function display_date_time($timestamp = 0, $tzoffset = 0) {
@@ -1003,33 +984,140 @@ function get_user_class(): int
 
 function get_user_class_name($class) {
 	global $tracker_lang;
-	switch ($class) {
+	switch ((int)$class) {
 		case UC_USER:
-			return $tracker_lang['class_user'];
+			return $tracker_lang['class_user'] ?? 'Зритель';
 
 		case UC_POWER_USER:
-			return $tracker_lang['class_power_user'];
+			return $tracker_lang['class_power_user'] ?? 'Опытный Зритель';
+
+		case UC_HONOR_USER:
+			return $tracker_lang['class_honor_user'] ?? 'Заслуженный Зритель';
 
 		case UC_VIP:
-			return $tracker_lang['class_vip'];
+			return $tracker_lang['class_vip'] ?? 'ВИП';
 
 		case UC_UPLOADER:
-			return $tracker_lang['class_uploader'];
+			return $tracker_lang['class_uploader'] ?? 'Кинооператор';
+
+		case UC_SENIOR_UPLOADER:
+			return $tracker_lang['class_senior_uploader'] ?? 'Главный Кинооператор';
+
+		case UC_MANAGER:
+			return $tracker_lang['class_manager'] ?? 'Менеджер';
 
 		case UC_MODERATOR:
-			return $tracker_lang['class_moderator'];
+			return $tracker_lang['class_moderator'] ?? 'Редактор';
 
 		case UC_ADMINISTRATOR:
-			return $tracker_lang['class_administrator'];
+			return $tracker_lang['class_administrator'] ?? 'Администратор';
 
 		case UC_SYSOP:
-			return $tracker_lang['class_sysop'];
+			return $tracker_lang['class_sysop'] ?? 'Директор';
 	}
 	return "";
 }
 
 function is_valid_user_class($class) {
 	return is_numeric($class) && floor($class) == $class && $class >= UC_USER && $class <= UC_SYSOP;
+}
+
+function kz_user_daily_torrent_limit($class)
+{
+	switch ((int)$class) {
+		case UC_USER:
+			return 3;
+		case UC_POWER_USER:
+			return 8;
+		case UC_HONOR_USER:
+			return 16;
+		default:
+			return 20;
+	}
+}
+
+function kz_user_effective_torrent_limit($user)
+{
+	$limit = kz_user_daily_torrent_limit((int)($user['class'] ?? UC_USER));
+	$downloaded = (float)($user['downloaded'] ?? 0);
+	$uploaded = (float)($user['uploaded'] ?? 0);
+
+	if ($downloaded >= 1073741824 && ($downloaded > 0 ? $uploaded / $downloaded : 1) < 0.7) {
+		return 1;
+	}
+
+	return $limit;
+}
+
+function kz_torrent_downloads_ensure_schema()
+{
+	static $ready = false;
+
+	if ($ready) {
+		return;
+	}
+
+	sql_query("
+		CREATE TABLE IF NOT EXISTS user_torrent_downloads (
+			userid INT UNSIGNED NOT NULL,
+			torrent INT UNSIGNED NOT NULL,
+			download_date DATE NOT NULL,
+			downloaded_at DATETIME NOT NULL,
+			PRIMARY KEY (userid, torrent, download_date),
+			KEY download_date (download_date),
+			KEY torrent (torrent)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	") or sqlerr(__FILE__, __LINE__);
+
+	$ready = true;
+}
+
+function kz_torrent_downloads_today($userid)
+{
+	kz_torrent_downloads_ensure_schema();
+
+	$userid = (int)$userid;
+	$res = sql_query("
+		SELECT COUNT(*) AS cnt
+		FROM user_torrent_downloads
+		WHERE userid = $userid
+		  AND download_date = CURDATE()
+	") or sqlerr(__FILE__, __LINE__);
+	$row = mysqli_fetch_assoc($res);
+
+	return $row ? (int)$row['cnt'] : 0;
+}
+
+function kz_torrent_download_seen_today($userid, $torrent)
+{
+	kz_torrent_downloads_ensure_schema();
+
+	$userid = (int)$userid;
+	$torrent = (int)$torrent;
+	$res = sql_query("
+		SELECT 1
+		FROM user_torrent_downloads
+		WHERE userid = $userid
+		  AND torrent = $torrent
+		  AND download_date = CURDATE()
+		LIMIT 1
+	") or sqlerr(__FILE__, __LINE__);
+
+	return (bool)mysqli_fetch_assoc($res);
+}
+
+function kz_torrent_download_register($userid, $torrent)
+{
+	kz_torrent_downloads_ensure_schema();
+
+	$userid = (int)$userid;
+	$torrent = (int)$torrent;
+
+	sql_query("
+		INSERT INTO user_torrent_downloads (userid, torrent, download_date, downloaded_at)
+		VALUES ($userid, $torrent, CURDATE(), NOW())
+		ON DUPLICATE KEY UPDATE downloaded_at = VALUES(downloaded_at)
+	") or sqlerr(__FILE__, __LINE__);
 }
 
 //----------------------------------

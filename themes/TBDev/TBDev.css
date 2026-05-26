@@ -416,7 +416,7 @@ table.brd td { border-width: 1px; padding: 5px; border-style: solid; border-colo
 .ssdl dt {float: left; overflow: hidden; display: block; padding: 0 5px 0 0; margin: 0;}
 .ssdl dd {float: right; overflow: hidden; display: block; padding: 0; margin: 0;}
 
-.i1 { height:12px; background-image:url('images/status_icons.png');  position: relative; margin: 0 0 0 2px; display: inline-block;
+.i1 { height:12px; background-image:url('/pic/status_icons.png');  position: relative; margin: 0 0 0 2px; display: inline-block;
 /*  _overflow:hidden;/*IE6, IE7*/
 /*  *zoom:1;/*включаем hasLayout для IE6, IE7*/
 /*  *display:inline;/*при hasLayout true display:inline в IE6, IE7 ведёт себя как display:inline-block*/

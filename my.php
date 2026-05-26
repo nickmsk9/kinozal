@@ -77,6 +77,7 @@ function my_theme_select($selected) {
 
 $id = (int)$CURUSER["id"];
 $profile_name = my_h($CURUSER["username"]);
+$profile_class_css = 'u' . (int)($CURUSER["class"] ?? UC_USER);
 $avatar = !empty($CURUSER["avatar"]) ? my_h($CURUSER["avatar"]) : "/pic/default_avatar.gif";
 $birthday = (!empty($CURUSER["birthday"]) && $CURUSER["birthday"] !== "0000-00-00") ? $CURUSER["birthday"] : "1990-01-01";
 list($b_year, $b_month, $b_day) = explode('-', date('Y-m-d', strtotime($birthday)));
@@ -95,10 +96,10 @@ if (isset($_GET["mailsent"])) {
 	print("<div class=\"bx1 center b\">Письмо для подтверждения отправлено</div>\n");
 }
 ?>
-<div class="mn_wrap">
-	<?= my_menu($CURUSER) ?>
-	<div class="mn1_content">
-		<div class="bx1 u2"><a href="/userdetails.php?id=<?= $id ?>" class="u2"><?= $profile_name ?></a></div>
+	<div class="mn_wrap">
+		<?= my_menu($CURUSER) ?>
+		<div class="mn1_content">
+		<div class="bx1 <?= $profile_class_css ?>"><a href="/userdetails.php?id=<?= $id ?>" class="<?= $profile_class_css ?>"><?= $profile_name ?></a></div>
 
 		<form name="myc" method="post" action="/takeprofedit.php?act=1">
 			<div class="bx1_0">

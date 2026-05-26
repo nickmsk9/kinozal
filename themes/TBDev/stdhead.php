@@ -23,6 +23,7 @@ $is_logged = !empty($CURUSER) && is_array($CURUSER);
 $user_id       = $is_logged ? (int)$CURUSER['id'] : 0;
 $username      = $is_logged ? (string)$CURUSER['username'] : 'Гость';
 $user_class    = $is_logged ? (int)$CURUSER['class'] : 0;
+$user_class_css = 'u' . $user_class;
 $user_uploaded = $is_logged ? (float)$CURUSER['uploaded'] : 0;
 $user_download = $is_logged ? (float)$CURUSER['downloaded'] : 0;
 $user_bonus    = $is_logged && isset($CURUSER['bonus']) ? $CURUSER['bonus'] : 0;
@@ -249,7 +250,7 @@ $page_title = $title !== '' ? $title : $site_name;
 			<ul class="men">
 				<?php if ($is_logged) { ?>
 					<li class="tp2 center b">
-						<a href="/userdetails.php?id=<?= $user_id ?>" class="u2"><?= h($username) ?></a>
+						<a href="/userdetails.php?id=<?= $user_id ?>" class="<?= h($user_class_css) ?>"><?= h($username) ?></a>
 						(
 						<a onclick="return mess_out('Вы действительно хотите выйти?')" href="<?= h($logout_url) ?>">Выход</a>
 						)

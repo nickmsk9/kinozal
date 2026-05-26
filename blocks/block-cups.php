@@ -17,7 +17,7 @@ $content .= '<table width="100%" border="0" cellspacing="0" cellpadding="0">';
 
 foreach ($cups as $cup) {
     $num = (int)$cup['sort'];
-    $icon = kz_cups_h($cup['icon']);
+    $icon = '<i class="i1 ' . kz_cups_h($cup['icon']) . '"></i>';
     $cup_title = kz_cups_h($cup['title']);
     $holder = '<span style="color:#777;">—</span>';
 

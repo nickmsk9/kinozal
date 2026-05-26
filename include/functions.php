@@ -1153,25 +1153,11 @@ function hash_pad($hash) {
 }
 
 function get_user_icons($arr, $big = false) {
-		if ($big) {
-				$donorpic = "starbig.gif";
-				$warnedpic = "warnedbig.gif";
-				$disabledpic = "disabledbig.gif";
-				$style = "style='margin-left: 4pt'";
-		} else {
-				$donorpic = "star.gif";
-				$warnedpic = "warned.gif";
-				$disabledpic = "disabled.gif";
-				$parkedpic = "parked.gif";
-				$style = "style=\"margin-left: 2pt\"";
-		}
-		$pics = $arr["donor"] == "yes" ? "<img src=\"pic/$donorpic\" alt='Donor' border=\"0\" $style>" : "";
-		if ($arr["enabled"] == "yes")
-				$pics .= $arr["warned"] == "yes" ? "<img src=pic/$warnedpic alt=\"Warned\" border=0 $style>" : "";
-		else
-				$pics .= "<img src=\"pic/$disabledpic\" alt=\"Disabled\" border=\"0\" $style>\n";
-		$pics .= $arr["parked"] == "yes" ? "<img src=pic/$parkedpic alt=\"Parked\" border=\"0\" $style>" : "";
-		return $pics;
+	if (function_exists('kz_statuses_user_icons_html')) {
+		return kz_statuses_user_icons_html($arr);
+	}
+
+	return '';
 }
 
 function parked() {

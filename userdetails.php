@@ -55,12 +55,6 @@ function ud_birthday($value) {
 
 function ud_rank_name($user) {
 	$class = isset($user["class"]) ? (int)$user["class"] : UC_USER;
-	if ($class === UC_POWER_USER && !empty($user["added"]) && $user["added"] !== "0000-00-00 00:00:00") {
-		$registered_at = sql_timestamp_to_unix_timestamp($user["added"]);
-		if ($registered_at > 0 && (TIMENOW - $registered_at) >= (86400 * 365 * 3)) {
-			return 'Заслуженный Зритель';
-		}
-	}
 	return get_user_class_name($class);
 }
 
@@ -123,7 +117,7 @@ function ud_print_moderator_block($user, $id, $enabled) {
 		foreach (kz_cups_catalog() as $cup) {
 			$cup_id = (int)$cup["id"];
 			$checked = isset($manual_cups_map[$cup_id]) ? " checked" : "";
-			$cup_options .= "<label><input type=\"checkbox\" name=\"manual_cups[]\" value=\"$cup_id\"$checked> " . ud_h($cup["icon"]) . " " . ud_h($cup["title"]) . "</label><br />\n";
+			$cup_options .= "<label><input type=\"checkbox\" name=\"manual_cups[]\" value=\"$cup_id\"$checked> <i class=\"i1 " . ud_h($cup["icon"]) . "\"></i> " . ud_h($cup["title"]) . "</label><br />\n";
 		}
 		print("<tr><td class=\"rowhead\">Переходящие кубки</td><td colspan=\"2\" align=\"left\">$cup_options</td></tr>\n");
 	}
@@ -204,6 +198,10 @@ $leech_total = ud_minutes($user["leechtime"] ?? 0);
 $bonus = isset($user["bonus"]) ? (float)$user["bonus"] : 0;
 $reputation = isset($user["simpaty"]) ? (int)$user["simpaty"] : 0;
 $rank_name = ud_h(ud_rank_name($user));
+$user_class_css = 'u' . (int)$user["class"];
+$user_icons = function_exists('get_user_icons') ? get_user_icons($user) : '';
+$daily_limit = function_exists('kz_user_effective_torrent_limit') ? kz_user_effective_torrent_limit($user) : 20;
+$daily_downloaded = function_exists('kz_torrent_downloads_today') ? kz_torrent_downloads_today($id) : 0;
 
 $country_name = "не указано";
 $country_flag = "";
@@ -275,7 +273,7 @@ if (!$enabled) {
 		</ul>
 	</div>
 	<div class="mn1_content">
-		<div class="bx1 u2"><a href="/userdetails.php?id=<?= $id ?>" class="u2"><?= $profile_name ?></a></div>
+		<div class="bx1 <?= $user_class_css ?>"><a href="/userdetails.php?id=<?= $id ?>" class="<?= $user_class_css ?>"><?= $profile_name ?></a> <?= $user_icons ?></div>
 		<div class="bx1_0"><table class="tables1 u2">
 			<?= ud_table_row("Звание", $rank_name) ?>
 			<? $cups_html = function_exists('kz_cups_user_profile_html') ? kz_cups_user_profile_html($id) : ''; ?>
@@ -287,7 +285,7 @@ if (!$enabled) {
 			<?= ud_table_row("Рейтинг", ud_rating_img($ratio_value) . $ratio_value) ?>
 			<?= ud_table_row("Сид", $seed_total . " ( сегодня: 0 мин. )") ?>
 			<?= ud_table_row("Пир", $leech_total . " ( сегодня: 0 мин. )") ?>
-			<?= ud_table_row("Торренты", "Доступно в сутки ( 20 ) Скачано ( 0 ) Последний ( $last_torrent_link )") ?>
+			<?= ud_table_row("Торренты", "Доступно в сутки ( $daily_limit ) Скачано ( $daily_downloaded ) Последний ( $last_torrent_link )") ?>
 		</table></div>
 		<div class="bx1_0"><table class="tables1 u2">
 			<?= ud_table_row("Раздачи", $torrent_count > 0 ? '<a href="/mytorrents.php?id=' . $id . '" class="sba">' . $torrent_count . ' раздач</a>' : "нет раздач") ?>
@@ -314,7 +312,7 @@ if (!$enabled) {
 	</div>
 	<div class="clear"></div>
 </div>
-<div class="bx2_0"><ul class="men"><li class="tp2 center">Кто ОнЛайн здесь, на этой странице [ <a class="sba" href="/pay.php">помочь проекту</a> ]</li><li><div class="pad5x5"><a href="/userdetails.php?id=<?= $id ?>" class="u2"><?= $profile_name ?></a></div></li></ul></div>
+<div class="bx2_0"><ul class="men"><li class="tp2 center">Кто ОнЛайн здесь, на этой странице [ <a class="sba" href="/pay.php">помочь проекту</a> ]</li><li><div class="pad5x5"><a href="/userdetails.php?id=<?= $id ?>" class="<?= $user_class_css ?>"><?= $profile_name ?></a></div></li></ul></div>
 <?
 ud_print_moderator_block($user, $id, $enabled);
 stdfoot();

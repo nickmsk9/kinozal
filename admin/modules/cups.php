@@ -84,7 +84,7 @@ if (!function_exists('CupsAdmin')) {
 
             echo '<tr>';
             echo '<td class="center">' . (int)$row['sort'] . '</td>';
-            echo '<td><b>' . kz_cups_h($row['icon']) . ' ' . kz_cups_h($row['title']) . '</b></td>';
+            echo '<td><b><i class="i1 ' . kz_cups_h($row['icon']) . '"></i> ' . kz_cups_h($row['title']) . '</b></td>';
             echo '<td>' . $current_user . '</td>';
             echo '<td class="center">' . $source . '</td>';
             echo '<td><input type="text" name="cup_user[' . $cup_id . ']" value="' . kz_cups_h($manual_value) . '" size="35"> <span class="small">пусто = снять ручное назначение</span></td>';
