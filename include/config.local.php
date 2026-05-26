@@ -27,8 +27,8 @@
 */
 
 # IMPORTANT: Do not edit below unless you know what you are doing!
-if(!defined('IN_TRACKER') && !defined('IN_ANNOUNCE'))
-  die('Hacking attempt!');
+if (!defined('IN_TRACKER') && !defined('IN_ANNOUNCE'))
+    die('Hacking attempt!');
 
 $SITE_ONLINE = true;
 //$SITE_ONLINE = local_user();
@@ -59,7 +59,7 @@ $ttl_days = 28; // Сколько дней торрент может жить д
 $avatar_max_width = 100; // Максимальная ширина аватары.
 $avatar_max_height = 100; // Максимальная высота аватары.
 $points_per_hour = 1; // Сколько добавлять бонусов в час, если пользователь сидирует.
-$points_per_cleanup = $points_per_hour*($autoclean_interval/3600); // Don't change it!
+$points_per_cleanup = $points_per_hour * ($autoclean_interval / 3600); // Don't change it!
 $default_theme = 'TBDev'; // Тема по умолчанию.
 $nc = 'no'; // Не пропускать на трекер пиров с закрытыми портами.
 $default_language = 'russian'; // Язык трекера по умолчанию.
@@ -78,15 +78,15 @@ $smtptype = 'advanced'; // Тип отправки почты, по умолча
 $allow_block_hide = true; // Разрешить сворачивание блоков
 $check_for_working_mta = true; // Проверять работу почтового MTA при регистрации пользователя (TCP connect @ domain:25)
 $force_private_tracker = true; // Yet not working
-$max_image_size = 1024*1024; // 1mb
+$max_image_size = 1024 * 1024; // 1mb
 $allow_guests_details = false; // Разрешить гостям доступ к странице деталей торрента
 
-$admin_email = 'admin@'.$_SERVER['HTTP_HOST']; // Почта администратора трекера, для формы обратной связи
+$admin_email = 'admin@' . $_SERVER['HTTP_HOST']; // Почта администратора трекера, для формы обратной связи
 $website_name = 'TBDev'; // Краткое имя сайта, для формы обратной связи
 
 $enable_adv_antidreg = false; // Использовать продвинутую систему против двойных регистраций. Пояснение внизу:
 
-$_COOKIE_SALT = 'default'; // Соль для cookie пользователей
+$_COOKIE_SALT = 'default2'; // Соль для cookie пользователей
 if (!defined('COOKIE_SALT')) {
     define('COOKIE_SALT', $_COOKIE_SALT);
 }
@@ -102,5 +102,3 @@ if (!defined('COOKIE_SALT')) {
  * особенно из-за включенного по-умолчанию авто-удаления пользователей через 28 дней неактивности
  */
 // [END] Custom variables from Yuna Scatari
-
-?>

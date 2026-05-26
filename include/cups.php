@@ -328,7 +328,7 @@ function kz_cups_update_auto($force = false)
     if ($row) {
         sql_query("UPDATE avps SET value_u = $now WHERE arg = 'cups_last_update'") or sqlerr(__FILE__, __LINE__);
     } else {
-        sql_query("INSERT INTO avps (arg, value_u) VALUES ('cups_last_update', $now)") or sqlerr(__FILE__, __LINE__);
+        sql_query("INSERT INTO avps (arg, value_u, value_s) VALUES ('cups_last_update', $now, '')") or sqlerr(__FILE__, __LINE__);
     }
 
     $manual_res = sql_query("SELECT cup_id FROM user_cups WHERE source = 'manual'") or sqlerr(__FILE__, __LINE__);

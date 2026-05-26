@@ -1854,3 +1854,61 @@ Stack trace:
 #1 /var/www/html/index.php(30): dbconn(true)
 #2 {main}
   thrown in /var/www/html/include/functions.php on line 222
+[26-May-2026 15:05:09 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Field 'value_s' doesn't have a default value in /var/www/html/include/functions.php:192
+Stack trace:
+#0 /var/www/html/include/functions.php(192): mysqli_query(Object(mysqli), 'INSERT INTO avp...')
+#1 /var/www/html/include/cups.php(331): sql_query('INSERT INTO avp...')
+#2 /var/www/html/blocks/block-cups.php(13): kz_cups_update_auto(false)
+#3 /var/www/html/include/blocks.php(51): require('/var/www/html/b...')
+#4 /var/www/html/include/blocks.php(252): render_blocks('block-cups.php', '\xD0\x9F\xD0\xB5\xD1\x80\xD0\xB5\xD1\x85\xD0\xBE\xD0\xB4\xD1...', '', '12', 'r', true)
+#5 /var/www/html/themes/TBDev/stdhead.php(370): show_blocks('r')
+#6 /var/www/html/include/functions.php(849): require_once('/var/www/html/t...')
+#7 /var/www/html/index.php(32): stdhead('TBDev Yuna Scat...')
+#8 {main}
+  thrown in /var/www/html/include/functions.php on line 192
+[26-May-2026 15:05:09 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Field 'value_s' doesn't have a default value in /var/www/html/include/functions.php:192
+Stack trace:
+#0 /var/www/html/include/functions.php(192): mysqli_query(Object(mysqli), 'INSERT INTO avp...')
+#1 /var/www/html/include/functions.php(603): sql_query('INSERT INTO avp...')
+#2 [internal function]: autoclean()
+#3 {main}
+  thrown in /var/www/html/include/functions.php on line 192
+[26-May-2026 15:05:15 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Field 'value_s' doesn't have a default value in /var/www/html/include/functions.php:192
+Stack trace:
+#0 /var/www/html/include/functions.php(192): mysqli_query(Object(mysqli), 'INSERT INTO avp...')
+#1 /var/www/html/include/cups.php(331): sql_query('INSERT INTO avp...')
+#2 /var/www/html/blocks/block-cups.php(13): kz_cups_update_auto(false)
+#3 /var/www/html/include/blocks.php(51): require('/var/www/html/b...')
+#4 /var/www/html/include/blocks.php(252): render_blocks('block-cups.php', '\xD0\x9F\xD0\xB5\xD1\x80\xD0\xB5\xD1\x85\xD0\xBE\xD0\xB4\xD1...', '', '12', 'r', true)
+#5 /var/www/html/themes/TBDev/stdhead.php(370): show_blocks('r')
+#6 /var/www/html/include/functions.php(849): require_once('/var/www/html/t...')
+#7 /var/www/html/index.php(32): stdhead('TBDev Yuna Scat...')
+#8 {main}
+  thrown in /var/www/html/include/functions.php on line 192
+[26-May-2026 15:05:15 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Field 'value_s' doesn't have a default value in /var/www/html/include/functions.php:192
+Stack trace:
+#0 /var/www/html/include/functions.php(192): mysqli_query(Object(mysqli), 'INSERT INTO avp...')
+#1 /var/www/html/include/functions.php(603): sql_query('INSERT INTO avp...')
+#2 [internal function]: autoclean()
+#3 {main}
+  thrown in /var/www/html/include/functions.php on line 192
+[26-May-2026 15:05:48 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Field 'value_s' doesn't have a default value in /var/www/html/include/functions.php:192
+Stack trace:
+#0 /var/www/html/include/functions.php(192): mysqli_query(Object(mysqli), 'INSERT INTO avp...')
+#1 /var/www/html/include/cups.php(331): sql_query('INSERT INTO avp...')
+#2 /var/www/html/blocks/block-cups.php(13): kz_cups_update_auto(false)
+#3 /var/www/html/include/blocks.php(51): require('/var/www/html/b...')
+#4 /var/www/html/include/blocks.php(252): render_blocks('block-cups.php', '\xD0\x9F\xD0\xB5\xD1\x80\xD0\xB5\xD1\x85\xD0\xBE\xD0\xB4\xD1...', '', '12', 'r', true)
+#5 /var/www/html/themes/TBDev/stdhead.php(370): show_blocks('r')
+#6 /var/www/html/include/functions.php(849): require_once('/var/www/html/t...')
+#7 /var/www/html/index.php(32): stdhead('TBDev Yuna Scat...')
+#8 {main}
+  thrown in /var/www/html/include/functions.php on line 192
+[26-May-2026 15:05:48 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Field 'value_s' doesn't have a default value in /var/www/html/include/functions.php:192
+Stack trace:
+#0 /var/www/html/include/functions.php(192): mysqli_query(Object(mysqli), 'INSERT INTO avp...')
+#1 /var/www/html/include/functions.php(603): sql_query('INSERT INTO avp...')
+#2 [internal function]: autoclean()
+#3 {main}
+  thrown in /var/www/html/include/functions.php on line 192
+[26-May-2026 15:08:01 UTC] PHP Warning:  Trying to access array offset on null in /var/www/html/include/functions.php on line 1177

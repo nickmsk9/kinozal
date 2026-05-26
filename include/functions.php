@@ -600,7 +600,7 @@ function autoclean() {
 	$res = sql_query("SELECT value_u FROM avps WHERE arg = 'lastcleantime'");
 	$row = mysqli_fetch_array($res);
 	if (!$row) {
-		sql_query("INSERT INTO avps (arg, value_u) VALUES ('lastcleantime',$now)");
+		sql_query("INSERT INTO avps (arg, value_u, value_s) VALUES ('lastcleantime',$now,'')");
 		return;
 	}
 	$ts = $row[0];
@@ -1173,9 +1173,9 @@ function get_user_icons($arr, $big = false) {
 }
 
 function parked() {
-	   global $CURUSER;
-	   if ($CURUSER['parked'] == 'yes')
-		  stderr($tracker_lang['error'], 'Ваш аккаунт припаркован.');
+	   global $CURUSER, $tracker_lang;
+	   if (($CURUSER['parked'] ?? 'no') === 'yes')
+		  stderr($tracker_lang['error'] ?? 'Ошибка', 'Ваш аккаунт припаркован.');
 }
 
 function magnet($arg1, $arg2 = null, $arg3 = null, $arg4 = null, $arg5 = array())
