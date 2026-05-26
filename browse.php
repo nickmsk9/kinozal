@@ -29,8 +29,6 @@
 require_once("include/bittorrent.php");
 
 dbconn(false);
-
-//loggedinorreturn();
 parked();
 
 function browse_fmt_added($datetime) {
@@ -43,10 +41,7 @@ function browse_fmt_added($datetime) {
         return htmlspecialchars_uni($datetime);
     }
 
-    $today = date('Y-m-d');
-    $valueDay = date('Y-m-d', $ts);
-
-    if ($valueDay === $today) {
+    if (date('Y-m-d', $ts) === date('Y-m-d')) {
         return 'сегодня в ' . date('H:i', $ts);
     }
 
@@ -66,57 +61,28 @@ function browse_year_options($selected = 0) {
 }
 
 $cats = genrelist();
-
-$searchstr = '';
-
-if (isset($_GET['search']))
-    $searchstr = (string)unesc($_GET["search"]);
+$searchstr = isset($_GET['search']) ? (string)unesc($_GET["search"]) : '';
 $cleansearchstr = htmlspecialchars_uni($searchstr);
-if (empty($cleansearchstr))
+if ($cleansearchstr === '') {
     unset($cleansearchstr);
-
-// sorting by MarkoStamcar
+}
 
 if (isset($_GET['sort']) && isset($_GET['type'])) {
-
-    $column = '';
-    $ascdesc = '';
-
     switch ($_GET['sort']) {
-        case '1':
-            $column = "name";
-            break;
-        case '2':
-            $column = "numfiles";
-            break;
-        case '3':
-            $column = "comments";
-            break;
-        case '4':
-            $column = "added";
-            break;
-        case '5':
-            $column = "size";
-            break;
-        case '6':
-            $column = "times_completed";
-            break;
-        case '7':
-            $column = "seeders";
-            break;
-        case '8':
-            $column = "leechers";
-            break;
-        case '9':
-            $column = "owner";
-            break;
+        case '1': $column = "name"; break;
+        case '2': $column = "numfiles"; break;
+        case '3': $column = "comments"; break;
+        case '4': $column = "added"; break;
+        case '5': $column = "size"; break;
+        case '6': $column = "times_completed"; break;
+        case '7': $column = "seeders"; break;
+        case '8': $column = "leechers"; break;
+        case '9': $column = "owner"; break;
         case '10':
-            if (get_user_class() >= UC_MODERATOR)
-                $column = "moderatedby";
+            $column = get_user_class() >= UC_MODERATOR ? "moderatedby" : "id";
             break;
         default:
             $column = "id";
-            break;
     }
 
     switch ($_GET['type']) {
@@ -124,25 +90,17 @@ if (isset($_GET['sort']) && isset($_GET['type'])) {
             $ascdesc = "ASC";
             $linkascdesc = "asc";
             break;
-        case 'desc':
-            $ascdesc = "DESC";
-            $linkascdesc = "desc";
-            break;
         default:
             $ascdesc = "DESC";
             $linkascdesc = "desc";
             break;
     }
 
-
     $orderby = "ORDER BY t." . $column . " " . $ascdesc;
     $pagerlink = "sort=" . intval($_GET['sort']) . "&type=" . $linkascdesc . "&";
-
 } else {
-
     $orderby = "ORDER BY t.not_sticky DESC, t.id DESC";
     $pagerlink = "";
-
 }
 
 $addparam = "";
@@ -153,8 +111,9 @@ $incldead = 0;
 if (isset($_GET['incldead'])) {
     if ($_GET["incldead"] == 1) {
         $addparam .= "incldead=1&amp;";
-        if (!isset($CURUSER) || get_user_class() < UC_ADMINISTRATOR)
+        if (!isset($CURUSER) || get_user_class() < UC_ADMINISTRATOR) {
             $wherea[] = "banned != 'yes'";
+        }
     } elseif ($_GET["incldead"] == 2) {
         $addparam .= "incldead=2&amp;";
         $wherea[] = "visible = 'no'";
@@ -168,16 +127,12 @@ if (isset($_GET['incldead'])) {
         $wherea[] = "visible = 'yes'";
     }
     $incldead = (int)$_GET['incldead'];
-} else
+} else {
     $wherea[] = "visible = 'yes'";
+}
 
-if (isset($_GET['cat']))
-    $category = (int)$_GET["cat"]; else
-    $category = 0;
-
-if (isset($_GET['all']))
-    $all = $_GET["all"]; else
-    $all = false;
+$category = isset($_GET['cat']) ? (int)$_GET["cat"] : 0;
+$all = isset($_GET['all']) ? $_GET["all"] : false;
 
 if (!$all) {
     if (empty($_GET) && !empty($CURUSER['notifs'])) {
@@ -185,7 +140,6 @@ if (!$all) {
 
         foreach ($cats as $cat) {
             $catid = (int)$cat['id'];
-
             $all = $all && $catid;
 
             if (strpos($CURUSER['notifs'], '[cat' . $catid . ']') !== false) {
@@ -223,9 +177,11 @@ if ($all) {
     $addparam = "";
 }
 
-if (count($wherecatina) > 1)
-    $wherecatin = implode(",", $wherecatina); elseif (count($wherecatina) == 1)
+if (count($wherecatina) > 1) {
+    $wherecatin = implode(",", $wherecatina);
+} elseif (count($wherecatina) == 1) {
     $wherea[] = "category = $wherecatina[0]";
+}
 
 $wherebase = $wherea;
 
@@ -235,68 +191,69 @@ if (isset($cleansearchstr)) {
 }
 
 $where = implode(" AND ", $wherea);
-if (isset($wherecatin) && !empty($wherecatin))
+if (isset($wherecatin) && !empty($wherecatin)) {
     $where .= ($where ? " AND " : "") . "t.category IN (" . $wherecatin . ")";
-
-if ($where != "")
+}
+if ($where !== "") {
     $where = "WHERE $where";
+}
 
 $res = sql_query("SELECT COUNT(*) FROM torrents AS t $where") or die(mysql_error());
 $row = mysqli_fetch_array($res);
-$count = $row[0];
+$count = (int)$row[0];
 $num_torrents = $count;
 
 if (!$count && isset($cleansearchstr)) {
     $wherea = $wherebase;
-    //$orderby = "ORDER BY id DESC";
     $searcha = explode(" ", $cleansearchstr);
     $sc = 0;
+
     foreach ($searcha as $searchss) {
-        if (strlen($searchss) <= 1)
+        if (strlen($searchss) <= 1) {
             continue;
+        }
         $sc++;
-        if ($sc > 5)
+        if ($sc > 5) {
             break;
-        $ssa = array();
-        $ssa[] = "t.name LIKE '%" . sqlwildcardesc($searchss) . "%'";
+        }
     }
+
     if ($sc) {
         $where = implode(" AND ", $wherea);
-        if ($where != "")
+        if ($where !== "") {
             $where = "WHERE $where";
+        }
         $res = sql_query("SELECT COUNT(*) FROM torrents AS t $where");
         $row = mysqli_fetch_array($res);
-        $count = $row[0];
+        $count = (int)$row[0];
     }
 }
 
-$torrentsperpage = $CURUSER["torrentsperpage"];
-if (!$torrentsperpage)
-    $torrentsperpage = 25;
+$torrentsperpage = !empty($CURUSER["torrentsperpage"]) ? (int)$CURUSER["torrentsperpage"] : 25;
 
 if ($count) {
     if ($addparam !== '') {
         if ($pagerlink !== '') {
             $lastChar = substr($addparam, -1);
-
-            if ($lastChar !== ';') { // & = &amp;
-                $addparam .= '&' . $pagerlink;
-            } else {
-                $addparam .= $pagerlink;
-            }
+            $addparam .= ($lastChar !== ';') ? '&' . $pagerlink : $pagerlink;
         }
     } else {
         $addparam = $pagerlink;
     }
 
     list($pagertop, $pagerbottom, $limit) = pager($torrentsperpage, $count, "browse.php?" . $addparam);
-    $query = "SELECT t.id, t.moderated, t.moderatedby, t.category, (t.leechers + t.remote_leechers) AS leechers, (t.seeders + t.remote_seeders) AS seeders, t.multitracker, t.last_mt_update, t.free, t.name, t.info_hash, t.times_completed, t.size, t.added, t.comments, t.numfiles, t.filename, t.not_sticky, t.owner," . "IF(t.numratings < $minvotes, NULL, ROUND(t.ratingsum / t.numratings, 1)) AS rating, c.name AS cat_name, c.image AS cat_pic, u.username, u.class" . ($CURUSER ? ", EXISTS(SELECT * FROM readtorrents WHERE readtorrents.userid = " . sqlesc($CURUSER["id"]) . " AND readtorrents.torrentid = t.id) AS readtorrent" : ", 1 AS readtorrent") . " FROM torrents AS t LEFT JOIN categories AS c ON t.category = c.id LEFT JOIN users AS u ON t.owner = u.id $where $orderby $limit";
+    $query = "SELECT t.id, t.moderated, t.moderatedby, t.category, (t.leechers + t.remote_leechers) AS leechers, (t.seeders + t.remote_seeders) AS seeders, t.multitracker, t.last_mt_update, t.free, t.name, t.info_hash, t.times_completed, t.size, t.added, t.comments, t.numfiles, t.filename, t.not_sticky, t.owner, IF(t.numratings < $minvotes, NULL, ROUND(t.ratingsum / t.numratings, 1)) AS rating, c.name AS cat_name, c.image AS cat_pic, u.username, u.class" . ($CURUSER ? ", EXISTS(SELECT * FROM readtorrents WHERE readtorrents.userid = " . sqlesc($CURUSER["id"]) . " AND readtorrents.torrentid = t.id) AS readtorrent" : ", 1 AS readtorrent") . " FROM torrents AS t LEFT JOIN categories AS c ON t.category = c.id LEFT JOIN users AS u ON t.owner = u.id $where $orderby $limit";
     $res = sql_query($query) or die(mysql_error());
-} else
+} else {
     unset($res);
-if (isset($cleansearchstr))
-    stdhead($tracker_lang['search_results_for'] . " \"$cleansearchstr\""); else
+}
+
+$hide_right_blocks = true;
+if (isset($cleansearchstr)) {
+    stdhead($tracker_lang['search_results_for'] . " \"$cleansearchstr\"");
+} else {
     stdhead($tracker_lang['browse']);
+}
 
 $selectedCat = isset($_GET['cat']) ? (int)$_GET['cat'] : 0;
 $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : 0;
@@ -322,25 +279,14 @@ $filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
                     </tr>
                     <tr>
                         <td colspan="3">
-                            <input
-                                type="text"
-                                id="searchinput"
-                                name="search"
-                                class="w100p"
-                                autocomplete="off"
-                                ondblclick="suggest(event.keyCode, this.value);"
-                                onkeyup="suggest(event.keyCode, this.value);"
-                                onkeypress="return noenter(event.keyCode);"
-                                value="<?= htmlspecialchars_uni($searchstr ?? ''); ?>"
-                                style="height:22px;"
-                            />
+                            <input type="text" id="searchinput" name="search" class="w100p" autocomplete="off" ondblclick="suggest(event.keyCode, this.value);" onkeyup="suggest(event.keyCode, this.value);" onkeypress="return noenter(event.keyCode);" value="<?= htmlspecialchars_uni($searchstr ?? ''); ?>" style="height:22px;">
                         </td>
                         <td class="nowrap">
                             <select name="where" class="w100">
                                 <option value="name"<?= $searchMode === 'name' ? ' selected="selected"' : '' ?>>в названии</option>
                                 <option value="descr"<?= $searchMode === 'descr' ? ' selected="selected"' : '' ?>>в описании</option>
                             </select>
-                            <input class="buttonS" type="submit" value="Поиск раздач" style="margin-left:4px;" />
+                            <input class="buttonS" type="submit" value="Поиск раздач" style="margin-left:4px;">
                         </td>
                     </tr>
                     <tr>
@@ -355,9 +301,7 @@ $filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
                             <select name="cat" class="w190">
                                 <option value="0">Поиск по разделам</option>
                                 <?php foreach ($cats as $cat) { ?>
-                                    <option value="<?= (int)$cat['id'] ?>"<?= $selectedCat === (int)$cat['id'] ? ' selected="selected"' : '' ?>>
-                                        <?= htmlspecialchars_uni($cat['name']) ?>
-                                    </option>
+                                    <option value="<?= (int)$cat['id'] ?>"<?= $selectedCat === (int)$cat['id'] ? ' selected="selected"' : '' ?>><?= htmlspecialchars_uni($cat['name']) ?></option>
                                 <?php } ?>
                             </select>
                         </td>
@@ -372,9 +316,7 @@ $filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
                             </select>
                         </td>
                         <td>
-                            <select name="year" class="w90">
-                                <?= browse_year_options($selectedYear) ?>
-                            </select>
+                            <select name="year" class="w90"><?= browse_year_options($selectedYear) ?></select>
                         </td>
                         <td>
                             <select name="incldead" class="w100">
@@ -400,13 +342,10 @@ $filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
                     </tr>
                     <tr>
                         <td colspan="5" style="padding-top:4px;">
-                            <span style="color:#000000;">
-                                ► Найдено <?= number_format((int)$num_torrents, 0, '.', ' ') ?> раздач, в списке отображается только 5000. Пожалуйста, уточните параметры поиска.
-                            </span>
+                            <span style="color:#000000;">► Найдено <?= number_format((int)$num_torrents, 0, '.', ' ') ?> раздач, в списке отображается только 5000. Пожалуйста, уточните параметры поиска.</span>
                         </td>
                     </tr>
                 </table>
-
                 <div id="suggcontainer" style="text-align:left; width:520px; display:none; margin:0 auto;">
                     <div id="suggestions" style="cursor:default; position:absolute; background-color:#FFFFFF; border:1px solid #777777;"></div>
                 </div>
@@ -422,12 +361,13 @@ $filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
         <div class="pad5x5" style="padding-top:4px;">
             <table class="tables2 w100p" style="table-layout:fixed;">
                 <tr style="background:#F1D29C;">
-                    <td style="width:1330px;"></td>
+                    <td style="width:92px;"></td>
+                    <td></td>
                     <td class="center nowrap" style="width:45px; font-weight:bold;">Комм.</td>
-                    <td class="center nowrap" style="width:65px; font-weight:bold;">Размер</td>
+                    <td class="center nowrap" style="width:70px; font-weight:bold;">Размер</td>
                     <td class="center nowrap" style="width:40px; font-weight:bold;">Сидов</td>
                     <td class="center nowrap" style="width:40px; font-weight:bold;">Пиров</td>
-                    <td class="center nowrap" style="width:120px; font-weight:bold;">Залит</td>
+                    <td class="center nowrap" style="width:116px; font-weight:bold;">Залит</td>
                     <td class="center nowrap" style="width:110px; font-weight:bold;">Раздает</td>
                 </tr>
                 <?php if ($num_torrents && isset($res)) { ?>
@@ -451,23 +391,17 @@ $filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
                         }
                         ?>
                         <tr class="bov">
-                            <td style="padding:3px 0;">
-                                <table class="tables2 w100p">
-                                    <tr>
-                                        <td style="width:90px; padding-right:8px; vertical-align:top;">
-                                            <?php if ($catPic !== '') { ?>
-                                                <img src="pic/cats/<?= $catPic ?>" alt="<?= $catName ?>" style="display:block; max-width:88px;">
-                                            <?php } else { ?>
-                                                <div style="width:88px; height:31px; background:#f5e0b1;"></div>
-                                            <?php } ?>
-                                        </td>
-                                        <td style="vertical-align:middle;">
-                                            <a href="details.php?id=<?= (int)$row['id'] ?>&amp;hit=1" style="<?= $freeColor !== '' ? 'color:' . $freeColor . ';' : '' ?>">
-                                                <b><?= $title ?></b>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                </table>
+                            <td style="padding:3px 4px; vertical-align:middle;">
+                                <?php if ($catPic !== '') { ?>
+                                    <img src="pic/cats/<?= $catPic ?>" alt="<?= $catName ?>" style="display:block; max-width:88px;">
+                                <?php } else { ?>
+                                    <div style="width:88px; height:31px; background:#f5e0b1;"></div>
+                                <?php } ?>
+                            </td>
+                            <td style="padding:3px 8px 3px 0; vertical-align:middle; line-height:1.15;">
+                                <a href="details.php?id=<?= (int)$row['id'] ?>&amp;hit=1" style="font-weight:bold;<?= $freeColor !== '' ? ' color:' . $freeColor . ';' : '' ?>">
+                                    <?= $title ?>
+                                </a>
                             </td>
                             <td class="center" style="vertical-align:middle;"><?= $comments ?></td>
                             <td class="center nowrap" style="vertical-align:middle;"><?= $sizeText ?></td>
@@ -479,7 +413,7 @@ $filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
                     <?php } ?>
                 <?php } else { ?>
                     <tr>
-                        <td colspan="7" class="center" style="padding:18px 8px;"><?= htmlspecialchars_uni($tracker_lang['nothing_found'] ?? 'Ничего не найдено') ?></td>
+                        <td colspan="8" class="center" style="padding:18px 8px;"><?= htmlspecialchars_uni($tracker_lang['nothing_found'] ?? 'Ничего не найдено') ?></td>
                     </tr>
                 <?php } ?>
             </table>
@@ -487,7 +421,7 @@ $filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
     </div>
 
     <?php if ($num_torrents && isset($pagertop) && $pagertop) { ?>
-        <div class="small center" style="padding:6px 0 0 0;"><?= $pagertop ?></div>
+        <div class="small" style="padding:6px 0 0 0;"><?= $pagertop ?></div>
     <?php } ?>
 </div>
 

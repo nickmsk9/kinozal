@@ -361,6 +361,9 @@ $page_title = $title !== '' ? $title : $site_name;
 
 <div class="content">
 
+	<?php $hide_right_blocks = !empty($hide_right_blocks); ?>
+
+	<?php if (!$hide_right_blocks) { ?>
 	<div class="mn3_menu">
 		<?php
 		if (function_exists('show_blocks')) {
@@ -368,8 +371,9 @@ $page_title = $title !== '' ? $title : $site_name;
 		}
 		?>
 	</div>
+	<?php } ?>
 
-	<div class="mn3_content">
+	<div class="mn3_content"<?= $hide_right_blocks ? ' style="margin-right:0; width:auto;"' : '' ?>>
 
 <?php
 if ($is_logged && $unread > 0) {
