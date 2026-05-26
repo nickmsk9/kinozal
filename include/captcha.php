@@ -9,10 +9,9 @@ function create_captcha() {
 	//$randomstr = mksecret(5);
 	$randomstr = rand(10000, 99999);
 	$imagehash = md5($randomstr . $_COOKIE_SALT); // Additional security tightening
-	// Have to use MYsql_query to prohibit seeing imagestring in debugmode
-	mysql_query("INSERT INTO captcha SET imagehash = ".sqlesc($imagehash).", imagestring = ".sqlesc($randomstr).", dateline = ".sqlesc(time())) or sqlerr(__FILE__,__LINE__);
-	return $imagehash;
-}
+		sql_query("INSERT INTO captcha SET imagehash = " . sqlesc($imagehash) . ", imagestring = " . sqlesc($randomstr) . ", dateline = " . sqlesc(time())) or sqlerr(__FILE__,__LINE__);
+		return $imagehash;
+	}
 
 function my_strlen($string) {
 	$string = preg_replace("#&\#(0-9]+);#", "-", $string);
