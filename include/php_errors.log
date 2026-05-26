@@ -293,3 +293,14 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in /var/www/html/users.php on line 121
+[26-May-2026 17:21:48 UTC] PHP Warning:  Undefined array key "search" in /var/www/html/users.php on line 35
+[26-May-2026 17:21:48 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/users.php on line 35
+[26-May-2026 17:21:48 UTC] PHP Warning:  Undefined array key "class" in /var/www/html/users.php on line 36
+[26-May-2026 17:21:48 UTC] PHP Warning:  Undefined array key "letter" in /var/www/html/users.php on line 45
+[26-May-2026 17:21:48 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/users.php on line 45
+[26-May-2026 17:21:48 UTC] PHP Warning:  Undefined variable $q in /var/www/html/users.php on line 116
+[26-May-2026 17:21:48 UTC] PHP Warning:  Undefined array key "page" in /var/www/html/users.php on line 117
+[26-May-2026 17:21:48 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_row() in /var/www/html/users.php:121
+Stack trace:
+#0 {main}
+  thrown in /var/www/html/users.php on line 121
