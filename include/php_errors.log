@@ -1830,3 +1830,27 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\users.php on line 121
+[26-May-2026 15:03:36 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: No such file or directory in /var/www/html/include/functions.php:222
+Stack trace:
+#0 /var/www/html/include/functions.php(222): mysqli_connect('localhost', 'root', Object(SensitiveParameterValue))
+#1 /var/www/html/index.php(30): dbconn(true)
+#2 {main}
+  thrown in /var/www/html/include/functions.php on line 222
+[26-May-2026 15:03:41 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: No such file or directory in /var/www/html/include/functions.php:222
+Stack trace:
+#0 /var/www/html/include/functions.php(222): mysqli_connect('localhost', 'root', Object(SensitiveParameterValue))
+#1 /var/www/html/index.php(30): dbconn(true)
+#2 {main}
+  thrown in /var/www/html/include/functions.php on line 222
+[26-May-2026 15:03:41 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: No such file or directory in /var/www/html/include/functions.php:222
+Stack trace:
+#0 /var/www/html/include/functions.php(222): mysqli_connect('localhost', 'root', Object(SensitiveParameterValue))
+#1 /var/www/html/index.php(30): dbconn(true)
+#2 {main}
+  thrown in /var/www/html/include/functions.php on line 222
+[26-May-2026 15:03:44 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: No such file or directory in /var/www/html/include/functions.php:222
+Stack trace:
+#0 /var/www/html/include/functions.php(222): mysqli_connect('localhost', 'root', Object(SensitiveParameterValue))
+#1 /var/www/html/index.php(30): dbconn(true)
+#2 {main}
+  thrown in /var/www/html/include/functions.php on line 222

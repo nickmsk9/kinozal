@@ -1,0 +1,65 @@
+services:
+  php:
+    build: .
+    container_name: kinozal-php
+    ports:
+      - "8098:80"
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    networks:
+      - kinozal-net
+
+  db:
+    image: mysql:8.4
+    container_name: kinozal-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: kinozal
+      MYSQL_USER: kinozal
+      MYSQL_PASSWORD: kinozal
+    ports:
+      - "3312:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - kinozal-net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: kinozal-phpmyadmin
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8099:80"
+    restart: unless-stopped
+    networks:
+      - kinozal-net
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: kinozal-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - kinozal-net
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  kinozal-net:
+    driver: bridge
