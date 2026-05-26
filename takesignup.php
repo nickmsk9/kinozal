@@ -31,6 +31,25 @@ require_once("include/bittorrent.php");
 
 dbconn();
 
+if (isset($_POST['wusername']) && !isset($_POST['wantusername'])) {
+    $_POST['wantusername'] = $_POST['wusername'];
+}
+if (isset($_POST['wpassword3']) && !isset($_POST['wantpassword'])) {
+    $_POST['wantpassword'] = $_POST['wpassword3'];
+}
+if (isset($_POST['wgender']) && !isset($_POST['gender'])) {
+    $_POST['gender'] = ($_POST['wgender'] === 'Female') ? '2' : '1';
+}
+if (isset($_POST['bday_year']) && !isset($_POST['year'])) {
+    $_POST['year'] = $_POST['bday_year'];
+}
+if (isset($_POST['bday_month']) && !isset($_POST['month'])) {
+    $_POST['month'] = $_POST['bday_month'];
+}
+if (isset($_POST['bday_day']) && !isset($_POST['day'])) {
+    $_POST['day'] = $_POST['bday_day'];
+}
+
 $deny_signup = !empty($deny_signup);
 $allow_invite_signup = !empty($allow_invite_signup);
 $use_email_act = !empty($use_email_act);
