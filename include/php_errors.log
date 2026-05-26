@@ -1,1 +1,21 @@
 [26-May-2026 15:10:41 UTC] PHP Warning:  Undefined array key "nowarn" in /var/www/html/login.php on line 40
+[26-May-2026 15:18:46 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_query() in /var/www/html/include/captcha.php:13
+Stack trace:
+#0 /var/www/html/recover.php(139): create_captcha()
+#1 {main}
+  thrown in /var/www/html/include/captcha.php on line 13
+[26-May-2026 15:23:04 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_query() in /var/www/html/include/captcha.php:13
+Stack trace:
+#0 /var/www/html/recover.php(151): create_captcha()
+#1 {main}
+  thrown in /var/www/html/include/captcha.php on line 13
+[26-May-2026 15:23:16 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_query() in /var/www/html/include/captcha.php:13
+Stack trace:
+#0 /var/www/html/recover.php(151): create_captcha()
+#1 {main}
+  thrown in /var/www/html/include/captcha.php on line 13
+[26-May-2026 15:23:17 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_query() in /var/www/html/include/captcha.php:13
+Stack trace:
+#0 /var/www/html/recover.php(151): create_captcha()
+#1 {main}
+  thrown in /var/www/html/include/captcha.php on line 13

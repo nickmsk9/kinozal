@@ -122,42 +122,65 @@ EOD;
 		or stderr($tracker_lang['error'], "Невозможно отправить E-mail. Пожалуста сообщите администрации об ошибке.");
 	stderr($tracker_lang['success'], "Новые данные по аккаунту отправлены на E-Mail <b>$email</b>.\n" .
 		"Через несколько минут (обычно сразу) вы получите ваши новые данные.");
-} else {
- 	stdhead("Восстановление пароля");
-	?>
-	<form method="post" action="recover.php">
-	<table border="1" cellspacing="0" cellpadding="5">
-	<tr><td class="colhead" colspan="2">Восстановление имени пользователя или пароля</td></tr>
-	<tr><td colspan="2">Используйте форму ниже для востановления пароля<br /> и ваши данные будут отправлены вам на почту.<br /><br />
-	Вы должны будете подтвердить запрос.</td></tr>
-	<tr><td class="rowhead">Зарегистрированый email</td>
-	<td><input type="text" size="40" name="email"></td></tr>
-<?
-
-if ($use_captcha) {
-	include_once("include/captcha.php");
-	$hash = create_captcha();
-	tr("Код подтверждения", "<input type=\"text\" name=\"imagestring\" size=\"20\" value=\"\" />
-	<p>Пожалуйста, введите текст изображенный на картинке внизу.<br />Этот процесс предотвращает автоматическую регистрацию.</p>
-	<table>
-		<tr>
-			<td class=\"block\" rowspan=\"2\">
-				<img id=\"captcha\" src=\"captcha.php?imagehash=$hash\" alt=\"Captcha\" ondblclick=\"document.getElementById('captcha').src = 'captcha.php?imagehash=$hash&amp;' + Math.random();\" />
-			</td>
-			<td class=\"block\"><img src=\"themes/$ss_uri/images/reload.gif\" style=\"cursor: pointer;\" onclick=\"document.getElementById('captcha').src = 'captcha.php?imagehash=$hash&amp;' + Math.random();\" /></td>
-		</tr>
-		<tr>
-			<td class=\"block\"><a href=\"captcha_mp3.php?imagehash=$hash\"><img src=\"themes/$ss_uri/images/listen.gif\" style=\"cursor: pointer;\" border=\"0\" /></a></td>
-		</tr>
-	</table>
-	<font color=\"red\">Код чувствителен к регистру</font><br />Кликните два раза на картинке, что-бы обновить картинку.<input type=\"hidden\" name=\"imagehash\" value=\"$hash\" />", 1);
-}
-
-?>
-	<tr><td colspan="2" align="center"><input type="submit" value="Восстановить"></td></tr>
-	</table>
-	<?
-	stdfoot();
-}
+	} else {
+	 	stdhead("Восстановление пароля");
+		$email_value = isset($_POST["email"]) ? htmlspecialchars_uni((string)$_POST["email"]) : "";
+		?>
+		<div style="width: 100%; text-align: center;">
+			<div style="width: 700px; display: inline-block; text-align: left;">
+				<div class="pad0x0x5x0">
+					<ul class="lis">
+						<li><a href="/login.php">Вход</a></li>
+						<li><a href="/signup.php">Регистрация в Кинозал.ТВ</a></li>
+						<li class="mn"><a href="/recover.php">Восстановление пароля</a></li>
+					</ul>
+				</div>
+				<form method="post" action="recover.php">
+					<div class="bx1_0">
+						<div class="pad10x10 floatleft">
+							<table class="tables1">
+								<tr>
+									<td class="w150 nw b">Почта</td>
+									<td class="right"><input type="text" size="35" id="email" name="email" value="<?= $email_value ?>"></td>
+								</tr>
+								<tr>
+									<td colspan="2" align="right">Адрес электронной почты</td>
+								</tr>
+								<?php if ($use_captcha) {
+									include_once("include/captcha.php");
+									$hash = create_captcha();
+								?>
+								<tr>
+									<td class="w150 nw b">Проверочный вопрос</td>
+									<td class="right">
+										<img id="captcha" src="captcha.php?imagehash=<?= $hash ?>" alt="Captcha" ondblclick="document.getElementById('captcha').src='captcha.php?imagehash=<?= $hash ?>&amp;'+Math.random();">
+									</td>
+								</tr>
+								<tr>
+									<td class="w150 nw b">Проверочный ответ</td>
+									<td class="right">
+										<input type="text" size="15" name="imagestring" class="w60" value="">
+										<input type="hidden" name="imagehash" value="<?= $hash ?>">
+									</td>
+								</tr>
+								<?php } ?>
+								<tr>
+									<td colspan="2" class="right"><input class="buttonS" type="submit" value=" Восстановить пароль "></td>
+								</tr>
+							</table>
+						</div>
+						<div class="pad10x10" style="margin: 0 5px 0 380px;">
+							Для восстановления пароля введите почтовый адрес,<br>
+							указанный в Вашем профиле<br>
+							Вам будет отправлено письмо с паролем<br>
+							С уважением, Администрация Кинозал.ТВ
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		<?php
+		stdfoot();
+	}
 
 ?>
