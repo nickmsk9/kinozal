@@ -181,3 +181,9 @@ Stack trace:
 #0 /var/www/html/takesignup.php(373): mysqli_insert_id(NULL)
 #1 {main}
   thrown in /var/www/html/takesignup.php on line 373
+[26-May-2026 15:47:53 UTC] PHP Warning:  Undefined variable $headers in /var/www/html/include/functions.php on line 742
+[26-May-2026 15:47:53 UTC] PHP Fatal error:  Uncaught Error: Undefined constant "SMTP" in /var/www/html/include/functions.php:761
+Stack trace:
+#0 /var/www/html/takesignup.php(401): sent_mail('nickmsk92@iclou...', 'TBDev Yuna Scat...', 'noreply@localho...', '\xD0\x9F\xD0\xBE\xD0\xB4\xD1\x82\xD0\xB2\xD0\xB5\xD1\x80\xD0...', '\xD0\x92\xD1\x8B \xD0\xB7\xD0\xB0\xD1\x80\xD0\xB5\xD0\xB3...', false)
+#1 {main}
+  thrown in /var/www/html/include/functions.php on line 761

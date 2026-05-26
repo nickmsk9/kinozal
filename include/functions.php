@@ -729,6 +729,8 @@ function sent_mail($to,$fromname,$fromemail,$subject,$body,$multiple=false,$mult
 		@mail($to, $subject, $body, "From: $SITEEMAIL") or $result = false;
 	} elseif ($smtptype == 'advanced') {
 	# Is the OS Windows or Mac or Linux?
+	$headers = '';
+	$windows = false;
 	if (strtoupper(substr(PHP_OS,0,3)=='WIN')) {
 		$eol="\r\n";
 		$windows = true;
@@ -744,9 +746,9 @@ function sent_mail($to,$fromname,$fromemail,$subject,$body,$multiple=false,$mult
 	$headers .= "Return-Path: $fromname <$fromemail>".$eol;
 	$headers .= "Message-ID: <$mid.thesystem@$name>".$eol;
 	$headers .= "X-Mailer: PHP v".phpversion().$eol;
-    $headers .= "MIME-Version: 1.0".$eol;
-    $headers .= "Content-type: text/plain; charset=utf8bm4".$eol;
-    $headers .= "X-Sender: PHP".$eol;
+	    $headers .= "MIME-Version: 1.0".$eol;
+	    $headers .= "Content-type: text/plain; charset=utf-8".$eol;
+	    $headers .= "X-Sender: PHP".$eol;
     if ($multiple)
     	$headers .= "Bcc: $multiplemail.$eol";
 	if ($smtp == "yes") {
@@ -758,11 +760,11 @@ function sent_mail($to,$fromname,$fromemail,$subject,$body,$multiple=false,$mult
 
     	@mail($to, $subject, $body, $headers) or $result = false;
 
-    	ini_restore(SMTP);
-		ini_restore(smtp_port);
-		if ($windows)
-			ini_restore(sendmail_from);
-	} elseif ($smtptype == 'external') {
+	    	ini_restore('SMTP');
+			ini_restore('smtp_port');
+			if ($windows)
+				ini_restore('sendmail_from');
+		} elseif ($smtptype == 'external') {
 		require_once($rootpath . 'include/smtp/smtp.lib.php');
 		$mail = new smtp;
 		$mail->debug(false);
