@@ -1,68 +1,55 @@
 <?php
 
-/* ToDo:
- * Make cache in this block
-*/
-
 if (!defined('BLOCK_FILE')) {
- Header("Location: ../index.php");
- exit;
+    header('Location: ../index.php');
+    exit;
 }
 
-global $tracker_lang, $ss_uri, $maxusers, $pic_base_url;
+global $content;
 
-$registered = number_format(get_row_count("users"));
-$unverified = number_format(get_row_count("users", "WHERE status='pending'"));
-$male = number_format(get_row_count("users", "WHERE gender='1'"));
-$female = number_format(get_row_count("users", "WHERE gender='2'"));
-$torrents = number_format(get_row_count("torrents"));
-$dead = number_format(get_row_count("torrents", "WHERE visible='no'"));
-$seeders = get_row_count("peers", "WHERE seeder='yes'");
-$leechers = get_row_count("peers", "WHERE seeder='no'");
-list($external_seeders, $external_leechers) = array_map('number_format', mysqli_fetch_row(sql_query('SELECT SUM(seeders), SUM(leechers) FROM torrents_scrape')));
-$warned_users = number_format(get_row_count("users", "WHERE warned = 'yes'"));
-$disabled = number_format(get_row_count("users", "WHERE enabled = 'no'"));
-$uploaders = number_format(get_row_count("users", "WHERE class = ".UC_UPLOADER));
-$vip = number_format(get_row_count("users", "WHERE class = ".UC_VIP));
-if ($leechers == 0)
-  $ratio = 0;
-else
-  $ratio = round($seeders / $leechers * 100);
-$peers = number_format($seeders + $leechers);
-$seeders = number_format($seeders);
-$leechers = number_format($leechers);
+$blocktitle = 'Статистика трекера';
+$content = '';
 
-$content .= "<table width=\"100%\" class=\"main\" border=\"0\" cellspacing=\"0\" cellpadding=\"2\"><td align=\"center\">
-<table class=\"main\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\">
+$users_res = sql_query("
+    SELECT
+        COUNT(*) AS users_total,
+        SUM(CASE WHEN gender = '2' THEN 1 ELSE 0 END) AS girls_total,
+        SUM(CASE WHEN class = " . UC_UPLOADER . " THEN 1 ELSE 0 END) AS uploaders_total
+    FROM users
+    WHERE status = 'confirmed'
+");
 
-<table width=\"100%\" class=\"main\" border=\"0\" cellspacing=\"0\" cellpadding=\"10\">
-  <tr>
-    <td width=\"50%\" align=\"center\" style=\"border: none;\"><table class=\"main\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\">
-<tr><td class=\"rowhead\">{$tracker_lang['users_registered']}</td><td align=right><img src=\"$pic_base_url/male.gif\" alt=\"{$tracker_lang['stats_male']}\">$male<img src=\"$pic_base_url/female.gif\" alt=\"{$tracker_lang['stats_female']}\">$female<br />{$tracker_lang['total']}: {$registered}</td></tr>
-<tr><td colspan=\"2\" class=\"rowhead\"><table width=\"100%\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\"><tr><td style=\"text-align: right; font-weight: bold; vertical-align: top;\">{$tracker_lang['stats_maxusers']}</td><td align=\"right\">{$maxusers}</td></tr></table></td></tr>
-<tr><td class=\"rowhead\">{$tracker_lang['users_unconfirmed']}</td><td align=\"right\">{$unverified}</td></tr>
-<tr><td class=\"rowhead\">{$tracker_lang['users_warned']}&nbsp;<img src=\"$pic_base_url/warned.gif\" border=\"0\" align=\"absbottom\"></td><td align=\"right\">{$warned_users}</td></tr>
-<tr><td class=\"rowhead\">{$tracker_lang['users_disabled']}&nbsp;<img src=\"$pic_base_url/disabled.gif\" border=\"0\" align=\"absbottom\"></td><td align=\"right\">{$disabled}</td></tr>
-<tr><td class=\"rowhead\"><font color=\"orange\">{$tracker_lang['users_uploaders']}</font></td><td align=\"right\">{$uploaders}</td></tr>
-<tr><td class=\"rowhead\"><font color=\"#9C2FE0\">{$tracker_lang['users_vips']}</font></td><td align=\"right\">{$vip}</td></tr>
+$torrents_res = sql_query("
+    SELECT
+        COUNT(*) AS torrents_total,
+        COALESCE(SUM(seeders), 0) AS seeders_total,
+        COALESCE(SUM(leechers), 0) AS leechers_total
+    FROM torrents
+    WHERE visible = 'yes' AND banned != 'yes'
+");
 
-</table></td>
-<td width=\"50%\" align=\"center\" style=\"border: none;\"><table class=\"main\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\">
-<tr><td class=\"rowhead\">{$tracker_lang['tracker_torrents']}</td><td align=\"right\">{$torrents}</td></tr>
-<tr><td class=\"rowhead\">{$tracker_lang['tracker_dead_torrents']}</td><td align=\"right\">{$dead}</td></tr>
-<tr><td class=\"rowhead\">{$tracker_lang['tracker_peers']}</td><td align=\"right\">{$peers}</td></tr>";
-if (isset($peers)) {
-$content .= "<tr><td class=\"rowhead\">{$tracker_lang['tracker_seeders']}&nbsp;&nbsp;<img src=\"./themes/$ss_uri/images/arrowup.gif\" border=\"0\" align=\"absbottom\"></td><td align=\"right\">{$seeders}</td></tr>
-<tr><td class=\"rowhead\">{$tracker_lang['tracker_leechers']}&nbsp;&nbsp;<img src=\"./themes/$ss_uri/images/arrowdown.gif\" border=\"0\" align=\"absbottom\"></td><td align=\"right\">{$leechers}</td></tr>
-<tr><td class=\"rowhead\">{$tracker_lang['tracker_seed_peer']}</td><td align=\"right\">{$ratio}</td></tr>";
+$users_stats = $users_res ? mysqli_fetch_assoc($users_res) : array();
+$torrents_stats = $torrents_res ? mysqli_fetch_assoc($torrents_res) : array();
+
+$stats = array(
+    'Зрителей в зале' => number_format((int)($users_stats['users_total'] ?? 0)),
+    'Девочек' => number_format((int)($users_stats['girls_total'] ?? 0)),
+    'Кинооператоров' => number_format((int)($users_stats['uploaders_total'] ?? 0)),
+    'Раздач' => number_format((int)($torrents_stats['torrents_total'] ?? 0)),
+    'Сидов' => number_format((int)($torrents_stats['seeders_total'] ?? 0)),
+    'Пиров' => number_format((int)($torrents_stats['leechers_total'] ?? 0)),
+);
+
+$content .= '<table width="100%" border="0" cellspacing="0" cellpadding="0">';
+
+foreach ($stats as $label => $value) {
+    $content .= '
+    <tr>
+        <td class="embedded"><b>' . $label . '</b></td>
+        <td class="embedded" align="right">' . $value . '</td>
+    </tr>';
 }
 
-$content .= "<tr><td class=\"rowhead\">{$tracker_lang['external_seeders']}&nbsp;&nbsp;<img src=\"./themes/$ss_uri/images/arrowup.gif\" border=\"0\" align=\"absbottom\"></td><td align=\"right\">{$external_seeders}</td></tr>
-<tr><td class=\"rowhead\">{$tracker_lang['external_leechers']}&nbsp;&nbsp;<img src=\"./themes/$ss_uri/images/arrowdown.gif\" border=\"0\" align=\"absbottom\"></td><td align=\"right\">{$external_leechers}</td></tr>";
-
-$content .= "</table></td>
-
-</table>
-</td></tr></table>";
+$content .= '</table>';
 
 ?>

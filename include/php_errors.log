@@ -1650,3 +1650,42 @@ Stack trace:
 #1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
 #2 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 12:22:30 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:22:30 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_array() in C:\OSPanel\domains\kinozal.lv\include\cleanup.php:42
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(619): docleanup()
+#1 [internal function]: autoclean()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\cleanup.php on line 42
+[26-May-2026 12:26:16 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:17 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:17 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:17 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:17 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:17 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:18 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:18 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:18 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:19 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:22 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:22 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:23 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:26:23 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:28:48 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:28:49 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:28:50 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:28:50 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:28:50 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:29:08 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:29:34 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:30:10 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:30:14 Europe/Moscow] PHP Deprecated:  number_format(): Passing null to parameter #1 ($num) of type float is deprecated in C:\OSPanel\domains\kinozal.lv\blocks\block-stats.php on line 22
+[26-May-2026 12:37:01 Europe/Moscow] PHP Warning:  Undefined variable $ok in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php on line 706
+[26-May-2026 12:37:01 Europe/Moscow] PHP Warning:  Undefined variable $de in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php on line 706
+[26-May-2026 12:37:01 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_array() in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php:591
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php(706): BlocksChange()
+#1 C:\OSPanel\domains\kinozal.lv\admin\admin.php(100): require_once('C:\\OSPanel\\doma...')
+#2 C:\OSPanel\domains\kinozal.lv\admincp.php(36): include_once('C:\\OSPanel\\doma...')
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php on line 591

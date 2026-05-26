@@ -961,7 +961,7 @@ COMMIT;
 
 INSERT INTO `orbital_blocks` (`bid`, `bkey`, `title`, `content`, `bposition`, `weight`, `active`, `time`, `blockfile`, `view`, `expire`, `action`, `which`) VALUES
   (1,'','Администрация','<table border=\"0\"><tr>\r\n<td class=\"block\"><a href=\"admincp.php\">Админка</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"users.php\">Список пользователей</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"staffmess.php\">Массовое ЛС</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"ipcheck.php\">Двойники по IP</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"logout.php\">Выйти</a></td>\r\n</tr></table>','r',1,1,'','',2,'0','d','all'),
-  (8,'','Статистика','','c',7,1,'','block-stats.php',0,'0','d','ihome,'),
+  (8,'','Статистика трекера','','r',4,1,'','block-stats.php',0,'0','d','ihome,'),
   (9,'','Релизы, которым нужны раздающие','','c',6,1,'','block-helpseed.php',0,'0','d','ihome,'),
   (10,'','Напоминание о правилах','<p align=\"jsutify\">Администрация данного сайта - прирожденные садисты и кровопийцы, которые только и ищут повод помучать и поиздеваться над пользователями, используя для этого самые изощренные пытки. Единственный способ избежать этого - не попадаться нам на глаза, то есть спокойно качать и раздавать, поддерживая свой рейтинг как можно ближе к 1, и не делать глупых комментариев к торрентам. И не говорите, что мы вас не предупреждали! (шутка)</p>','c',1,1,'','',0,'0','d','rules,'),
   (2,'','Новости','','c',3,1,'','block-news.php',0,'0','d','ihome,'),
