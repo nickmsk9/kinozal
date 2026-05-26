@@ -43,12 +43,12 @@ function barf($text = "Пользователь удален") {
 if (get_user_class() < UC_MODERATOR)
 	puke($tracker_lang['access_denied']);
 
-$action = $_POST["action"];
+	$action = $_POST["action"] ?? "";
 
 if ($action == "edituser") {
-	$userid = $_POST["userid"];
-	$title = $_POST["title"];
-	$avatar = $_POST["avatar"];
+		$userid = $_POST["userid"] ?? 0;
+		$title = $_POST["title"] ?? "";
+		$avatar = $_POST["avatar"] ?? "";
 	// Check remote avatar size
 	if ($avatar) {
 		if (!preg_match('#^((http)|(ftp):\/\/[a-zA-Z0-9\-]+?\.([a-zA-Z0-9\-]+\.)+[a-zA-Z]+(:[0-9]+)*\/.*?\.(gif|jpg|jpeg|png)$)#is', $avatar))
@@ -59,26 +59,26 @@ if ($action == "edituser") {
 						stderr($tracker_lang['error'], sprintf($tracker_lang['avatar_is_too_big'], $avatar_max_width, $avatar_max_height));
 	}
 // Check remote avatar size
-	$resetb = $_POST["resetb"];
-	$birthday = ($resetb=='yes'?", birthday = NULL":"");
-	$enabled = $_POST["enabled"];
-	$warned = $_POST["warned"];
-	$warnlength = intval($_POST["warnlength"]);
-	$dislength = intval($_POST["dislength"]);
-	$warnpm = $_POST["warnpm"];
-	$donor = $_POST["donor"];
-	$uploadtoadd = $_POST["amountup"];
-	$downloadtoadd=  $_POST["amountdown"];
-	$formatup = $_POST["formatup"];
-	$formatdown = $_POST["formatdown"];
-	$mpup = $_POST["upchange"];
-	$mpdown = $_POST["downchange"];
-	$support = $_POST["support"];
-	$supportfor = htmlspecialchars_uni($_POST["supportfor"]);
-	$modcomm = htmlspecialchars_uni($_POST["modcomm"]);
-	$deluser = $_POST["deluser"];
+		$resetb = $_POST["resetb"] ?? "no";
+		$birthday = ($resetb=='yes'?", birthday = NULL":"");
+		$enabled = $_POST["enabled"] ?? "";
+		$warned = $_POST["warned"] ?? "";
+		$warnlength = intval($_POST["warnlength"] ?? 0);
+		$dislength = intval($_POST["dislength"] ?? 0);
+		$warnpm = $_POST["warnpm"] ?? "";
+		$donor = $_POST["donor"] ?? "no";
+		$uploadtoadd = $_POST["amountup"] ?? 0;
+		$downloadtoadd=  $_POST["amountdown"] ?? 0;
+		$formatup = $_POST["formatup"] ?? "mb";
+		$formatdown = $_POST["formatdown"] ?? "mb";
+		$mpup = $_POST["upchange"] ?? "plus";
+		$mpdown = $_POST["downchange"] ?? "plus";
+		$support = $_POST["support"] ?? "no";
+		$supportfor = htmlspecialchars_uni($_POST["supportfor"] ?? "");
+		$modcomm = htmlspecialchars_uni($_POST["modcomm"] ?? "");
+		$deluser = $_POST["deluser"] ?? "";
 
-	$class = intval($_POST["class"]);
+		$class = intval($_POST["class"] ?? 0);
 	if (!is_valid_id($userid) || !is_valid_user_class($class))
 		stderr($tracker_lang['error'], "Неверный идентификатор пользователя или класса.");
 	// check target user class
@@ -102,36 +102,36 @@ if ($action == "edituser") {
 
 	if($uploadtoadd > 0) {
 		if ($mpup == "plus")
-			$newupload = $arr["uploaded"] + ($formatup == mb ? ($uploadtoadd * 1048576) : ($uploadtoadd * 1073741824));
-		else
-			$newupload = $arr["uploaded"] - ($formatup == mb ? ($uploadtoadd * 1048576) : ($uploadtoadd * 1073741824));
+				$newupload = $arr["uploaded"] + ($formatup == "mb" ? ($uploadtoadd * 1048576) : ($uploadtoadd * 1073741824));
+			else
+				$newupload = $arr["uploaded"] - ($formatup == "mb" ? ($uploadtoadd * 1048576) : ($uploadtoadd * 1073741824));
 		if ($newupload < 0)
 			stderr($tracker_lang['error'], "Вы хотите отнять у пользователя отданого больше чем у него есть!");
 		$updateset[] = "uploaded = $newupload";
-		$modcomment = date("Y-m-d") . " - Пользователь $CURUSER[username] ".($mpup == "plus" ? "добавил " : "отнял ").$uploadtoadd.($formatup == mb ? " MB" : " GB")." к раздаче.\n". $modcomment;
+			$modcomment = date("Y-m-d") . " - Пользователь " . $CURUSER["username"] . " ".($mpup == "plus" ? "добавил " : "отнял ").$uploadtoadd.($formatup == "mb" ? " MB" : " GB")." к раздаче.\n". $modcomment;
 	}
 
 	if($downloadtoadd > 0) {
 		if ($mpdown == "plus")
-			$newdownload = $arr["downloaded"] + ($formatdown == mb ? ($downloadtoadd * 1048576) : ($downloadtoadd * 1073741824));
-		else
-			$newdownload = $arr["downloaded"] - ($formatdown == mb ? ($downloadtoadd * 1048576) : ($downloadtoadd * 1073741824));
+				$newdownload = $arr["downloaded"] + ($formatdown == "mb" ? ($downloadtoadd * 1048576) : ($downloadtoadd * 1073741824));
+			else
+				$newdownload = $arr["downloaded"] - ($formatdown == "mb" ? ($downloadtoadd * 1048576) : ($downloadtoadd * 1073741824));
 		if ($newdownload < 0)
 			stderr($tracker_lang['error'], "Вы хотите отнять у пользователя скачаного больше чем у него есть!");
 		$updateset[] = "downloaded = $newdownload";
-		$modcomment = date("Y-m-d") . " - Пользователь $CURUSER[username] ".($mpdown == "plus" ? "добавил " : "отнял ").$downloadtoadd.($formatdown == mb ? " MB" : " GB")." к скачаному.\n". $modcomment;
+			$modcomment = date("Y-m-d") . " - Пользователь " . $CURUSER["username"] . " ".($mpdown == "plus" ? "добавил " : "отнял ").$downloadtoadd.($formatdown == "mb" ? " MB" : " GB")." к скачаному.\n". $modcomment;
 	}
 
 	if ($curclass != $class) {
 		// Notify user
 		$what = ($class > $curclass ? "повышены" : "понижены");
-		$msg = "Вы были $what до класса \"" . get_user_class_name($class) . "\" пользователем $CURUSER[username].";
+			$msg = "Вы были $what до класса \"" . get_user_class_name($class) . "\" пользователем " . $CURUSER["username"] . ".";
 		$subject = "Вы были $what";
 		send_pm(0, $userid, get_date_time(), $subject, $msg);
 		//sql_query("INSERT INTO messages (sender, receiver, msg, added, subject) VALUES(0, $userid, $msg, $added, $subject)") or sqlerr(__FILE__, __LINE__);
 		$updateset[] = "class = $class";
 		$what = ($class > $curclass ? "Повышен" : "Пониженен");
- 		$modcomment = date("Y-m-d") . " - $what до класса \"" . get_user_class_name($class) . "\" пользователем $CURUSER[username].\n". $modcomment;
+	 		$modcomment = date("Y-m-d") . " - $what до класса \"" . get_user_class_name($class) . "\" пользователем " . $CURUSER["username"] . ".\n". $modcomment;
 	}
 
 	// some Helshad fun
@@ -153,7 +153,7 @@ if ($action == "edituser") {
 			stderr($tracker_lang['error'], "Вы должны указать причину по которой ставите предупреждение!");
 		if ($warnlength == 255) {
 			$modcomment = date("Y-m-d") . " - Предупрежден пользователем " . $CURUSER['username'] . ".\nПричина: $warnpm\n" . $modcomment;
-			$msg = "Вы получили [url=rules.php#warning]предупреждение[/url] на неограниченый срок от $CURUSER[username]" . ($warnpm ? "\n\nПричина: $warnpm" : "");
+				$msg = "Вы получили [url=rules.php#warning]предупреждение[/url] на неограниченый срок от " . $CURUSER["username"] . ($warnpm ? "\n\nПричина: $warnpm" : "");
 			$updateset[] = "warneduntil = NULL";
 		} else {
 			$warneduntil = get_date_time(gmtime() + $warnlength * 604800);
@@ -198,9 +198,9 @@ if ($action == "edituser") {
 	$updateset[] = "avatar = " . sqlesc($avatar);
 	$updateset[] = "title = " . sqlesc($title);
 	if (!empty($modcomm))
-		$modcomment = date("Y-m-d") . " - Заметка от $CURUSER[username]: $modcomm\n" . $modcomment;
+			$modcomment = date("Y-m-d") . " - Заметка от " . $CURUSER["username"] . ": $modcomm\n" . $modcomment;
 	$updateset[] = "modcomment = " . sqlesc($modcomment);
-	if ($_POST['resetkey']) {
+	if (!empty($_POST['resetkey'])) {
 		$passkey = md5($CURUSER['username'].get_date_time().$CURUSER['passhash']);
 		$updateset[] = "passkey = " . sqlesc($passkey);
 	}

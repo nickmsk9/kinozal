@@ -154,21 +154,26 @@ $page_title = $title !== '' ? $title : $site_name;
 			});
 		}
 
-		function getRetio() {
-			var block = document.getElementById('user_retio');
+			function getRetio() {
+				var block = document.getElementById('user_retio');
 
 			if (!block) {
 				return false;
 			}
 
-			block.innerHTML =
-				'<ul class="men">' +
-					'<li><span class="bulet"></span>Рейтинг: <?= addslashes(strip_tags((string)$ratio)) ?></li>' +
-					'<li><span class="bulet"></span>Отдано: <?= addslashes(strip_tags((string)$uped)) ?></li>' +
-					'<li><span class="bulet"></span>Скачано: <?= addslashes(strip_tags((string)$downed)) ?></li>' +
-					'<li><span class="bulet"></span>Сидирует: <?= $activeseed ?></li>' +
-					'<li><span class="bulet"></span>Качает: <?= $activeleech ?></li>' +
-				'</ul>';
+				block.innerHTML =
+					'<div style="background:#d4deea; padding:10px; margin-top:6px;">' +
+						'<table style="width:100%; border-collapse:collapse;"><tr>' +
+							'<td style="width:88px; vertical-align:top;">' +
+								'<img src="/pic/default_avatar.gif" alt="" style="width:80px; height:80px; border:1px solid #e7c98e;">' +
+							'</td>' +
+							'<td style="text-align:right; color:#0b7f12; font-size:14px; line-height:1.3; vertical-align:middle;">' +
+								'Рейтинг: <?= addslashes(strip_tags((string)$ratio)) ?><br>' +
+								'Залил: <?= addslashes(strip_tags((string)$uped)) ?><br>' +
+								'Скачал: <?= addslashes(strip_tags((string)$downed)) ?>' +
+							'</td>' +
+						'</tr></table>' +
+					'</div>';
 
 			return false;
 		}
@@ -347,16 +352,7 @@ $page_title = $title !== '' ? $title : $site_name;
 			</ul>
 		</div>
 
-		<?php if ($is_logged && function_exists('get_user_class') && get_user_class() >= UC_MODERATOR) { ?>
-			<div class="bx2_0">
-				<ul class="men">
-					<li class="tp2 center">Администрация</li>
-					<li><span class="bulet"></span><a href="/admin.php">Админ-панель</a></li>
-					<li><span class="bulet"></span><a href="/staff.php">Команда</a></li>
-					<li><span class="bulet"></span><a href="/log.php">Логи</a></li>
-				</ul>
-			</div>
-		<?php } ?>
+			
 
 	</div>
 

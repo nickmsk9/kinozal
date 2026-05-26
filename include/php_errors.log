@@ -187,3 +187,6 @@ Stack trace:
 #0 /var/www/html/takesignup.php(401): sent_mail('nickmsk92@iclou...', 'TBDev Yuna Scat...', 'noreply@localho...', '\xD0\x9F\xD0\xBE\xD0\xB4\xD1\x82\xD0\xB2\xD0\xB5\xD1\x80\xD0...', '\xD0\x92\xD1\x8B \xD0\xB7\xD0\xB0\xD1\x80\xD0\xB5\xD0\xB3...', false)
 #1 {main}
   thrown in /var/www/html/include/functions.php on line 761
+[26-May-2026 15:52:27 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/message.php on line 40
+[26-May-2026 15:52:27 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/message.php on line 43
+[26-May-2026 15:52:27 UTC] PHP Warning:  Undefined array key "box" in /var/www/html/message.php on line 53
