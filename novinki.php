@@ -10,7 +10,7 @@ $hide_right_blocks = true;
 $title = "Новинки кино - Анонс новых работ отечественного и зарубежного кинематографа";
 stdhead($title);
 
-$movie_categories = array(11, 12, 13, 14, 15);
+$movie_categories = range(1, 26);
 $where_categories = implode(',', array_map('intval', $movie_categories));
 
 $res = sql_query("

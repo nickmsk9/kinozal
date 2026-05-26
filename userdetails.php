@@ -68,7 +68,7 @@ function maketable($res)
 	$downloaded = str_replace(" ", "<br />", mksize($arr["downloaded"]));
 	$seeders = number_format($arr["seeders"]);
 	$leechers = number_format($arr["leechers"]);
-    $ret .= "<tr><td style='padding: 0px'><a href=\"browse.php?cat=$catid\"><img src=\"pic/cats/$catimage\" alt=\"$catname\" border=\"0\" /></a></td>\n" .
+    $ret .= "<tr><td style='padding: 0px'><a href=\"browse.php?cat=$catid\"><img src=\"pic/cat/$catimage\" alt=\"$catname\" border=\"0\" /></a></td>\n" .
 		"<td><a href=details.php?id=$arr[torrent]&amp;hit=1><b>" . $arr["torrentname"] .
 		"</b></a></td>".($use_ttl ? "<td align=center>$ttl</td>" : "")."<td align=center>$size</td><td align=right>$seeders</td><td align=right>$leechers</td><td align=center>$uploaded</td>\n" .
 		"<td align=center>$downloaded</td><td align=center>$ratio</td></tr>\n";
@@ -179,7 +179,7 @@ if (mysqli_num_rows($r) > 0) {
 	if ($ttl == 1) $ttl .= "&nbsp;час"; else $ttl .= "&nbsp;часов";
 		//$r2 = sql_query("SELECT name, image FROM categories WHERE id=$a[category]") or sqlerr(__FILE__, __LINE__);
 		//$a2 = mysqli_fetch_assoc($r2);
-		$cat = "<a href=\"browse.php?cat=$a[catid]\"><img src=\"pic/cats/$a[catimage]\" alt=\"$a[catname]\" border=\"0\" /></a>";
+		$cat = "<a href=\"browse.php?cat=$a[catid]\"><img src=\"pic/cat/$a[catimage]\" alt=\"$a[catname]\" border=\"0\" /></a>";
       $torrents .= "<tr><td style='padding: 0px'>$cat</td><td><a href=\"details.php?id=" . $a["id"] . "&hit=1\"><b>" . $a["name"] . "</b></a></td>"
       	.($use_ttl ? "<td align=center>$ttl</td>" : "")
         ."<td align=right>$a[seeders]</td><td align=right>$a[leechers]</td></tr>\n";
@@ -233,7 +233,7 @@ if ($a["seeder"] == 'yes')
 	$seeder = "<font color=\"green\">Да</font>";
 else
 	$seeder = "<font color=\"red\">Нет</font>";
-	$cat = "<a href=\"browse.php?cat=$a[catid]\"><img src=\"pic/cats/$a[catimage]\" alt=\"$a[catname]\" border=\"0\" /></a>";
+	$cat = "<a href=\"browse.php?cat=$a[catid]\"><img src=\"pic/cat/$a[catimage]\" alt=\"$a[catname]\" border=\"0\" /></a>";
     $completed .= "<tr><td style=\"padding: 0px\">$cat</td><td><nobr><a href=\"details.php?id=" . $a["id"] . "&amp;hit=1\"><b>" . $a["name"] . "</b></a></nobr></td>" .
       "<td align=\"right\">$a[seeders]</td><td align=\"right\">$a[leechers]</td><td align=\"right\">$uploaded</td><td align=\"right\">$downloaded</td><td align=\"center\">$ratio</td><td align=\"center\"><nobr>$a[startdat]<br />$a[completedat]</nobr></td><td align=\"center\"><nobr>$a[last_action]</nobr></td><td align=\"center\">$seeder</td>\n";
 }

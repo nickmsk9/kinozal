@@ -393,7 +393,7 @@ $filterSelected = isset($_GET['incldead']) ? (int)$_GET['incldead'] : 0;
                         <tr class="bov">
                             <td style="padding:3px 4px; vertical-align:middle;">
                                 <?php if ($catPic !== '') { ?>
-                                    <img src="pic/cats/<?= $catPic ?>" alt="<?= $catName ?>" style="display:block; max-width:88px;">
+                                    <img src="pic/cat/<?= $catPic ?>" alt="<?= $catName ?>" style="display:block; max-width:88px;">
                                 <?php } else { ?>
                                     <div style="width:88px; height:31px; background:#f5e0b1;"></div>
                                 <?php } ?>

@@ -212,7 +212,7 @@ if ((get_user_class() >= UC_MODERATOR) && $variant == "index")
 		if (isset($row["cat_name"])) {
 			print("<a href=\"browse.php?cat=" . $row["category"] . "\">");
 			if (isset($row["cat_pic"]) && $row["cat_pic"] != "")
-				print("<img border=\"0\" src=\"$pic_base_url/cats/" . $row["cat_pic"] . "\" alt=\"" . $row["cat_name"] . "\" />");
+				print("<img border=\"0\" src=\"$pic_base_url/cat/" . $row["cat_pic"] . "\" alt=\"" . $row["cat_name"] . "\" />");
 			else
 				print($row["cat_name"]);
 			print("</a>");

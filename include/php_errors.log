@@ -1704,3 +1704,25 @@ Stack trace:
 #1 [internal function]: autoclean()
 #2 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\include\cleanup.php on line 42
+[26-May-2026 13:01:41 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_array() in C:\OSPanel\domains\kinozal.lv\include\cleanup.php:42
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(619): docleanup()
+#1 [internal function]: autoclean()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\cleanup.php on line 42
+[26-May-2026 13:02:00 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:02:53 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:03:22 Europe/Moscow] PHP Fatal error:  Uncaught Error: Undefined constant "MYSQL_BOTH" in C:\OSPanel\domains\kinozal.lv\faq.php:57
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\faq.php on line 57

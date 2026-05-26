@@ -293,7 +293,7 @@ while ($row = mysqli_fetch_assoc($sql)) {
     $name = category_h($nameRaw);
     $img = category_h($imgRaw);
 
-    $catImgUrl = category_h($DEFAULTBASEURL . '/pic/cats/' . $imgRaw);
+    $catImgUrl = category_h($DEFAULTBASEURL . '/pic/cat/' . $imgRaw);
 
     print '<tr>';
 
