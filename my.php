@@ -271,6 +271,9 @@ tr(" ", "    <table cellspacing=\"3\" cellpadding=\"0\" width=\"100%\" border=\"
       </tr>
     </table>",1);
 tr($tracker_lang['my_website'], "<input type=\"text\" name=\"website\" size=50 value=\"" . htmlspecialchars_uni($CURUSER["website"]) . "\" /> ", 1);
+tr("Город", "<input type=\"text\" name=\"city\" size=50 value=\"" . htmlspecialchars_uni(isset($CURUSER["city"]) ? $CURUSER["city"] : "") . "\" />", 1);
+tr("Любимый фильм", "<input type=\"text\" name=\"favorite_movie\" size=50 value=\"" . htmlspecialchars_uni(isset($CURUSER["favorite_movie"]) ? $CURUSER["favorite_movie"] : "") . "\" />", 1);
+tr("Любимые персоны", "<input type=\"text\" name=\"favorite_persons\" size=50 value=\"" . htmlspecialchars_uni(isset($CURUSER["favorite_persons"]) ? $CURUSER["favorite_persons"] : "") . "\" />", 1);
 tr($tracker_lang['my_torrents_per_page'], "<input type=text size=10 name=torrentsperpage value=$CURUSER[torrentsperpage]> (0 = установки по умолчанию)",1);
 tr($tracker_lang['my_topics_per_page'], "<input type=text size=10 name=topicsperpage value=$CURUSER[topicsperpage]> (0 = установки по умолчанию)",1);
 tr($tracker_lang['my_messages_per_page'], "<input type=text size=10 name=postsperpage value=$CURUSER[postsperpage]> (0 = установки по умолчанию)",1);

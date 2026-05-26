@@ -166,6 +166,21 @@ $updateset[] = "privacy = '$privacy'";
 $website = unesc($_POST["website"]);
 $updateset[] = "website = " . sqlesc(htmlspecialchars_uni($website));
 
+$city = unesc($_POST["city"]);
+if (strlen($city) > 100)
+	bark("Название города слишком длинное (макс. 100 символов)");
+$updateset[] = "city = " . sqlesc(htmlspecialchars_uni($city));
+
+$favorite_movie = unesc($_POST["favorite_movie"]);
+if (strlen($favorite_movie) > 255)
+	bark("Название любимого фильма слишком длинное (макс. 255 символов)");
+$updateset[] = "favorite_movie = " . sqlesc(htmlspecialchars_uni($favorite_movie));
+
+$favorite_persons = unesc($_POST["favorite_persons"]);
+if (strlen($favorite_persons) > 255)
+	bark("Поле любимых персон слишком длинное (макс. 255 символов)");
+$updateset[] = "favorite_persons = " . sqlesc(htmlspecialchars_uni($favorite_persons));
+
 $updateset[] = "torrentsperpage = " . min(100, intval($_POST["torrentsperpage"]));
 $updateset[] = "topicsperpage = " . min(100, intval($_POST["topicsperpage"]));
 $updateset[] = "postsperpage = " . min(100, intval($_POST["postsperpage"]));

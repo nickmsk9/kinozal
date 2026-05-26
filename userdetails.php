@@ -77,6 +77,91 @@ function maketable($res)
   return $ret;
 }
 
+function kz_format_minutes($minutes) {
+	$minutes = max(0, (int)$minutes);
+	$hours = floor($minutes / 60);
+	$mins = $minutes % 60;
+
+	return number_format($hours, 0, '.', ' ') . " час. " . $mins . " мин.";
+}
+
+function kz_public_rank_name($user) {
+	$class = isset($user["class"]) ? (int)$user["class"] : UC_USER;
+
+	if ($class === UC_POWER_USER && !empty($user["added"]) && $user["added"] !== "0000-00-00 00:00:00") {
+		$registered_at = sql_timestamp_to_unix_timestamp($user["added"]);
+		if ($registered_at > 0 && (TIMENOW - $registered_at) >= (86400 * 365 * 3)) {
+			return 'Заслуженный Зритель';
+		}
+	}
+
+	return get_user_class_name($class);
+}
+
+function kz_public_rank_color($user) {
+	$class = isset($user["class"]) ? (int)$user["class"] : UC_USER;
+
+	switch ($class) {
+		case UC_POWER_USER:
+			return '#E08A00';
+		case UC_VIP:
+			return '#BEA000';
+		case UC_UPLOADER:
+			return '#8C8CB5';
+		case UC_MODERATOR:
+			return '#D02BC0';
+		case UC_ADMINISTRATOR:
+			return '#9B8CD8';
+		case UC_SYSOP:
+			return '#5B2B2B';
+		default:
+			return '#000000';
+	}
+}
+
+function kz_torrent_limit_for_user($user) {
+	$class = isset($user["class"]) ? (int)$user["class"] : UC_USER;
+	$rank = kz_public_rank_name($user);
+
+	if ($rank === 'Заслуженный Зритель') {
+		return 16;
+	}
+
+	if ($class >= UC_POWER_USER) {
+		return 8;
+	}
+
+	return 3;
+}
+
+function kz_sidebar_box($title, $items) {
+	$html = "<div class=\"bx2_0\">\n<ul class=\"men\">\n";
+	$html .= "<li class=\"tp2 center b\">" . $title . "</li>\n";
+
+	foreach ($items as $item) {
+		$html .= "<li><span class=\"bulet\"></span>" . $item . "</li>\n";
+	}
+
+	$html .= "</ul>\n</div>\n";
+
+	return $html;
+}
+
+function kz_profile_panel_start() {
+	return "<div class=\"bx2_0\" style=\"margin-bottom:6px;\"><div class=\"pad5x5\" style=\"padding:0;\">";
+}
+
+function kz_profile_panel_end() {
+	return "</div></div>";
+}
+
+function kz_profile_row($label, $value, $label_width = 140) {
+	return "<tr>"
+		. "<td class=\"rowhead\" style=\"width:" . (int)$label_width . "px; color:#E47D00; text-align:left; padding:2px 8px 2px 8px; white-space:nowrap;\">$label</td>"
+		. "<td style=\"padding:2px 8px 2px 8px;\">$value</td>"
+		. "</tr>\n";
+}
+
 $id = intval($_GET["id"]);
 
 if (!is_valid_id($id))
@@ -176,9 +261,13 @@ $torrentcomments = (int)$arr3[0];
 //  $don = "<img src=pic/starbig.gif>";
 
 $res = sql_query("SELECT name, flagpic FROM countries WHERE id = $user[country] LIMIT 1") or sqlerr(__FILE__, __LINE__);
+$country_name = '';
+$country_flag = '';
 if (mysqli_num_rows($res) == 1)
 {
   $arr = mysqli_fetch_assoc($res);
+  $country_name = htmlspecialchars_uni($arr['name']);
+  $country_flag = htmlspecialchars_uni($arr['flagpic']);
   $country = "<td class=\"embedded\"><img src=\"pic/flag/$arr[flagpic]\" alt=\"$arr[name]\" style=\"margin-left: 8pt\"></td>";
 }
 
@@ -218,213 +307,37 @@ if (!empty($user["birthday"]) && $user["birthday"] != "0000-00-00") {
 }
 
 ///////////////// BIRTHDAY MOD /////////////////////
-stdhead("Просмотр профиля " . $user["username"]);
+stdhead("Пользователь :: " . $user["username"]);
 
 $enabled = $user["enabled"] == 'yes';
-
-print("<div class=\"mn_wrap\">\n");
-
-print("<div class=\"bx2_0\">\n");
-print("<ul class=\"men\">\n");
-print("<li class=\"tp2 b\">");
-print(htmlspecialchars_uni($user["username"]) . get_user_icons($user, true));
-print($country ? " " . $country : "");
-print("</li>\n");
-print("</ul>\n");
-print("</div>\n");
-
-if (!$enabled) {
-	print("<div class=\"bx1 center b red\">Этот аккаунт отключен</div>\n");
-} elseif ($CURUSER["id"] <> $user["id"]) {
-	$r = sql_query("SELECT id FROM friends WHERE userid=" . sqlesc($CURUSER["id"]) . " AND friendid=" . sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-	$friend = mysqli_num_rows($r);
-
-	$r = sql_query("SELECT id FROM blocks WHERE userid=" . sqlesc($CURUSER["id"]) . " AND blockid=" . sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-	$block = mysqli_num_rows($r);
-
-	print("<div class=\"bx1 center\">\n");
-
-	if ($friend) {
-		print("<a class=\"sbab\" href=\"friends.php?action=delete&amp;type=friend&amp;targetid=$id\">Убрать из друзей</a>\n");
-	} elseif ($block) {
-		print("<a class=\"sbab\" href=\"friends.php?action=delete&amp;type=block&amp;targetid=$id\">Убрать из блокированных</a>\n");
-	} else {
-		print("<a class=\"sbab\" href=\"friends.php?action=add&amp;type=friend&amp;targetid=$id\">Добавить в друзья</a>");
-		print(" &nbsp;|&nbsp; ");
-		print("<a class=\"sbab\" href=\"friends.php?action=add&amp;type=block&amp;targetid=$id\">Добавить в блокированные</a>\n");
-	}
-
-	print("</div>\n");
+$uploaded_total = mksize($user["uploaded"]);
+$downloaded_total = mksize($user["downloaded"]);
+$seed_total = kz_format_minutes(isset($user["seedtime"]) ? $user["seedtime"] : 0);
+$leech_total = kz_format_minutes(isset($user["leechtime"]) ? $user["leechtime"] : 0);
+$current_theme = function_exists('select_theme') ? select_theme() : 'TBDev';
+$avatar_url = $user["avatar"] ? htmlspecialchars_uni($user["avatar"]) : "themes/$current_theme/images/default_avatar.gif";
+$profile_name = htmlspecialchars_uni($user["username"]);
+$public_rank_name = kz_public_rank_name($user);
+$public_rank_color = kz_public_rank_color($user);
+$torrent_limit = kz_torrent_limit_for_user($user);
+$today_uploaded = "0 Б";
+$today_downloaded = "0 Б";
+$today_seed = "0 мин.";
+$today_leech = "0 мин.";
+$today_download_count = 0;
+$birth_display = ($user["birthday"] != '0000-00-00' && !empty($user["birthday"])) ? date("d F Y", strtotime($user["birthday"])) . " года" : "не указана";
+$city_display = !empty($user["city"]) ? htmlspecialchars_uni($user["city"]) : "не указано";
+$favorite_movie = !empty($user["favorite_movie"]) ? htmlspecialchars_uni($user["favorite_movie"]) : "не указано";
+$favorite_persons = !empty($user["favorite_persons"]) ? htmlspecialchars_uni($user["favorite_persons"]) : "не указано";
+$uploaded_torrent_count = 0;
+$res_upload_count = sql_query("SELECT COUNT(*) FROM torrents WHERE owner = $id") or sqlerr(__FILE__, __LINE__);
+if ($res_upload_count) {
+	$row_upload_count = mysqli_fetch_row($res_upload_count);
+	$uploaded_torrent_count = (int)$row_upload_count[0];
 }
-
-print("<table class=\"tables3 w100p\">\n");
-
-print("<tr class=\"first\"><td class=\"rowhead w190\">Зарегистрирован</td><td class=\"left\">$joindate</td></tr>\n");
-print("<tr><td class=\"rowhead\">Последний раз был на трекере</td><td class=\"left\">$lastseen</td></tr>\n");
-
-if (get_user_class() >= UC_MODERATOR) {
-	print("<tr><td class=\"rowhead\">Email</td><td class=\"left\"><a href=\"mailto:" . htmlspecialchars_uni($user["email"]) . "\">" . htmlspecialchars_uni($user["email"]) . "</a></td></tr>\n");
-}
-
-if ($addr) {
-	print("<tr><td class=\"rowhead\">IP</td><td class=\"left\">$addr</td></tr>\n");
-}
-
-print("<tr><td class=\"rowhead\">Раздал</td><td class=\"left\">" . mksize($user["uploaded"]) . "</td></tr>\n");
-print("<tr><td class=\"rowhead\">Скачал</td><td class=\"left\">" . mksize($user["downloaded"]) . "</td></tr>\n");
-
-if (get_user_class() >= UC_MODERATOR) {
-	print("<tr><td class=\"rowhead\">Приглашений</td><td class=\"left\"><a href=\"invite.php?id=$id\">" . (int)$user["invites"] . "</a></td></tr>\n");
-}
-
-if ($user["invitedby"] != 0) {
-	$inviter = mysqli_fetch_assoc(sql_query("SELECT username FROM users WHERE id = " . sqlesc($user["invitedby"])));
-	print("<tr><td class=\"rowhead\">Пригласил</td><td class=\"left\"><a href=\"userdetails.php?id=" . (int)$user["invitedby"] . "\">" . htmlspecialchars_uni($inviter["username"]) . "</a></td></tr>\n");
-}
-
-if ($user["downloaded"] > 0) {
-	$sr = $user["uploaded"] / $user["downloaded"];
-
-	if ($sr >= 4) {
-		$s = "w00t";
-	} elseif ($sr >= 2) {
-		$s = "grin";
-	} elseif ($sr >= 1) {
-		$s = "smile1";
-	} elseif ($sr >= 0.5) {
-		$s = "noexpression";
-	} elseif ($sr >= 0.25) {
-		$s = "sad";
-	} else {
-		$s = "cry";
-	}
-
-	$sr = floor($sr * 1000) / 1000;
-
-	$ratio = "<span style=\"color:" . get_ratio_color($sr) . "\">" . number_format($sr, 3) . "</span>";
-	$ratio .= " &nbsp;<img src=\"pic/smilies/$s.gif\" alt=\"\">";
-
-	print("<tr><td class=\"rowhead\">Рейтинг</td><td class=\"left\">$ratio</td></tr>\n");
-}
-//}
-if ($user["icq"] || $user["msn"] || $user["aim"] || $user["yahoo"] || $user["skype"] || $user["mirc"]) {
-	print("<tr><td class=\"rowhead\">Связь</td><td class=\"left\">\n");
-
-	if ($user["icq"]) {
-		print("<img src=\"http://web.icq.com/whitepages/online?icq=" . htmlspecialchars_uni($user["icq"]) . "&amp;img=5\" alt=\"icq\"> " . htmlspecialchars_uni($user["icq"]) . "<br>\n");
-	}
-
-	if ($user["msn"]) {
-		print("<img src=\"pic/contact/msn.gif\" alt=\"msn\"> " . htmlspecialchars_uni($user["msn"]) . "<br>\n");
-	}
-
-	if ($user["aim"]) {
-		print("<img src=\"pic/contact/aim.gif\" alt=\"aim\"> " . htmlspecialchars_uni($user["aim"]) . "<br>\n");
-	}
-
-	if ($user["yahoo"]) {
-		print("<img src=\"pic/contact/yahoo.gif\" alt=\"yahoo\"> " . htmlspecialchars_uni($user["yahoo"]) . "<br>\n");
-	}
-
-	if ($user["skype"]) {
-		print("<img src=\"pic/contact/skype.gif\" alt=\"skype\"> " . htmlspecialchars_uni($user["skype"]) . "<br>\n");
-	}
-
-	if ($user["mirc"]) {
-		print("<img src=\"pic/contact/mirc.gif\" alt=\"mirc\"> " . htmlspecialchars_uni($user["mirc"]) . "\n");
-	}
-
-	print("</td></tr>\n");
-}
-
-if ($user["website"]) {
-	print("<tr><td class=\"rowhead\">Сайт</td><td class=\"left\"><a href=\"" . htmlspecialchars_uni($user["website"]) . "\" target=\"_blank\">" . htmlspecialchars_uni($user["website"]) . "</a></td></tr>\n");
-}
-
-if ($user["avatar"]) {
-	print("<tr><td class=\"rowhead\">Аватар</td><td class=\"left\"><img class=\"p100\" src=\"" . htmlspecialchars_uni($user["avatar"]) . "\" alt=\"\"></td></tr>\n");
-}
-
-print("<tr><td class=\"rowhead\">Класс</td><td class=\"left b\">" . get_user_class_color($user["class"], get_user_class_name($user["class"])) . ($user["title"] != "" ? " / <span style=\"color: purple;\">" . htmlspecialchars_uni($user["title"]) . "</span>" : "") . "</td></tr>\n");
-
-print("<tr><td class=\"rowhead\">Пол</td><td class=\"left\">$gender</td></tr>\n");
-
-if ($user["birthday"] != '0000-00-00') {
-	print("<tr><td class=\"rowhead\">Возраст</td><td class=\"left\">$age</td></tr>\n");
-
-	$birthday = date("d.m.Y", strtotime($birthday));
-	print("<tr><td class=\"rowhead\">Дата рождения</td><td class=\"left\">$birthday</td></tr>\n");
-
-	$month_of_birth = substr($user["birthday"], 5, 2);
-	$day_of_birth = substr($user["birthday"], 8, 2);
-
-	for ($i = 0; $i < count($zodiac); $i++) {
-		if ($month_of_birth == substr($zodiac[$i][2], 3, 2)) {
-			if ($day_of_birth >= substr($zodiac[$i][2], 0, 2)) {
-				$zodiac_img = $zodiac[$i][1];
-				$zodiac_name = $zodiac[$i][0];
-			} else {
-				if ($i == 11) {
-					$zodiac_img = $zodiac[0][1];
-					$zodiac_name = $zodiac[0][0];
-				} else {
-					$zodiac_img = $zodiac[$i + 1][1];
-					$zodiac_name = $zodiac[$i + 1][0];
-				}
-			}
-		}
-	}
-
-	print("<tr><td class=\"rowhead\">Знак зодиака</td><td class=\"left\"><img src=\"pic/zodiac/" . htmlspecialchars_uni($zodiac_img) . "\" alt=\"" . htmlspecialchars_uni($zodiac_name) . "\" title=\"" . htmlspecialchars_uni($zodiac_name) . "\"></td></tr>\n");
-}
-
-if ($user["simpaty"] != 0) {
-	if ((get_user_class() >= UC_MODERATOR && $user["class"] < get_user_class()) || $user["id"] == $CURUSER["id"]) {
-		$simpaty = ($user["simpaty"] > 0)
-			? '<img src="pic/thum_good.gif" alt=""> <a href="mysimpaty.php?id=' . (int)$user["id"] . '">' . (int)$user["simpaty"] . '</a>'
-			: '<img src="pic/thum_bad.gif" alt=""> <a href="mysimpaty.php?id=' . (int)$user["id"] . '">' . (int)$user["simpaty"] . '</a>';
-	} else {
-		$simpaty = ($user["simpaty"] > 0)
-			? '<img src="pic/thum_good.gif" alt=""> ' . (int)$user["simpaty"]
-			: '<img src="pic/thum_bad.gif" alt=""> ' . (int)$user["simpaty"];
-	}
-
-	print("<tr><td class=\"rowhead\">Респектов</td><td class=\"left\">$simpaty</td></tr>\n");
-}
-
-print("<tr><td class=\"rowhead\">Комментариев</td>");
-
-if ($torrentcomments && (($user["class"] >= UC_POWER_USER && $user["id"] == $CURUSER["id"]) || get_user_class() >= UC_MODERATOR)) {
-	print("<td class=\"left\"><a href=\"userhistory.php?action=viewcomments&amp;id=$id\">$torrentcomments</a></td></tr>\n");
-} else {
-	print("<td class=\"left\">$torrentcomments</td></tr>\n");
-}
-
-print("<script type=\"text/javascript\" src=\"js/show_hide.js\"></script>\n");
-
-if ($torrents) {
-	print("<tr><td class=\"rowhead top\">Залитые&nbsp;торренты</td><td class=\"left\"><a href=\"javascript:show_hide('s1')\"><img src=\"pic/plus.gif\" id=\"pics1\" title=\"Показать\" alt=\"\"></a><div id=\"ss1\" class=\"displaynone\">$torrents</div></td></tr>\n");
-}
-
-if ($seeding) {
-	print("<tr><td class=\"rowhead top\">Сейчас&nbsp;раздаёт</td><td class=\"left\"><a href=\"javascript:show_hide('s2')\"><img src=\"pic/plus.gif\" id=\"pics2\" title=\"Показать\" alt=\"\"></a><div id=\"ss2\" class=\"displaynone\">$seeding</div></td></tr>\n");
-}
-
-if ($leeching) {
-	print("<tr><td class=\"rowhead top\">Сейчас&nbsp;качает</td><td class=\"left\"><a href=\"javascript:show_hide('s3')\"><img src=\"pic/plus.gif\" id=\"pics3\" title=\"Показать\" alt=\"\"></a><div id=\"ss3\" class=\"displaynone\">$leeching</div></td></tr>\n");
-}
-
-if ($completed) {
-	print("<tr><td class=\"rowhead top\">Скачанные&nbsp;торренты</td><td class=\"left\"><a href=\"javascript:show_hide('s4')\"><img src=\"pic/plus.gif\" id=\"pics4\" title=\"Показать\" alt=\"\"></a><div id=\"ss4\" class=\"displaynone\">$completed</div></td></tr>\n");
-}
-
-if ($invitetree) {
-	print("<tr><td class=\"rowhead top\">Приглашённые</td><td class=\"left\"><a href=\"javascript:show_hide('s5')\"><img src=\"pic/plus.gif\" id=\"pics5\" title=\"Показать\" alt=\"\"></a><div id=\"ss5\" class=\"displaynone\">$invitetree</div></td></tr>\n");
-}
-
-if ($user["info"]) {
-	print("<tr><td colspan=\"2\" class=\"text\">" . format_comment($user["info"]) . "</td></tr>\n");
-}
+$comments_label = $torrentcomments > 0 ? "<a href=\"userhistory.php?action=viewcomments&amp;id=$id\">$torrentcomments комментариев</a>" : "нет комментариев";
+$torrents_label = $uploaded_torrent_count > 0 ? "<a href=\"#uploaded-list\">$uploaded_torrent_count раздач</a>" : "нет раздач";
+$profile_class_html = "<span style=\"color:$public_rank_color; font-weight:bold;\">$public_rank_name</span>";
 
 if (!isset($showpmbutton)) {
 	$showpmbutton = 0;
@@ -442,17 +355,115 @@ if ($CURUSER["id"] != $user["id"]) {
 	}
 }
 
-if ($showpmbutton) {
-	print("<tr><td colspan=\"2\" class=\"center\">
-		<form method=\"get\" action=\"message.php\">
-			<input type=\"hidden\" name=\"receiver\" value=\"" . (int)$user["id"] . "\">
-			<input type=\"hidden\" name=\"action\" value=\"sendmessage\">
-			<input class=\"buttonS\" type=\"submit\" value=\"Послать ЛС\">
-		</form>
-	</td></tr>\n");
+print("<div class=\"mn_wrap\">\n");
+
+if (!$enabled) {
+	print("<div class=\"bx1 center b red\">Этот аккаунт отключен</div>\n");
 }
 
+print("<table class=\"tables2 w100p\">\n<tr>\n");
+print("<td class=\"top w200\">\n");
+
+print("<div class=\"bx2_0\"><ul class=\"men\">\n");
+print("<li class=\"img center\" style=\"padding:8px 8px 10px 8px;\"><img src=\"" . $avatar_url . "\" alt=\"" . $profile_name . "\" style=\"display:block; width:190px; max-width:190px; margin:0 auto;\"></li>\n");
+print("</ul></div>\n");
+
+print(kz_sidebar_box("Меню пользователя", array(
+	($showpmbutton ? '<a href="message.php?action=sendmessage&amp;receiver=' . (int)$user["id"] . '">Личные сообщения</a>' : 'Личные сообщения'),
+	'<a href="userdetails.php?id=' . (int)$user["id"] . '">Мой профиль</a>',
+	'<a href="my.php">Редактировать профиль</a>',
+	'<a href="javascript:void(0)">Мои группы</a>',
+	'<a href="friends.php">Мои списки друзей</a>',
+	'<a href="mytorrents.php">Мои раздачи</a>'
+)));
+print(kz_sidebar_box("Репутация", array(
+	'<a href="mysimpaty.php?id=' . (int)$user["id"] . '">Полученные отзывы</a>',
+	'<a href="simpaty.php">Отданные отзывы</a>'
+)));
+print(kz_sidebar_box("Закладки", array(
+	'<a href="bookmarks.php">Раздачи</a>',
+	'<a href="javascript:void(0)">Группы</a>',
+	'<a href="users.php">Пользователи</a>',
+	'<a href="personsearch.php">Персоны</a>'
+)));
+print(kz_sidebar_box("История", array(
+	'<a href="userhistory.php?id=' . (int)$user["id"] . '">Скачанного</a>',
+	'<a href="userhistory.php?action=viewcomments&amp;id=' . (int)$user["id"] . '">Комментариев</a>',
+	'<a href="javascript:void(0)">Голосований</a>'
+)));
+print(kz_sidebar_box("Голоса", array(
+	'<a href="javascript:void(0)">Получить голоса</a>',
+	'<a href="javascript:void(0)">Управление голосами</a>',
+	'<a href="suggest.php">Оставить пожелание</a>',
+	'<a href="javascript:void(0)">Обнулить счетчик скачиваний</a>'
+)));
+
+print("</td>\n");
+print("<td class=\"top\">\n");
+
+print(kz_profile_panel_start());
+print("<table class=\"tables2 w100p\" style=\"background:#EEF7FF;\">\n");
+print("<tr><td colspan=\"2\" style=\"padding:6px 8px 4px 8px; color:#E47D00; font-weight:bold;\">" . $profile_name . "</td></tr>\n");
+print("<tr><td colspan=\"2\" style=\"padding:0 0 4px 0;\"><div style=\"height:2px; background:#f1d29c;\"></div></td></tr>\n");
+print(kz_profile_row("Звание", $profile_class_html, 140));
+print("<tr><td colspan=\"2\" style=\"padding:0 0 4px 0;\"><div style=\"height:2px; background:#f1d29c;\"></div></td></tr>\n");
+print(kz_profile_row("Залил", "<span style=\"color:#E47D00; font-weight:bold;\">$uploaded_total</span> ( сегодня: <span style=\"color:#E47D00; font-weight:bold;\">$today_uploaded</span> )", 140));
+print(kz_profile_row("Скачал", "<span style=\"color:#E47D00; font-weight:bold;\">$downloaded_total</span> ( сегодня: <span style=\"color:#E47D00; font-weight:bold;\">$today_downloaded</span> )", 140));
+$ratio_value = $user["downloaded"] > 0 ? number_format($user["uploaded"] / $user["downloaded"], 2) : '---';
+print(kz_profile_row("Рейтинг", "<span style=\"color:#E47D00; font-weight:bold;\">$ratio_value</span>", 140));
+print(kz_profile_row("Сид", "<span style=\"color:#E47D00; font-weight:bold;\">$seed_total</span> ( сегодня: <span style=\"color:#E47D00; font-weight:bold;\">$today_seed</span> )", 140));
+print(kz_profile_row("Пир", "<span style=\"color:#E47D00; font-weight:bold;\">$leech_total</span> ( сегодня: <span style=\"color:#E47D00; font-weight:bold;\">$today_leech</span> )", 140));
+print(kz_profile_row("Торренты", "<span style=\"color:#E47D00; font-weight:bold;\">Доступно в сутки ( $torrent_limit ) Скачано ( $today_download_count ) Последний</span> ( <a class=\"sba\" href=\"#\">здесь</a> )", 140));
 print("</table>\n");
+print(kz_profile_panel_end());
+
+print(kz_profile_panel_start());
+print("<table class=\"tables2 w100p\" style=\"background:#EEF7FF;\">\n");
+print(kz_profile_row("Раздачи", $torrents_label, 140));
+print(kz_profile_row("Комментарии", $comments_label, 140));
+print("</table>\n");
+print(kz_profile_panel_end());
+
+print(kz_profile_panel_start());
+print("<table class=\"tables2 w100p\" style=\"background:#EEF7FF;\">\n");
+print(kz_profile_row("Зарегистрирован", "<span style=\"color:#E47D00; font-weight:bold;\">$joindate</span>", 140));
+print(kz_profile_row("Был на трекере", "<span style=\"color:#E47D00; font-weight:bold;\">$lastseen</span>", 140));
+print(kz_profile_row("Место жительства", ($country_flag !== '' ? "<img src=\"pic/flag/$country_flag\" alt=\"$country_name\" style=\"vertical-align:middle; margin-right:6px;\">" : "") . "<span style=\"color:#5A71B0;\">" . ($country_name !== '' ? $country_name : "не указано") . "</span>", 140));
+print(kz_profile_row("Дата рождения", "<span style=\"color:#5A71B0;\">$birth_display</span>", 140));
+print(kz_profile_row("Города", "<span style=\"color:#5A71B0;\">$city_display</span>", 140));
+print(kz_profile_row("Любимый фильм", "<span style=\"color:#5A71B0;\">$favorite_movie</span>", 140));
+print(kz_profile_row("Любимые персоны", "<span style=\"color:#5A71B0;\">$favorite_persons</span>", 140));
+print("</table>\n");
+print(kz_profile_panel_end());
+
+print(kz_profile_panel_start());
+print("<table class=\"tables2 w100p\" style=\"background:#EEF7FF;\">\n");
+print("<tr><td style=\"padding:6px 8px; color:#E47D00; font-weight:bold;\">Проверить подключения ( сид / пир ) к трекеру ( <a class=\"sba\" href=\"testport.php\">проверить</a> )</td></tr>\n");
+print("</table>\n");
+print(kz_profile_panel_end());
+
+if ($user["info"]) {
+	print(kz_profile_panel_start());
+	print("<div class=\"pad5x5\" style=\"background:#EEF7FF;\">" . format_comment($user["info"]) . "</div>");
+	print(kz_profile_panel_end());
+}
+
+if ($uploaded_torrent_count > 0 || !empty($torrents)) {
+	print(kz_profile_panel_start());
+	print("<a id=\"uploaded-list\"></a><div class=\"pad5x5\" style=\"background:#EEF7FF;\">");
+	print($torrents ? $torrents : "нет раздач");
+	print("</div>");
+	print(kz_profile_panel_end());
+}
+
+print(kz_profile_panel_start());
+print("<table class=\"tables2 w100p\" style=\"background:#EEF7FF;\">\n");
+print("<tr><td class=\"center\" style=\"padding:6px 8px;\">Кто Онлайн здесь, на этой странице [ <a class=\"sba\" href=\"javascript:void(0)\">помочь проекту</a> ]</td></tr>\n");
+print("<tr><td style=\"padding:6px 8px; color:#E47D00; font-weight:bold;\">$profile_name</td></tr>\n");
+print("</table>\n");
+print(kz_profile_panel_end());
+
+print("</td>\n</tr>\n</table>\n");
 print("</div>\n");
 
 if (get_user_class() >= UC_MODERATOR && $user["class"] < get_user_class())
@@ -585,7 +596,5 @@ function togglepic(bu, picid, formid)
   print("</form>\n");
   end_frame();
 }
-end_main_frame();
-end_frame();
 stdfoot();
 
