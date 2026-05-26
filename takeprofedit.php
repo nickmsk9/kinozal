@@ -1,242 +1,150 @@
 <?
 
-/*
-// +--------------------------------------------------------------------------+
-// | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
-// |                                               Do not remove above lines! |
-// +--------------------------------------------------------------------------+
-*/
-
 require_once("include/bittorrent.php");
+
+dbconn();
+loggedinorreturn();
 
 function bark($msg) {
 	stderr("Произошла ошибка", $msg);
 }
 
-dbconn();
+function profile_check_password($password) {
+	global $CURUSER;
+	return md5($CURUSER["secret"] . $password . $CURUSER["secret"]) === $CURUSER["passhash"];
+}
 
-loggedinorreturn();
+function profile_require_password($password) {
+	if ($password === '' || !profile_check_password($password)) {
+		bark("Вы ввели неправильный пароль.");
+	}
+}
 
-if (!mkglobal("email:oldpassword:chpassword:passagain"))
-	bark("missing form data");
+function profile_redirect($extra = '') {
+	global $DEFAULTBASEURL;
+	header("Location: $DEFAULTBASEURL/my.php?edited=1" . $extra);
+	exit;
+}
 
-// $set = array();
-
+$act = isset($_GET["act"]) ? (int)$_GET["act"] : 1;
 $updateset = array();
-$changedemail = 0;
 
-if ($chpassword != "") {
-	if (strlen($chpassword) > 40)
-		bark("Извините, ваш пароль слишком длинный (максимум 40 символов)");
-	if ($chpassword != $passagain)
+if ($act === 1) {
+	profile_require_password((string)($_POST["psw"] ?? ""));
+
+	$country = (int)($_POST["country"] ?? 0);
+	$gender = (string)($_POST["gender"] ?? "1");
+	$year = (int)($_POST["bday_year"] ?? 0);
+	$month = (int)($_POST["bday_month"] ?? 0);
+	$day = (int)($_POST["bday_day"] ?? 0);
+	$city = trim((string)($_POST["sr_citys"] ?? ""));
+	$favorite_movie = trim((string)($_POST["sr_film"] ?? ""));
+	$favorite_persons = trim((string)($_POST["sr_persons"] ?? ""));
+
+	if ($gender !== "1" && $gender !== "2") {
+		$gender = "1";
+	}
+	if ($country > 0) {
+		$updateset[] = "country = $country";
+	}
+	if (!checkdate($month, $day, $year)) {
+		bark("Похоже, вы указали неверную дату рождения.");
+	}
+	if (mb_strlen($city, "UTF-8") > 100) {
+		bark("Название города слишком длинное (макс. 100 символов).");
+	}
+	if (mb_strlen($favorite_movie, "UTF-8") > 255) {
+		bark("Название любимого фильма слишком длинное (макс. 255 символов).");
+	}
+	if (mb_strlen($favorite_persons, "UTF-8") > 255) {
+		bark("Поле любимых персон слишком длинное (макс. 255 символов).");
+	}
+
+	$birthday = sprintf("%04d-%02d-%02d", $year, $month, $day);
+	$updateset[] = "gender = " . sqlesc($gender);
+	$updateset[] = "birthday = " . sqlesc($birthday);
+	$updateset[] = "city = " . sqlesc(htmlspecialchars_uni($city));
+	$updateset[] = "favorite_movie = " . sqlesc(htmlspecialchars_uni($favorite_movie));
+	$updateset[] = "favorite_persons = " . sqlesc(htmlspecialchars_uni($favorite_persons));
+} elseif ($act === 2) {
+	$avatar = trim((string)($_POST["avatar"] ?? ""));
+
+	if ($avatar !== '') {
+		if (mb_strlen($avatar, "UTF-8") > 100) {
+			bark("Ошибка! Длина ссылки превышает 100 символов.");
+		}
+		if (!preg_match('#^https://.+\.(jpe?g|png|gif)$#i', $avatar)) {
+			bark("Ошибка! Укажите HTTPS ссылку на картинку JPG, JPEG, PNG или GIF.");
+		}
+	}
+
+	$updateset[] = "avatar = " . sqlesc($avatar);
+} elseif ($act === 10) {
+	profile_require_password((string)($_POST["psw"] ?? ""));
+	$passkey = md5($CURUSER["username"] . get_date_time() . $CURUSER["passhash"] . mt_rand());
+	$updateset[] = "passkey = " . sqlesc($passkey);
+} elseif ($act === 11) {
+	profile_require_password((string)($_POST["psw"] ?? ""));
+	$parked = (($_POST["parked"] ?? "no") === "yes") ? "yes" : "no";
+	$updateset[] = "parked = " . sqlesc($parked);
+} elseif ($act === 12) {
+	$oldpassword = (string)($_POST["pass"] ?? "");
+	$newpassword = (string)($_POST["chpass"] ?? "");
+	$passagain = (string)($_POST["passagain"] ?? "");
+
+	profile_require_password($oldpassword);
+	if (strlen($newpassword) < 6) {
+		bark("Извините, пароль слишком короткий (минимум 6 символов).");
+	}
+	if (strlen($newpassword) > 40) {
+		bark("Извините, пароль слишком длинный (максимум 40 символов).");
+	}
+	if ($newpassword !== $passagain) {
 		bark("Пароли не совпадают. Попробуйте еще раз.");
-    if ($CURUSER["passhash"] != md5($CURUSER["secret"] . $oldpassword . $CURUSER["secret"]))
-            bark("Вы ввели неправильный старый пароль.");
+	}
 
 	$sec = mksecret();
-	$passhash = md5($sec . $chpassword . $sec);
+	$passhash = md5($sec . $newpassword . $sec);
 	$updateset[] = "secret = " . sqlesc($sec);
 	$updateset[] = "passhash = " . sqlesc($passhash);
 	logincookie($CURUSER["id"], $passhash);
-}
+} elseif ($act === 13) {
+	$email = trim((string)($_POST["mail"] ?? ""));
+	$emailagain = trim((string)($_POST["mailagain"] ?? ""));
 
-if ($email != $CURUSER["email"]) {
-	if (!validemail($email))
+	if ($email === '' || $email !== $emailagain) {
+		bark("Почтовые адреса не совпадают.");
+	}
+	if (!validemail($email)) {
 		bark("Это не похоже на настоящий E-Mail.");
-  $r = sql_query("SELECT id FROM users WHERE email=" . sqlesc($email)) or sqlerr(__FILE__, __LINE__);
-	if (mysqli_num_rows($r) > 0)
-		bark("Этот e-mail адрес уже используется одним из пользователей трекера. (<b>$email</b>)");
-	$changedemail = 1;
-}
+	}
+	if ($email === $CURUSER["email"]) {
+		profile_redirect();
+	}
 
-$acceptpms = $_POST["acceptpms"];
-$deletepms = ($_POST["deletepms"] != "" ? "yes" : "no");
-$savepms = ($_POST["savepms"] != "" ? "yes" : "no");
-$pmnotif = $_POST["pmnotif"];
-$emailnotif = $_POST["emailnotif"];
-$notifs = ($pmnotif == 'yes' ? "[pm]" : "");
-$notifs .= ($emailnotif == 'yes' ? "[email]" : "");
-$r = sql_query("SELECT id FROM categories") or sqlerr(__FILE__, __LINE__);
-$rows = mysqli_num_rows($r);
-for ($i = 0; $i < $rows; ++$i)
-{
-	$a = mysql_fetch_assoc($r);
-	if ($_POST["cat$a[id]"] == 'yes')
-	  $notifs .= "[cat$a[id]]";
-}
-$avatar = $_POST["avatar"];
-// Check remote avatar size
-        if ($avatar) {
-                if (!preg_match('#^((http)|(ftp):\/\/[a-zA-Z0-9\-]+?\.([a-zA-Z0-9\-]+\.)+[a-zA-Z]+(:[0-9]+)*\/.*?\.(gif|jpg|jpeg|png)$)#is', $avatar))
-                        stderr($tracker_lang['error'], $tracker_lang['avatar_adress_invalid']);
-                if(!(list($width, $height) = getimagesize($avatar)))
-                        stderr($tracker_lang['error'], $tracker_lang['avatar_adress_invalid']);
-                if ($width > $avatar_max_width || $height > $avatar_max_height)
-                        stderr($tracker_lang['error'], sprintf($tracker_lang['avatar_is_too_big'], $avatar_max_width, $avatar_max_height));
-        }
-// Check remote avatar size
-$avatars = ($_POST["avatars"] != "" ? "yes" : "no");
-$parked = $_POST["parked"];
-$updateset[] = "parked = " . sqlesc($parked);
-$gender = $_POST["gender"];
-$updateset[] = "gender =  " . sqlesc($gender);
+	$r = sql_query("SELECT id FROM users WHERE email = " . sqlesc($email) . " AND id <> " . (int)$CURUSER["id"]) or sqlerr(__FILE__, __LINE__);
+	if (mysqli_num_rows($r) > 0) {
+		bark("Этот e-mail адрес уже используется одним из пользователей трекера.");
+	}
 
-///////////////// BIRTHDAY MOD /////////////////////
-$year = $_POST["year"];
-$month = $_POST["month"];
-$day = $_POST["day"];
-$birthday = date("$year.$month.$day");
-///////////////// BIRTHDAY MOD /////////////////////
-$updateset[] = "birthday = " . sqlesc($birthday);
-
-if ($_POST['resetpasskey'])
-	$updateset[] = "passkey=''";
-
-$updateset[] = "passkey_ip = ".($_POST["passkey_ip"] != "" ? sqlesc(getip()) : "''");
-
-// $ircnick = $_POST["ircnick"];
-// $ircpass = $_POST["ircpass"];
-$info = $_POST["info"];
-$theme = $_POST["theme"];
-$country = $_POST["country"];
-$language = $_POST["language"];
-if (!file_exists('./languages/lang_'.$language.'/lang_main.php')) {
-    bark('Выбранный язык в системе отсутствует!');
-}
-$updateset[] = "language = " . sqlesc($language);
-//$timezone = 0 + $_POST["timezone"];
-//$dst = ($_POST["dst"] != "" ? "yes" : "no");
-
-$icq = (int) unesc($_POST["icq"]);
-if (strlen($icq) > 10)
-    bark("Жаль, Номер icq слишком длинный  (Макс - 10)");
-$updateset[] = "icq = " . sqlesc($icq);
-
-$msn = unesc($_POST["msn"]);
-if (strlen($msn) > 30)
-    bark("Жаль, Ваш msn слишком длинный  (Макс - 30)");
-$updateset[] = "msn = " . sqlesc(htmlspecialchars_uni($msn));
-
-$aim = unesc($_POST["aim"]);
-if (strlen($aim) > 30)
-    bark("Жаль, Ваш aim слишком длинный  (Макс - 30)");
-$updateset[] = "aim = " . sqlesc(htmlspecialchars_uni($aim));
-
-$yahoo = unesc($_POST["yahoo"]);
-if (strlen($yahoo) > 30)
-    bark("Жаль, Ваш yahoo слишком длинный  (Макс - 30)");
-$updateset[] = "yahoo = " . sqlesc(htmlspecialchars_uni($yahoo));
-
-$mirc = unesc($_POST["mirc"]);
-if (strlen($mirc) > 30)
-    bark("Жаль, Ваш mirc слишком длинный  (Макс - 30)");
-$updateset[] = "mirc = " . sqlesc(htmlspecialchars_uni($mirc));
-
-$skype = unesc($_POST["skype"]);
-if (strlen($skype) > 20)
-    bark("Жаль, Ваш skype слишком длинный  (Макс - 20)");
-$updateset[] = "skype = " . sqlesc(htmlspecialchars_uni($skype));
-
-/*
-if ($privacy != "normal" && $privacy != "low" && $privacy != "strong")
-	bark("whoops");
-
-$updateset[] = "privacy = '$privacy'";
-*/
-
-$website = unesc($_POST["website"]);
-$updateset[] = "website = " . sqlesc(htmlspecialchars_uni($website));
-
-$city = unesc($_POST["city"]);
-if (strlen($city) > 100)
-	bark("Название города слишком длинное (макс. 100 символов)");
-$updateset[] = "city = " . sqlesc(htmlspecialchars_uni($city));
-
-$favorite_movie = unesc($_POST["favorite_movie"]);
-if (strlen($favorite_movie) > 255)
-	bark("Название любимого фильма слишком длинное (макс. 255 символов)");
-$updateset[] = "favorite_movie = " . sqlesc(htmlspecialchars_uni($favorite_movie));
-
-$favorite_persons = unesc($_POST["favorite_persons"]);
-if (strlen($favorite_persons) > 255)
-	bark("Поле любимых персон слишком длинное (макс. 255 символов)");
-$updateset[] = "favorite_persons = " . sqlesc(htmlspecialchars_uni($favorite_persons));
-
-$updateset[] = "torrentsperpage = " . min(100, intval($_POST["torrentsperpage"]));
-$updateset[] = "topicsperpage = " . min(100, intval($_POST["topicsperpage"]));
-$updateset[] = "postsperpage = " . min(100, intval($_POST["postsperpage"]));
-
-if (is_theme($theme))
-	$updateset[] = "theme = ".sqlesc($theme);
-if (is_valid_id($country))
-	$updateset[] = "country = $country";
-
-//$updateset[] = "timezone = $timezone";
-//$updateset[] = "dst = '$dst'";
-$updateset[] = "info = " . sqlesc($info);
-$updateset[] = "acceptpms = " . sqlesc($acceptpms);
-$updateset[] = "deletepms = '$deletepms'";
-$updateset[] = "savepms = '$savepms'";
-$updateset[] = "notifs = '$notifs'";
-$updateset[] = "avatar = " . sqlesc($avatar);
-$updateset[] = "avatars = '$avatars'";
-
-/* ****** */
-
-$urladd = "";
-
-if ($changedemail) {
 	$sec = mksecret();
 	$hash = md5($sec . $email . $sec);
-	$obemail = urlencode($email);
 	$updateset[] = "editsecret = " . sqlesc($sec);
 	$thishost = $_SERVER["HTTP_HOST"];
-	$thisdomain = preg_replace('/^www\./is', "", $thishost);
-	$body = <<<EOD
-You have requested that your user profile (username {$CURUSER["username"]})
-on $thisdomain should be updated with this email address ($email) as
-user contact.
+	$obemail = urlencode($email);
+	$body = "Для подтверждения смены почты перейдите по ссылке:\n\nhttp://$thishost/confirmemail.php?id=" . (int)$CURUSER["id"] . "&hash=$hash&email=$obemail\n";
+	sent_mail($email, $GLOBALS["SITENAME"], $GLOBALS["SITEEMAIL"], "Изменение настроек профиля на $thishost", $body, false);
 
-If you did not do this, please ignore this email. The person who entered your
-email address had the IP address {$_SERVER["REMOTE_ADDR"]}. Please do not reply.
-
-To complete the update of your user profile, please follow this link:
-
-http://$thishost/confirmemail.php?id={$CURUSER["id"]}&hash=$hash&email=$obemail
-
-If you have AOL browser, please click the following link:
-<a href="http://$thishost/confirmemail.php?id={$CURUSER["id"]}&amp;hash=$hash&amp;email=$obemail">http://$thishost/confirmemail.php?id={$CURUSER["id"]}&amp;hash=$hash&amp;email=$obemail</a>
-
-Your new email address will appear in your profile after you do this. Otherwise
-your profile will remain unchanged.
-EOD;
-
-	sent_mail($email, $SITENAME, $SITEEMAIL, "Изменение настроек профиля на $thisdomain", $body, false);
-//	mail($email, "$thisdomain profile change confirmation", $body, "From: $SITEEMAIL");
-	$urladd .= "&mailsent=1";
+	sql_query("UPDATE users SET " . implode(", ", $updateset) . " WHERE id = " . (int)$CURUSER["id"]) or sqlerr(__FILE__, __LINE__);
+	profile_redirect("&mailsent=1");
+} else {
+	bark("Неизвестное действие.");
 }
 
-sql_query("UPDATE users SET " . implode(",", $updateset) . " WHERE id = " . $CURUSER["id"]) or sqlerr(__FILE__,__LINE__);
+if (!empty($updateset)) {
+	sql_query("UPDATE users SET " . implode(", ", $updateset) . " WHERE id = " . (int)$CURUSER["id"]) or sqlerr(__FILE__, __LINE__);
+}
 
-header("Location: $DEFAULTBASEURL/my.php?edited=1" . $urladd);
+profile_redirect();
 
 ?>

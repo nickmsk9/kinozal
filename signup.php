@@ -131,7 +131,6 @@ function test_name() {
 <input type="checkbox" name="rulesverify" value="yes" checked>
 <input type="checkbox" name="faqverify" value="yes" checked>
 <input type="checkbox" name="ageverify" value="yes" checked>
-<input type="text" name="website" value=""><input type="text" name="icq" value=""><input type="text" name="aim" value=""><input type="text" name="msn" value=""><input type="text" name="yahoo" value=""><input type="text" name="skype" value=""><input type="text" name="mirc" value="">
 </td></tr>
 <tr><td colspan="2" class="right"><input class="buttonS" type="submit" value=" Завершить регистрацию "></td></tr>
 </table></div>

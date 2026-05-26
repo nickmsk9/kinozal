@@ -107,43 +107,11 @@ $passagain = (string)$passagain;
 $email = trim(strtolower((string)$email));
 
 $gender = isset($_POST['gender']) ? trim((string)$_POST['gender']) : '';
-$website = isset($_POST['website']) ? htmlspecialchars_uni(trim((string)$_POST['website'])) : '';
 $country = isset($_POST['country']) ? (int)$_POST['country'] : 0;
 
 $year = isset($_POST['year']) ? (int)$_POST['year'] : 0;
 $month = isset($_POST['month']) ? (int)$_POST['month'] : 0;
 $day = isset($_POST['day']) ? (int)$_POST['day'] : 0;
-
-$icq = isset($_POST['icq']) ? unesc(trim((string)$_POST['icq'])) : '';
-$msn = isset($_POST['msn']) ? unesc(trim((string)$_POST['msn'])) : '';
-$aim = isset($_POST['aim']) ? unesc(trim((string)$_POST['aim'])) : '';
-$yahoo = isset($_POST['yahoo']) ? unesc(trim((string)$_POST['yahoo'])) : '';
-$mirc = isset($_POST['mirc']) ? unesc(trim((string)$_POST['mirc'])) : '';
-$skype = isset($_POST['skype']) ? unesc(trim((string)$_POST['skype'])) : '';
-
-if (mb_strlen($icq, 'UTF-8') > 10) {
-    bark("Жаль, номер ICQ слишком длинный. Максимум 10 символов.");
-}
-
-if (mb_strlen($msn, 'UTF-8') > 30) {
-    bark("Жаль, ваш MSN слишком длинный. Максимум 30 символов.");
-}
-
-if (mb_strlen($aim, 'UTF-8') > 30) {
-    bark("Жаль, ваш AIM слишком длинный. Максимум 30 символов.");
-}
-
-if (mb_strlen($yahoo, 'UTF-8') > 30) {
-    bark("Жаль, ваш Yahoo слишком длинный. Максимум 30 символов.");
-}
-
-if (mb_strlen($mirc, 'UTF-8') > 30) {
-    bark("Жаль, ваш mIRC слишком длинный. Максимум 30 символов.");
-}
-
-if (mb_strlen($skype, 'UTF-8') > 20) {
-    bark("Жаль, ваш Skype слишком длинный. Максимум 20 символов.");
-}
 
 if ($wantusername === '' || $wantpassword === '' || $email === '' || $gender === '' || $country <= 0) {
     bark("Все поля обязательны для заполнения.");
@@ -300,13 +268,6 @@ $fields = array(
     'editsecret',
     'gender',
     'country',
-    'icq',
-    'msn',
-    'aim',
-    'yahoo',
-    'skype',
-    'mirc',
-    'website',
     'email',
     'status',
     'added',
@@ -325,13 +286,6 @@ $values = array(
     $editsecret,
     $gender,
     $country,
-    $icq,
-    $msn,
-    $aim,
-    $yahoo,
-    $skype,
-    $mirc,
-    $website,
     $email,
     $status,
     $added,

@@ -1,317 +1,174 @@
 <?
 
-/*
-// +--------------------------------------------------------------------------+
-// | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
-// |                                               Do not remove above lines! |
-// +--------------------------------------------------------------------------+
-*/
-
 require_once("include/bittorrent.php");
 
 dbconn(false);
-
 loggedinorreturn();
 
-stdhead($tracker_lang['my_my']);
+function my_h($value) {
+	return htmlspecialchars_uni((string)$value);
+}
+
+function my_menu($user) {
+	$id = (int)$user["id"];
+	$name = my_h($user["username"]);
+	$avatar = !empty($user["avatar"]) ? my_h($user["avatar"]) : "/pic/default_avatar.gif";
+	$reputation = isset($user["simpaty"]) ? (int)$user["simpaty"] : 0;
+	$bonus = isset($user["bonus"]) ? number_format((float)$user["bonus"], 0, '.', ' ') : 0;
+
+	return '
+	<div class="mn1_menu">
+		<ul class="men u2 w200">
+			<li class="img"><a href="/userdetails.php?id=' . $id . '"><img src="' . $avatar . '" class="p200" alt=""></a></li>
+			<li class="tp">Меню пользователя</li>
+			<li><span class="bulet"></span><a href="/message.php">Личные сообщения</a></li>
+			<li><span class="bulet"></span><a href="/userdetails.php?id=' . $id . '">Мой профиль</a></li>
+			<li><span class="bulet"></span><a href="/my.php">Редактировать профиль</a></li>
+			<li><span class="bulet"></span><a href="/mygroups.php">Мои группы</a></li>
+			<li><span class="bulet"></span><a href="/friends.php?id=' . $id . '">Мой список друзей</a></li>
+			<li class="sf"><span class="bulet"></span><a href="/mytorrents.php?id=' . $id . '">Мои раздачи</a></li>
+			<li class="tp">Репутация<span class="floatright"><a href="/pay_mode_b.php?userid=' . $id . '" title="Понизить репутацию"><img border="0" src="/pic/minus.gif" alt=""></a> <b>' . $reputation . '</b> <a href="/pay_mode_b.php?userid=' . $id . '" title="Повысить репутацию"><img border="0" src="/pic/plus.gif" alt=""></a></span></li>
+			<li><span class="bulet"></span><a href="/user_reputation.php?id=' . $id . '">Полученные отзывы</a></li>
+			<li><span class="bulet"></span><a href="/user_reputation.php?id=' . $id . '&amp;type=2">Отданные отзывы</a></li>
+			<li class="tp">Закладки</li>
+			<li><span class="bulet"></span><a href="/bookmarks.php?type=1">Раздачи</a></li>
+			<li><span class="bulet"></span><a href="/bookmarks.php?type=2">Группы</a></li>
+			<li><span class="bulet"></span><a href="/bookmarks.php?type=3">Пользователи</a></li>
+			<li class="sf"><span class="bulet"></span><a href="/bookmarks.php?type=4">Персоны</a></li>
+			<li class="tp">История</li>
+			<li><span class="bulet"></span><a href="/hytorrents.php?id=' . $id . '">Скачанного</a></li>
+			<li><span class="bulet"></span><a href="/userhistory.php?id=' . $id . '">Комментариев</a></li>
+			<li><span class="bulet"></span><a href="/uservotes.php?id=' . $id . '">Голосований</a></li>
+			<li class="tp">Голоса<span class="floatright b">' . $bonus . '</span></li>
+			<li><span class="bulet"></span><a href="/pay.php">Получить голоса</a></li>
+			<li><span class="bulet"></span><a href="/pay_mode.php">Управление голосами</a></li>
+			<li><span class="bulet"></span><a href="/pay_mode.php">Оставить пожелание</a></li>
+			<li><span class="bulet"></span><a href="/pay_mode.php">Обнулить счетчик скачиваний</a></li>
+		</ul>
+	</div>';
+}
+
+function my_select_range($name, $min, $max, $selected, $default) {
+	$html = '<select name="' . $name . '" class="styled"><option value="00">' . $default . '</option>';
+	for ($i = $min; $i <= $max; $i++) {
+		$value = sprintf('%02d', $i);
+		$html .= '<option value="' . $value . '"' . ((string)$selected === (string)$value ? ' selected' : '') . '>' . $value . '</option>';
+	}
+	return $html . '</select>';
+}
+
+function my_country_select($selected) {
+	$html = '<select name="country" id="country" class="styled"><option value="0">Выберите страну</option>';
+	$res = sql_query("SELECT id, name FROM countries ORDER BY name ASC") or sqlerr(__FILE__, __LINE__);
+	while ($row = mysqli_fetch_assoc($res)) {
+		$id = (int)$row["id"];
+		$html .= '<option value="' . $id . '"' . ((int)$selected === $id ? ' selected' : '') . '>' . my_h($row["name"]) . '</option>';
+	}
+	return $html . '</select>';
+}
+
+function my_theme_select($selected) {
+	$html = '<select name="theme" class="styled w200" onchange="document.location.href=\'/changetheme.php?theme=\'+this.options[this.options.selectedIndex].value;">';
+	foreach (get_themes() as $theme) {
+		$html .= '<option value="' . my_h($theme) . '"' . ($theme === $selected ? ' selected' : '') . '>' . my_h($theme) . '</option>';
+	}
+	return $html . '</select>';
+}
+
+$id = (int)$CURUSER["id"];
+$profile_name = my_h($CURUSER["username"]);
+$avatar = !empty($CURUSER["avatar"]) ? my_h($CURUSER["avatar"]) : "/pic/default_avatar.gif";
+$birthday = (!empty($CURUSER["birthday"]) && $CURUSER["birthday"] !== "0000-00-00") ? $CURUSER["birthday"] : "1990-01-01";
+list($b_year, $b_month, $b_day) = explode('-', date('Y-m-d', strtotime($birthday)));
+
+if (strlen($CURUSER["passkey"]) < 10) {
+	$CURUSER["passkey"] = md5($CURUSER["username"] . get_date_time() . $CURUSER["passhash"]);
+	sql_query("UPDATE users SET passkey = " . sqlesc($CURUSER["passkey"]) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
+}
+
+stdhead($tracker_lang['my_my'] ?? 'Мой профиль');
 
 if (isset($_GET["edited"])) {
-	print("<h1>".$tracker_lang['my_updated']."</h1>\n");
-	if (isset($_GET["mailsent"]))
-		print("<h2>".$tracker_lang['my_mail_sent']."</h2>\n");
-} elseif (isset($_GET["emailch"]))
-	print("<h1>".$tracker_lang['my_mail_updated']."</h1>\n");
-/*else
-	print("<h1>Добро пожаловать, <a href=userdetails.php?id=$CURUSER[id]>$CURUSER[username]</a>!</h1>\n");*/
-
+	print("<div class=\"bx1 center b\">Профиль обновлен</div>\n");
+}
+if (isset($_GET["mailsent"])) {
+	print("<div class=\"bx1 center b\">Письмо для подтверждения отправлено</div>\n");
+}
 ?>
 <div class="mn_wrap">
+	<?= my_menu($CURUSER) ?>
+	<div class="mn1_content">
+		<div class="bx1 u2"><a href="/userdetails.php?id=<?= $id ?>" class="u2"><?= $profile_name ?></a></div>
 
-    <table class="tables2 w100p">
-        <tr>
-            <td class="center w33p">
-                <a class="sbab" href="logout.php"><?=$tracker_lang['logout'];?></a>
-            </td>
-            <td class="center w33p">
-                <a class="sbab" href="mytorrents.php"><?=$tracker_lang['my_torrents'];?></a>
-            </td>
-            <td class="center w33p">
-                <a class="sbab" href="friends.php">Мои списки пользователей</a>
-            </td>
-        </tr>
-    </table>
+		<form name="myc" method="post" action="/takeprofedit.php?act=1">
+			<div class="bx1_0">
+				<div class="pad5x5 u2"><span class="bulet"></span>Основные настройки</div>
+				<table class="tables4 w100p">
+					<tr><td class="w120 right nw">Место жительства</td><td><span class="sw200"><?= my_country_select($CURUSER["country"] ?? 0) ?></span></td></tr>
+					<tr><td class="right">Пол</td><td class="line20"><input class="styled" type="radio" name="gender"<?= ($CURUSER["gender"] == "1" ? " checked" : "") ?> value="1" id="Male"><label for="Male" class="label_lf">Мужской</label> <input class="styled" type="radio" name="gender"<?= ($CURUSER["gender"] == "2" ? " checked" : "") ?> value="2" id="Female"><label for="Female" class="label_lf">Женский</label></td></tr>
+					<tr><td class="right">Дата рождения</td><td><?= my_select_range('bday_day', 1, 31, $b_day, 'число') ?> <select name="bday_month" class="styled"><option value="00">месяц</option><? $months = array("01"=>"января","02"=>"февраля","03"=>"марта","04"=>"апреля","05"=>"мая","06"=>"июня","07"=>"июля","08"=>"августа","09"=>"сентября","10"=>"октября","11"=>"ноября","12"=>"декабря"); foreach ($months as $num => $name) { ?><option value="<?= $num ?>"<?= ($b_month == $num ? " selected" : "") ?>><?= $name ?></option><? } ?></select> <?= my_select_range('bday_year', 1930, (int)date('Y') - 13, $b_year, 'год') ?></td></tr>
+					<tr><td class="right nw">Временная зона</td><td><select name="timezone" class="styled"><option value="0" selected>00:00</option></select> Сейчас на сервере: <b><?= date('d.m.Y H:i') ?></b> ( Московское время )</td></tr>
+					<tr><td class="right">Ваши города</td><td><span class="w200"><input type="text" name="sr_citys" size="28" value="<?= my_h($CURUSER["city"] ?? "") ?>"></span> Дюссельдорф, Москва</td></tr>
+					<tr><td class="right">Любимый фильм</td><td><input type="text" name="sr_film" size="28" value="<?= my_h($CURUSER["favorite_movie"] ?? "") ?>"> Собака на сене</td></tr>
+					<tr><td class="right">Любимые персоны</td><td><input type="text" name="sr_persons" size="28" value="<?= my_h($CURUSER["favorite_persons"] ?? "") ?>"> Александр Абдулов, Джеки Чан</td></tr>
+					<tr><td class="right nw">Пароль</td><td><ul class="men"><li><input type="password" name="psw" size="28" value=""> Требуется для смены данных</li></ul></td></tr>
+					<tr><td colspan="2"><input type="submit" value="Изменить" class="buttonS w200"></td></tr>
+				</table>
+			</div>
+		</form>
 
-    <form method="post" action="takeprofedit.php">
-        <table class="tables2 w100p">
+		<form name="mycphpto" method="post" action="/takeprofedit.php?act=2">
+			<div class="bx1_0">
+				<div class="pad5x5 u2"><span class="bulet"></span>Ваша фотография</div>
+				<div class="w200 nw floatleft"><img src="<?= $avatar ?>" class="w200 block pad5x5" alt=""></div>
+				<div style="padding: 0 20px 0 220px;">
+					<div class="justify">Рекомендуем использовать аватар размером 200x200, предварительно разместив его <a href="https://forum.kinozal.tv/showthread.php?t=78697" target="blank" class="sba">здесь</a>. Уменьшайте аватар по горизонтали до 200 пикселей, высота не выше 350 пикселей.</div>
+					<div style="padding: 20px 0 20px 0;"><input type="text" name="avatar" class="w90p" value="<?= my_h($CURUSER["avatar"] ?? "") ?>"><div style="padding: 5px 0 5px 0;">Пример: https://i115.fastpic.org/a3d526.jpg ( Обратите внимание, HTTPS ссылка на картинку .[JPG/JPEG] )</div></div>
+					<div><input type="submit" value="Обновить фотографию" class="buttonS w200"></div>
+				</div>
+			</div>
+		</form>
+
+		<form name="mypassk" method="post" action="/takeprofedit.php?act=10" onsubmit="return confirm('Внимание, после смены пасскей Вам необходимо будет заново скачать все активные торренты!')">
+			<div class="bx1"><table class="tables4">
+				<tr><td class="w100 right nw">Ваш пасскей:</td><td class="b"><?= my_h($CURUSER["passkey"]) ?></td></tr>
+				<tr><td class="right nw">Пароль</td><td><ul class="men"><li><input type="password" name="psw" size="28" value=""> Требуется для смены данных</li></ul></td></tr>
+				<tr><td colspan="2"><input type="submit" value="Сменить пасскей" class="buttonS w200"></td></tr>
+			</table></div>
+		</form>
+
+		<div class="bx1"><div class="w200 nw floatleft"><span class="sw200"><?= my_theme_select($CURUSER["theme"] ?? "") ?></span></div><div style="padding: 0 0 0 220px;"><b class="u2">Стиль отображения</b> - Вы можете выбрать один из стилей, который более подходит Вам</div></div>
+		<div class="bx1"><div class="w200 nw floatleft"><input type="button" value="Редактировать информацию" onclick="document.location.href='my_info.php'" class="buttonS w200"></div><div style="padding: 0 0 0 220px;"><b class="u2">Информация пользователя</b> - Вы можете разместить интересную и познавательную информацию здесь</div></div>
+
+		<form name="mypark" method="post" action="/takeprofedit.php?act=11">
+			<div class="bx1"><div class="pad5x5 u2"><span class="bulet"></span>Припарковать профиль</div><table class="tables4">
+				<tr><td class="w120 right nw">Профиль припаркован</td><td class="line20"><input class="styled" type="radio" id="prk1" name="parked" value="yes"<?= ($CURUSER["parked"] == "yes" ? " checked" : "") ?>><label for="prk1" class="label_lf">Да</label> <input class="styled" type="radio" id="prk2" name="parked" value="no"<?= ($CURUSER["parked"] == "no" ? " checked" : "") ?>><label for="prk2" class="label_lf">Нет</label></td></tr>
+				<tr><td class="right nw">Пароль</td><td><ul class="men"><li><input type="password" name="psw" size="28" value=""> Требуется для смены данных</li></ul></td></tr>
+				<tr><td colspan="2"><input type="submit" value="Изменить" class="buttonS w200"></td></tr>
+			</table></div>
+		</form>
+
+		<form name="mypass" method="post" action="/takeprofedit.php?act=12">
+			<div class="bx1"><div class="pad5x5 u2"><span class="bulet"></span>Сменить пароль</div><table class="tables4">
+				<tr><td class="w120 right nw">Старый пароль</td><td><input type="password" name="pass" value="" size="28" autocomplete="off"></td><td><a href="/recover.php" class="sba">Забыли пароль ?</a></td></tr>
+				<tr><td class="w120 right nw">Новый пароль</td><td><input type="password" name="chpass" value="" size="28" autocomplete="off"></td><td></td></tr>
+				<tr><td class="w120 right nw">Подтвердите пароль</td><td><input type="password" name="passagain" value="" size="28" autocomplete="off"></td><td></td></tr>
+				<tr><td colspan="3"><input type="submit" value="Сменить пароль" class="buttonS w200"></td></tr>
+			</table></div>
+		</form>
+
+		<form name="mymail" method="post" action="/takeprofedit.php?act=13">
+			<div class="bx1"><div class="pad5x5 u2"><span class="bulet"></span>Сменить почтовый ящик</div><table class="tables4">
+				<tr><td class="w120 right nw">Ваша почта</td><td colspan="2"><b><?= my_h($CURUSER["email"]) ?></b> ( При смене адреса письмо для подтверждения высылается на новый адрес )</td></tr>
+				<tr><td class="w120 right nw">Новая почта</td><td><input type="text" name="mail" value="" size="28" autocomplete="off"></td><td><a class="sba" href="/helpdesk.php">Для смены почты обратитесь в Помощь Администрации</a></td></tr>
+				<tr><td class="w120 right nw">Подтвердите почту</td><td><input type="text" name="mailagain" value="" size="28" autocomplete="off"></td><td></td></tr>
+				<tr><td colspan="3"><input type="submit" value="Сменить почту" class="buttonS w200"></td></tr>
+			</table></div>
+		</form>
+	</div>
+	<div class="clr"></div>
+</div>
 <?
-
-/***********************
-
-$res = sql_query("SELECT COUNT(*) FROM ratings WHERE user=" . $CURUSER["id"]);
-$row = mysqli_fetch_array($res);
-tr("Ratings submitted", $row[0]);
-
-$res = sql_query("SELECT COUNT(*) FROM comments WHERE user=" . $CURUSER["id"]);
-$row = mysqli_fetch_array($res);
-tr("Written comments", $row[0]);
-
-****************/
-
-$themes = theme_selector($CURUSER["theme"]);
-
-$countries = "<option value=0>---- ".$tracker_lang['my_unset']." ----</option>\n";
-$ct_r = sql_query("SELECT id, name FROM countries ORDER BY name ASC") or sqlerr(__FILE__,__LINE__);
-while ($ct_a = mysqli_fetch_array($ct_r))
-  $countries .= "<option value=$ct_a[id]" . ($CURUSER["country"] == $ct_a['id'] ? " selected" : "") . ">$ct_a[name]</option>\n";
-
-$lang = [];
-
-$languageDir = __DIR__ . '/languages';
-
-if (is_dir($languageDir)) {
-    $files = scandir($languageDir);
-
-    foreach ($files as $file) {
-        if ($file === '.' || $file === '..') {
-            continue;
-        }
-
-        $path = $languageDir . '/' . $file;
-
-        if (
-            preg_match('#^lang_#i', $file)
-            && is_dir($path)
-            && !is_link($path)
-        ) {
-            $filename = trim(str_replace('lang_', '', $file));
-
-            $displayname = preg_replace('/^(.*?)_(.*)$/', '$1 [ $2 ]', $filename);
-            $displayname = preg_replace('/\[(.*?)_(.*)\]/', '[ $1 - $2 ]', $displayname);
-
-            $lang[$displayname] = $filename;
-        }
-    }
-}
-
-asort($lang, SORT_NATURAL | SORT_FLAG_CASE);
-
-$currentLanguage = $CURUSER['language'] ?? '';
-
-$lang_select = '<select name="language">';
-
-foreach ($lang as $displayname => $filename) {
-    $selected = strtolower($currentLanguage) === strtolower($filename)
-        ? ' selected="selected"'
-        : '';
-
-    $lang_select .= '<option value="' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>'
-        . htmlspecialchars(ucwords($displayname), ENT_QUOTES, 'UTF-8')
-        . '</option>';
-}
-
-$lang_select .= '</select>';
-
-function format_tz($a)
-{
-	$h = floor($a);
-	$m = ($a - floor($a)) * 60;
-	return ($a >= 0?"+":"-") . (strlen(abs($h)) > 1?"":"0") . abs($h) .
-		":" . ($m==0?"00":$m);
-}
-
-tr($tracker_lang['my_allow_pm_from'],
-"<input type=radio name=acceptpms" . ($CURUSER["acceptpms"] == "yes" ? " checked" : "") . " value=\"yes\">Все (исключая блокированных)
-<br /><input type=radio name=acceptpms" .  ($CURUSER["acceptpms"] == "friends" ? " checked" : "") . " value=\"friends\">Только друзей
-<br /><input type=radio name=acceptpms" .  ($CURUSER["acceptpms"] == "no" ? " checked" : "") . " value=\"no\">Только администрации"
-,1);
-
-tr($tracker_lang['my_parked'],
-"<input type=\"radio\" name=\"parked\"" . ($CURUSER["parked"] == "yes" ? " checked" : "") . " value=\"yes\">".$tracker_lang['yes']."
-<input type=\"radio\" name=\"parked\"" . ($CURUSER["parked"] == "no" ? " checked" : "") . " value=\"no\">".$tracker_lang['no']."
-<br /><font class=\"small_text\">".$tracker_lang['my_you_can_park'].".</font>"
-,1);
-
-tr($tracker_lang['my_delete_after_reply'], "<input type=checkbox name=deletepms" . ($CURUSER["deletepms"] == "yes" ? " checked" : "") . ">",1);
-tr($tracker_lang['my_sentbox'], "<input type=checkbox name=savepms" . ($CURUSER["savepms"] == "yes" ? " checked" : "") . ">",1);
-
-$r = genrelist();
-//$categories = "Default browsing categories:<br />\n";
-if (count($r) > 0)
-{
-	$categories = "<table><tr>\n";
-	$i = 0;
-	foreach ($r as $a)
-	{
-	  $categories .=  ($i && $i % 2 == 0) ? "</tr><tr>" : "";
-	  $categories .= "<td class=bottom style='padding-right: 5px'><input name=cat$a[id] type=\"checkbox\" " . (strpos($CURUSER['notifs'], "[cat$a[id]]") !== false ? " checked" : "") . " value='yes'>&nbsp;" . htmlspecialchars_uni($a["name"]) . "</td>\n";
-	  ++$i;
-	}
-	$categories .= "</tr></table>\n";
-}
-
-tr($tracker_lang['my_email_notify'], "<input type=checkbox name=pmnotif" . (strpos($CURUSER['notifs'], "[pm]") !== false ? " checked" : "") . " value=yes> Уведомить меня при получении ЛС<br />\n" .
-	 "<input type=checkbox name=emailnotif" . (strpos($CURUSER['notifs'], "[email]") !== false ? " checked" : "") . " value=yes> Уведомить меня при размещении торрента в одной <br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; из следующих предпочитаемых категорий.\n"
-   , 1);
-tr($tracker_lang['my_default_browse'],$categories,1);
-tr($tracker_lang['my_style'], "$themes",1);
-tr($tracker_lang['my_country'], "<select name=country>\n$countries\n</select>",1);
-tr($tracker_lang['my_language'], $lang_select ,1);
-tr($tracker_lang['my_avatar_url'], "<input name=avatar size=50 value=\"" . htmlspecialchars_uni($CURUSER["avatar"]) .
-  "\"><br />\n".sprintf($tracker_lang['max_avatar_size'], $avatar_max_width, $avatar_max_height),1);
-tr($tracker_lang['my_gender'],
-"<input type=radio name=gender" . ($CURUSER["gender"] == "1" ? " checked" : "") . " value=1>".$tracker_lang['my_gender_male']."
-<input type=radio name=gender" .  ($CURUSER["gender"] == "2" ? " checked" : "") . " value=2>".$tracker_lang['my_gender_female']
-,1);
-
-///////////////// BIRTHDAY MOD /////////////////////
-$birthday = $CURUSER['birthday'];
-$birthday = date('Y-m-d', strtotime($birthday));
-list($year1, $month1, $day1) = explode('-', $birthday);
-if ($CURUSER['birthday'] == '0000-00-00') {
-        $year .= "<select name=year><option value=\"0000\">".$tracker_lang['my_year']."</option>\n";
-        $i = "1920";
-        while($i <= (date('Y',time())-13)) {
-                $year .= "<option value=" .$i. ">".$i."</option>\n";
-                $i++;
-        }
-        $year .= "</select>\n";
-        $birthmonths = array(
-        "01" => $tracker_lang['my_months_january'],
-        "02" => $tracker_lang['my_months_february'],
-        "03" => $tracker_lang['my_months_march'],
-        "04" => $tracker_lang['my_months_april'],
-        "05" => $tracker_lang['my_months_may'],
-        "06" => $tracker_lang['my_months_june'],
-        "07" => $tracker_lang['my_months_jule'],
-        "08" => $tracker_lang['my_months_august'],
-        "09" => $tracker_lang['my_months_september'],
-        "10" => $tracker_lang['my_months_october'],
-        "11" => $tracker_lang['my_months_november'],
-        "12" => $tracker_lang['my_months_december'],
-        );
-        $month = "<select name=\"month\"><option value=\"00\">".$tracker_lang['my_month']."</option>\n";
-        foreach ($birthmonths as $month_no => $show_month)
-        {
-                $month .= "<option value=$month_no>$show_month</option>\n";
-        }
-        $month .= "</select>\n";
-        $day .= "<select name=day><option value=\"00\">".$tracker_lang['my_day']."</option>\n";
-        $i = 1;
-        while ($i <= 31) {
-                if($i < 10) {
-                        $day .= "<option value=0".$i. ">0".$i."</option>\n";
-                } else {
-                        $day .= "<option value=".$i.">".$i."</option>\n";
-                }
-                $i++;
-        }
-        $day .="</select>\n";
-        tr($tracker_lang['my_birthdate'], $year . $month . $day ,1);
-}
-if ($CURUSER['birthday'] != "0000-00-00") {
-	tr($tracker_lang['my_birthdate'],"<b><input type=hidden name=year value=$year1>$year1<input type=hidden name=month value=$month1>.$month1<input type=hidden name=day value=$day1>.$day1</b>",1);
-}
-///////////////// BIRTHDAY MOD /////////////////////
-
-print("<tr><td class=\"tablecat\" colspan=\"2\" align=left><b>".$tracker_lang['my_contact']."</b></td></tr>\n");
-
-tr(" ", "    <table cellspacing=\"3\" cellpadding=\"0\" width=\"100%\" border=\"0\">
-            <tr>
-        <td style=\"font-size: 11px; font-style: normal; font-variant: normal; font-weight: normal; font-family: verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif\" colspan=2>
-        ".$tracker_lang['my_contact_descr']."</td>
-      </tr>
-      <tr>
-        <td style=\"font-size: 11px; font-style: normal; font-variant: normal; font-weight: normal; font-family: verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif\">
-        ".$tracker_lang['my_contact_icq']."<br />
-        <img alt src=pic/contact/icq.gif width=\"17\" height=\"17\">
-        <input maxLength=\"30\" size=\"25\" name=\"icq\" value=\"" . $CURUSER["icq"] . "\" ></td>
-        <td style=\"font-size: 11px; font-style: normal; font-variant: normal; font-weight: normal; font-family: verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif\">
-        ".$tracker_lang['my_contact_aim']."<br />
-        <img alt src=pic/contact/aim.gif width=\"17\" height=\"17\">
-        <input maxLength=\"30\" size=\"25\" name=\"aim\" value=\"" . $CURUSER["aim"] . "\" ></td>
-      </tr>
-      <tr>
-        <td style=\"font-size: 11px; font-style: normal; font-variant: normal; font-weight: normal; font-family: verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif\">
-        ".$tracker_lang['my_contact_msn']."<br />
-        <img alt src=pic/contact/msn.gif width=\"17\" height=\"17\">
-        <input maxLength=\"50\" size=\"25\" name=\"msn\" value=\"" . $CURUSER["msn"] . "\" ></td>
-        <td style=\"font-size: 11px; font-style: normal; font-variant: normal; font-weight: normal; font-family: verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif\">
-        ".$tracker_lang['my_contact_yahoo']."<br />
-        <img alt src=pic/contact/yahoo.gif width=\"17\" height=\"17\">
-        <input maxLength=\"30\" size=\"25\" name=\"yahoo\" value=\"" . $CURUSER["yahoo"] . "\" ></td>
-      </tr>
-      <tr>
-        <td style=\"font-size: 11px; font-style: normal; font-variant: normal; font-weight: normal; font-family: verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif\">
-        ".$tracker_lang['my_contact_skype']."<br />
-        <img alt src=pic/contact/skype.gif width=\"17\" height=\"17\">
-        <input maxLength=\"32\" size=\"25\" name=\"skype\" value=\"" . $CURUSER["skype"] . "\" ></td>
-        <td style=\"font-size: 11px; font-style: normal; font-variant: normal; font-weight: normal; font-family: verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif\">
-        ".$tracker_lang['my_contact_mirc']."<br />
-        <img alt src=pic/contact/mirc.gif width=\"17\" height=\"17\">
-        <input maxLength=\"30\" size=\"25\" name=\"mirc\" value=\"" . $CURUSER["mirc"] . "\" ></td>
-      </tr>
-    </table>",1);
-tr($tracker_lang['my_website'], "<input type=\"text\" name=\"website\" size=50 value=\"" . htmlspecialchars_uni($CURUSER["website"]) . "\" /> ", 1);
-tr("Город", "<input type=\"text\" name=\"city\" size=50 value=\"" . htmlspecialchars_uni(isset($CURUSER["city"]) ? $CURUSER["city"] : "") . "\" />", 1);
-tr("Любимый фильм", "<input type=\"text\" name=\"favorite_movie\" size=50 value=\"" . htmlspecialchars_uni(isset($CURUSER["favorite_movie"]) ? $CURUSER["favorite_movie"] : "") . "\" />", 1);
-tr("Любимые персоны", "<input type=\"text\" name=\"favorite_persons\" size=50 value=\"" . htmlspecialchars_uni(isset($CURUSER["favorite_persons"]) ? $CURUSER["favorite_persons"] : "") . "\" />", 1);
-tr($tracker_lang['my_torrents_per_page'], "<input type=text size=10 name=torrentsperpage value=$CURUSER[torrentsperpage]> (0 = установки по умолчанию)",1);
-tr($tracker_lang['my_topics_per_page'], "<input type=text size=10 name=topicsperpage value=$CURUSER[topicsperpage]> (0 = установки по умолчанию)",1);
-tr($tracker_lang['my_messages_per_page'], "<input type=text size=10 name=postsperpage value=$CURUSER[postsperpage]> (0 = установки по умолчанию)",1);
-tr($tracker_lang['my_show_avatars'], "<input type=checkbox name=avatars" . ($CURUSER["avatars"] == "yes" ? " checked" : "") . "> (Пользователи с маленькими каналами могут отключить эту опцию)",1);
-tr($tracker_lang['my_info'], "<textarea name=info cols=50 rows=4>" . $CURUSER["info"] . "</textarea><br />Показывается на вашей публичной странице. Может содержать <a href=tags.php target=_new>BB коды</a>.", 1);
-tr($tracker_lang['my_userbar'], "<img src=\"torrentbar/bar.php/".$CURUSER["id"].".png\" border=\"0\"><br />".$tracker_lang['my_userbar_descr'].":<br /><input type=\"text\" size=65 value=\"[url=$DEFAULTBASEURL][img]$DEFAULTBASEURL/torrentbar/bar.php/".$CURUSER["id"].".png[/img][/url]\" readonly />",1);
-tr($tracker_lang['my_mail'], "<input type=\"text\" name=\"email\" size=50 value=\"" . htmlspecialchars_uni($CURUSER["email"]) . "\" />", 1);
-print("<tr><td colspan=\"2\" align=left><b>Примечание:</b> Если вы смените ваш Email адрес, то вам придет запрос о подтверждении на ваш новый Email-адрес. Если вы не подтвердите письмо, то Email адрес не будет изменен.</td></tr>\n");
-tr("Сменить пасскей","<input type=checkbox name=resetpasskey value=1 /> (Вы должны перекачать все активные торренты после смены пасскея)", 1);
-
-if (strlen($CURUSER['passkey']) != 32) {
-	$CURUSER['passkey'] = md5($CURUSER['username'].get_date_time().$CURUSER['passhash']);
-	sql_query("UPDATE users SET passkey='$CURUSER[passkey]' WHERE id=$CURUSER[id]");
-}
-tr("Мой пасскей","<b>$CURUSER[passkey]</b>", 1);
-tr("Привязать IP к пасскею", "<input type=checkbox name=passkey_ip" . ($CURUSER["passkey_ip"] != "" ? " checked" : "") . "> Включив эту опцию вы можете защитить себя от неавторизованной закакачки по вашему пасскею привязав его к IP. Если ваш IP динамический - не включайте эту опцию.<br />На данный момент ваш IP: <b>".getip()."</b>", 1);
-tr("Старый пароль", "<input type=\"password\" name=\"oldpassword\" size=\"50\" />", 1);
-tr("Сменить пароль", "<input type=\"password\" name=\"chpassword\" size=\"50\" />", 1);
-tr("Пароль еще раз", "<input type=\"password\" name=\"passagain\" size=\"50\" />", 1);
-
-function priv($name, $descr) {
-	global $CURUSER;
-	if ($CURUSER["privacy"] == $name)
-		return "<input type=\"radio\" name=\"privacy\" value=\"$name\" checked=\"checked\" /> $descr";
-	return "<input type=\"radio\" name=\"privacy\" value=\"$name\" /> $descr";
-}
-
-/* tr("Privacy level",  priv("normal", "Normal") . " " . priv("low", "Low (email address will be shown)") . " " . priv("strong", "Strong (no info will be made available)"), 1); */
-
-?>
-<tr><td colspan="2" align="center"><input type="submit" value="Обновить профиль" style='height: 25px'> <input type="reset" value="Сбросить изменения" style='height: 25px'></td></tr>
-</table>
-</form>
-</td>
-</tr>
-</table>
-<?
-print("<p><a href=users.php><b>Найти пользователя/Список пользователей</b></a></p>");
 stdfoot();
 
 ?>
