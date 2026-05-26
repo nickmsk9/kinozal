@@ -353,7 +353,8 @@ $sql = "INSERT INTO users (" . implode(", ", $fields) . ") VALUES (" . implode("
 $ret = sql_query($sql);
 
 if (!$ret) {
-    $db = isset($GLOBALS['___mysqli_ston']) ? $GLOBALS['___mysqli_ston'] : null;
+    global $link;
+    $db = ($link instanceof mysqli) ? $link : null;
 
     $errno = $db ? mysqli_errno($db) : 0;
     $error = $db ? mysqli_error($db) : 'Unknown MySQL error';
@@ -370,7 +371,7 @@ if (!$ret) {
     );
 }
 
-$id = mysqli_insert_id($GLOBALS['___mysqli_ston']);
+$id = mysqli_insert_id($link);
 
 if ($invite !== '') {
     sql_query("DELETE FROM invites WHERE invite = " . sqlesc($invite)) or sqlerr(__FILE__, __LINE__);

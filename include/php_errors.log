@@ -175,3 +175,9 @@ Stack trace:
 [26-May-2026 15:25:45 UTC] PHP Deprecated:  Implicit conversion from float 130.65 to int loses precision in /var/www/html/captcha.php on line 303
 [26-May-2026 15:25:45 UTC] PHP Deprecated:  Implicit conversion from float 169.85000000000002 to int loses precision in /var/www/html/captcha.php on line 300
 [26-May-2026 15:25:45 UTC] PHP Deprecated:  Implicit conversion from float 170.85000000000002 to int loses precision in /var/www/html/captcha.php on line 303
+[26-May-2026 15:46:30 UTC] PHP Warning:  Undefined global variable $___mysqli_ston in /var/www/html/takesignup.php on line 373
+[26-May-2026 15:46:30 UTC] PHP Fatal error:  Uncaught TypeError: mysqli_insert_id(): Argument #1 ($mysql) must be of type mysqli, null given in /var/www/html/takesignup.php:373
+Stack trace:
+#0 /var/www/html/takesignup.php(373): mysqli_insert_id(NULL)
+#1 {main}
+  thrown in /var/www/html/takesignup.php on line 373
