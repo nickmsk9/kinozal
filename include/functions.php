@@ -90,6 +90,25 @@ function is_theme($theme = "") {
 	return file_exists($rootpath . "themes/$theme/stdhead.php") && file_exists($rootpath . "themes/$theme/stdfoot.php") && file_exists($rootpath . "themes/$theme/template.php");
 }
 
+function theme_resolve_name($theme = "") {
+	$theme = trim((string)$theme);
+	$lower = function_exists('mb_strtolower') ? mb_strtolower($theme, 'UTF-8') : strtolower($theme);
+
+	if ($lower === 'tbdev' || $lower === 'основная') {
+		return 'TBDev';
+	}
+
+	return $theme;
+}
+
+function theme_display_name($theme = "") {
+	$resolved = theme_resolve_name($theme);
+	if ($resolved === 'TBDev') {
+		return 'Основная';
+	}
+	return $theme;
+}
+
 function get_themes() {
 	global $rootpath;
 	$handle = opendir($rootpath . "themes");
@@ -108,8 +127,12 @@ function theme_selector($sel_theme = "", $use_fsw = false) {
 	global $DEFAULTBASEURL;
 	$themes = get_themes();
 	$content = "<select name=\"theme\"".($use_fsw ? " onchange=\"window.location='$DEFAULTBASEURL/changetheme.php?theme='+this.options[this.selectedIndex].value\"" : "").">\n";
-	foreach ($themes as $theme)
-		$content .= "<option value=\"$theme\"".($theme == $sel_theme ? " selected" : "").">$theme</option>\n";
+	$selectedResolved = theme_resolve_name($sel_theme);
+	foreach ($themes as $theme) {
+		$label = theme_display_name($theme);
+		$value = ($theme === 'TBDev') ? 'Основная' : $theme;
+		$content .= "<option value=\"$value\"".(theme_resolve_name($theme) == $selectedResolved ? " selected" : "").">$label</option>\n";
+	}
 	$content .= "</select>";
 	return $content;
 }
@@ -120,8 +143,10 @@ function select_theme() {
 		$theme = $CURUSER["theme"];
 	else
 		$theme = $default_theme;
+	$theme = theme_resolve_name($theme);
+	$default = theme_resolve_name($default_theme);
 	if (!is_theme($theme))
-		$theme = $default_theme;
+		$theme = $default;
 	return $theme;
 }
 

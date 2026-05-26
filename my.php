@@ -69,8 +69,12 @@ function my_country_select($selected) {
 
 function my_theme_select($selected) {
 	$html = '<select name="theme" class="styled w200" onchange="document.location.href=\'/changetheme.php?theme=\'+this.options[this.options.selectedIndex].value;">';
+	$selectedResolved = theme_resolve_name($selected);
 	foreach (get_themes() as $theme) {
-		$html .= '<option value="' . my_h($theme) . '"' . ($theme === $selected ? ' selected' : '') . '>' . my_h($theme) . '</option>';
+		$label = theme_display_name($theme);
+		$value = ($theme === 'TBDev') ? 'Основная' : $theme;
+		$isSelected = (theme_resolve_name($theme) === $selectedResolved);
+		$html .= '<option value="' . my_h($value) . '"' . ($isSelected ? ' selected' : '') . '>' . my_h($label) . '</option>';
 	}
 	return $html . '</select>';
 }

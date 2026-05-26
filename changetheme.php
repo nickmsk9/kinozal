@@ -31,9 +31,11 @@ dbconn();
 loggedinorreturn();
 
 $theme = (string) $_GET["theme"];
+$resolved = theme_resolve_name($theme);
+$stored = ($resolved === 'TBDev') ? 'Основная' : $theme;
 
-if (is_theme($theme))
-	sql_query("UPDATE users SET theme = ".sqlesc($theme)." WHERE id = {$CURUSER["id"]}") or sqlerr(__FILE__,__LINE__);
+if (is_theme($resolved))
+	sql_query("UPDATE users SET theme = ".sqlesc($stored)." WHERE id = {$CURUSER["id"]}") or sqlerr(__FILE__,__LINE__);
 
 header('Location: '.$DEFAULTBASEURL);
 

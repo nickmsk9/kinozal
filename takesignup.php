@@ -258,6 +258,9 @@ $editsecret = "";
 
 $status = 'confirmed';
 $theme = select_theme();
+if (theme_resolve_name($theme) === 'TBDev') {
+    $theme = 'Основная';
+}
 $added = get_date_time();
 $passkey = md5($wantusername . $email . $added . mt_rand());
 
