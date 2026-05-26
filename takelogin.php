@@ -57,16 +57,16 @@ if (!is_password_correct($password, $row['secret'], $row['passhash']))
 if ($row["enabled"] == "no")
 	bark("Этот аккаунт отключен.");
 
-$peers = sql_query("SELECT COUNT(id) FROM peers WHERE userid = $row[id]");
+$peers = sql_query("SELECT COUNT(id) FROM peers WHERE userid = " . (int)$row["id"]);
 $num = mysqli_fetch_row($peers);
 $ip = getip();
-if ($num[0] > 0 && $row[ip] != $ip && $row[ip])
+if ($num[0] > 0 && ($row["ip"] ?? '') != $ip && !empty($row["ip"]))
 	bark("Этот пользователь на данный момент активен с другого IP. Вход невозможен.");
 
 logincookie($row["id"], $row["passhash"]);
 
 if (!empty($_POST["returnto"]))
-	header("Location: $DEFAULTBASEURL/$_POST[returnto]");
+	header("Location: $DEFAULTBASEURL/" . $_POST["returnto"]);
 else
 	header("Location: $DEFAULTBASEURL/");
 
