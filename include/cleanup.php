@@ -39,7 +39,7 @@ function docleanup() {
 	do {
 		$res = sql_query("SELECT id FROM torrents") or sqlerr(__FILE__,__LINE__);
 		$ar = array();
-		while ($row = mysql_fetch_array($res)) {
+		while ($row = mysqli_fetch_array($res)) {
 			$id = $row[0];
 			$ar[$id] = 1;
 		}
@@ -79,7 +79,7 @@ function docleanup() {
 
 		$res = sql_query("SELECT torrent FROM peers GROUP BY torrent") or sqlerr(__FILE__,__LINE__);
 		$delids = array();
-		while ($row = mysql_fetch_array($res)) {
+		while ($row = mysqli_fetch_array($res)) {
 			$id = $row[0];
 			if (isset($ar[$id]) && $ar[$id])
 				continue;
@@ -90,7 +90,7 @@ function docleanup() {
 
 		$res = sql_query("SELECT torrent FROM files GROUP BY torrent") or sqlerr(__FILE__,__LINE__);
 		$delids = array();
-		while ($row = mysql_fetch_array($res)) {
+		while ($row = mysqli_fetch_array($res)) {
 			$id = $row[0];
 			if ($ar[$id])
 				continue;
@@ -110,7 +110,7 @@ function docleanup() {
 
 	$torrents = array();
 	$res = sql_query("SELECT torrent, seeder, COUNT(*) AS c FROM peers GROUP BY torrent, seeder") or sqlerr(__FILE__,__LINE__);
-	while ($row = mysql_fetch_assoc($res)) {
+	while ($row = mysqli_fetch_assoc($res)) {
 		if ($row["seeder"] == "yes")
 			$key = "seeders";
 		else
@@ -119,15 +119,15 @@ function docleanup() {
 	}
 
 	$res = sql_query("SELECT torrent, COUNT(*) AS c FROM comments GROUP BY torrent") or sqlerr(__FILE__,__LINE__);
-	while ($row = mysql_fetch_assoc($res)) {
+	while ($row = mysqli_fetch_assoc($res)) {
 		$torrents[$row["torrent"]]["comments"] = $row["c"];
 	}
 
 	$fields = explode(":", "comments:leechers:seeders");
 	$res = sql_query("SELECT id, seeders, leechers, comments FROM torrents") or sqlerr(__FILE__,__LINE__);
-	while ($row = mysql_fetch_assoc($res)) {
+	while ($row = mysqli_fetch_assoc($res)) {
 		$id = $row["id"];
-		$torr = $torrents[$id];
+		$torr = isset($torrents[$id]) ? $torrents[$id] : array();
 		foreach ($fields as $field) {
 			if (!isset($torr[$field]))
 				$torr[$field] = 0;
@@ -145,8 +145,8 @@ function docleanup() {
 		$secs = 31*86400;
 		$dt = sqlesc(get_date_time(gmtime() - $secs));
 		$maxclass = UC_POWER_USER;
-		$res = sql_query("SELECT id FROM users WHERE parked='no' AND status='confirmed' AND class <= $maxclass AND last_access < $dt AND last_access <> '0000-00-00 00:00:00'") or sqlerr(__FILE__,__LINE__);
-		while ($arr = mysql_fetch_assoc($res)) {
+		$res = sql_query("SELECT id FROM users WHERE parked='no' AND status='confirmed' AND class <= $maxclass AND UNIX_TIMESTAMP(last_access) > 0 AND last_access < $dt") or sqlerr(__FILE__,__LINE__);
+		while ($arr = mysqli_fetch_assoc($res)) {
 			sql_query("DELETE FROM users WHERE id = ".sqlesc($arr["id"])) or sqlerr(__FILE__,__LINE__);
 			sql_query("DELETE FROM messages WHERE receiver = ".sqlesc($arr["id"])) or sqlerr(__FILE__,__LINE__);
 			sql_query("DELETE FROM friends WHERE userid = ".sqlesc($arr["id"])) or sqlerr(__FILE__,__LINE__);
@@ -165,9 +165,9 @@ function docleanup() {
        $secs = 175*86400; // change the time to fit your needs
        $dt = sqlesc(get_date_time(gmtime() - $secs));
        $maxclass = UC_POWER_USER;
-       $res = sql_query("SELECT id FROM users WHERE parked='yes' AND status='confirmed' AND class <= $maxclass AND last_access < $dt");
-       if (mysql_num_rows($res) > 0) {
-       	while ($arr = mysql_fetch_array($res)) {
+       $res = sql_query("SELECT id FROM users WHERE parked='yes' AND status='confirmed' AND class <= $maxclass AND UNIX_TIMESTAMP(last_access) > 0 AND last_access < $dt");
+       if (mysqli_num_rows($res) > 0) {
+       	while ($arr = mysqli_fetch_array($res)) {
 			sql_query("DELETE FROM users WHERE id = ".sqlesc($arr["id"])) or sqlerr(__FILE__,__LINE__);
 			sql_query("DELETE FROM messages WHERE receiver = ".sqlesc($arr["id"])) or sqlerr(__FILE__,__LINE__);
 			sql_query("DELETE FROM friends WHERE userid = ".sqlesc($arr["id"])) or sqlerr(__FILE__,__LINE__);
@@ -185,9 +185,9 @@ function docleanup() {
 
 	// delete unconfirmed users if timeout.
 	$deadtime = TIMENOW - $signup_timeout;
-	$res = sql_query("SELECT id FROM users WHERE status = 'pending' AND added < FROM_UNIXTIME($deadtime) AND last_login < FROM_UNIXTIME($deadtime) AND last_access < FROM_UNIXTIME($deadtime)") or sqlerr(__FILE__,__LINE__);
-	if (mysql_num_rows($res) > 0) {
-		while ($arr = mysql_fetch_array($res)) {
+	$res = sql_query("SELECT id FROM users WHERE status = 'pending' AND UNIX_TIMESTAMP(added) > 0 AND added < FROM_UNIXTIME($deadtime) AND UNIX_TIMESTAMP(last_login) > 0 AND last_login < FROM_UNIXTIME($deadtime) AND UNIX_TIMESTAMP(last_access) > 0 AND last_access < FROM_UNIXTIME($deadtime)") or sqlerr(__FILE__,__LINE__);
+	if (mysqli_num_rows($res) > 0) {
+		while ($arr = mysqli_fetch_array($res)) {
 			sql_query("DELETE FROM users WHERE id = ".sqlesc($arr["id"]));
 		}
 	}
@@ -199,13 +199,13 @@ function docleanup() {
 	$now = sqlesc(get_date_time());
 	$modcomment = sqlesc(date("Y-m-d") . " - Предупреждение снято системой по таймауту.\n");
 	$msg = sqlesc("Ваше предупреждение снято по таймауту. Постарайтесь больше не получать предупреждений и сделовать правилам.\n");
-	sql_query("INSERT INTO messages (sender, receiver, added, msg, poster) SELECT 0, id, $now, $msg, 0 FROM users WHERE warned='yes' AND warneduntil < NOW() AND warneduntil <> '0000-00-00 00:00:00'") or sqlerr(__FILE__,__LINE__);
-	sql_query("UPDATE users SET warned='no', warneduntil = '0000-00-00 00:00:00', modcomment = CONCAT($modcomment, modcomment) WHERE warned='yes' AND warneduntil < NOW() AND warneduntil <> '0000-00-00 00:00:00'") or sqlerr(__FILE__,__LINE__);
+	sql_query("INSERT INTO messages (sender, receiver, added, msg, poster) SELECT 0, id, $now, $msg, 0 FROM users WHERE warned='yes' AND UNIX_TIMESTAMP(warneduntil) > 0 AND warneduntil < NOW()") or sqlerr(__FILE__,__LINE__);
+	sql_query("UPDATE users SET warned='no', warneduntil = NULL, modcomment = CONCAT($modcomment, modcomment) WHERE warned='yes' AND UNIX_TIMESTAMP(warneduntil) > 0 AND warneduntil < NOW()") or sqlerr(__FILE__,__LINE__);
 
 	//remove expired bans
 	$modcomment = sqlesc(date("Y-m-d") . " - Включен системой по истечению бана.\n");
-	sql_query("UPDATE users SET enabled = 'yes', modcomment = CONCAT($modcomment, modcomment) WHERE id IN (SELECT userid FROM users_ban WHERE disuntil < NOW() AND disuntil != '0000-00-00 00:00:00')") or sqlerr(__FILE__,__LINE__);
-	sql_query("DELETE FROM users_ban WHERE disuntil < NOW() AND disuntil != '0000-00-00 00:00:00'") or sqlerr(__FILE__,__LINE__);
+	sql_query("UPDATE users SET enabled = 'yes', modcomment = CONCAT($modcomment, modcomment) WHERE id IN (SELECT userid FROM users_ban WHERE UNIX_TIMESTAMP(disuntil) > 0 AND disuntil < NOW())") or sqlerr(__FILE__,__LINE__);
+	sql_query("DELETE FROM users_ban WHERE UNIX_TIMESTAMP(disuntil) > 0 AND disuntil < NOW()") or sqlerr(__FILE__,__LINE__);
 
 	// promote to power users
 	$limit = 25*1024*1024*1024;
@@ -231,7 +231,7 @@ function docleanup() {
 	if ($use_ttl) {
 		$dt = sqlesc(get_date_time(gmtime() - ($ttl_days * 86400)));
 		$res = sql_query("SELECT id, name, image1, image2, image3, image4, image5 FROM torrents WHERE added < $dt") or sqlerr(__FILE__,__LINE__);
-		while ($arr = mysql_fetch_assoc($res)) {
+		while ($arr = mysqli_fetch_assoc($res)) {
 			unlink("$torrent_dir/$arr[id].torrent");
 			for ($x=1; $x <= 5; $x++) {
 				if ($arr['image' . $x] != "")
@@ -258,6 +258,9 @@ function docleanup() {
 	$dt = time() - $secs;
 	sql_query("DELETE FROM sessions WHERE time < $dt") or sqlerr(__FILE__,__LINE__);
 
+	if (function_exists('kz_cups_update_auto')) {
+		kz_cups_update_auto(false);
+	}
 }
 
 ?>

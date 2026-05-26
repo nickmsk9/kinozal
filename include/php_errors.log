@@ -1726,3 +1726,107 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\faq.php on line 57
+[26-May-2026 13:10:24 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:14:31 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:23:14 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_array() in C:\OSPanel\domains\kinozal.lv\include\cleanup.php:42
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(619): docleanup()
+#1 [internal function]: autoclean()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\cleanup.php on line 42
+[26-May-2026 13:23:17 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:23:22 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:28:37 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:29:04 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry '1-1' for key 'readtorrents.read' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\details.php(198): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:34:56 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect date value: '0000-00-00' for column 'birthday' at row 1 in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\adduser.php(69): sql_query()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:38:46 Europe/Moscow] PHP Warning:  Undefined array key "page" in C:\OSPanel\domains\kinozal.lv\userhistory.php on line 42
+[26-May-2026 13:38:46 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\userhistory.php on line 44
+[26-May-2026 13:38:50 Europe/Moscow] PHP Warning:  Undefined array key "page" in C:\OSPanel\domains\kinozal.lv\userhistory.php on line 42
+[26-May-2026 13:38:50 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_row() in C:\OSPanel\domains\kinozal.lv\userhistory.php:67
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\userhistory.php on line 67
+[26-May-2026 13:39:01 Europe/Moscow] PHP Warning:  Undefined array key 1 in C:\OSPanel\domains\kinozal.lv\include\cleanup.php on line 130
+[26-May-2026 13:39:01 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect DATETIME value: '0000-00-00 00:00:00' in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\include\cleanup.php(148): sql_query()
+#2 C:\OSPanel\domains\kinozal.lv\include\functions.php(619): docleanup()
+#3 [internal function]: autoclean()
+#4 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:42:36 Europe/Moscow] PHP Warning:  Undefined variable $i in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php on line 444
+[26-May-2026 13:42:45 Europe/Moscow] PHP Warning:  Undefined variable $content in C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php on line 716
+[26-May-2026 13:42:45 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Column 'content' cannot be null in C:\OSPanel\domains\kinozal.lv\include\functions.php:192
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(192): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php(559): sql_query()
+#2 C:\OSPanel\domains\kinozal.lv\admin\modules\blocks.php(716): BlocksEditSave()
+#3 C:\OSPanel\domains\kinozal.lv\admin\admin.php(100): require_once('C:\\OSPanel\\doma...')
+#4 C:\OSPanel\domains\kinozal.lv\admincp.php(36): include_once('C:\\OSPanel\\doma...')
+#5 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 192
+[26-May-2026 13:44:33 Europe/Moscow] PHP Warning:  Undefined array key "savepms" in C:\OSPanel\domains\kinozal.lv\takeprofedit.php on line 73
+[26-May-2026 13:44:33 Europe/Moscow] PHP Warning:  Undefined array key "pmnotif" in C:\OSPanel\domains\kinozal.lv\takeprofedit.php on line 74
+[26-May-2026 13:44:33 Europe/Moscow] PHP Warning:  Undefined array key "emailnotif" in C:\OSPanel\domains\kinozal.lv\takeprofedit.php on line 75
+[26-May-2026 13:44:33 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_assoc() in C:\OSPanel\domains\kinozal.lv\takeprofedit.php:82
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\takeprofedit.php on line 82
+[26-May-2026 13:45:07 Europe/Moscow] PHP Warning:  Undefined array key "search" in C:\OSPanel\domains\kinozal.lv\users.php on line 35
+[26-May-2026 13:45:07 Europe/Moscow] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\OSPanel\domains\kinozal.lv\users.php on line 35
+[26-May-2026 13:45:07 Europe/Moscow] PHP Warning:  Undefined array key "class" in C:\OSPanel\domains\kinozal.lv\users.php on line 36
+[26-May-2026 13:45:07 Europe/Moscow] PHP Warning:  Undefined array key "letter" in C:\OSPanel\domains\kinozal.lv\users.php on line 45
+[26-May-2026 13:45:07 Europe/Moscow] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\OSPanel\domains\kinozal.lv\users.php on line 45
+[26-May-2026 13:45:07 Europe/Moscow] PHP Warning:  Undefined variable $q in C:\OSPanel\domains\kinozal.lv\users.php on line 116
+[26-May-2026 13:45:07 Europe/Moscow] PHP Warning:  Undefined array key "page" in C:\OSPanel\domains\kinozal.lv\users.php on line 117
+[26-May-2026 13:45:07 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_row() in C:\OSPanel\domains\kinozal.lv\users.php:121
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\users.php on line 121
+[26-May-2026 13:45:10 Europe/Moscow] PHP Warning:  Undefined array key "search" in C:\OSPanel\domains\kinozal.lv\users.php on line 35
+[26-May-2026 13:45:10 Europe/Moscow] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\OSPanel\domains\kinozal.lv\users.php on line 35
+[26-May-2026 13:45:10 Europe/Moscow] PHP Warning:  Undefined array key "class" in C:\OSPanel\domains\kinozal.lv\users.php on line 36
+[26-May-2026 13:45:10 Europe/Moscow] PHP Warning:  Undefined array key "letter" in C:\OSPanel\domains\kinozal.lv\users.php on line 45
+[26-May-2026 13:45:10 Europe/Moscow] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in C:\OSPanel\domains\kinozal.lv\users.php on line 45
+[26-May-2026 13:45:10 Europe/Moscow] PHP Warning:  Undefined variable $q in C:\OSPanel\domains\kinozal.lv\users.php on line 116
+[26-May-2026 13:45:10 Europe/Moscow] PHP Warning:  Undefined array key "page" in C:\OSPanel\domains\kinozal.lv\users.php on line 117
+[26-May-2026 13:45:10 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_row() in C:\OSPanel\domains\kinozal.lv\users.php:121
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\users.php on line 121

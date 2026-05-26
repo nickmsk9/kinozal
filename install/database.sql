@@ -149,6 +149,26 @@ CREATE TABLE `comments_parsed` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
+# Structure for the `cups` table :
+#
+
+DROP TABLE IF EXISTS `cups`;
+
+CREATE TABLE `cups` (
+  `id` tinyint unsigned NOT NULL,
+  `cup_key` varchar(40) NOT NULL,
+  `title` varchar(100) NOT NULL,
+  `profile_title` varchar(100) NOT NULL,
+  `icon` varchar(16) NOT NULL default '🏆',
+  `sort` int unsigned NOT NULL default '0',
+  `active` tinyint unsigned NOT NULL default '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `cup_key` (`cup_key`),
+  KEY `sort` (`sort`),
+  KEY `active` (`active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
 # Structure for the `countries` table :
 #
 
@@ -703,6 +723,26 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
+# Structure for the `user_cups` table :
+#
+
+DROP TABLE IF EXISTS `user_cups`;
+
+CREATE TABLE `user_cups` (
+  `cup_id` tinyint unsigned NOT NULL,
+  `userid` int unsigned NOT NULL,
+  `source` enum('auto','manual') NOT NULL default 'auto',
+  `metric` bigint unsigned NOT NULL default '0',
+  `assigned_by` int unsigned NOT NULL default '0',
+  `assigned_at` datetime NULL DEFAULT NULL,
+  `note` varchar(255) NOT NULL default '',
+  PRIMARY KEY (`cup_id`),
+  KEY `userid` (`userid`),
+  KEY `source` (`source`),
+  KEY `assigned_at` (`assigned_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
 # Structure for the `users_ban` table :
 #
 
@@ -768,6 +808,22 @@ INSERT INTO `categories` (`id`, `sort`, `name`, `image`) VALUES
   (33,330,'Другое - Программы','32.gif'),
   (34,340,'Другое - Дизайн / Графика','40.gif'),
   (35,350,'Другое - Библиотека','41.gif');
+
+COMMIT;
+
+#
+# Data for the `cups` table  (LIMIT 0,100)
+#
+
+INSERT INTO `cups` (`id`, `cup_key`, `title`, `profile_title`, `icon`, `sort`, `active`) VALUES
+  (1,'best_release','Кубок за лучшую раздачу','За самую лучшую раздачу','🏆',1,1),
+  (2,'popular_release','Кубок за популярную раздачу','За популярную раздачу','🏆',2,1),
+  (3,'active_seeder','Кубок самому активному раздающему','Самому активному раздающему','🏆',3,1),
+  (4,'discussed_release','Кубок за самую обсуждаемую раздачу','За самую обсуждаемую раздачу','🏆',4,1),
+  (5,'best_commentator','Кубок лучшему комментатору','Лучшему комментатору','🏆',5,1),
+  (6,'active_patron','Кубок активному Меценату','Активному Меценату','🏆',6,1),
+  (7,'best_patron','Кубок лучшему Меценату','Лучшему Меценату','🏆',7,1),
+  (8,'best_dj','Кубок лучшему ДиДжею','Лучшему ДиДжею','🏆',8,1);
 
 COMMIT;
 
@@ -979,7 +1035,8 @@ COMMIT;
 
 INSERT INTO `orbital_blocks` (`bid`, `bkey`, `title`, `content`, `bposition`, `weight`, `active`, `time`, `blockfile`, `view`, `expire`, `action`, `which`) VALUES
   (1,'','Администрация','<table border=\"0\"><tr>\r\n<td class=\"block\"><a href=\"admincp.php\">Админка</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"users.php\">Список пользователей</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"staffmess.php\">Массовое ЛС</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"ipcheck.php\">Двойники по IP</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"logout.php\">Выйти</a></td>\r\n</tr></table>','r',1,1,'','',2,'0','d','all'),
-  (8,'','Статистика трекера','','r',4,1,'','block-stats.php',0,'0','d','ihome,'),
+  (8,'','Статистика трекера','','r',5,1,'','block-stats.php',0,'0','d','ihome,'),
+  (12,'','Переходящие кубки','','r',4,1,'','block-cups.php',0,'0','d','ihome,'),
   (9,'','Релизы, которым нужны раздающие','','c',6,1,'','block-helpseed.php',0,'0','d','ihome,'),
   (10,'','Напоминание о правилах','<p align=\"jsutify\">Администрация данного сайта - прирожденные садисты и кровопийцы, которые только и ищут повод помучать и поиздеваться над пользователями, используя для этого самые изощренные пытки. Единственный способ избежать этого - не попадаться нам на глаза, то есть спокойно качать и раздавать, поддерживая свой рейтинг как можно ближе к 1, и не делать глупых комментариев к торрентам. И не говорите, что мы вас не предупреждали! (шутка)</p>','c',1,1,'','',0,'0','d','rules,'),
   (2,'','Новости','','c',3,1,'','block-news.php',0,'0','d','ihome,'),

@@ -60,7 +60,7 @@ if ($action == "edituser") {
 	}
 // Check remote avatar size
 	$resetb = $_POST["resetb"];
-	$birthday = ($resetb=='yes'?", birthday = '0000-00-00'":"");
+	$birthday = ($resetb=='yes'?", birthday = NULL":"");
 	$enabled = $_POST["enabled"];
 	$warned = $_POST["warned"];
 	$warnlength = intval($_POST["warnlength"]);
@@ -83,7 +83,7 @@ if ($action == "edituser") {
 		stderr($tracker_lang['error'], "Неверный идентификатор пользователя или класса.");
 	// check target user class
 	$res = sql_query("SELECT warned, enabled, username, class, modcomment, uploaded, downloaded FROM users WHERE id = $userid") or sqlerr(__FILE__, __LINE__);
-	$arr = mysql_fetch_assoc($res) or puke("Ошибка MySQL: " . mysql_error());
+	$arr = mysqli_fetch_assoc($res) or puke("Ошибка MySQL.");
 	$curenabled = $arr["enabled"];
 	$curclass = $arr["class"];
 	$curwarned = $arr["warned"];
@@ -94,6 +94,11 @@ if ($action == "edituser") {
 	// User may not edit someone with same or higher class than himself!
 	if ($curclass >= get_user_class() || $class >= get_user_class())
 		puke("Так нельзя делать!");
+
+	if (get_user_class() >= UC_ADMINISTRATOR) {
+		$manual_cups = isset($_POST["manual_cups"]) && is_array($_POST["manual_cups"]) ? $_POST["manual_cups"] : array();
+		kz_cups_save_profile_manual($userid, $manual_cups, (int)$CURUSER["id"]);
+	}
 
 	if($uploadtoadd > 0) {
 		if ($mpup == "plus")
@@ -134,7 +139,7 @@ if ($action == "edituser") {
 
 	if ($warned && $curwarned != $warned) {
 		$updateset[] = "warned = " . sqlesc($warned);
-		$updateset[] = "warneduntil = '0000-00-00 00:00:00'";
+		$updateset[] = "warneduntil = NULL";
 		$subject = "Ваше предупреждение снято";
 		if ($warned == 'no')
 		{
@@ -149,7 +154,7 @@ if ($action == "edituser") {
 		if ($warnlength == 255) {
 			$modcomment = date("Y-m-d") . " - Предупрежден пользователем " . $CURUSER['username'] . ".\nПричина: $warnpm\n" . $modcomment;
 			$msg = "Вы получили [url=rules.php#warning]предупреждение[/url] на неограниченый срок от $CURUSER[username]" . ($warnpm ? "\n\nПричина: $warnpm" : "");
-			$updateset[] = "warneduntil = '0000-00-00 00:00:00'";
+			$updateset[] = "warneduntil = NULL";
 		} else {
 			$warneduntil = get_date_time(gmtime() + $warnlength * 604800);
 			$dur = $warnlength . " недел" . ($warnlength > 1 ? "и" : "ю");
@@ -218,6 +223,7 @@ if ($action == "edituser") {
 		sql_query("DELETE FROM simpaty WHERE fromuserid = $userid") or sqlerr(__FILE__,__LINE__);
 		sql_query("DELETE FROM checkcomm WHERE userid = $userid") or sqlerr(__FILE__,__LINE__);
 		sql_query("DELETE FROM sessions WHERE uid = $userid") or sqlerr(__FILE__,__LINE__);
+		sql_query("DELETE FROM user_cups WHERE userid = $userid") or sqlerr(__FILE__,__LINE__);
 		$deluserid=$CURUSER["username"];
 		write_log("Пользователь $username был удален пользователем $deluserid");
 		barf();

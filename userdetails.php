@@ -406,6 +406,10 @@ print("<table class=\"tables2 w100p\" style=\"background:#EEF7FF;\">\n");
 print("<tr><td colspan=\"2\" style=\"padding:6px 8px 4px 8px; color:#E47D00; font-weight:bold;\">" . $profile_name . "</td></tr>\n");
 print("<tr><td colspan=\"2\" style=\"padding:0 0 4px 0;\"><div style=\"height:2px; background:#f1d29c;\"></div></td></tr>\n");
 print(kz_profile_row("Звание", $profile_class_html, 140));
+$profile_cups_html = kz_cups_user_profile_html($id);
+if ($profile_cups_html !== '') {
+	print(kz_profile_row("Кубок", $profile_cups_html, 140));
+}
 print("<tr><td colspan=\"2\" style=\"padding:0 0 4px 0;\"><div style=\"height:2px; background:#f1d29c;\"></div></td></tr>\n");
 print(kz_profile_row("Залил", "<span style=\"color:#E47D00; font-weight:bold;\">$uploaded_total</span> ( сегодня: <span style=\"color:#E47D00; font-weight:bold;\">$today_uploaded</span> )", 140));
 print(kz_profile_row("Скачал", "<span style=\"color:#E47D00; font-weight:bold;\">$downloaded_total</span> ( сегодня: <span style=\"color:#E47D00; font-weight:bold;\">$today_downloaded</span> )", 140));
@@ -499,6 +503,17 @@ if (get_user_class() >= UC_MODERATOR && $user["class"] < get_user_class())
 	    print("<option value=\"$i\"" . ($user["class"] == $i ? " selected" : "") . ">$prefix" . get_user_class_name($i) . "\n");
 	  print("</select></td></tr>\n");
 	}
+	if (get_user_class() >= UC_ADMINISTRATOR) {
+		$manual_cups = kz_cups_user_manual_ids($id);
+		$manual_cups_map = array_fill_keys($manual_cups, true);
+		$cup_options = "";
+		foreach (kz_cups_catalog() as $cup) {
+			$cup_id = (int)$cup["id"];
+			$checked = isset($manual_cups_map[$cup_id]) ? " checked" : "";
+			$cup_options .= "<label><input type=\"checkbox\" name=\"manual_cups[]\" value=\"$cup_id\"$checked> " . kz_cups_h($cup["icon"]) . " " . kz_cups_h($cup["title"]) . "</label><br />\n";
+		}
+		print("<tr><td class=\"rowhead\">Переходящие кубки</td><td colspan=\"2\" align=\"left\">$cup_options</td></tr>\n");
+	}
 	print("<tr><td class=\"rowhead\">Сбросить день рождения</td><td colspan=\"2\" align=\"left\"><input type=\"radio\" name=\"resetb\" value=\"yes\">Да<input type=\"radio\" name=\"resetb\" value=\"no\" checked>Нет</td></tr>\n");
 	$modcomment = htmlspecialchars_uni($user["modcomment"]);
 	$supportfor = htmlspecialchars_uni($user["supportfor"]);
@@ -520,7 +535,7 @@ if (get_user_class() >= UC_MODERATOR && $user["class"] < get_user_class())
 		print("<input name=\"warned\" value=\"yes\" type=\"radio\" checked>Да<input name=\"warned\" value=\"no\" type=\"radio\">Нет");
 
 		$warneduntil = $user['warneduntil'];
-		if ($warneduntil == '0000-00-00 00:00:00')
+		if (empty($warneduntil) || $warneduntil == '0000-00-00 00:00:00')
     		print("<td align=\"center\">Предупреждение на неограниченый срок</td></tr>\n");
 		else {
     		print("<td align=\"center\">Предупреждение действует до<br />" . date('d.m.Y H:i:s', strtotime($warneduntil)));
