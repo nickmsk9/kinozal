@@ -69,9 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ($added, $added, $secret, $username, $passhash, 'confirmed', $email)
     ") or sqlerr(__FILE__, __LINE__);
 
-    global $___mysqli_ston;
+    global $link;
 
-    $userId = mysqli_insert_id($___mysqli_ston);
+    $userId = mysqli_insert_id($link);
 
     if (!$userId) {
         stderr($tracker_lang['error'], $tracker_lang['unable_to_create_account']);

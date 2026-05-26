@@ -269,3 +269,10 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in /var/www/html/users.php on line 121
+[26-May-2026 17:12:20 UTC] PHP Warning:  Undefined array key "id" in /var/www/html/friends.php on line 33
+[26-May-2026 17:12:20 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/friends.php on line 34
+[26-May-2026 17:13:18 UTC] PHP Fatal error:  Uncaught TypeError: mysqli_insert_id(): Argument #1 ($mysql) must be of type mysqli, null given in /var/www/html/adduser.php:74
+Stack trace:
+#0 /var/www/html/adduser.php(74): mysqli_insert_id(NULL)
+#1 {main}
+  thrown in /var/www/html/adduser.php on line 74

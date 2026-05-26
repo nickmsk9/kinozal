@@ -47,7 +47,7 @@ $torrent_dir = 'torrents';
 // Email for sender/return path.
 $SITEEMAIL = 'noreply@' . $_SERVER['HTTP_HOST'];
 
-$SITENAME = 'TBDev Yuna Scatari Edition';
+$SITENAME = 'Торрент трекер Кинозал.ТВ';
 
 $autoclean_interval = 900;
 $pic_base_url = './pic';
