@@ -56,18 +56,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = sqlesc(htmlspecialchars_uni($usernameRaw));
     $email    = sqlesc(htmlspecialchars_uni($emailRaw));
 
+    $dupeRes = sql_query("SELECT id FROM users WHERE username = $username OR email = $email LIMIT 1") or sqlerr(__FILE__, __LINE__);
+    if (mysqli_num_rows($dupeRes) > 0) {
+        stderr($tracker_lang['error'], 'Пользователь с таким логином или e-mail уже существует.');
+    }
+
     $secretRaw = mksecret();
     $secret    = sqlesc($secretRaw);
     $passhash  = sqlesc(md5($secretRaw . $password . $secretRaw));
 
     $added = sqlesc(get_date_time());
 
-    sql_query("
-        INSERT INTO users 
-            (added, last_access, secret, username, passhash, status, email) 
-        VALUES
-            ($added, $added, $secret, $username, $passhash, 'confirmed', $email)
-    ") or sqlerr(__FILE__, __LINE__);
+    try {
+        sql_query("
+            INSERT INTO users 
+                (added, last_access, secret, username, passhash, status, email) 
+            VALUES
+                ($added, $added, $secret, $username, $passhash, 'confirmed', $email)
+        ");
+    } catch (mysqli_sql_exception $e) {
+        if ((int)$e->getCode() === 1062) {
+            stderr($tracker_lang['error'], 'Пользователь с таким логином или e-mail уже существует.');
+        }
+        throw $e;
+    }
 
     global $link;
 

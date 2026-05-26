@@ -276,3 +276,20 @@ Stack trace:
 #0 /var/www/html/adduser.php(74): mysqli_insert_id(NULL)
 #1 {main}
   thrown in /var/www/html/adduser.php on line 74
+[26-May-2026 17:14:41 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate entry 'demo' for key 'users.username' in /var/www/html/include/functions.php:192
+Stack trace:
+#0 /var/www/html/include/functions.php(192): mysqli_query(Object(mysqli), '\n        INSERT...')
+#1 /var/www/html/adduser.php(65): sql_query('\n        INSERT...')
+#2 {main}
+  thrown in /var/www/html/include/functions.php on line 192
+[26-May-2026 17:18:45 UTC] PHP Warning:  Undefined array key "search" in /var/www/html/users.php on line 35
+[26-May-2026 17:18:45 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/users.php on line 35
+[26-May-2026 17:18:45 UTC] PHP Warning:  Undefined array key "class" in /var/www/html/users.php on line 36
+[26-May-2026 17:18:45 UTC] PHP Warning:  Undefined array key "letter" in /var/www/html/users.php on line 45
+[26-May-2026 17:18:45 UTC] PHP Deprecated:  trim(): Passing null to parameter #1 ($string) of type string is deprecated in /var/www/html/users.php on line 45
+[26-May-2026 17:18:45 UTC] PHP Warning:  Undefined variable $q in /var/www/html/users.php on line 116
+[26-May-2026 17:18:45 UTC] PHP Warning:  Undefined array key "page" in /var/www/html/users.php on line 117
+[26-May-2026 17:18:45 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_row() in /var/www/html/users.php:121
+Stack trace:
+#0 {main}
+  thrown in /var/www/html/users.php on line 121

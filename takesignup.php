@@ -254,9 +254,9 @@ if (isset($_COOKIE[COOKIE_UID]) && is_numeric($_COOKIE[COOKIE_UID]) && $users &&
 
 $secret = mksecret();
 $wantpasshash = md5($secret . $wantpassword . $secret);
-$editsecret = (!$users ? "" : mksecret());
+$editsecret = "";
 
-$status = (!$users || !$use_email_act) ? 'confirmed' : 'pending';
+$status = 'confirmed';
 $theme = select_theme();
 $added = get_date_time();
 $passkey = md5($wantusername . $email . $added . mt_rand());

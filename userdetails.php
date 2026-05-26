@@ -85,6 +85,8 @@ function ud_print_moderator_block($user, $id, $enabled) {
 	}
 
 	begin_frame("Редактирование пользователя", true);
+	print("<div class=\"pad5\"><a href=\"#\" id=\"modEditToggle\" onclick=\"return toggleUserEditBlock();\">Показать редактирование пользователя</a></div>\n");
+	print("<div id=\"modEditBlock\" style=\"display: none;\">\n");
 	print("<form method=\"post\" action=\"modtask.php\">\n");
 	print("<input type=\"hidden\" name=\"action\" value=\"edituser\">\n");
 	print("<input type=\"hidden\" name=\"userid\" value=\"" . (int)$id . "\">\n");
@@ -171,6 +173,26 @@ function ud_print_moderator_block($user, $id, $enabled) {
 	print("</table>\n");
 	print("<input type=\"hidden\" id=\"upchange\" name=\"upchange\" value=\"plus\"><input type=\"hidden\" id=\"downchange\" name=\"downchange\" value=\"plus\">\n");
 	print("</form>\n");
+	print("</div>\n");
+	?>
+	<script type="text/javascript">
+	function toggleUserEditBlock() {
+		var block = document.getElementById('modEditBlock');
+		var toggle = document.getElementById('modEditToggle');
+		if (!block || !toggle) {
+			return false;
+		}
+		if (block.style.display === 'none' || block.style.display === '') {
+			block.style.display = 'block';
+			toggle.innerHTML = 'Скрыть редактирование пользователя';
+		} else {
+			block.style.display = 'none';
+			toggle.innerHTML = 'Показать редактирование пользователя';
+		}
+		return false;
+	}
+	</script>
+	<?
 	end_frame();
 }
 
@@ -184,7 +206,7 @@ $r = sql_query("SELECT * FROM users WHERE id = $id") or sqlerr(__FILE__, __LINE_
 $user = mysqli_fetch_assoc($r) or bark("Нет пользователя с таким ID $id.");
 
 if ($user["status"] == "pending") {
-	die;
+	bark("Аккаунт пользователя еще не подтвержден.");
 }
 
 $enabled = ($user["enabled"] == "yes");
