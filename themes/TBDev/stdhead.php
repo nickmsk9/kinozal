@@ -279,61 +279,62 @@ $page_title = $title !== '' ? $title : $site_name;
 						<a onclick="getRetio(); return false;" href="#" class="sbab">Рейтинг</a>,
 						время: <?= date('H:i') ?>
 					</li>
-				<?php } else { ?>
-	<li class="tp2 center">
-		<a href="/signup.php" class="sbab">Гость! ( Зарегистрируйтесь )</a>
-	</li>
-
-	<li class="right b">
-		Логин:
-		<input type="text" name="username" class="w90" value="">
-	</li>
-
-	<li class="right b">
-		Пароль:
-		<input type="password" name="password" class="w90" value="">
-	</li>
-
-	<li class="right b">
-		<a href="/recover.php" class="sbab">Восстановление!</a>
-		<input type="hidden" name="returnto" value="<?= h($_SERVER['REQUEST_URI'] ?? '') ?>">
-		<input class="buttonS" type="submit" value="Вход">
-	</li>
-<?php } ?>
-			</ul>
+					<?php } else { ?>
+						<form method="post" action="/takelogin.php">
+							<li class="tp2 center"><a href="/signup.php" class="sbab">Гость! ( Зарегистрируйтесь )</a></li>
+							<li class="right b">Логин: <input type="text" name="username" class="w90" value=""></li>
+							<li class="right b">Пароль: <input type="password" name="password" class="w90" value=""></li>
+							<li class="right b">
+								<a href="/recover.php" class="sbab">Восстановление!</a>
+								<input type="hidden" name="returnto" value="<?= h($_SERVER['REQUEST_URI'] ?? '') ?>">
+								<input class="buttonS" type="submit" value="Вход">
+							</li>
+						</form>
+					<?php } ?>
+				</ul>
 
 			<div id="user_retio"></div>
 		</div>
 
-		<div class="bx2_0">
-			<a href="/pay.php" title="Раздел Меценатов">
-				<img src="./themes/<?= h($ss_uri) ?>/images/bnr_pay_sm.jpg" class="block" height="35" width="184" alt="">
-			</a>
-		</div>
+			<?php if ($is_logged) { ?>
+				<div class="bx2_0">
+					<a href="/pay.php" title="Раздел Меценатов">
+						<img src="./themes/<?= h($ss_uri) ?>/images/bnr_pay_sm.jpg" class="block" height="35" width="184" alt="">
+					</a>
+				</div>
 
-		<div class="bx2_0">
-			<ul class="men">
-				<li><span class="bulet"></span><a href="/pay.php">Поднять рейтинг и голоса</a></li>
-				<li><span class="bulet"></span><a href="/pay_wishes.php">Пожелания проекту</a></li>
-				<li><span class="bulet"></span><a href="/helpdesk.php">Помощь Администрации</a></li>
-				<li><span class="bulet"></span><a href="/users.php">Список пользователей</a></li>
-			</ul>
-		</div>
+				<div class="bx2_0">
+					<ul class="men">
+						<li><span class="bulet"></span><a href="/pay.php">Поднять рейтинг и голоса</a></li>
+						<li><span class="bulet"></span><a href="/pay_wishes.php">Пожелания проекту</a></li>
+						<li><span class="bulet"></span><a href="/helpdesk.php">Помощь Администрации</a></li>
+						<li><span class="bulet"></span><a href="/users.php">Список пользователей</a></li>
+					</ul>
+				</div>
+			<?php } ?>
 
 		<div class="bx2_0">
 			<ul class="men imgmn">
 				<li class="tp2 center">Меню раздач</li>
 				<li><span class="bulet"></span><a href="/browse.php">Раздачи трекера</a></li>
 				<li><span class="bulet"></span><a href="/top.php">Топ раздач</a></li>
-				<li><span class="bulet"></span><a href="/personsearch.php">Персоны</a></li>
-				<li><span class="bulet"></span><a href="/novinki.php">Новинки кино</a></li>
-				<li><span class="bulet"></span><a href="/browsetest.php">Тестовые раздачи</a></li>
-				<?php if ($is_logged) { ?>
-					<li><span class="bulet"></span><a href="/upload.php">Залить раздачу</a></li>
-				<?php } ?>
-				<li><span class="bulet"></span><a href="/group.php">Релиз-группы</a></li>
-			</ul>
-		</div>
+					<li><span class="bulet"></span><a href="/persons.php">Персоны</a></li>
+					<li><span class="bulet"></span><a href="/novinki.php">Новинки кино</a></li>
+					<?php if ($is_logged) { ?>
+						<li><span class="bulet"></span><a href="/browsetest.php">Тестовые раздачи</a></li>
+						<li><span class="bulet"></span><a href="/upload.php">Залить раздачу</a></li>
+						<li><span class="bulet"></span><a href="/group.php">Релиз-группы</a></li>
+					<?php } ?>
+				</ul>
+			</div>
+
+			<?php if (!$is_logged) { ?>
+				<div class="bx2_0">
+					<ul class="men">
+						<li class="justify">На сайте представлено невероятное количество классических и современных кинолент мирового и отечественного кинематографа: блокбастеры, комедии, сериалы, мультфильмы, новинки кино, а также разнообразная музыка, игры и программы. Любой киноман найдет фильм по своему вкусу. Заходите, знакомьтесь и присоединяйтесь к нам! Вы не останетесь равнодушными, окунувшись в сказочный мир кино и доброжелательную атмосферу.</li>
+					</ul>
+				</div>
+			<?php } ?>
 
 		<div class="bx2_0">
 			<ul class="men">
