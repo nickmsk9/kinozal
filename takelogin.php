@@ -65,9 +65,14 @@ if ($num[0] > 0 && ($row["ip"] ?? '') != $ip && !empty($row["ip"]))
 
 logincookie($row["id"], $row["passhash"]);
 
-if (!empty($_POST["returnto"]))
-	header("Location: $DEFAULTBASEURL/" . $_POST["returnto"]);
-else
-	header("Location: $DEFAULTBASEURL/");
+if (!empty($_POST["returnto"])) {
+	$returnto = ltrim((string)$_POST["returnto"], '/');
+	if (strpos($returnto, '://') === false && strpos($returnto, "\n") === false && strpos($returnto, "\r") === false) {
+		header("Location: $DEFAULTBASEURL/" . $returnto);
+		exit;
+	}
+}
+header("Location: $DEFAULTBASEURL/");
+exit;
 
 ?>
