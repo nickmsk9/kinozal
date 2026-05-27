@@ -898,33 +898,27 @@ function parsedescr($d, $html) {
 }
 
 function stdhead($title = "", $msgalert = true) {
-	global $CURUSER, $SITE_ONLINE, $FUNDS, $SITENAME, $DEFAULTBASEURL, $ss_uri, $tracker_lang, $default_theme, $keywords, $description, $pic_base_url, $hide_right_blocks;
+	global $CURUSER, $SITE_ONLINE, $SITENAME, $ss_uri, $tracker_lang;
 
-	if (!$SITE_ONLINE)
+	if (!$SITE_ONLINE) {
 		die('Site is down for maintenance, please check back again later... thanks<br />');
+	}
 
-	header ('Content-Type: text/html; charset=' . $tracker_lang['language_charset']);
-	header ('X-Powered-by: TBDev Yuna Scatari Edition - http://bit-torrent.kiev.ua');
-	header ('X-Chocolate-to: ICQ 7282521');
-	header ('Cache-Control: no-cache');
-	header ('Pragma: no-cache');
-	if ($title == '')
-		$title = $SITENAME . (isset($_GET['yuna']) ? ' ('.TBVERSION.')' : '');
-	else
-		$title = $SITENAME . (isset($_GET['yuna']) ? ' ('.TBVERSION.')' : ''). ' :: ' . htmlspecialchars_uni($title);
+	header('Content-Type: text/html; charset=' . $tracker_lang['language_charset']);
+	header('Cache-Control: no-cache');
+	header('Pragma: no-cache');
+
+	if ($title === '') {
+		$title = $SITENAME . (isset($_GET['yuna']) ? ' (' . TBVERSION . ')' : '');
+	} else {
+		$title = $SITENAME . (isset($_GET['yuna']) ? ' (' . TBVERSION . ')' : '') . ' :: ' . htmlspecialchars_uni($title);
+	}
 
 	$ss_uri = select_theme();
 
-	if ($msgalert && $CURUSER) {
-		$res = sql_query('SELECT COUNT(*) FROM messages WHERE receiver = ' . $CURUSER['id'] . ' AND unread="yes"') or die('OopppsY!');
-		$arr = mysqli_fetch_row($res);
-		$unread = $arr[0];
-	}
-
 	require_once('themes/' . $ss_uri . '/template.php');
 	require_once('themes/' . $ss_uri . '/stdhead.php');
-
-} // stdhead
+}
 
 function stdfoot() {
 	global $CURUSER, $ss_uri, $tracker_lang, $queries, $tstart, $query_stat, $querytime;
