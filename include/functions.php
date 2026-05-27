@@ -458,28 +458,47 @@ function userlogin($lightmode = false): void
 }
 
 function get_server_load() {
-	global $tracker_lang, $phpver;
-	if (strtolower(substr(PHP_OS, 0, 3)) === 'win') {
-		return 0;
-	} elseif (@file_exists("/proc/loadavg")) {
-		$load = @file_get_contents("/proc/loadavg");
-		$serverload = explode(" ", $load);
-		$serverload[0] = round($serverload[0], 4);
-		if(!$serverload) {
-			$load = @exec("uptime");
-			$load = @split("load averages?: ", $load);
-			$serverload = explode(",", $load[1]);
-		}
-	} else {
-		$load = @exec("uptime");
-		$load = @split("load averages?: ", $load);
-		$serverload = explode(",", $load[1]);
-	}
-	$returnload = trim($serverload[0]);
-	if(!$returnload) {
-		$returnload = $tracker_lang['unknown'];
-	}
-	return $returnload;
+    global $tracker_lang; // глобальный массив языковых строк (используется только для 'unknown')
+    
+    // Windows: нагрузка не определяется штатными средствами
+    if (stripos(PHP_OS, 'WIN') === 0) {
+        return 0;
+    }
+    
+    $load = null;
+    
+    // Способ 1: чтение из /proc/loadavg (Linux)
+    if (@file_exists('/proc/loadavg')) {
+        $content = @file_get_contents('/proc/loadavg');
+        if ($content !== false) {
+            $parts = explode(' ', $content);
+            if (isset($parts[0])) {
+                $load = (float)trim($parts[0]);
+            }
+        }
+    }
+    
+    // Способ 2: вызов uptime (Unix, BSD, macOS)
+    if ($load === null && function_exists('exec')) {
+        $uptime = @exec('uptime');
+        if ($uptime && preg_match('/load average[s]?:?\s*(.+)/', $uptime, $matches)) {
+            $load_str = trim($matches[1]);
+            // Обычно формат: "0.08, 0.03, 0.01" – берём первое значение
+            $load_parts = explode(',', $load_str);
+            if (isset($load_parts[0])) {
+                $load = (float)trim($load_parts[0]);
+            }
+        }
+    }
+    
+    // Если нагрузку получить не удалось
+    if ($load === null) {
+        $unknown = isset($tracker_lang['unknown']) ? $tracker_lang['unknown'] : 'unknown';
+        return $unknown;
+    }
+    
+    // Округляем до 4 знаков (сохраняем поведение оригинала)
+    return round($load, 4);
 }
 
 function user_session() {
@@ -549,37 +568,50 @@ function gzip(): void
 
     static $alreadyLoaded = false;
 
+    // Предотвращаем повторный запуск
     if ($alreadyLoaded) {
         return;
     }
-
     $alreadyLoaded = true;
 
+    // Если заголовки уже отправлены, включать буферизацию поздно
     if (headers_sent()) {
         return;
     }
 
+    // Разрешено ли сжатие в настройках трекера?
     $useGzip = !empty($use_gzip);
 
+    // Проверка наличия библиотеки zlib
     $zlibLoaded = extension_loaded('zlib');
-    $zlibOutputCompression = filter_var(ini_get('zlib.output_compression'), FILTER_VALIDATE_BOOLEAN);
+
+    // Включено ли сжатие на уровне сервера (php.ini)
+    $zlibIni = ini_get('zlib.output_compression');
+    $zlibOutputCompression = !empty($zlibIni) && $zlibIni !== 'off';
+
+    // Текущий обработчик вывода (например, ob_gzhandler)
     $outputHandler = strtolower((string) ini_get('output_handler'));
 
-    $alreadyCompressed =
-        $zlibOutputCompression
-        || $outputHandler === 'ob_gzhandler'
-        || in_array('ob_gzhandler', ob_list_handlers(), true);
+    // Активные обработчики в стеке буферов вывода
+    $handlersList = ob_list_handlers();
+    $alreadyCompressed = (
+        $zlibOutputCompression ||
+        $outputHandler === 'ob_gzhandler' ||
+        in_array('ob_gzhandler', $handlersList, true)
+    );
 
-    if (
-        $useGzip
-        && $zlibLoaded
-        && !$alreadyCompressed
-        && function_exists('ob_gzhandler')
-    ) {
+    // Включаем сжатие, только если:
+    // - трекер разрешил,
+    // - zlib доступна,
+    // - сжатие ещё не активно,
+    // - функция ob_gzhandler существует.
+    if ($useGzip && $zlibLoaded && !$alreadyCompressed && function_exists('ob_gzhandler')) {
+        // Запускаем буфер вывода с обработчиком gzip
         ob_start('ob_gzhandler');
         return;
     }
 
+    // Иначе просто включаем буферизацию без сжатия (для совместимости)
     ob_start();
 }
 
