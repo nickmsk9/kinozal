@@ -3,7 +3,7 @@
 
 # IMPORTANT: Do not edit below unless you know what you are doing!
 if (!defined('IN_TRACKER'))
-	die('Hacking attempt!');
+	die('Прямой вызов запрещён.');
 
 function get_user_class_color($class, $username) {
 	$class = (int)$class;

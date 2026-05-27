@@ -3,7 +3,7 @@
 
 # IMPORTANT: Do not edit below unless you know what you are doing!
 if(!defined('IN_TRACKER'))
-  die('Hacking attempt!');
+  die('Прямой вызов запрещён.');
 
 $zodiac[] = array("Козерог", "capricorn.gif", "22-12");
 $zodiac[] = array("Стрелец", "sagittarius.gif", "23-11");

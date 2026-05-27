@@ -1,7 +1,7 @@
 <?php
 
 if (!defined('IN_TRACKER')) {
-    die('Hacking attempt!');
+    die('Прямой вызов запрещён.');
 }
 
 function kz_cups_h($value)

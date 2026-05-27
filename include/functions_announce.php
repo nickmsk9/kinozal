@@ -3,7 +3,7 @@
 
 # IMPORTANT: Do not edit below unless you know what you are doing!
 if (!defined('IN_ANNOUNCE'))
-    die('Hacking attempt!');
+    die('Прямой вызов запрещён.');
 
 require_once($rootpath . 'include/config.php');
 require_once($rootpath . 'include/config.local.php');

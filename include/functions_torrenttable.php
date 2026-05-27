@@ -2,7 +2,7 @@
 
 # IMPORTANT: Do not edit below unless you know what you are doing!
 if(!defined('IN_TRACKER'))
-  die('Hacking attempt!');
+ die('Прямой вызов запрещён.');
 
 function torrenttable($res, $variant = "index") {
 		global $pic_base_url, $CURUSER, $use_wait, $use_ttl, $ttl_days, $tracker_lang;

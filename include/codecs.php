@@ -2,7 +2,7 @@
 
 # IMPORTANT: Do not edit below unless you know what you are doing!
 if(!defined('IN_TRACKER'))
-  die('Hacking attempt!');
+  die('Прямой вызов запрещён.');
 
 $video_codec = array(
 	1 => "H.263",

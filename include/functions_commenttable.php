@@ -2,7 +2,7 @@
 
 # IMPORTANT: Do not edit below unless you know what you are doing!
 if(!defined('IN_TRACKER'))
-  die('Hacking attempt!');
+  die('Прямой вызов запрещён.');
 
 function commenttable($rows, $redaktor = "comment") {
 	global $CURUSER, $avatar_max_width;

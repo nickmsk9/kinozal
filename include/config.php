@@ -3,7 +3,7 @@
 
 # IMPORTANT: Do not edit below unless you know what you are doing!
 if(!defined('IN_TRACKER') && !defined('IN_ANNOUNCE'))
-  die('Hacking attempt!');
+  die('Прямой вызов запрещён.');
 
 $SITE_ONLINE = true;
 //$SITE_ONLINE = local_user();
