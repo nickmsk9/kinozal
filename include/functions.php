@@ -9,55 +9,63 @@ require_once($rootpath . 'include/functions_global.php');
 require_once($rootpath . 'include/functions_torrenttable.php');
 require_once($rootpath . 'include/functions_commenttable.php');
 
-///////////////////////////////////////////////////////////////////////////////
-// Check open port, requires --enable-sockets
 function check_port($host, $port, $timeout, $force_fsock = false) {
-	if (function_exists('socket_create') && !$force_fsock) {
-		// Create a TCP/IP socket.
-		$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-		if ($socket == false) {
-			return false;
-		}
-		//
-		if (socket_set_nonblock($socket) == false) {
-			socket_close($socket);
-			return false;
-		}
-		//
-		@socket_connect($socket, $host, $port); // will return FALSE as it's async, so no check
-		//
-		if (socket_set_block($socket) == false) {
-			socket_close($socket);
-			return false;
-		}
+    // Валидация входных параметров
+    if (empty($host) || $port < 1 || $port > 65535 || $timeout <= 0) {
+        return false;
+    }
 
-		switch(socket_select($r = array($socket), $w = array($socket), $f = array($socket), $timeout)) {
-			case 2:
-			// Refused
-				$result = false;
-				break;
-			case 1:
-				$result = true;
-				break;
-			case 0:
-				// Timeout
-				$result = false;
-				break;
-		}
+    // Принудительное использование fsockopen (резервный метод)
+    if ($force_fsock || !function_exists('socket_create')) {
+        $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
+        if ($socket === false) {
+            return false;
+        }
+        fclose($socket);
+        return true;
+    }
 
-		// cleanup
-		socket_close($socket);
-	} else {
-		$socket = @fsockopen($host, $port, $errno, $errstr, 5);
-		if (!$socket)
-			$result = false;
-		else {
-			$result = true;
-			@fclose($socket);
-		}
-	}
+    // Расширенный метод через сокеты (поддержка дробного таймаута и точной диагностики)
+    $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+    if ($socket === false) {
+        return false;
+    }
 
-	return $result;
+    // Неблокирующий режим для асинхронного соединения
+    if (!socket_set_nonblock($socket)) {
+        socket_close($socket);
+        return false;
+    }
+
+    // Асинхронное подключение (ошибка EINPROGRESS — штатная ситуация)
+    @socket_connect($socket, $host, $port);
+    $lastError = socket_last_error($socket);
+    if ($lastError !== SOCKET_EINPROGRESS && $lastError !== SOCKET_EALREADY && $lastError !== 0) {
+        socket_close($socket);
+        return false;
+    }
+
+    // Подготовка к socket_select (таймаут с поддержкой дробных секунд)
+    $sec  = (int)$timeout;
+    $usec = (int)(($timeout - $sec) * 1000000);
+    $write = [$socket];
+    $except = [$socket];
+    $read = [];
+
+    $result = false;
+    $status = socket_select($read, $write, $except, $sec, $usec);
+
+    if ($status === 1 && !empty($write)) {
+        // Соединение установлено – проверим, нет ли скрытой ошибки
+        $error_code = socket_get_option($socket, SOL_SOCKET, SO_ERROR);
+        $result = ($error_code === 0);
+    } else {
+        // Таймаут ($status === 0) или ошибка ($status === false, 2 и т.д.)
+        $result = false;
+    }
+
+    socket_close($socket);
+    return $result;
 }
 
 function is_theme($theme = "") {
