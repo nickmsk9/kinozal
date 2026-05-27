@@ -7,3 +7,4 @@ Stack trace:
 #4 [internal function]: autoclean()
 #5 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 217
+[27-May-2026 11:52:03 Europe/Moscow] PHP Fatal error:  Cannot redeclare kz_statuses_manual_keys() (previously declared in C:\OSPanel\domains\kinozal.lv\include\user_statuses.php:153) in C:\OSPanel\domains\kinozal.lv\include\user_statuses.php on line 257

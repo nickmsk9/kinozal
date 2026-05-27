@@ -25,14 +25,21 @@ function kz_statuses_catalog()
 	);
 }
 
+/**
+ * Оставлена для совместимости со старым кодом.
+ * В обычной загрузке страницы таблицы НЕ создаём.
+ */
 function kz_statuses_ensure_schema()
 {
-	static $ready = false;
+	return;
+}
 
-	if ($ready) {
-		return;
-	}
-
+/**
+ * Запускать только вручную из установщика/админки.
+ * Не вызывать на каждой странице.
+ */
+function kz_statuses_install_schema()
+{
 	sql_query("
 		CREATE TABLE IF NOT EXISTS user_statuses (
 			status_key VARCHAR(40) NOT NULL,
@@ -60,7 +67,6 @@ function kz_statuses_ensure_schema()
 	") or sqlerr(__FILE__, __LINE__);
 
 	kz_statuses_seed_catalog();
-	$ready = true;
 }
 
 function kz_statuses_seed_catalog()
@@ -76,6 +82,10 @@ function kz_statuses_seed_catalog()
 			. (int)$status['auto'] . ')';
 	}
 
+	if (!$values) {
+		return;
+	}
+
 	sql_query("
 		INSERT INTO user_statuses (status_key, title, icon_class, sort, active, auto)
 		VALUES " . implode(', ', $values) . "
@@ -83,24 +93,19 @@ function kz_statuses_seed_catalog()
 			title = VALUES(title),
 			icon_class = VALUES(icon_class),
 			sort = VALUES(sort),
+			active = VALUES(active),
 			auto = VALUES(auto)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
 function kz_statuses_all()
 {
-	kz_statuses_ensure_schema();
-
-	static $rows = null;
-
-	if ($rows !== null) {
-		return $rows;
-	}
-
 	$rows = array();
+
 	$res = sql_query("
 		SELECT status_key, title, icon_class, sort, active, auto
 		FROM user_statuses
+		WHERE active = 1
 		ORDER BY sort ASC, status_key ASC
 	") or sqlerr(__FILE__, __LINE__);
 
@@ -124,7 +129,13 @@ function kz_statuses_auto_keys($user)
 	}
 
 	$birthday = (string)($user['birthday'] ?? '');
-	if ($birthday !== '' && $birthday !== '0000-00-00' && substr($birthday, 5) === date('m-d')) {
+
+	if (
+		$birthday !== ''
+		&& $birthday !== '0000-00-00'
+		&& strlen($birthday) >= 10
+		&& substr($birthday, 5, 5) === date('m-d')
+	) {
 		$keys['birthday'] = true;
 	}
 
@@ -139,7 +150,11 @@ function kz_statuses_auto_keys($user)
 	$downloaded = (float)($user['downloaded'] ?? 0);
 	$uploaded = (float)($user['uploaded'] ?? 0);
 
-	if (($user['enabled'] ?? 'yes') === 'yes' && $downloaded >= 1073741824 && ($downloaded > 0 ? $uploaded / $downloaded : 1) < 0.7) {
+	if (
+		($user['enabled'] ?? 'yes') === 'yes'
+		&& $downloaded >= 1073741824
+		&& $uploaded / $downloaded < 0.7
+	) {
 		$keys['low_ratio'] = true;
 	}
 
@@ -162,36 +177,18 @@ function kz_statuses_load_user($userid)
 	") or sqlerr(__FILE__, __LINE__);
 
 	$row = mysqli_fetch_assoc($res);
+
 	return $row ?: null;
 }
 
-function kz_statuses_for_user($user)
+function kz_statuses_manual_keys($userid)
 {
-	kz_statuses_ensure_schema();
-
-	static $cache = array();
-
-	$userid = isset($user['id']) ? (int)$user['id'] : (isset($user['userid']) ? (int)$user['userid'] : 0);
+	$userid = (int)$userid;
+	$keys = array();
 
 	if (!is_valid_id($userid)) {
-		return array();
+		return $keys;
 	}
-
-	$needed = array('donor', 'gender', 'birthday', 'warned', 'enabled', 'uploaded', 'downloaded');
-	foreach ($needed as $field) {
-		if (!array_key_exists($field, $user)) {
-			if (!isset($cache[$userid]['user'])) {
-				$cache[$userid]['user'] = kz_statuses_load_user($userid);
-			}
-			if (is_array($cache[$userid]['user'])) {
-				$user = array_merge($cache[$userid]['user'], $user);
-			}
-			break;
-		}
-	}
-
-	$statuses = kz_statuses_all();
-	$keys = kz_statuses_auto_keys($user);
 
 	$res = sql_query("
 		SELECT status_key
@@ -203,9 +200,63 @@ function kz_statuses_for_user($user)
 		$keys[$row['status_key']] = true;
 	}
 
+	return $keys;
+}
+
+function kz_statuses_for_user($user)
+{
+	if (!is_array($user)) {
+		return array();
+	}
+
+	$userid = isset($user['id'])
+		? (int)$user['id']
+		: (isset($user['userid']) ? (int)$user['userid'] : 0);
+
+	if (!is_valid_id($userid)) {
+		return array();
+	}
+
+	$needed = array(
+		'donor',
+		'gender',
+		'birthday',
+		'warned',
+		'enabled',
+		'uploaded',
+		'downloaded'
+	);
+
+	foreach ($needed as $field) {
+		if (!array_key_exists($field, $user)) {
+			$loaded_user = kz_statuses_load_user($userid);
+
+			if (!is_array($loaded_user)) {
+				return array();
+			}
+
+			$user = array_merge($loaded_user, $user);
+			break;
+		}
+	}
+
+	$statuses = kz_statuses_all();
+
+	if (!$statuses) {
+		return array();
+	}
+
+	$keys = kz_statuses_auto_keys($user);
+	$manual_keys = kz_statuses_manual_keys($userid);
+
+	foreach ($manual_keys as $key => $value) {
+		$keys[$key] = true;
+	}
+
 	$result = array();
+
 	foreach ($statuses as $key => $status) {
-		if ((int)$status['active'] === 1 && isset($keys[$key])) {
+		if (isset($keys[$key])) {
 			$result[] = $status;
 		}
 	}
@@ -225,30 +276,8 @@ function kz_statuses_user_icons_html($user)
 	return $html;
 }
 
-function kz_statuses_manual_keys($userid)
-{
-	kz_statuses_ensure_schema();
-
-	$userid = (int)$userid;
-	$keys = array();
-
-	if (!is_valid_id($userid)) {
-		return $keys;
-	}
-
-	$res = sql_query("SELECT status_key FROM user_status_assignments WHERE userid = $userid") or sqlerr(__FILE__, __LINE__);
-
-	while ($row = mysqli_fetch_assoc($res)) {
-		$keys[$row['status_key']] = true;
-	}
-
-	return $keys;
-}
-
 function kz_statuses_save_manual($userid, $selected_keys, $admin_id)
 {
-	kz_statuses_ensure_schema();
-
 	$userid = (int)$userid;
 	$admin_id = (int)$admin_id;
 
@@ -261,12 +290,16 @@ function kz_statuses_save_manual($userid, $selected_keys, $admin_id)
 
 	foreach ((array)$selected_keys as $key) {
 		$key = (string)$key;
+
 		if (isset($catalog[$key]) && (int)$catalog[$key]['auto'] === 0) {
 			$selected[$key] = true;
 		}
 	}
 
-	sql_query("DELETE FROM user_status_assignments WHERE userid = $userid") or sqlerr(__FILE__, __LINE__);
+	sql_query("
+		DELETE FROM user_status_assignments
+		WHERE userid = $userid
+	") or sqlerr(__FILE__, __LINE__);
 
 	foreach (array_keys($selected) as $key) {
 		sql_query("
@@ -292,5 +325,6 @@ function kz_statuses_find_user_by_username($username)
 	") or sqlerr(__FILE__, __LINE__);
 
 	$row = mysqli_fetch_assoc($res);
+
 	return $row ?: null;
 }
