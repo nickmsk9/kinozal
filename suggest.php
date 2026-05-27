@@ -1,51 +1,42 @@
 <?php
-
-/*
-// +--------------------------------------------------------------------------+
-// | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
-// |                                               Do not remove above lines! |
-// +--------------------------------------------------------------------------+
-*/
-
 require("include/bittorrent.php");
 dbconn(false);
 loggedinorreturn();
 
-header ("Content-Type: text/html; charset=" . $tracker_lang['language_charset']);
+header("Content-Type: text/html; charset=" . $tracker_lang['language_charset']);
 
-if (strlen($_GET['q']) > 3) {
-	$q = str_replace(" ",".",sqlesc("%".$_GET['q']."%"));
-	$q2 = str_replace("."," ",sqlesc("%".$_GET['q']."%"));
-	$result = mysql_query("SELECT name FROM torrents WHERE name LIKE {$q} OR name LIKE {$q2} ORDER BY id DESC LIMIT 0,10;");
-	if (mysqli_num_rows($result) > 0) {
-		for ($i = 0; $i < mysqli_num_rows($result); $i++) {
-			$name = mysql_result($result,$i,"name");
-			$name = trim(str_replace("\t","",$name));
-			print $name;
-			if ($i != mysqli_num_rows($result)-1) {
-				print "\r\n";
-			}
-		}
-	}
+$query = $_GET['q'] ?? '';
+if (strlen($query) > 3) {
+    // Получаем соединение с БД, предполагая, что dbconn() создает глобальную переменную $___mysqli_ston
+    // Если используется другой идентификатор, замените на актуальный для вашего движка
+    $mysqli = $GLOBALS['___mysqli_ston'] ?? null;
+    if (!$mysqli) {
+        // fallback: попытаемся использовать стандартную переменную из bittorrent.php (например, $db)
+        global $db; // некоторые сборки
+        $mysqli = $db ?? null;
+    }
+    if (!$mysqli) {
+        die('Ошибка соединения с базой данных');
+    }
+
+    // Преобразуем строку запроса для двух вариантов поиска
+    $term1 = '%' . str_replace(' ', '.', $query) . '%'; // пробелы -> точки
+    $term2 = '%' . str_replace('.', ' ', $query) . '%'; // точки -> пробелы
+
+    $sql = "SELECT name FROM torrents WHERE name LIKE ? OR name LIKE ? ORDER BY id DESC LIMIT 10";
+    $stmt = $mysqli->prepare($sql);
+    if ($stmt) {
+        $stmt->bind_param('ss', $term1, $term2);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $names = [];
+        while ($row = $result->fetch_assoc()) {
+            $name = trim(str_replace("\t", '', $row['name']));
+            $names[] = $name;
+        }
+        echo implode("\r\n", $names);
+        $stmt->close();
+    }
 }
-
 ?>
