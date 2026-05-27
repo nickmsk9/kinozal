@@ -27,6 +27,7 @@
 */
 
 require_once("include/bittorrent.php");
+require_once("include/kz_upload.php");
 dbconn(false);
 if (!$allow_guests_details)
 	loggedinorreturn();
@@ -191,11 +192,14 @@ if (!isset($id) || !$id)
 
 $res = sql_query("SELECT td.descr_hash, td.descr_parsed, t.multitracker, t.last_mt_update, t.keywords, t.description, t.free, t.seeders, t.banned, t.leechers, t.info_hash, t.filename, UNIX_TIMESTAMP() - UNIX_TIMESTAMP(t.last_action) AS lastseed, t.numratings, t.name, IF(t.numratings < $minvotes, NULL, ROUND(t.ratingsum / t.numratings, 1)) AS rating, t.owner, t.save_as, t.descr, t.visible, t.size, t.added, t.views, t.hits, t.times_completed, t.id, t.type, t.numfiles, t.image1, t.image2, t.image3, t.image4, t.image5, c.name AS cat_name, u.username FROM torrents AS t LEFT JOIN categories AS c ON t.category = c.id LEFT JOIN users AS u ON t.owner = u.id LEFT JOIN torrents_descr AS td ON td.tid = $id WHERE t.id = $id") or sqlerr(__FILE__, __LINE__);
 $row = mysqli_fetch_array($res);
+$torrent_details = kz_upload_load_details($id);
 
 $keywords = $row['keywords'];
 $description = $row['description'];
 
-sql_query("INSERT INTO readtorrents (userid, torrentid) VALUES (".sqlesc($CURUSER["id"]).", ".sqlesc($id).")")/* or sqlerr(__FILE__,__LINE__)*/;
+if ($CURUSER) {
+	sql_query("INSERT IGNORE INTO readtorrents (userid, torrentid) VALUES (".sqlesc($CURUSER["id"]).", ".sqlesc($id).")");
+}
 
 $owned = $moderator = 0;
 if (get_user_class() >= UC_MODERATOR)
@@ -223,6 +227,7 @@ if (isset($_GET["hit"])) {
 }
 
 if (!isset($_GET["page"])) {
+	$hide_right_blocks = true;
 	stdhead($tracker_lang['torrent_details']." \"".htmlspecialchars_decode($row["name"])."\"");
 
 	if ($CURUSER["id"] == $row["owner"] || get_user_class() >= UC_MODERATOR)
@@ -238,6 +243,20 @@ if (!isset($_GET["page"])) {
 			$announces_urls[] = $announce['url'];
 		}
 		unset($announce);
+	}
+
+	$details_descr = '';
+	if (!empty($row["descr"])) {
+		if (md5($row['descr']) == $row['descr_hash'])
+			$details_descr = $row['descr_parsed'];
+		else {
+			$details_descr = format_comment($row['descr']);
+			sql_query('INSERT INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES ('.implode(', ', array_map('sqlesc', array($id, md5($row['descr']), $details_descr))).') ON DUPLICATE KEY UPDATE descr_hash = VALUES(descr_hash), descr_parsed = VALUES(descr_parsed)') or sqlerr(__FILE__,__LINE__);
+		}
+	}
+
+	if (!empty($torrent_details['exists']) && $details_descr !== '') {
+		kz_upload_render_details_panel($row, $torrent_details, $details_descr, $owned, isset($announces_urls) ? $announces_urls : array());
 	}
 
 	$spacer = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
@@ -286,20 +305,14 @@ if (!isset($_GET["page"])) {
 
 	tr($tracker_lang['info_hash'], $row["info_hash"]);
 
-	if ($row["image1"] != "") {
+	if (empty($torrent_details['exists']) && $row["image1"] != "") {
 		if ($row["image1"] != "")
 			$img1 = "<a href=\"viewimage.php?pic={$row['image1']}\"><img border=\"0\" src=\"thumbnail.php?{$row['image1']}\" /></a>";
 		tr($tracker_lang['details_poster'], $img1, 1);
 	}
 
-	if (!empty($row["descr"])) {
-		if (md5($row['descr']) == $row['descr_hash'])
-			$descr = $row['descr_parsed'];
-		else {
-			$descr = format_comment($row['descr']);
-			sql_query('INSERT INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES ('.implode(', ', array_map('sqlesc', array($id, md5($row['descr']), $descr))).')') or sqlerr(__FILE__,__LINE__);
-		}
-		tr($tracker_lang['description'], $descr, 1, 1);
+	if (empty($torrent_details['exists']) && $details_descr !== '') {
+		tr($tracker_lang['description'], $details_descr, 1, 1);
 	}
 
 	$images = array();
@@ -324,122 +337,21 @@ if (!isset($_GET["page"])) {
 	tr($tracker_lang['seeder'], "{$tracker_lang['seeder_last_seen']} " . mkprettytime($row['lastseed']) . " {$tracker_lang['ago']}");
 	tr($tracker_lang['size'], mksize($row['size']) . " (" . number_format($row['size']) . " {$tracker_lang['bytes']})");
 
-	/*$s = "";
-	$s .= "<div id=\"ajaxrate\"><table border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td valign=\"top\" class=\"embedded\">";
-	if (!isset($row["rating"])) {
-		if ($minvotes > 1) {
-			$s .= sprintf($tracker_lang['not_enough_votes'], $minvotes);
-			if ($row["numratings"])
-				$s .= sprintf($tracker_lang['only_votes'], $row["numratings"]);
-			else
-				$s .= $tracker_lang['none_voted'];
-			$s .= ")";
-		} else
-			$s .= $tracker_lang['no_votes'];
-	} else {
-		$rpic = ratingpic($row["rating"]);
-		if (!isset($rpic))
-			$s .= "invalid?";
-		else
-			$s .= "$rpic ({$row["rating"]} {$tracker_lang['from']} 5 {$tracker_lang['with']} {$row["numratings"]} {$tracker_lang['votes']})";
-	}
-	$s .= "\n";
-	$s .= "</td><td class=embedded>$spacer</td><td valign=\"top\" class=embedded>";
-	if (!isset($CURUSER))
-		$s .= "(<a href=\"login.php?returnto=" . urlencode($_SERVER["REQUEST_URI"]) . "&amp;nowarn=1\">Log in</a> to rate it)"; else {
-		$ratings = array(5 => $tracker_lang['vote_5'],
-						 4 => $tracker_lang['vote_4'],
-						 3 => $tracker_lang['vote_3'],
-						 2 => $tracker_lang['vote_2'],
-						 1 => $tracker_lang['vote_1'],);
-		if (!$owned || $moderator) {
-			$xres = sql_query("SELECT rating, added FROM ratings WHERE torrent = $id AND user = " . $CURUSER["id"]);
-			$xrow = mysqli_fetch_array($xres);
-			if ($xrow)
-				$s .= "({$tracker_lang['you_have_voted_for_this_torrent']} \"{$xrow["rating"]} - {$ratings[$xrow["rating"]]}\")"; else {
-				$s .= "<form method=\"post\" action=\"takerate.php\" name=\"ajaxrating\"><input type=\"hidden\" id=\"ratingtid\" name=\"id\" value=\"$id\" />\n";
-				$s .= "<select id=\"ratingselect\" name=\"rating\">\n";
-				$s .= "<option value=\"0\">{$tracker_lang['vote']}</option>\n";
-				foreach ($ratings as $k => $v) {
-					$s .= "<option value=\"$k\">$k - $v</option>\n";
-				}
-				$s .= "</select>\n";
-				$s .= "<input type=\"submit\" value=\"{$tracker_lang['vote']}!\" onClick=\"sendrating(); return false;\" />";
-				$s .= "</form>\n";
-			}
-		}
-	}
-	$s .= "</td></tr></table></div>";
-
-?>
-<script type="text/javascript">
-function sendrating(){
-
-    var tid = $('#ratingtid').val();
-    var rating = $('#ratingselect').val();
-
-	if (rating == 0) {
-		alert("Вы не выбрали оценку!");
-		return false;
-	}
-
-	var ajax = new tbdev_ajax();
-	ajax.onShow ('');
-	var varsString = "";
-	ajax.requestFile = "takerate.php";
-	ajax.setVar("id", tid);
-	ajax.setVar("rating", rating);
-	ajax.method = 'POST';
-	ajax.element = 'ajaxrate';
-	ajax.sendAJAX(varsString);
-
-	return false;
-}
-</script>
-<?
-
-	tr($tracker_lang['rating'], $s, 1);*/
-
 	if ($CURUSER) {
-?>
-<script>
-$(document).ready(function(){
-	$('span.star').click(function (e) {
-		e.stopPropagation();
-		var tid = $('#ratingtid').val();
-		var rate_value = $(e.target).data('value');
-		$.ajax({
-			url: 'takerate.php',
-			type: 'post',
-			data: {rating: rate_value, id: tid},
-			beforeSend: function () {
-				$('div#rating_selector').html('<img src="pic/loading.gif" />');
-			},
-			success: function (result) {
-				$('div#rating_selector').html(result);
-			}
-		});
-	});
-});	
-</script>
-<?
+		$stars = '';
+		$rating_selector = '<form method="post" action="takerate.php">'
+			. '<input type="hidden" name="id" value="' . $id . '">'
+			. '<select name="rating">'
+			. '<option value="0">' . $tracker_lang['vote'] . '</option>'
+			. '<option value="5">5 - ' . $tracker_lang['vote_5'] . '</option>'
+			. '<option value="4">4 - ' . $tracker_lang['vote_4'] . '</option>'
+			. '<option value="3">3 - ' . $tracker_lang['vote_3'] . '</option>'
+			. '<option value="2">2 - ' . $tracker_lang['vote_2'] . '</option>'
+			. '<option value="1">1 - ' . $tracker_lang['vote_1'] . '</option>'
+			. '</select> <input type="submit" class="buttonS" value="' . $tracker_lang['vote'] . '">'
+			. '</form>';
 
-/* Sorry, but heredoc is not possible to indent */
-$rating_selector = <<<SELECTOR
-<input type="hidden" id="ratingtid" value="{$id}" />
-<div id="rating_selector">
-	<span class="rating star" title="{$tracker_lang['vote_1']}" data-value="1">
-	<span class="rating star" title="{$tracker_lang['vote_2']}" data-value="2">
-	<span class="rating star" title="{$tracker_lang['vote_3']}" data-value="3">
-	<span class="rating star" title="{$tracker_lang['vote_4']}" data-value="4">
-	<span class="rating star" title="{$tracker_lang['vote_5']}" data-value="5">
-	</span></span></span></span></span>
-</div>
-SELECTOR;
-
-		$is_voted = mysqli_fetch_array(sql_query('SELECT rating FROM ratings WHERE torrent = ' . $id . ' AND user = ' . $CURUSER['id']));
-		if (mysql_error())
-			sqlerr();
+		$is_voted = mysqli_fetch_array(sql_query('SELECT rating FROM ratings WHERE torrent = ' . $id . ' AND user = ' . (int)$CURUSER['id']));
 		if ($is_voted) {
 			$stars .= ratingpic($row['rating']) . "(" . $row["rating"] . " " . $tracker_lang['from'] . " 5 ".$tracker_lang['with'] . " " . $row["numratings"] . " " . getWord($row["numratings"], array($tracker_lang['votes_1'], $tracker_lang['votes_2'], $tracker_lang['votes_3'])).")".' Ваша оценка <b>' . $is_voted['rating'] . '</b> - <b>' . $tracker_lang['vote_' . $is_voted['rating']] . '</b>';
 		} else {
@@ -578,7 +490,7 @@ if ($row["times_completed"] > 0) {
 			"</td><td align=center><a href=\"message.php?action=sendmessage&amp;receiver={$arr['userid']}\"><img src=\"$pic_base_url/button_pm.gif\" border=\"0\"></a></td></tr>\n";
     }
     $snatched_full .= "</table>\n";
-	?><script language="javascript" type="text/javascript" src="js/show_hide.js"></script><?
+	?><script language="javascript" type="text/javascript" src="js/show_hide.js"></script><?php
 	if ($row["seeders"] == 0 || ($row["leechers"] / $row["seeders"] >= 2))
 		$reseed_button = "<form action=\"takereseed.php\"><input type=\"hidden\" name=\"torrent\" value=\"$id\" /><input type=\"submit\" value=\"Позвать скачавших\" /></form>";
 	if (!$_GET["snatched"]==1)
@@ -652,7 +564,7 @@ function update_multi() {
      <div style="font-weight:bold" id="loading-layer-text"><?=$tracker_lang['ajax_loading'];?></div><br />
      <img src="<?=$pic_base_url;?>/loading.gif" border="0" />
 </div>
-<?
+<?php
 
 	tr($tracker_lang['said_thanks'], $thanksby, 1);
 
