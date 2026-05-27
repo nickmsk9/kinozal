@@ -564,13 +564,6 @@ function get_row_count($table, $suffix = "")
     return (int)$row[0];
 }
 
-/*function stdmsg($heading = '', $text = '') {
-	print("<table class=\"main\" width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td class=\"embedded\">\n");
-	if ($heading)
-		print("<h2>$heading</h2>\n");
-	print("<table width=\"100%\" border=\"1\" cellspacing=\"0\" cellpadding=\"10\"><tr><td class=\"text\">\n");
-	print($text . "</td></tr></table></td></tr></table>\n");
-}*/
 
 function stdmsg($heading = '', $text = '', $div = 'success', $htmlstrip = false) {
 	if ($htmlstrip) {
@@ -589,16 +582,40 @@ function stderr($heading = '', $text = '') {
 }
 
 function newerr($heading = '', $text = '', $head = true, $foot = true, $die = true, $div = 'error', $htmlstrip = true) {
-	if ($head)
-		stdhead($heading);
+    // Приведение типов (сохраняем поведение оригинала)
+    $head = (bool)$head;
+    $foot = (bool)$foot;
+    $die = (bool)$die;
+    $htmlstrip = (bool)$htmlstrip;
 
-	newmsg($heading, $text, $div, $htmlstrip);
+    // Вывод шапки сайта, если требуется
+    if ($head && function_exists('stdhead')) {
+        stdhead($heading);
+    } elseif ($head) {
+        // Если функции stdhead нет, выводим минимальный заголовок HTML
+        echo '<!DOCTYPE html><html><head><title>' . htmlspecialchars($heading) . '</title></head><body>';
+    }
 
-	if ($foot)
-		stdfoot();
+    // Вывод сообщения через newmsg (ожидается, что функция определена)
+    if (function_exists('newmsg')) {
+        newmsg($heading, $text, $div, $htmlstrip);
+    } else {
+        // Fallback, если newmsg отсутствует
+        $safeText = $htmlstrip ? htmlspecialchars($text) : $text;
+        echo "<div class='$div'><strong>$heading</strong><br>$safeText</div>";
+    }
 
-	if ($die)
-		die;
+    // Вывод подвала сайта
+    if ($foot && function_exists('stdfoot')) {
+        stdfoot();
+    } elseif ($foot) {
+        echo '</body></html>';
+    }
+
+    // Завершение скрипта
+    if ($die) {
+        exit;
+    }
 }
 
 function sqlerr($file = '', $line = '') {
@@ -634,19 +651,6 @@ function format_urls($s) {
 		"\\1<a href=\"\\2\">\\2</a>", $s);
 }
 
-/*
-
-// Removed this fn, I've decided we should drop the redir script...
-// it's pretty useless since ppl can still link to pics...
-// -Rb
-
-function format_local_urls($s)
-{
-	return preg_replace(
-    "/(<a href=redir\.php\?url=)((http|ftp|https|ftps|irc):\/\/(www\.)?torrentbits\.(net|org|com)(:8[0-3])?([^<>\s]*))>([^<]+)<\/a>/i",
-    "<a href=\\2>\\8</a>", $s);
-}
-*/
 
 //Finds last occurrence of needle in haystack
 //in PHP5 use strripos() instead of this
@@ -715,21 +719,6 @@ function encode_quote_from($text) {
 	return $text;
 }
 
-// Format spoiler
-/*function encode_spoiler($text) {
-	$replace = "<div class=\"spoiler-wrap\"><div class=\"spoiler-head folded clickable\">Скрытый текст</div><div class=\"spoiler-body\"><textarea>\\1</textarea></div></div>";
-	$text = preg_replace("#\[hide\](.*?)\[/hide\]#si", $replace, $text);
-	return $text;
-}
-
-// Format spoiler from
-function encode_spoiler_from($text) {
-	$replace = "<div class=\"spoiler-wrap\"><div class=\"spoiler-head folded clickable\">\\1</div><div class=\"spoiler-body\"><textarea>\\2</textarea></div></div>";
-	$text = preg_replace("#\[hide=(.+?)\](.*?)\[/hide\]#si", "".$replace, $text);
-	return $text;
-}*/
-
-// Thanks to Leonid Evstigneev from TorrentsZona for figuring this shit out...
 // Format spoiler
 function encode_spoiler($text) {
 	$text = preg_replace_callback("#\[hide\](.*?)\[/hide\]#si", 'escape1', $text);
@@ -846,12 +835,6 @@ function format_comment($text, $strip_html = true) {
 	global $smilies, $privatesmilies, $pic_base_url;
 	$smiliese = $smilies;
 	$s = $text;
-
-	// This fixes the extraneous ;) smilies problem. When there was an html escaped
-	// char before a closing bracket - like >), "), ... - this would be encoded
-	// to &xxx;), hence all the extra smilies. I created a new :wink: label, removed
-	// the ;) one, and replace all genuine ;) by :wink: before escaping the body.
-	// (What took us so long? :blush:)- wyz
 
 	$s = str_replace(";)", ":wink:", $s);
 
@@ -1095,39 +1078,63 @@ function kz_torrent_download_register($userid, $torrent)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-//----------------------------------
-//---- Security function v0.1 by xam
-//----------------------------------
-function int_check($value, $stdhead = false, $stdfood = true, $die = true, $log = true) {
-	global $CURUSER;
-	$msg = "Invalid ID Attempt: Username: " . $CURUSER["username"] . " - UserID: " . $CURUSER["id"] . " - UserIP : " . getip();
-	if (is_array($value)) {
-		foreach ($value as $val) int_check($val);
-	} else {
-		if (!is_valid_id($value)) {
-			if ($stdhead) {
-				if ($log)
-					write_log($msg);
-				stderr("ERROR", "Invalid ID! For security reason, we have been logged this action.");
-			} else {
-				Print ("<h2>Error</h2><table width=100% border=1 cellspacing=0 cellpadding=10><tr><td class=text>");
-				Print ("Invalid ID! For security reason, we have been logged this action.</td></tr></table>");
-				if ($log)
-					write_log($msg);
-			}
+function int_check($value, $stdhead = false, $stdfoot = true, $die = true, $log = true) {
+    global $CURUSER;
 
-			if ($stdfood)
-				stdfoot();
-			if ($die)
-				die;
-		} else
-			return true;
-	}
+    // Рекурсивная обработка массива
+    if (is_array($value)) {
+        foreach ($value as $val) {
+            int_check($val, $stdhead, $stdfoot, $die, $log);
+        }
+        return true;
+    }
+
+    // Проверка валидности ID через внешнюю функцию
+    if (function_exists('is_valid_id') && is_valid_id($value)) {
+        return true;
+    }
+
+    // ---- ID невалиден ----
+
+    // Формируем сообщение для лога (на русском)
+    $username = isset($CURUSER['username']) ? $CURUSER['username'] : 'неизвестно';
+    $userid   = isset($CURUSER['id']) ? $CURUSER['id'] : 'неизвестно';
+    $userip   = function_exists('getip') ? getip() : 'неизвестно';
+    $msg = "Попытка использовать неверный ID: Пользователь: $username - ID: $userid - IP: $userip";
+
+    // Вывод ошибки пользователю (на русском)
+    if ($stdhead) {
+        if (function_exists('stderr')) {
+            stderr("ОШИБКА", "Неверный идентификатор! В целях безопасности это действие зарегистрировано.");
+        } else {
+            echo "<html><head><title>Ошибка</title></head><body>";
+            echo "<h2>Ошибка</h2><p>Неверный идентификатор! В целях безопасности это действие зарегистрировано.</p>";
+        }
+    } else {
+        echo "<h2>Ошибка</h2><table width='100%' border='1' cellspacing='0' cellpadding='10'><tr><td class='text'>";
+        echo "Неверный идентификатор! В целях безопасности это действие зарегистрировано.";
+        echo "</td></table>";
+    }
+
+    // Логирование
+    if ($log && function_exists('write_log')) {
+        write_log($msg);
+    }
+
+    // Подвал
+    if ($stdfoot && function_exists('stdfoot')) {
+        stdfoot();
+    } elseif ($stdhead && !function_exists('stderr')) {
+        echo "</body></html>";
+    }
+
+    // Завершение
+    if ($die) {
+        exit;
+    }
+
+    return false;
 }
-
-//----------------------------------
-//---- Security function v0.1 by xam
-//----------------------------------
 
 function is_valid_id($id) {
 	return is_numeric($id) && ($id > 0) && (floor($id) == $id);
