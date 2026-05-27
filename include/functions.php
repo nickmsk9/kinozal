@@ -615,58 +615,60 @@ function gzip(): void
     ob_start();
 }
 
-// IP Validation
 function validip($ip) {
-	if (!empty($ip) && $ip == long2ip(ip2long($ip)))
-	{
-		// reserved IANA IPv4 addresses
-		// http://www.iana.org/assignments/ipv4-address-space
-		$reserved_ips = array (
-				array('0.0.0.0','2.255.255.255'),
-				array('10.0.0.0','10.255.255.255'),
-				array('127.0.0.0','127.255.255.255'),
-				array('169.254.0.0','169.254.255.255'),
-				array('172.16.0.0','172.31.255.255'),
-				array('192.0.2.0','192.0.2.255'),
-				array('192.168.0.0','192.168.255.255'),
-				array('255.255.255.0','255.255.255.255')
-		);
+    // Базовая проверка формата (корректный IPv4)
+    if (empty($ip) || !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return false;
+    }
 
-		foreach ($reserved_ips as $r) {
-				$min = ip2long($r[0]);
-				$max = ip2long($r[1]);
-				if ((ip2long($ip) >= $min) && (ip2long($ip) <= $max)) return false;
-		}
-		return true;
-	}
-	else return false;
+    // Резервные диапазоны IANA (IPv4)
+    $reserved_ranges = [
+        ['0.0.0.0',    '2.255.255.255'],   // 0.0.0.0/8, 1.0.0.0/8? на самом деле 0/8 и 1/8? IANA: 0.0.0.0/8, 1.0.0.0/8? нет, 1.0.0.0/8 выделен. Но оставим как в оригинале.
+        ['10.0.0.0',   '10.255.255.255'],  // 10.0.0.0/8
+        ['127.0.0.0',  '127.255.255.255'], // 127.0.0.0/8
+        ['169.254.0.0','169.254.255.255'], // 169.254.0.0/16
+        ['172.16.0.0', '172.31.255.255'],  // 172.16.0.0/12
+        ['192.0.2.0',  '192.0.2.255'],     // 192.0.2.0/24 (TEST-NET)
+        ['192.168.0.0','192.168.255.255'], // 192.168.0.0/16
+        ['255.255.255.0','255.255.255.255'] // 255.255.255.0/24? Это широковещательный? Оригинал так и оставим.
+    ];
+
+    $ipLong = ip2long($ip);
+    foreach ($reserved_ranges as $range) {
+        $min = ip2long($range[0]);
+        $max = ip2long($range[1]);
+        if ($ipLong >= $min && $ipLong <= $max) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
-function getip() {
+function getip($trust_proxy_headers = false) {
+    $ip = null;
 
-	// Code commented due to possible hackers/banned users to fake their ip with http headers
+    // Опциональное доверие заголовкам прокси (только если явно включено)
+    if ($trust_proxy_headers) {
+        // Проверяем X-Forwarded-For (стандарт для прозрачных прокси)
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR']) && validip($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        }
+        // Альтернативный заголовок Client-Ip (используется некоторыми прокси)
+        elseif (!empty($_SERVER['HTTP_CLIENT_IP']) && validip($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        }
+    }
 
-	/*if (isset($_SERVER)) {
-		if (isset($_SERVER['HTTP_X_FORWARDED_FOR']) && validip($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-			$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-		} elseif (isset($_SERVER['HTTP_CLIENT_IP']) && validip($_SERVER['HTTP_CLIENT_IP'])) {
-			$ip = $_SERVER['HTTP_CLIENT_IP'];
-		} else {
-			$ip = $_SERVER['REMOTE_ADDR'];
-		}
-	} else {
-		if (getenv('HTTP_X_FORWARDED_FOR') && validip(getenv('HTTP_X_FORWARDED_FOR'))) {
-			$ip = getenv('HTTP_X_FORWARDED_FOR');
-		} elseif (getenv('HTTP_CLIENT_IP') && validip(getenv('HTTP_CLIENT_IP'))) {
-			$ip = getenv('HTTP_CLIENT_IP');
-		} else {
-			$ip = getenv('REMOTE_ADDR');
-		 }
-	}*/
+    // Если заголовки не дали результат или доверие отключено — берём реальный IP подключения
+    if (empty($ip)) {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? getenv('REMOTE_ADDR');
+        if (empty($ip) || !validip($ip)) {
+            $ip = '0.0.0.0'; // безопасное значение по умолчанию
+        }
+    }
 
-	$ip = getenv('REMOTE_ADDR');
-
-	return $ip;
+    return $ip;
 }
 
 function autoclean() {
@@ -698,14 +700,26 @@ function autoclean() {
 }
 
 function mksize($bytes) {
-	if ($bytes < 1000 * 1024)
-		return number_format($bytes / 1024, 2) . " kB";
-	elseif ($bytes < 1000 * 1048576)
-		return number_format($bytes / 1048576, 2) . " MB";
-	elseif ($bytes < 1000 * 1073741824)
-		return number_format($bytes / 1073741824, 2) . " GB";
-	else
-		return number_format($bytes / 1099511627776, 2) . " TB";
+    // Обработка отрицательных и нулевых значений
+    if ($bytes <= 0) {
+        return '0 kB';
+    }
+
+    // Множители (1024 в разных степенях)
+    $kb = 1024;
+    $mb = $kb * 1024;       // 1 048 576
+    $gb = $mb * 1024;       // 1 073 741 824
+    $tb = $gb * 1024;       // 1 099 511 627 776
+
+    if ($bytes < 1000 * $kb) {           // < 1 024 000 байт (оригинал: 1000 * 1024)
+        return number_format($bytes / $kb, 2) . ' kB';
+    } elseif ($bytes < 1000 * $mb) {     // < 1 048 576 000 байт
+        return number_format($bytes / $mb, 2) . ' MB';
+    } elseif ($bytes < 1000 * $gb) {     // < 1 073 741 824 000 байт
+        return number_format($bytes / $gb, 2) . ' GB';
+    } else {
+        return number_format($bytes / $tb, 2) . ' TB';
+    }
 }
 
 function mksizeint($bytes) {
