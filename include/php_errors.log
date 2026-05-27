@@ -94,3 +94,34 @@ Stack trace:
 #4 [internal function]: autoclean()
 #5 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 189
+[27-May-2026 15:18:26 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect DATETIME value: '0000-00-00 00:00:00' in /var/www/html/include/functions.php:189
+Stack trace:
+#0 /var/www/html/include/functions.php(189): mysqli_query(Object(mysqli), '\n        SELECT...')
+#1 /var/www/html/include/cleanup.php(73): sql_query('\n        SELECT...')
+#2 /var/www/html/include/cleanup.php(220): cleanup_fetch_ids('\n        SELECT...')
+#3 /var/www/html/include/functions.php(699): docleanup()
+#4 [internal function]: autoclean()
+#5 {main}
+  thrown in /var/www/html/include/functions.php on line 189
+[27-May-2026 15:40:11 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect DATETIME value: '0000-00-00 00:00:00' in /var/www/html/include/functions.php:189
+Stack trace:
+#0 /var/www/html/include/functions.php(189): mysqli_query(Object(mysqli), '\n        SELECT...')
+#1 /var/www/html/include/cleanup.php(73): sql_query('\n        SELECT...')
+#2 /var/www/html/include/cleanup.php(220): cleanup_fetch_ids('\n        SELECT...')
+#3 /var/www/html/include/functions.php(699): docleanup()
+#4 [internal function]: autoclean()
+#5 {main}
+  thrown in /var/www/html/include/functions.php on line 189
+[27-May-2026 15:47:50 UTC] PHP Warning:  mysqli_connect(): php_network_getaddresses: getaddrinfo for db failed: nodename nor servname provided, or not known in /Users/nick/docker/kinozal/include/functions.php on line 268
+[27-May-2026 15:47:50 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: php_network_getaddresses: getaddrinfo for db failed: nodename nor servname provided, or not known in /Users/nick/docker/kinozal/include/functions.php:268
+Stack trace:
+#0 /Users/nick/docker/kinozal/include/functions.php(268): mysqli_connect('db', 'kinozal', Object(SensitiveParameterValue))
+#1 /Users/nick/docker/kinozal/top.php(5): dbconn(false)
+#2 Command line code(1): include('/Users/nick/doc...')
+#3 {main}
+  thrown in /Users/nick/docker/kinozal/include/functions.php on line 268
+[27-May-2026 15:49:20 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_real_escape_string() in /var/www/html/include/functions.php:973
+Stack trace:
+#0 /var/www/html/top.php(167): sqlwildcardesc('Netflix')
+#1 {main}
+  thrown in /var/www/html/include/functions.php on line 973

@@ -1,8 +1,8 @@
 <?php
 
-$mysql_host = "localhost";
-$mysql_user = "root";
-$mysql_pass = "";
+$mysql_host = "db";
+$mysql_user = "kinozal";
+$mysql_pass = "kinozal";
 $mysql_db = "kinozal";
 $mysql_charset = "utf8mb4";
 
