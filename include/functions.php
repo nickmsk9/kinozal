@@ -170,17 +170,6 @@ function convert_unicode($t, $to = 'utf8') {
 	return $t;
 }
 
-function strip_magic_quotes($arr) {
-	foreach ($arr as $k => $v) {
-		if (is_array($v)) {
-			$arr[$k] = strip_magic_quotes($v);
-			} else {
-			$arr[$k] = stripslashes($v);
-			}
-	}
-	return $arr;
-}
-
 function local_user() {
 	return $_SERVER["SERVER_ADDR"] == $_SERVER["REMOTE_ADDR"];
 }
