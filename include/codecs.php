@@ -53,20 +53,30 @@ $audio_trans = array(
 );
 
 $release_quality = array(
-	1 => "HD DVD",
-	2 => "HDTV",
-	3 => "HDTVRip",
-	4 => "DVD-9",
-	5 => "DVD-5",
-	6 => "DVDRip",
-	7 => "DVDScr",
-	8 => "Scr",
-	9 => "SatRip",
-	10 => "TVRip",
-	11 => "TC",
-	12 => "Super-TS",
-	13 => "TS",
-	14 => "CAM"
+	1 => "WEB-DL (2160p)",
+	2 => "WEB-DL (1080p)",
+	3 => "WEB-DL (720p)",
+	4 => "WEBRip (1080p)",
+	5 => "WEBRip (720p)",
+	6 => "BDRemux",
+	7 => "Blu-Ray",
+	8 => "Blu-Ray 3D",
+	9 => "BDRip (1080p)",
+	10 => "BDRip (720p)",
+	11 => "HDRip (1080p)",
+	12 => "HDRip (720p)",
+	13 => "DVDRip",
+	14 => "DVD-9",
+	15 => "DVD-5",
+	16 => "HDTVRip (1080p)",
+	17 => "HDTVRip (720p)",
+	18 => "HDTVRip",
+	19 => "TVRip",
+	20 => "SATRip",
+	21 => "DVB",
+	22 => "DVDScr",
+	23 => "TS",
+	24 => "CAMRip"
 );
 
 ?>

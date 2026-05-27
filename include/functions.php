@@ -962,7 +962,13 @@ function sqlesc($value, $force = false)
 }
 
 function sqlwildcardesc($x) {
-	return str_replace(array("%","_"), array("\\%","\\_"), mysql_real_escape_string($x));
+	global $link;
+
+	if (!$link instanceof mysqli) {
+		die('sqlwildcardesc: нет активного подключения к базе данных');
+	}
+
+	return str_replace(array("%","_"), array("\\%","\\_"), mysqli_real_escape_string($link, (string)$x));
 }
 
 function urlparse($m) {
@@ -981,7 +987,7 @@ function parsedescr($d, $html) {
 }
 
 function stdhead($title = "", $msgalert = true) {
-	global $CURUSER, $SITE_ONLINE, $SITENAME, $ss_uri, $tracker_lang;
+	global $CURUSER, $SITE_ONLINE, $SITENAME, $ss_uri, $tracker_lang, $hide_right_blocks;
 
 	if (!$SITE_ONLINE) {
 		die('Site is down for maintenance, please check back again later... thanks<br />');
