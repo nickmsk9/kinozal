@@ -25,12 +25,11 @@ function kz_cups_catalog()
 
 function kz_cups_ensure_schema()
 {
-    static $ready = false;
+    return;
+}
 
-    if ($ready) {
-        return;
-    }
-
+function kz_cups_install_schema()
+{
     sql_query("
         CREATE TABLE IF NOT EXISTS cups (
             id TINYINT UNSIGNED NOT NULL,
@@ -64,7 +63,6 @@ function kz_cups_ensure_schema()
     ") or sqlerr(__FILE__, __LINE__);
 
     kz_cups_seed_catalog();
-    $ready = true;
 }
 
 function kz_cups_seed_catalog()
