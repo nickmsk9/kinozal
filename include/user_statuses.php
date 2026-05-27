@@ -100,20 +100,39 @@ function kz_statuses_seed_catalog()
 
 function kz_statuses_all()
 {
-	$rows = array();
+	static $cached_rows = null;
 
-	$res = sql_query("
-		SELECT status_key, title, icon_class, sort, active, auto
-		FROM user_statuses
-		WHERE active = 1
-		ORDER BY sort ASC, status_key ASC
-	") or sqlerr(__FILE__, __LINE__);
-
-	while ($row = mysqli_fetch_assoc($res)) {
-		$rows[$row['status_key']] = $row;
+	if ($cached_rows !== null) {
+		return $cached_rows;
 	}
 
-	return $rows;
+	$rows = array();
+	$catalog = kz_statuses_catalog();
+	uasort($catalog, function ($left, $right) {
+		$left_sort = (int)($left['sort'] ?? 0);
+		$right_sort = (int)($right['sort'] ?? 0);
+
+		if ($left_sort === $right_sort) {
+			return strcmp((string)$left['status_key'], (string)$right['status_key']);
+		}
+
+		return $left_sort <=> $right_sort;
+	});
+
+	foreach ($catalog as $row) {
+		$rows[$row['status_key']] = array(
+			'status_key' => $row['status_key'],
+			'title' => $row['title'],
+			'icon_class' => $row['icon_class'],
+			'sort' => $row['sort'],
+			'active' => 1,
+			'auto' => $row['auto'],
+		);
+	}
+
+	$cached_rows = $rows;
+
+	return $cached_rows;
 }
 
 function kz_statuses_auto_keys($user)
@@ -163,10 +182,16 @@ function kz_statuses_auto_keys($user)
 
 function kz_statuses_load_user($userid)
 {
+	static $cached_users = array();
+
 	$userid = (int)$userid;
 
 	if (!is_valid_id($userid)) {
 		return null;
+	}
+
+	if (array_key_exists($userid, $cached_users)) {
+		return $cached_users[$userid];
 	}
 
 	$res = sql_query("
@@ -178,16 +203,24 @@ function kz_statuses_load_user($userid)
 
 	$row = mysqli_fetch_assoc($res);
 
-	return $row ?: null;
+	$cached_users[$userid] = $row ?: null;
+
+	return $cached_users[$userid];
 }
 
 function kz_statuses_manual_keys($userid)
 {
+	static $cached_keys = array();
+
 	$userid = (int)$userid;
 	$keys = array();
 
 	if (!is_valid_id($userid)) {
 		return $keys;
+	}
+
+	if (array_key_exists($userid, $cached_keys)) {
+		return $cached_keys[$userid];
 	}
 
 	$res = sql_query("
@@ -200,11 +233,15 @@ function kz_statuses_manual_keys($userid)
 		$keys[$row['status_key']] = true;
 	}
 
-	return $keys;
+	$cached_keys[$userid] = $keys;
+
+	return $cached_keys[$userid];
 }
 
 function kz_statuses_for_user($user)
 {
+	static $cached_statuses = array();
+
 	if (!is_array($user)) {
 		return array();
 	}
@@ -215,6 +252,10 @@ function kz_statuses_for_user($user)
 
 	if (!is_valid_id($userid)) {
 		return array();
+	}
+
+	if (array_key_exists($userid, $cached_statuses)) {
+		return $cached_statuses[$userid];
 	}
 
 	$needed = array(
@@ -232,6 +273,7 @@ function kz_statuses_for_user($user)
 			$loaded_user = kz_statuses_load_user($userid);
 
 			if (!is_array($loaded_user)) {
+				$cached_statuses[$userid] = array();
 				return array();
 			}
 
@@ -243,11 +285,22 @@ function kz_statuses_for_user($user)
 	$statuses = kz_statuses_all();
 
 	if (!$statuses) {
+		$cached_statuses[$userid] = array();
 		return array();
 	}
 
 	$keys = kz_statuses_auto_keys($user);
-	$manual_keys = kz_statuses_manual_keys($userid);
+	$manual_keys = array();
+	if (array_key_exists('manual_status_keys', $user)) {
+		foreach (explode(',', (string)$user['manual_status_keys']) as $manual_key) {
+			$manual_key = trim($manual_key);
+			if ($manual_key !== '') {
+				$manual_keys[$manual_key] = true;
+			}
+		}
+	} else {
+		$manual_keys = kz_statuses_manual_keys($userid);
+	}
 
 	foreach ($manual_keys as $key => $value) {
 		$keys[$key] = true;
@@ -261,7 +314,9 @@ function kz_statuses_for_user($user)
 		}
 	}
 
-	return $result;
+	$cached_statuses[$userid] = $result;
+
+	return $cached_statuses[$userid];
 }
 
 function kz_statuses_user_icons_html($user)

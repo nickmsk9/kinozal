@@ -408,7 +408,10 @@ function userlogin($lightmode = false): void
         $row['ip'] = $ip;
     }
 
-    $updateset[] = 'last_access = ' . sqlesc(get_date_time());
+    $last_access_ts = !empty($row['last_access']) ? strtotime((string)$row['last_access']) : 0;
+    if (!$last_access_ts || $last_access_ts < (TIMENOW - 60)) {
+        $updateset[] = 'last_access = ' . sqlesc(get_date_time());
+    }
 
     if (!empty($updateset)) {
         sql_query('UPDATE users SET ' . implode(', ', $updateset) . ' WHERE id = ' . (int) $row['id']) or sqlerr(__FILE__, __LINE__);
@@ -520,33 +523,22 @@ function user_session() {
 		$class = $CURUSER['class'];
 	}
 
-	$past = time() - 300;
 	$sid = session_id();
-	$where = array();
-	$updateset = array();
-	if ($sid)
-		$where[] = "sid = ".sqlesc($sid);
-	elseif ($uid)
-		$where[] = "uid = $uid";
-	else
-		$where[] = "ip = ".sqlesc($ip);
-	//sql_query("DELETE FROM sessions WHERE ".implode(" AND ", $where));
 	$ctime = time();
 	$agent = $_SERVER["HTTP_USER_AGENT"];
-	$updateset[] = "sid = ".sqlesc($sid);
-	$updateset[] = "uid = ".sqlesc($uid);
-	$updateset[] = "username = ".sqlesc($username);
-	$updateset[] = "class = ".sqlesc($class);
-	$updateset[] = "ip = ".sqlesc($ip);
-	$updateset[] = "time = ".sqlesc($ctime);
-	$updateset[] = "url = ".sqlesc($url);
-	$updateset[] = "useragent = ".sqlesc($agent);
 	session_write_close();
-	if (count($updateset))
-		sql_query("UPDATE sessions SET ".implode(", ", $updateset)." WHERE ".implode(" AND ", $where)) or sqlerr(__FILE__,__LINE__);
-	if (mysql_modified_rows() < 1)
-		sql_query("INSERT INTO sessions (sid, uid, username, class, ip, time, url, useragent) VALUES (".implode(", ", array_map("sqlesc",
-									array($sid, $uid, $username, $class, $ip, $ctime, $url, $agent))).")") or sqlerr(__FILE__,__LINE__);
+	sql_query("
+		INSERT INTO sessions (sid, uid, username, class, ip, time, url, useragent)
+		VALUES (" . implode(", ", array_map("sqlesc", array($sid, $uid, $username, $class, $ip, $ctime, $url, $agent))) . ")
+		ON DUPLICATE KEY UPDATE
+			uid = VALUES(uid),
+			username = VALUES(username),
+			class = VALUES(class),
+			ip = VALUES(ip),
+			time = VALUES(time),
+			url = VALUES(url),
+			useragent = VALUES(useragent)
+	") or sqlerr(__FILE__,__LINE__);
 }
 
 function unesc($x)

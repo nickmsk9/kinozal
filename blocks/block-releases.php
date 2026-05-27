@@ -140,27 +140,11 @@ if ($page < 0) {
     $page = 0;
 }
 
-$countRes = sql_query("
-    SELECT COUNT(*) AS total
-    FROM torrents
-    WHERE visible = 'yes' AND banned != 'yes'
-") or sqlerr(__FILE__, __LINE__);
-$countRow = mysqli_fetch_assoc($countRes);
-$count = (int)($countRow['total'] ?? 0);
-
 $offset = $page * $perPage;
-if ($offset >= $count && $count > 0) {
-    $page = (int)floor(($count - 1) / $perPage);
-    $offset = $page * $perPage;
-}
+$limit = $perPage + 1;
 
 $blocktitle = '';
 $content = '';
-
-if ($count === 0) {
-    $content .= '<div style="padding: 8px;">Нет раздач на трекере.</div>';
-    return;
-}
 
 $res = sql_query("
     SELECT
@@ -177,12 +161,27 @@ $res = sql_query("
     LEFT JOIN categories AS c ON c.id = t.category
     WHERE t.visible = 'yes' AND t.banned != 'yes'
     ORDER BY t.added DESC, t.id DESC
-    LIMIT $offset, $perPage
+    LIMIT $offset, $limit
 ") or sqlerr(__FILE__, __LINE__);
+
+$rows = array();
+while ($row = mysqli_fetch_assoc($res)) {
+    $rows[] = $row;
+}
+
+if (!$rows) {
+    $content .= '<div style="padding: 8px;">Нет раздач на трекере.</div>';
+    return;
+}
+
+$hasNext = count($rows) > $perPage;
+if ($hasNext) {
+    array_pop($rows);
+}
 
 $content .= '<table width="100%" border="0" cellspacing="0" cellpadding="0">';
 
-while ($row = mysqli_fetch_assoc($res)) {
+foreach ($rows as $row) {
     $torrentId = (int)$row['id'];
     $torrentName = htmlspecialchars_uni($row['name']);
     $fields = kz_release_block_extract_fields($row['name'], $row['descr']);
@@ -265,9 +264,15 @@ while ($row = mysqli_fetch_assoc($res)) {
 
 $content .= '</table>';
 
-$pagerBottom = kz_release_block_render_pager($count, $perPage);
-if ($pagerBottom !== '') {
-    $content .= $pagerBottom;
+$pagerLinks = array();
+if ($page > 0) {
+    $pagerLinks[] = '<td class="pager"><a href="' . htmlspecialchars_uni($_SERVER['PHP_SELF']) . '?relpage=' . ($page - 1) . '" style="text-decoration:none;"><b>Назад</b></a></td>';
+}
+if ($hasNext) {
+    $pagerLinks[] = '<td class="pager"><a href="' . htmlspecialchars_uni($_SERVER['PHP_SELF']) . '?relpage=' . ($page + 1) . '" style="text-decoration:none;"><b>Вперед</b></a></td>';
+}
+if ($pagerLinks) {
+    $content .= '<table class="main" border="0" cellspacing="0" cellpadding="0"><tr>' . implode('<td class="pagebr">&nbsp;</td>', $pagerLinks) . '</tr></table>';
 }
 
 ?>

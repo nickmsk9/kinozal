@@ -388,13 +388,23 @@ function kz_cups_current()
                u.username,
                u.class,
                u.donor,
+               u.gender,
+               u.birthday,
                u.warned,
                u.enabled,
                u.parked,
+               u.uploaded,
+               u.downloaded,
+               usa.manual_status_keys,
                co.flagpic
         FROM cups AS c
         LEFT JOIN user_cups AS uc ON uc.cup_id = c.id
         LEFT JOIN users AS u ON u.id = uc.userid
+        LEFT JOIN (
+            SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
+            FROM user_status_assignments
+            GROUP BY userid
+        ) AS usa ON usa.userid = u.id
         LEFT JOIN countries AS co ON co.id = u.country
         WHERE c.active = 1
         ORDER BY c.sort ASC, c.id ASC

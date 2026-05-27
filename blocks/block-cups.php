@@ -10,8 +10,6 @@ global $content;
 $blocktitle = 'Переходящие кубки';
 $content = '';
 
-kz_cups_update_auto(false);
-
 $cups = kz_cups_current();
 $rows = '';
 $display_num = 0;

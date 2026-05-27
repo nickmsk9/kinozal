@@ -299,3 +299,31 @@ Stack trace:
 #6 /var/www/html/index.php(32): stdhead('\xD0\xA2\xD0\xBE\xD1\x80\xD1\x80\xD0\xB5\xD0\xBD\xD1\x82 ...')
 #7 {main}
   thrown in /var/www/html/include/functions.php on line 189
+[27-May-2026 16:12:04 UTC] PHP Warning:  Undefined array key "returnto" in /var/www/html/staffmess.php on line 44
+[27-May-2026 16:12:04 UTC] PHP Warning:  Undefined array key "returnto" in /var/www/html/staffmess.php on line 47
+[27-May-2026 16:12:04 UTC] PHP Warning:  Undefined variable $body in /var/www/html/staffmess.php on line 78
+[27-May-2026 16:12:04 UTC] PHP Warning:  Undefined variable $body in /var/www/html/staffmess.php on line 79
+[27-May-2026 16:12:04 UTC] PHP Warning:  Undefined variable $receiver in /var/www/html/staffmess.php on line 90
+[27-May-2026 16:12:42 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/news.php on line 37
+[27-May-2026 16:12:42 UTC] PHP Warning:  Undefined variable $warning in /var/www/html/news.php on line 137
+[27-May-2026 16:12:42 UTC] PHP Warning:  Undefined variable $arr in /var/www/html/news.php on line 143
+[27-May-2026 16:12:42 UTC] PHP Warning:  Trying to access array offset on null in /var/www/html/news.php on line 143
+[27-May-2026 16:12:42 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[27-May-2026 16:12:48 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_affected_rows() in /var/www/html/news.php:72
+Stack trace:
+#0 {main}
+  thrown in /var/www/html/news.php on line 72
+[27-May-2026 16:13:36 UTC] PHP Warning:  Undefined array key "returnto" in /var/www/html/staffmess.php on line 44
+[27-May-2026 16:13:36 UTC] PHP Warning:  Undefined array key "returnto" in /var/www/html/staffmess.php on line 47
+[27-May-2026 16:13:36 UTC] PHP Warning:  Undefined variable $body in /var/www/html/staffmess.php on line 78
+[27-May-2026 16:13:36 UTC] PHP Warning:  Undefined variable $body in /var/www/html/staffmess.php on line 79
+[27-May-2026 16:13:36 UTC] PHP Warning:  Undefined variable $receiver in /var/www/html/staffmess.php on line 90
+[27-May-2026 16:13:39 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect DATETIME value: '0000-00-00 00:00:00' in /var/www/html/include/functions.php:189
+Stack trace:
+#0 /var/www/html/include/functions.php(189): mysqli_query(Object(mysqli), '\n        SELECT...')
+#1 /var/www/html/include/cleanup.php(73): sql_query('\n        SELECT...')
+#2 /var/www/html/include/cleanup.php(220): cleanup_fetch_ids('\n        SELECT...')
+#3 /var/www/html/include/functions.php(691): docleanup()
+#4 [internal function]: autoclean()
+#5 {main}
+  thrown in /var/www/html/include/functions.php on line 189
