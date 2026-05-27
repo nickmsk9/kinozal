@@ -434,3 +434,31 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in /var/www/html/thanks.php on line 53
+[27-May-2026 08:03:14 Europe/Moscow] PHP Fatal error:  Uncaught Error: Class "Redis" not found in C:\OSPanel\domains\kinozal.lv\include\secrets.php:13
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\core.php(43): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\include\bittorrent.php(131): require_once('C:\\OSPanel\\doma...')
+#2 C:\OSPanel\domains\kinozal.lv\index.php(29): require_once('C:\\OSPanel\\doma...')
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\secrets.php on line 13
+[27-May-2026 08:03:31 Europe/Moscow] PHP Fatal error:  Uncaught Error: Class "Redis" not found in C:\OSPanel\domains\kinozal.lv\include\secrets.php:13
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\core.php(43): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\include\bittorrent.php(131): require_once('C:\\OSPanel\\doma...')
+#2 C:\OSPanel\domains\kinozal.lv\index.php(29): require_once('C:\\OSPanel\\doma...')
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\secrets.php on line 13
+[27-May-2026 08:03:32 Europe/Moscow] PHP Fatal error:  Uncaught Error: Class "Redis" not found in C:\OSPanel\domains\kinozal.lv\include\secrets.php:13
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\core.php(43): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\include\bittorrent.php(131): require_once('C:\\OSPanel\\doma...')
+#2 C:\OSPanel\domains\kinozal.lv\index.php(29): require_once('C:\\OSPanel\\doma...')
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\secrets.php on line 13
+[27-May-2026 08:03:32 Europe/Moscow] PHP Fatal error:  Uncaught Error: Class "Redis" not found in C:\OSPanel\domains\kinozal.lv\include\secrets.php:13
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\core.php(43): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\include\bittorrent.php(131): require_once('C:\\OSPanel\\doma...')
+#2 C:\OSPanel\domains\kinozal.lv\index.php(29): require_once('C:\\OSPanel\\doma...')
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\secrets.php on line 13
