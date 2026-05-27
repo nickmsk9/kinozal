@@ -1,30 +1,33 @@
-function show_hide_no_img(id)
-{
-        var klappText = document.getElementById('s' + id);
-        var klappBild = document.getElementById('pic' + id);
+/**
+ * Переключает видимость блока с id = 's' + id
+ * @param {string|number} id - Идентификатор блока
+ * @param {boolean} [updateImage=false] - Обновлять ли картинку и title у элемента 'pic' + id
+ */
+function toggleBlock(id, updateImage = false) {
+    const textEl = document.getElementById('s' + id);
+    const imgEl = document.getElementById('pic' + id);
 
-        if (klappText.style.display == 'none') {
-                  klappText.style.display = 'block';
-                  // klappBild.src = 'images/blank.gif';
-        }
-        else {
-                  klappText.style.display = 'none';
-                  // klappBild.src = 'images/blank.gif';
-        }
+    // Если текстового блока нет на странице – выходим
+    if (!textEl) return;
+
+    // Определяем текущее состояние (скрыт или показан)
+    const isHidden = textEl.style.display === 'none';
+
+    // Переключаем видимость
+    textEl.style.display = isHidden ? 'block' : 'none';
+
+    // При необходимости обновляем иконку и всплывающую подсказку
+    if (updateImage && imgEl) {
+        imgEl.src = isHidden ? 'pic/minus.gif' : 'pic/plus.gif';
+        imgEl.title = isHidden ? 'Скрыть' : 'Показать';
+    }
 }
 
-function show_hide(id)
-{
-        var klappText = document.getElementById('s' + id);
-        var klappBild = document.getElementById('pic' + id);
+// Оригинальные точки входа (имена и сигнатуры без изменений)
+function show_hide_no_img(id) {
+    toggleBlock(id, false);
+}
 
-        if (klappText.style.display == 'none') {
-                  klappText.style.display = 'block';
-                  klappBild.src = 'pic/minus.gif';
-                  klappBild.title = 'Скрыть';
-        } else {
-                  klappText.style.display = 'none';
-                  klappBild.src = 'pic/plus.gif';
-                  klappBild.title = 'Показать';
-        }
+function show_hide(id) {
+    toggleBlock(id, true);
 }
