@@ -54,34 +54,44 @@ $activeseed = 0;
 $activeleech = 0;
 
 if ($is_logged) {
-	$res = sql_query("SELECT COUNT(*) FROM messages WHERE receiver = " . $user_id . " AND location = 1");
+	$user_id = (int)$user_id;
+
+	$messages = 0;
+	$unread = 0;
+	$outmessages = 0;
+	$activeseed = 0;
+	$activeleech = 0;
+
+	$res = sql_query("
+		SELECT
+			SUM(receiver = $user_id AND location = 1) AS messages,
+			SUM(receiver = $user_id AND location = 1 AND unread = 'yes') AS unread,
+			SUM(sender = $user_id AND saved = 'yes') AS outmessages
+		FROM messages
+		WHERE receiver = $user_id OR sender = $user_id
+	");
+
 	if ($res) {
-		$row = mysqli_fetch_row($res);
-		$messages = (int)$row[0];
+		$row = mysqli_fetch_assoc($res);
+
+		$messages = isset($row['messages']) ? (int)$row['messages'] : 0;
+		$unread = isset($row['unread']) ? (int)$row['unread'] : 0;
+		$outmessages = isset($row['outmessages']) ? (int)$row['outmessages'] : 0;
 	}
 
-	$res = sql_query("SELECT COUNT(*) FROM messages WHERE receiver = " . $user_id . " AND location = 1 AND unread = 'yes'");
-	if ($res) {
-		$row = mysqli_fetch_row($res);
-		$unread = (int)$row[0];
-	}
+	$res = sql_query("
+		SELECT
+			SUM(seeder = 'yes') AS activeseed,
+			SUM(seeder = 'no') AS activeleech
+		FROM peers
+		WHERE userid = $user_id
+	");
 
-	$res = sql_query("SELECT COUNT(*) FROM messages WHERE sender = " . $user_id . " AND saved = 'yes'");
 	if ($res) {
-		$row = mysqli_fetch_row($res);
-		$outmessages = (int)$row[0];
-	}
+		$row = mysqli_fetch_assoc($res);
 
-	$res = sql_query("SELECT COUNT(*) FROM peers WHERE userid = " . $user_id . " AND seeder = 'yes'");
-	if ($res) {
-		$row = mysqli_fetch_row($res);
-		$activeseed = (int)$row[0];
-	}
-
-	$res = sql_query("SELECT COUNT(*) FROM peers WHERE userid = " . $user_id . " AND seeder = 'no'");
-	if ($res) {
-		$row = mysqli_fetch_row($res);
-		$activeleech = (int)$row[0];
+		$activeseed = isset($row['activeseed']) ? (int)$row['activeseed'] : 0;
+		$activeleech = isset($row['activeleech']) ? (int)$row['activeleech'] : 0;
 	}
 }
 
