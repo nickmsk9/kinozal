@@ -4,7 +4,7 @@ require_once("include/bittorrent.php");
 
 dbconn(false);
 parked();
-loggedinorreturn();
+//loggedinorreturn();
 
 stdhead("Топ раздач");
 

@@ -1,50 +1,89 @@
 <?php
+
 if (!defined('BLOCK_FILE')) {
- Header("Location: ../index.php");
- exit;
+    header('Location: ../index.php');
+    exit;
 }
 
 global $tracker_lang;
 
-$blocktitle = $tracker_lang['news'].(get_user_class() >= UC_ADMINISTRATOR ? "<font class=\"small\"> - [<a class=\"altlink\" href=\"news.php\"><b>".$tracker_lang['create']."</b></a>]</font>" : "");
+$content = '';
 
-$resource = sql_query("SELECT * FROM news WHERE ADDDATE(news.added, INTERVAL 45 DAY) > NOW() ORDER BY added DESC LIMIT 10") or sqlerr(__FILE__, __LINE__);
+$is_admin = get_user_class() >= UC_ADMINISTRATOR;
+$returnto = urlencode($_SERVER['REQUEST_URI'] ?? $_SERVER['PHP_SELF'] ?? 'index.php');
 
-$content .= "<script language=\"javascript\" type=\"text/javascript\" src=\"js/show_hide.js\"></script>";
-//<a href=\"javascript: show_hide('s1')\"><img border=\"0\" src=\"pic/plus.gif\" id=\"pics1\" title=\"Показать\"></a>
-if (mysqli_num_rows($resource)) {
-    $content .= "<table width=\"100%\" border=\"1\" cellspacing=\"0\" cellpadding=\"10\"><tr><td class=\"text\">\n<ul>";
-    while($array = mysql_fetch_array($resource)) {
-		if ($news_flag == 0) {
-			$content .=
-			"<span style=\"cursor: pointer;\" onclick=\"javascript: show_hide('s".$array["id"]."')\"><img border=\"0\" src=\"pic/minus.gif\" id=\"pics".$array["id"]."\" title=\"Скрыть\"></span>&nbsp;"
-			."<span style=\"cursor: pointer;\" onclick=\"javascript: show_hide('s".$array["id"]."')\">".date("d.m.Y",strtotime($array['added']))." - \n"
-			."<b>".htmlspecialchars_uni($array['subject'])."</b></span>\n"
-			."<span id=\"ss".$array["id"]."\" style=\"display: block;\">".format_comment($array['body'])."</span>";
-	    	if (get_user_class() >= UC_ADMINISTRATOR) {
-	            $content .= " <font size=\"-2\">[<a class=\"altlink\" href=\"news.php?action=edit&newsid=" . $array['id'] . "&returnto=" . urlencode($_SERVER['PHP_SELF']) . "\"><b>E</b></a>]</font>";
-	            $content .= " <font size=\"-2\">[<a class=\"altlink\" href=\"news.php?action=delete&newsid=" . $array['id'] . "&returnto=" . urlencode($_SERVER['PHP_SELF']) . "\"><b>D</b></a>]</font>";
-	    	}
-	    	$content .= "<br /><hr />";
-	    	$news_flag = 1;
-    	} else {
-		$content .=
-			"<span style=\"cursor: pointer;\" onclick=\"javascript: show_hide('s".$array["id"]."')\"><img border=\"0\" src=\"pic/plus.gif\" id=\"pics".$array["id"]."\" title=\"Показать\"></span>&nbsp;"
-			."<span style=\"cursor: pointer;\" onclick=\"javascript: show_hide('s".$array["id"]."')\">".date("d.m.Y",strtotime($array['added']))." - \n"
-			."<b>".htmlspecialchars_uni($array['subject'])."</b></span>\n"
-			."<span id=\"ss".$array["id"]."\" style=\"display: none;\">".format_comment($array['body'])."</span>";
-			if (get_user_class() >= UC_ADMINISTRATOR) {
-		        $content .= " <font size=\"-2\">[<a class=\"altlink\" href=\"news.php?action=edit&newsid=" . $array['id'] . "&returnto=" . urlencode($_SERVER['PHP_SELF']) . "\"><b>E</b></a>]</font>";
-		        $content .= " <font size=\"-2\">[<a class=\"altlink\" href=\"news.php?action=delete&newsid=" . $array['id'] . "&returnto=" . urlencode($_SERVER['PHP_SELF']) . "\"><b>D</b></a>]</font>";
-			}
-			$content .= "<br /><hr />";
-    	}
-	}
-	$content .= "</ul></td></tr></table>\n";
-} else {
-	$content .= "<table class=\"main\" align=\"center\" border=\"1\" cellspacing=\"0\" cellpadding=\"10\"><tr><td class=\"text\">";
-	$content .= "<div align=\"center\"><h3>".$tracker_lang['no_news']."</h3></div>\n";
-	$content .= "</td></tr></table>";
+$news_title = $tracker_lang['news'] ?? 'Новости';
+$create_title = $tracker_lang['create'] ?? 'создать';
+$no_news = $tracker_lang['no_news'] ?? 'Новостей нет';
+
+$blocktitle = $news_title;
+
+if ($is_admin) {
+    $blocktitle .= " <span class=\"small\">- [<a class=\"altlink\" href=\"news.php\"><b>" . $create_title . "</b></a>]</span>";
 }
+
+$resource = sql_query("
+    SELECT id, added, subject, body
+    FROM news
+    WHERE added > DATE_SUB(NOW(), INTERVAL 45 DAY)
+    ORDER BY added DESC
+    LIMIT 10
+") or sqlerr(__FILE__, __LINE__);
+
+$content .= "<script type=\"text/javascript\" src=\"js/show_hide.js\"></script>\n";
+
+$content .= "<div class=\"mn2_content\" style=\"width:100%;\">";
+$content .= "<div class=\"bx1\" style=\"width:100%; box-sizing:border-box;\">";
+
+if (mysqli_num_rows($resource) > 0) {
+    $content .= "<ul class=\"men\">\n";
+
+    $i = 0;
+
+    while ($array = mysqli_fetch_assoc($resource)) {
+        $news_id = (int)$array['id'];
+        $subject = htmlspecialchars_uni($array['subject']);
+        $date = date('d.m.Y', strtotime($array['added']));
+
+        $is_first = ($i === 0);
+        $display = $is_first ? 'block' : 'none';
+        $icon = $is_first ? 'minus.gif' : 'plus.gif';
+        $title = $is_first ? 'Скрыть' : 'Показать';
+        $link_class = $is_first ? 'u9' : 'sbab';
+
+        $content .= "<li>";
+        $content .= "<span class=\"bulet\"></span>";
+
+        $content .= "<a href=\"javascript:void(0);\" class=\"" . $link_class . "\" onclick=\"show_hide('s" . $news_id . "'); return false;\">";
+        $content .= "<img border=\"0\" src=\"pic/" . $icon . "\" id=\"pics" . $news_id . "\" title=\"" . $title . "\" alt=\"\" /> ";
+        $content .= $date . " - <b>" . $subject . "</b>";
+        $content .= "</a>";
+
+        if ($is_admin) {
+            $content .= " <span class=\"small\">";
+            $content .= "[<a class=\"altlink\" href=\"news.php?action=edit&amp;newsid=" . $news_id . "&amp;returnto=" . $returnto . "\"><b>E</b></a>]";
+            $content .= " ";
+            $content .= "[<a class=\"altlink\" href=\"news.php?action=delete&amp;newsid=" . $news_id . "&amp;returnto=" . $returnto . "\"><b>D</b></a>]";
+            $content .= "</span>";
+        }
+
+        $content .= "<div id=\"ss" . $news_id . "\" style=\"display: " . $display . "; padding: 5px 0 5px 18px;\">";
+        $content .= format_comment($array['body']);
+        $content .= "</div>";
+
+        $content .= "</li>\n";
+
+        $i++;
+    }
+
+    $content .= "</ul>\n";
+} else {
+    $content .= "<ul class=\"men\">";
+    $content .= "<li><span class=\"bulet\"></span><span class=\"sbab\">" . $no_news . "</span></li>";
+    $content .= "</ul>";
+}
+
+$content .= "</div>";
+$content .= "</div>";
 
 ?>
