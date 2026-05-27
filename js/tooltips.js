@@ -1,130 +1,137 @@
 window.onerror = null;
 
-tooltip = {
+const tooltip = {
+    // Настройки — сохраняем оригинальные имена
+    attr_name: "tooltip",
+    blank_text: "(ссылка откроется в новом окне)",
+    newline_entity: "~",
+    max_width: 0,
+    delay: 0,
 
-    /* Ќј„јЋќ Ќј—“–ќ≈  */
+    // Элементы и состояния
+    t: null,          // сам контейнер подсказки
+    timeout: null,
+    show: false,
 
-    attr_name: "tooltip", // наименование создаваемого tooltip'ого атрибута
-    blank_text: "(ссылка откроетс¤ в новом окне)", // текст дл¤ ссылок с target="_blank"
-    newline_entity: "~", // укажите пустую строку (""), если не хотите использовать в tooltip'ах многострочность; ежели хотите, то укажите тот символ или символы, которые будут замен¤тьс¤ на перевод строки
-    max_width: 0, // максимальна¤ ширина tooltip'а в пикселах; обнулите это значение, если ширина должна быть нелимитирована
-    delay: 0, // задержка при показе tooltip'а в миллисекундах
+    // Инициализация (запускается один раз по готовности DOM)
+    init() {
+        this.t = document.createElement("div");
+        this.t.id = "tooltip";
+        document.body.appendChild(this.t);
 
-    /*  ќЌ≈÷ Ќј—“–ќ≈  */
+        // Переносим title/alt в кастомный атрибут для всех подходящих элементов
+        const candidates = document.querySelectorAll('[title], [alt], a[target="_blank"]');
+        candidates.forEach(el => {
+            let tipText = "";
 
-    t: document.createElement("DIV"),
-    c: null,
-    g: false,
+            const title = el.getAttribute("title");
+            const alt = el.getAttribute("alt");
+            const isBlank = el.getAttribute("target") === "_blank" && this.blank_text;
 
-    m: function (e) {
-        if (tooltip.g) {
-            oCanvas = document.getElementsByTagName(
-                (document.compatMode && document.compatMode == "CSS1Compat") ? "HTML" : "BODY"
-            )[0];
-            x = window.event ? event.clientX + oCanvas.scrollLeft : e.pageX;
-            y = window.event ? event.clientY + oCanvas.scrollTop : e.pageY;
-            tooltip.a(x, y);
-        }
+            // Если есть title и он строка (защита от IE, где getAttribute мог вернуть объект)
+            if (title && typeof title === "string") tipText = title;
+            else if (alt && el.complete) tipText = alt; // alt только для загруженных картинок
+
+            if (isBlank) {
+                tipText = tipText ? tipText + " " + this.blank_text : this.blank_text;
+            }
+
+            if (tipText) {
+                el.setAttribute(this.attr_name, tipText);
+                // Удаляем исходный атрибут, чтобы не появлялся нативный тултип
+                if (title) el.removeAttribute("title");
+                if (alt && el.complete) el.removeAttribute("alt");
+
+                // Навешиваем обработчики
+                el.addEventListener("mouseenter", this.showTooltip.bind(this));
+                el.addEventListener("mouseleave", this.hideTooltip.bind(this));
+            }
+        });
+
+        // Глобальные слушатели для перемещения и скрытия
+        document.addEventListener("mousemove", this.moveTooltip.bind(this));
+        window.addEventListener("scroll", this.hideTooltip.bind(this));
+        this.hideTooltip(); // спрятать изначально
     },
 
-    d: function () {
-        tooltip.t.setAttribute("id", "tooltip");
-//tooltip.t.style.filter = "alpha(opacity=85)"; // buggy in ie5.0
-        document.body.appendChild(tooltip.t);
-        a = document.all ? document.all : document.getElementsByTagName("*");
-        aLength = a.length;
-        for (var i = 0; i < aLength; i++) {
+    // Показать подсказку
+    showTooltip(e) {
+        const d = e.currentTarget;
+        const s = d.getAttribute(this.attr_name);
+        if (!s) return;
 
-//if (a[i].tagName == "A" || a[i].tagName == "BUTTON" || (a[i].tagName == "INPUT" && (a[i].type == "submit" || a[i].type == "button" || a[i].type == "reset"))) a[i].onclick = self.focus;
-
-            if (!a[i]) continue;
-
-            tooltip_title = a[i].getAttribute("title"); // returns form object if IE & name="title"; then IE crashes; so...
-            if (tooltip_title && typeof tooltip_title != "string") tooltip_title = "";
-
-            tooltip_alt = a[i].getAttribute("alt");
-            tooltip_blank = a[i].getAttribute("target") && a[i].getAttribute("target") == "_blank" && tooltip.blank_text;
-            if (tooltip_title || tooltip_blank) {
-                a[i].setAttribute(tooltip.attr_name, tooltip_blank ? (tooltip_title ? tooltip_title + " " + tooltip.blank_text : tooltip.blank_text) : tooltip_title);
-                if (a[i].getAttribute(tooltip.attr_name)) {
-                    a[i].removeAttribute("title");
-                    if (tooltip_alt && a[i].complete) a[i].removeAttribute("alt");
-                    tooltip.l(a[i], "mouseover", tooltip.s);
-                    tooltip.l(a[i], "mouseout", tooltip.h);
-                }
-            } else if (tooltip_alt && a[i].complete) {
-                a[i].setAttribute(tooltip.attr_name, tooltip_alt);
-                if (a[i].getAttribute(tooltip.attr_name)) {
-                    a[i].removeAttribute("alt");
-                    tooltip.l(a[i], "mouseover", tooltip.s);
-                    tooltip.l(a[i], "mouseout", tooltip.h);
-                }
-            }
-            if (!a[i].getAttribute(tooltip.attr_name) && tooltip_blank) {
-//
-            }
-        }
-        document.onmousemove = tooltip.m;
-        window.onscroll = tooltip.h;
-        tooltip.a(-99, -99);
-    },
-
-    s: function (e) {
-        d = window.event ? window.event.srcElement : e.target;
-        if (!d.getAttribute(tooltip.attr_name)) return;
-        s = d.getAttribute(tooltip.attr_name);
-        if (tooltip.newline_entity) {
-            s = s.replace(/\&/g, "&amp;");
-            s = s.replace(/\</g, "&lt;");
-            s = s.replace(/\>/g, "&gt;");
-            s = s.replace(eval("/" + tooltip.newline_entity + "/g"), "<br />");
-            tooltip.t.innerHTML = s;
+        // Очищаем и наполняем контейнер
+        if (this.newline_entity) {
+            // Экранируем HTML, заменяем разделитель на <br>
+            const escaped = s
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(new RegExp(this.newline_entity.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), "<br>");
+            this.t.innerHTML = escaped;
         } else {
-            if (tooltip.t.firstChild) tooltip.t.removeChild(tooltip.t.firstChild);
-            tooltip.t.appendChild(document.createTextNode(s));
-//tooltip.t.innerText = s;
+            this.t.textContent = s;
         }
-        tooltip.c = setTimeout("tooltip.t.style.visibility = 'visible';", tooltip.delay);
-        tooltip.g = true;
+
+        // Показываем с задержкой
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout(() => {
+            this.t.style.visibility = "visible";
+        }, this.delay);
+
+        this.show = true;
     },
 
-    h: function (e) {
-        tooltip.t.style.visibility = "hidden";
-        if (!tooltip.newline_entity && tooltip.t.firstChild) tooltip.t.removeChild(tooltip.t.firstChild);
-        clearTimeout(tooltip.c);
-        tooltip.g = false;
-        tooltip.a(-99, -99);
+    // Скрыть подсказку
+    hideTooltip() {
+        this.t.style.visibility = "hidden";
+        if (!this.newline_entity) this.t.textContent = "";
+        clearTimeout(this.timeout);
+        this.show = false;
+        this.setPosition(-99, -99);
     },
 
-    l: function (o, e, a) {
-        if (o.addEventListener) o.addEventListener(e, a, false); // was true--Opera 7b workaround!
-        else if (o.attachEvent) o.attachEvent("on" + e, a);
-        else return null;
+    // Обновить позицию по курсору
+    moveTooltip(e) {
+        if (!this.show) return;
+
+        const canvas = document.documentElement; // всегда HTML в стандартном режиме
+        const x = e.clientX + window.scrollX;
+        const y = e.clientY + window.scrollY;
+        this.setPosition(x, y);
     },
 
-    a: function (x, y) {
-        oCanvas = document.getElementsByTagName(
-            (document.compatMode && document.compatMode == "CSS1Compat") ? "HTML" : "BODY"
-        )[0];
+    // Рассчитать и установить координаты
+    setPosition(x, y) {
+        const canvas = document.documentElement;
+        const w_width = canvas.clientWidth + window.scrollX;
+        const w_height = window.innerHeight + window.scrollY;
 
-        w_width = oCanvas.clientWidth ? oCanvas.clientWidth + oCanvas.scrollLeft : window.innerWidth + window.pageXOffset;
-        w_height = window.innerHeight ? window.innerHeight + window.pageYOffset : oCanvas.clientHeight + oCanvas.scrollTop; // should be vice verca since Opera 7 is crazy!
+        // Ширина подсказки
+        if (this.max_width && this.t.offsetWidth > this.max_width) {
+            this.t.style.width = this.max_width + "px";
+        } else {
+            this.t.style.width = "auto";
+        }
 
-        tooltip.t.style.width = ((tooltip.max_width) && (tooltip.t.offsetWidth > tooltip.max_width)) ? tooltip.max_width + "px" : "auto";
+        const t_width = this.t.offsetWidth;
+        const t_height = this.t.offsetHeight;
 
-        t_width = tooltip.t.offsetWidth;
-        t_height = tooltip.t.offsetHeight;
+        let left = x + 6;
+        let top = y + 16;
 
-        tooltip.t.style.left = x + 6 + "px";
-        tooltip.t.style.top = y + 16 + "px";
+        // Не вылезать за края окна
+        if (x + t_width > w_width - 8) left = w_width - t_width;
+        if (y + t_height > w_height - 8) top = w_height - t_height;
 
-        if (x + t_width > w_width - 8) tooltip.t.style.left = w_width - t_width + "px";
-        if (y + t_height > w_height - 8) tooltip.t.style.top = w_height - t_height + "px";
+        this.t.style.left = left + "px";
+        this.t.style.top = top + "px";
     }
 };
 
-var root = window.addEventListener || window.attachEvent ? window : document.addEventListener ? document : null;
-if (root) {
-    if (root.addEventListener) root.addEventListener("load", tooltip.d, false);
-    else if (root.attachEvent) root.attachEvent("onload", tooltip.d);
+// Запуск после загрузки DOM
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => tooltip.init());
+} else {
+    tooltip.init(); // DOM уже готов
 }
