@@ -58,3 +58,12 @@ Stack trace:
 [27-May-2026 13:11:39 Europe/Moscow] PHP Warning:  Undefined array key "box" in C:\OSPanel\domains\kinozal.lv\message.php on line 53
 [27-May-2026 13:11:40 Europe/Moscow] PHP Warning:  Undefined array key "id" in C:\OSPanel\domains\kinozal.lv\friends.php on line 33
 [27-May-2026 13:11:40 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\friends.php on line 34
+[27-May-2026 13:34:05 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect DATETIME value: '0000-00-00 00:00:00' in C:\OSPanel\domains\kinozal.lv\include\functions.php:217
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(217): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\include\cleanup.php(73): sql_query()
+#2 C:\OSPanel\domains\kinozal.lv\include\cleanup.php(228): cleanup_fetch_ids()
+#3 C:\OSPanel\domains\kinozal.lv\include\functions.php(693): docleanup()
+#4 [internal function]: autoclean()
+#5 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 217
