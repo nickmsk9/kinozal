@@ -462,3 +462,18 @@ Stack trace:
 #2 C:\OSPanel\domains\kinozal.lv\index.php(29): require_once('C:\\OSPanel\\doma...')
 #3 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\include\secrets.php on line 13
+[27-May-2026 10:53:00 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\findnotconnectable.php on line 37
+[27-May-2026 10:53:00 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\findnotconnectable.php on line 90
+[27-May-2026 10:53:00 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\findnotconnectable.php on line 129
+[27-May-2026 10:53:00 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_assoc() in C:\OSPanel\domains\kinozal.lv\findnotconnectable.php:139
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\findnotconnectable.php on line 139
+[27-May-2026 10:53:12 Europe/Moscow] PHP Warning:  Undefined array key "format" in C:\OSPanel\domains\kinozal.lv\formats.php on line 35
+[27-May-2026 10:53:12 Europe/Moscow] PHP Warning:  Undefined variable $PHP_SELF in C:\OSPanel\domains\kinozal.lv\formats.php on line 48
+[27-May-2026 10:53:23 Europe/Moscow] PHP Warning:  Undefined array key "form" in C:\OSPanel\domains\kinozal.lv\formatss.php on line 37
+[27-May-2026 10:53:23 Europe/Moscow] PHP Warning:  Undefined array key "form" in C:\OSPanel\domains\kinozal.lv\formatss.php on line 127
+[27-May-2026 10:54:44 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_assoc() in C:\OSPanel\domains\kinozal.lv\ipcheck.php:51
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\ipcheck.php on line 51
