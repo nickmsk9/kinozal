@@ -37,7 +37,7 @@ function ud_datetime($value) {
 	return ud_h(date('d.m.Y в H:i', $ts)) . " ( " . get_et($ts) . " назад )";
 }
 
-function ud_birthday($value) {
+function ud_birthday($value, $link_class = "sba") {
 	if (empty($value) || $value == "0000-00-00") {
 		return "не указана";
 	}
@@ -50,7 +50,7 @@ function ud_birthday($value) {
 	$day = date("d", $ts);
 	$month = date("m", $ts);
 	$year = date("Y", $ts);
-	return '<a href="/users.php?s6=' . $day . '-' . $month . '" class="sba">' . $day . ' ' . ($months[$month] ?? $month) . '</a> ' . $year . ' года';
+	return '<a href="/users.php?s6=' . $day . '-' . $month . '" class="' . ud_h($link_class) . '">' . $day . ' ' . ($months[$month] ?? $month) . '</a> ' . $year . ' года';
 }
 
 function ud_rank_name($user) {
@@ -248,15 +248,15 @@ if ($row_comments = mysqli_fetch_row($res_comments)) {
 	$comment_count = (int)$row_comments[0];
 }
 
-$last_torrent_link = '<a href="/browse.php" class="sba">здесь</a>';
+$last_torrent_link = '<a href="/browse.php" class="' . $user_class_css . '">здесь</a>';
 $res_last = sql_query("SELECT torrent FROM snatched WHERE userid = $id ORDER BY completedat DESC, last_action DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
 if ($last = mysqli_fetch_assoc($res_last)) {
-	$last_torrent_link = '<a href="/details.php?id=' . (int)$last["torrent"] . '" class="sba">здесь</a>';
+	$last_torrent_link = '<a href="/details.php?id=' . (int)$last["torrent"] . '" class="' . $user_class_css . '">здесь</a>';
 }
 
-$city = !empty($user["city"]) ? '<a href="/users.php?s2=' . urlencode($user["city"]) . '" class="sba">' . ud_h($user["city"]) . '</a>' : 'не указано';
-$favorite_movie = !empty($user["favorite_movie"]) ? '<a href="/users.php?s3=' . urlencode($user["favorite_movie"]) . '" class="sba">' . ud_h($user["favorite_movie"]) . '</a>' : 'не указано';
-$favorite_persons = !empty($user["favorite_persons"]) ? '<a href="/users.php?s4=' . urlencode($user["favorite_persons"]) . '" class="sba">' . ud_h($user["favorite_persons"]) . '</a>' : 'не указано';
+$city = !empty($user["city"]) ? '<a href="/users.php?s2=' . urlencode($user["city"]) . '" class="' . $user_class_css . '">' . ud_h($user["city"]) . '</a>' : 'не указано';
+$favorite_movie = !empty($user["favorite_movie"]) ? '<a href="/users.php?s3=' . urlencode($user["favorite_movie"]) . '" class="' . $user_class_css . '">' . ud_h($user["favorite_movie"]) . '</a>' : 'не указано';
+$favorite_persons = !empty($user["favorite_persons"]) ? '<a href="/users.php?s4=' . urlencode($user["favorite_persons"]) . '" class="' . $user_class_css . '">' . ud_h($user["favorite_persons"]) . '</a>' : 'не указано';
 
 stdhead("Пользователь :: " . $user["username"]);
 
@@ -266,42 +266,42 @@ if (!$enabled) {
 ?>
 <div class="mn_wrap">
 	<div class="mn1_menu">
-		<ul class="men u2 w200">
+		<ul class="men w200">
 			<li class="img"><a href="/userdetails.php?id=<?= $id ?>"><img src="<?= $avatar_url ?>" class="p200" alt=""></a></li>
 			<li class="tp">Меню пользователя</li>
-			<li><span class="bulet"></span><a href="/message.php">Личные сообщения</a></li>
-			<li><span class="bulet"></span><a href="/userdetails.php?id=<?= $id ?>">Мой профиль</a></li>
-			<li><span class="bulet"></span><a href="/my.php">Редактировать профиль</a></li>
-			<li><span class="bulet"></span><a href="/mygroups.php">Мои группы</a></li>
-			<li><span class="bulet"></span><a href="/friends.php?id=<?= $id ?>">Мой список друзей</a></li>
-			<li class="sf"><span class="bulet"></span><a href="/mytorrents.php?id=<?= $id ?>">Мои раздачи</a></li>
+			<li><span class="bulet"></span><a href="/message.php" class="<?= $user_class_css ?>">Личные сообщения</a></li>
+			<li><span class="bulet"></span><a href="/userdetails.php?id=<?= $id ?>" class="<?= $user_class_css ?>">Мой профиль</a></li>
+			<li><span class="bulet"></span><a href="/my.php" class="<?= $user_class_css ?>">Редактировать профиль</a></li>
+			<li><span class="bulet"></span><a href="/mygroups.php" class="<?= $user_class_css ?>">Мои группы</a></li>
+			<li><span class="bulet"></span><a href="/friends.php?id=<?= $id ?>" class="<?= $user_class_css ?>">Мой список друзей</a></li>
+			<li class="sf"><span class="bulet"></span><a href="/mytorrents.php?id=<?= $id ?>" class="<?= $user_class_css ?>">Мои раздачи</a></li>
 			<li class="tp">Репутация<span class="floatright"><a href="/pay_mode_b.php?userid=<?= $id ?>" title="Понизить репутацию"><img border="0" src="/pic/minus.gif" alt=""></a> <b><?= $reputation ?></b> <a href="/pay_mode_b.php?userid=<?= $id ?>" title="Повысить репутацию"><img border="0" src="/pic/plus.gif" alt=""></a></span></li>
-			<li><span class="bulet"></span><a href="/user_reputation.php?id=<?= $id ?>">Полученные отзывы</a></li>
-			<li><span class="bulet"></span><a href="/user_reputation.php?id=<?= $id ?>&amp;type=2">Отданные отзывы</a></li>
+			<li><span class="bulet"></span><a href="/user_reputation.php?id=<?= $id ?>" class="<?= $user_class_css ?>">Полученные отзывы</a></li>
+			<li><span class="bulet"></span><a href="/user_reputation.php?id=<?= $id ?>&amp;type=2" class="<?= $user_class_css ?>">Отданные отзывы</a></li>
 			<li class="tp">Закладки</li>
-			<li><span class="bulet"></span><a href="/bookmarks.php?type=1">Раздачи</a></li>
-			<li><span class="bulet"></span><a href="/bookmarks.php?type=2">Группы</a></li>
-			<li><span class="bulet"></span><a href="/bookmarks.php?type=3">Пользователи</a></li>
-			<li class="sf"><span class="bulet"></span><a href="/bookmarks.php?type=4">Персоны</a></li>
+			<li><span class="bulet"></span><a href="/bookmarks.php?type=1" class="<?= $user_class_css ?>">Раздачи</a></li>
+			<li><span class="bulet"></span><a href="/bookmarks.php?type=2" class="<?= $user_class_css ?>">Группы</a></li>
+			<li><span class="bulet"></span><a href="/bookmarks.php?type=3" class="<?= $user_class_css ?>">Пользователи</a></li>
+			<li class="sf"><span class="bulet"></span><a href="/bookmarks.php?type=4" class="<?= $user_class_css ?>">Персоны</a></li>
 			<li class="tp">История</li>
-			<li><span class="bulet"></span><a href="/hytorrents.php?id=<?= $id ?>">Скачанного</a></li>
-			<li><span class="bulet"></span><a href="/userhistory.php?id=<?= $id ?>">Комментариев</a></li>
-			<li><span class="bulet"></span><a href="/uservotes.php?id=<?= $id ?>">Голосований</a></li>
+			<li><span class="bulet"></span><a href="/hytorrents.php?id=<?= $id ?>" class="<?= $user_class_css ?>">Скачанного</a></li>
+			<li><span class="bulet"></span><a href="/userhistory.php?id=<?= $id ?>" class="<?= $user_class_css ?>">Комментариев</a></li>
+			<li><span class="bulet"></span><a href="/uservotes.php?id=<?= $id ?>" class="<?= $user_class_css ?>">Голосований</a></li>
 			<li class="tp">Голоса<span class="floatright b"><?= number_format($bonus, 0, '.', ' ') ?></span></li>
-			<li><span class="bulet"></span><a href="/pay.php">Получить голоса</a></li>
-			<li><span class="bulet"></span><a href="/pay_mode.php">Управление голосами</a></li>
-			<li><span class="bulet"></span><a href="/pay_mode.php">Оставить пожелание</a></li>
-			<li><span class="bulet"></span><a href="/pay_mode.php">Обнулить счетчик скачиваний</a></li>
+			<li><span class="bulet"></span><a href="/pay.php" class="<?= $user_class_css ?>">Получить голоса</a></li>
+			<li><span class="bulet"></span><a href="/pay_mode.php" class="<?= $user_class_css ?>">Управление голосами</a></li>
+			<li><span class="bulet"></span><a href="/pay_mode.php" class="<?= $user_class_css ?>">Оставить пожелание</a></li>
+			<li><span class="bulet"></span><a href="/pay_mode.php" class="<?= $user_class_css ?>">Обнулить счетчик скачиваний</a></li>
 		</ul>
 	</div>
 	<div class="mn1_content">
 		<div class="bx1 <?= $user_class_css ?>"><a href="/userdetails.php?id=<?= $id ?>" class="<?= $user_class_css ?>"><?= $profile_name ?></a> <?= $user_icons ?></div>
-		<div class="bx1_0"><table class="tables1 u2">
+		<div class="bx1_0"><table class="tables1 <?= $user_class_css ?>">
 			<?= ud_table_row("Звание", $rank_name) ?>
-			<? $cups_html = function_exists('kz_cups_user_profile_html') ? kz_cups_user_profile_html($id) : ''; ?>
+			<? $cups_html = function_exists('kz_cups_user_profile_html') ? kz_cups_user_profile_html($id, (int)$user["class"]) : ''; ?>
 			<? if ($cups_html !== '') { echo ud_table_row("Кубок", $cups_html); } ?>
 		</table></div>
-		<div class="bx1_0"><table class="tables1 u2">
+		<div class="bx1_0"><table class="tables1 <?= $user_class_css ?>">
 			<?= ud_table_row("Залил", $uploaded_total . " ( сегодня: 0 Б )") ?>
 			<?= ud_table_row("Скачал", $downloaded_total . " ( сегодня: 0 Б )") ?>
 			<?= ud_table_row("Рейтинг", ud_rating_img($ratio_value) . $ratio_value) ?>
@@ -309,20 +309,20 @@ if (!$enabled) {
 			<?= ud_table_row("Пир", $leech_total . " ( сегодня: 0 мин. )") ?>
 			<?= ud_table_row("Торренты", "Доступно в сутки ( $daily_limit ) Скачано ( $daily_downloaded ) Последний ( $last_torrent_link )") ?>
 		</table></div>
-		<div class="bx1_0"><table class="tables1 u2">
-			<?= ud_table_row("Раздачи", $torrent_count > 0 ? '<a href="/mytorrents.php?id=' . $id . '" class="sba">' . $torrent_count . ' раздач</a>' : "нет раздач") ?>
-			<?= ud_table_row("Комментарии", $comment_count > 0 ? '<a href="/userhistory.php?id=' . $id . '" class="sba">' . $comment_count . ' комментариев</a>' : "нет комментариев") ?>
+		<div class="bx1_0"><table class="tables1 <?= $user_class_css ?>">
+			<?= ud_table_row("Раздачи", $torrent_count > 0 ? '<a href="/mytorrents.php?id=' . $id . '" class="' . $user_class_css . '">' . $torrent_count . ' раздач</a>' : "нет раздач") ?>
+			<?= ud_table_row("Комментарии", $comment_count > 0 ? '<a href="/userhistory.php?id=' . $id . '" class="' . $user_class_css . '">' . $comment_count . ' комментариев</a>' : "нет комментариев") ?>
 		</table></div>
-		<div class="bx1_0"><table class="tables1 u2">
+		<div class="bx1_0"><table class="tables1 <?= $user_class_css ?>">
 			<?= ud_table_row("Зарегистрирован", ud_datetime($user["added"])) ?>
 			<?= ud_table_row("Был на трекере", ud_datetime($user["last_access"])) ?>
-			<?= ud_table_row("Место жительства", ($country_flag !== '' ? "<img src='/pic/flag/$country_flag' class='i2 c$country_id' alt=''> " : "") . "<a href='/users.php?co=$country_id' class='sba'>$country_name</a>") ?>
-			<?= ud_table_row("Дата рождения", ud_birthday($user["birthday"])) ?>
+			<?= ud_table_row("Место жительства", ($country_flag !== '' ? "<img src='/pic/flag/$country_flag' class='i2 c$country_id' alt=''> " : "") . "<a href='/users.php?co=$country_id' class='$user_class_css'>$country_name</a>") ?>
+			<?= ud_table_row("Дата рождения", ud_birthday($user["birthday"], $user_class_css)) ?>
 			<?= ud_table_row("Города", $city) ?>
 			<?= ud_table_row("Любимый фильм", $favorite_movie) ?>
 			<?= ud_table_row("Любимые персоны", $favorite_persons) ?>
 		</table></div>
-		<div id="connecto"><div class="bx1 u2"><span id="connecto_msg">Проверить подключения ( сид / пир ) к трекеру ( <a href="#" onclick="manage_Connect(); return false;" class="sba">проверить</a> )</span></div></div>
+		<div id="connecto"><div class="bx1 <?= $user_class_css ?>"><span id="connecto_msg">Проверить подключения ( сид / пир ) к трекеру ( <a href="#" onclick="manage_Connect(); return false;" class="<?= $user_class_css ?>">проверить</a> )</span></div></div>
 		<script type="text/javascript">
 		function manage_Connect() {
 			$('#connecto_msg').html('Загрузка, идет проверка информации...');

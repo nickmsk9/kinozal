@@ -451,7 +451,7 @@ function kz_cups_for_user($userid)
     return $rows;
 }
 
-function kz_cups_user_profile_html($userid)
+function kz_cups_user_profile_html($userid, $user_class = null)
 {
     $cups = kz_cups_for_user($userid);
 
@@ -460,9 +460,10 @@ function kz_cups_user_profile_html($userid)
     }
 
     $parts = array();
+    $class = $user_class === null ? 'u9' : 'u' . (int)$user_class;
 
     foreach ($cups as $cup) {
-        $parts[] = '<i class="i1 ' . kz_cups_h($cup['icon']) . '"></i> <span class="u9">' . kz_cups_h($cup['profile_title']) . '</span>';
+        $parts[] = '<i class="i1 ' . kz_cups_h($cup['icon']) . '"></i> <span class="' . $class . '">' . kz_cups_h($cup['profile_title']) . '</span>';
     }
 
     return implode('<br />', $parts);

@@ -327,3 +327,12 @@ Stack trace:
 #4 [internal function]: autoclean()
 #5 {main}
   thrown in /var/www/html/include/functions.php on line 189
+[27-May-2026 16:30:17 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect DATETIME value: '0000-00-00 00:00:00' in /var/www/html/include/functions.php:189
+Stack trace:
+#0 /var/www/html/include/functions.php(189): mysqli_query(Object(mysqli), '\n        SELECT...')
+#1 /var/www/html/include/cleanup.php(73): sql_query('\n        SELECT...')
+#2 /var/www/html/include/cleanup.php(220): cleanup_fetch_ids('\n        SELECT...')
+#3 /var/www/html/include/functions.php(691): docleanup()
+#4 [internal function]: autoclean()
+#5 {main}
+  thrown in /var/www/html/include/functions.php on line 189
