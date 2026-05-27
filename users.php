@@ -163,7 +163,7 @@ function users_paginator($count, $perpage, $page)
     return '<div class="paginator"><ul>' . implode("\n", $items) . '</ul></div>';
 }
 
-function users_online_data()
+function users_online_html()
 {
     $dt = time() - 300;
     $res = sql_query("
@@ -172,31 +172,47 @@ function users_online_data()
         INNER JOIN users AS u ON u.id = s.uid
         WHERE s.time >= $dt
           AND s.uid > 0
-          AND s.url LIKE '/users.php%'
+          AND (s.url LIKE '/users.php%' OR s.url LIKE 'users.php%')
         GROUP BY s.uid, u.username, u.class, u.gender, u.parked
-        ORDER BY u.username ASC
+        ORDER BY u.class DESC, u.username ASC
     ") or sqlerr(__FILE__, __LINE__);
 
     $items = array();
     while ($row = mysqli_fetch_assoc($res)) {
-        $items[] = (int)$row['uid']
-            . '|' . str_replace(array('|', '^'), '', (string)$row['username'])
-            . '|' . (int)$row['class']
-            . '|' . ((string)$row['gender'] === '2' ? '1' : '')
-            . '|||'
-            . ((string)$row['parked'] === 'yes' ? '1' : '');
+        $username = users_h($row['username']);
+        $html = '<a href="/userdetails.php?id=' . (int)$row['uid'] . '" class="u' . (int)$row['class'] . '">' . $username . '</a>';
+
+        if ((string)$row['gender'] === '2') {
+            $html .= '<i class="i1 s_dv"></i>';
+        }
+
+        if ((string)$row['parked'] === 'yes') {
+            $html .= '<i class="i1 s_park"></i>';
+        }
+
+        $items[] = $html;
     }
 
-    return '^' . implode('^', $items) . ($items ? '^' : '');
+    if (!$items) {
+        return 'никого нет на этой странице';
+    }
+
+    return implode(', ', $items);
 }
 
 $search_name = users_get('s1');
+if ($search_name === '') {
+    $search_name = users_get('search');
+}
 $search_city = users_get('s2');
 $search_movie = users_get('s3');
 $search_person = users_get('s4');
 $country = users_get('co');
 $gender = users_get('gn');
-$photo = users_get('f');
+$photo = users_get('f', '1');
+if ($photo === '') {
+    $photo = '1';
+}
 $class = users_get('c');
 $status = users_get('g');
 $sort = users_get('s', '0');
@@ -222,7 +238,7 @@ if ($country !== '' && ctype_digit($country)) {
 if ($gender === '1' || $gender === '2') {
     $where[] = 'u.gender = ' . sqlesc($gender);
 }
-if ($photo !== '1') {
+if ($photo === '2') {
     $where[] = "u.avatar <> ''";
 }
 if ($class !== '' && ctype_digit($class)) {
@@ -366,8 +382,8 @@ stdhead('Список пользователей - Поиск пользоват
                         <dt>Фото</dt>
                         <dd>
                             <select name="f" class="w120">
-                                <option value=""<?= users_selected($photo, '') ?>>Только с фото</option>
                                 <option value="1"<?= users_selected($photo, '1') ?>>Все</option>
+                                <option value="2"<?= users_selected($photo, '2') ?>>Только с фото</option>
                             </select>
                         </dd>
                     </dl>
@@ -506,10 +522,7 @@ stdhead('Список пользователей - Поиск пользоват
         </li>
         <li>
             <div class="pad5x5">
-                <script type="text/javascript">
-                data = <?= json_encode(users_online_data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-                draw_usersarray();
-                </script>
+                <?= users_online_html() ?>
             </div>
         </li>
     </ul>

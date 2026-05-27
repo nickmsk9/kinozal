@@ -58,7 +58,13 @@ function render_blocks($blockfile, $blocktitle, $content, $bid, $bposition, $all
         $content = '<center>Существует проблема с этим блоком!</center>';
     }
 
-    if ($allow_block_hide && ($allow_hide || get_user_class() >= UC_ADMINISTRATOR)) {
+    $hide_control_allowed = !in_array(
+        basename((string) $blockfile),
+        array('block-top-torrents.php', 'block-birthday.php'),
+        true
+    );
+
+    if ($hide_control_allowed && $allow_block_hide && ($allow_hide || get_user_class() >= UC_ADMINISTRATOR)) {
         $hidden_blocks = array();
 
         if (!empty($_COOKIE['hb'])) {
