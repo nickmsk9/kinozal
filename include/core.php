@@ -56,7 +56,7 @@ if ($use_gzip) {
 // IMPORTANT CONSTANTS
 define("BETA", 0); // Set 0 to remove *BETA* notice.
 define("BETA_NOTICE", "\n<br />Внимание! Версия не для промышленого использования!");
-define("DEBUG_MODE", 0); // Shows the queries at the bottom of the page.
+define("DEBUG_MODE", 1); // Shows the queries at the bottom of the page.
 
 // BACKWARD CODE COMPATIBILITY
 // Старые TBDev/Yuna-скрипты могут обращаться к $HTTP_*_VARS.

@@ -207,10 +207,10 @@ function sql_query($query)
     global $link, $queries, $query_stat, $querytime;
 
     if (!$link instanceof mysqli) {
-        die("sql_query: нет подключения к базе данных");
+        die('sql_query: нет подключения к базе данных');
     }
 
-    $queries = isset($queries) ? (int) $queries + 1 : 1;
+    $queries = isset($queries) ? (int)$queries + 1 : 1;
 
     $query_start_time = timer();
 
@@ -219,22 +219,71 @@ function sql_query($query)
     $query_end_time = timer();
     $query_time = $query_end_time - $query_start_time;
 
-    $querytime = isset($querytime) ? $querytime + $query_time : $query_time;
+    $querytime = isset($querytime) ? (float)$querytime + $query_time : $query_time;
+
+    /*
+     * Файл и строку собираем только в debug-режиме,
+     * чтобы не грузить сайт лишним backtrace на production.
+     */
+    $debug_enabled = (
+        (defined('DEBUG_MODE') && DEBUG_MODE)
+        || isset($_GET['yuna'])
+    );
+
+    $debug_file = '';
+    $debug_line = '';
+
+    if ($debug_enabled) {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 8);
+
+        foreach ($trace as $trace_item) {
+            if (empty($trace_item['file'])) {
+                continue;
+            }
+
+            /*
+             * Пропускаем сам файл с sql_query(), чтобы найти реальный вызов:
+             * details.php, browse.php, index.php и т.д.
+             */
+            if ($trace_item['file'] === __FILE__) {
+                continue;
+            }
+
+            $debug_file = (string)$trace_item['file'];
+            $debug_line = isset($trace_item['line']) ? (int)$trace_item['line'] : 0;
+            break;
+        }
+
+        if ($debug_file !== '' && defined('ROOT_PATH')) {
+            $debug_file = str_replace(ROOT_PATH, '', $debug_file);
+        }
+    }
 
     $query_stat[] = array(
-        "seconds" => $query_time,
-        "query" => $query,
+        'seconds' => $query_time,
+        'query'   => $query,
+        'file'    => $debug_file,
+        'line'    => $debug_line,
     );
 
     if ($result === false) {
+        $error_file = $debug_file !== '' ? $debug_file : 'не определено';
+        $error_line = $debug_line > 0 ? $debug_line : 'не определено';
+
         die(
-            "sql_query: ошибка MySQL [" .
+            'sql_query: ошибка MySQL [' .
             mysqli_errno($link) .
-            "]: " .
-            mysqli_error($link) .
-            "<br><br>Запрос:<br><pre>" .
-            htmlspecialchars($query, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") .
-            "</pre>"
+            ']: ' .
+            htmlspecialchars(mysqli_error($link), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') .
+            '<br><br>Файл: <b>' .
+            htmlspecialchars((string)$error_file, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') .
+            '</b>' .
+            '<br>Строка: <b>' .
+            htmlspecialchars((string)$error_line, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') .
+            '</b>' .
+            '<br><br>Запрос:<br><pre>' .
+            htmlspecialchars($query, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') .
+            '</pre>'
         );
     }
 
@@ -880,15 +929,129 @@ function stdhead($title = "", $msgalert = true) {
 function stdfoot() {
 	global $CURUSER, $ss_uri, $tracker_lang, $queries, $tstart, $query_stat, $querytime;
 
-	if (!is_theme($ss_uri) || empty($ss_uri))
+	if (!is_theme($ss_uri) || empty($ss_uri)) {
 		$ss_uri = select_theme();
+	}
 
 	require_once('themes/' . $ss_uri . '/template.php');
 	require_once('themes/' . $ss_uri . '/stdfoot.php');
-	if ((DEBUG_MODE || isset($_GET['yuna'])) && count($query_stat)) {
-		foreach ($query_stat as $key => $value) {
-			print('<div>['.($key+1).'] => <b>'.($value['seconds'] > 0.01 ? '<font color="red" title="Рекомендуется оптимизировать запрос. Время исполнения превышает норму.">'.$value['seconds'].'</font>' : '<font color="green" title="Запрос не нуждается в оптимизации. Время исполнения допустимое.">'.$value['seconds'].'</font>' ).'</b> ['.htmlspecialchars_uni($value['query']).']</div>'."\n");
+
+	if ((DEBUG_MODE || isset($_GET['yuna'])) && !empty($query_stat) && is_array($query_stat)) {
+		$total_time = 0.0;
+		$slow_count = 0;
+
+		foreach ($query_stat as $value) {
+			$seconds = isset($value['seconds']) ? (float)$value['seconds'] : 0.0;
+			$total_time += $seconds;
+
+			if ($seconds > 0.01) {
+				$slow_count++;
+			}
 		}
+
+		print('<br />');
+		print('<table class="tables1" width="100%" cellspacing="0" cellpadding="5">');
+
+		print('<tr>');
+		print('<td class="colhead" colspan="5" align="center">Debug SQL-запросов</td>');
+		print('</tr>');
+
+		print('<tr>');
+		print('<td class="tables2" colspan="5" align="center">');
+		print('<span class="small">');
+		print('Всего запросов: <b>' . (int)count($query_stat) . '</b> &nbsp; | &nbsp; ');
+		print('Общее время SQL: <b>' . htmlspecialchars_uni(number_format($total_time, 5, '.', '')) . ' сек.</b> &nbsp; | &nbsp; ');
+
+		if ($slow_count > 0) {
+			print('Медленных запросов: <b><font color="red">' . (int)$slow_count . '</font></b>');
+		} else {
+			print('Медленных запросов: <b><font color="green">0</font></b>');
+		}
+
+		print('</span>');
+		print('</td>');
+		print('</tr>');
+
+		print('<tr>');
+		print('<td class="tables2" align="center" width="40"><b>#</b></td>');
+		print('<td class="tables2" align="center" width="90"><b>Время</b></td>');
+		print('<td class="tables2" align="center" width="120"><b>Статус</b></td>');
+		print('<td class="tables2" align="center" width="220"><b>Файл / строка</b></td>');
+		print('<td class="tables2" align="center"><b>SQL-запрос</b></td>');
+		print('</tr>');
+
+		foreach ($query_stat as $key => $value) {
+			$seconds = isset($value['seconds']) ? (float)$value['seconds'] : 0.0;
+			$query = isset($value['query']) ? (string)$value['query'] : '';
+
+			$file = '';
+			$line = '';
+
+			if (!empty($value['file'])) {
+				$file = (string)$value['file'];
+			} elseif (!empty($value['src'])) {
+				$file = (string)$value['src'];
+			} elseif (!empty($value['source'])) {
+				$file = (string)$value['source'];
+			}
+
+			if (!empty($value['line'])) {
+				$line = (string)$value['line'];
+			}
+
+			/*
+			 * Если в query_stat пока нет file/line,
+			 * попробуем аккуратно определить место вызова через backtrace,
+			 * но только для вывода debug и без тяжёлой глубокой трассировки.
+			 */
+			if ($file === '' && isset($value['trace']) && is_array($value['trace'])) {
+				foreach ($value['trace'] as $trace_item) {
+					if (!empty($trace_item['file'])) {
+						$file = (string)$trace_item['file'];
+						$line = !empty($trace_item['line']) ? (string)$trace_item['line'] : '';
+						break;
+					}
+				}
+			}
+
+			if ($file !== '') {
+				$file = str_replace(ROOT_PATH, '', $file);
+			}
+
+			$is_slow = ($seconds > 0.01);
+			$is_warning = ($seconds > 0.005 && $seconds <= 0.01);
+
+			if ($is_slow) {
+				$time_html = '<font color="red" title="Медленный SQL-запрос. Рекомендуется проверить индекс, WHERE, JOIN, ORDER BY или LIMIT.">' . htmlspecialchars_uni(number_format($seconds, 5, '.', '')) . '</font>';
+				$status_html = '<font color="red"><b>Медленный</b></font>';
+			} elseif ($is_warning) {
+				$time_html = '<font color="#b8860b" title="Запрос не критичный, но стоит обратить внимание при высокой нагрузке.">' . htmlspecialchars_uni(number_format($seconds, 5, '.', '')) . '</font>';
+				$status_html = '<font color="#b8860b"><b>Средний</b></font>';
+			} else {
+				$time_html = '<font color="green" title="Запрос выполняется быстро.">' . htmlspecialchars_uni(number_format($seconds, 5, '.', '')) . '</font>';
+				$status_html = '<font color="green"><b>OK</b></font>';
+			}
+
+			$place = 'не указано';
+
+			if ($file !== '') {
+				$place = htmlspecialchars_uni($file);
+
+				if ($line !== '') {
+					$place .= ':' . htmlspecialchars_uni($line);
+				}
+			}
+
+			print('<tr>');
+			print('<td class="tables2" align="center" valign="top"><b>' . ((int)$key + 1) . '</b></td>');
+			print('<td class="tables2" align="center" valign="top"><b>' . $time_html . '</b></td>');
+			print('<td class="tables2" align="center" valign="top">' . $status_html . '</td>');
+			print('<td class="tables2" valign="top"><span class="small">' . $place . '</span></td>');
+			print('<td class="tables2" valign="top"><span class="small">' . htmlspecialchars_uni($query) . '</span></td>');
+			print('</tr>');
+		}
+
+		print('</table>');
 		print('<br />');
 	}
 }
