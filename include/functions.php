@@ -723,43 +723,76 @@ function mksize($bytes) {
 }
 
 function mksizeint($bytes) {
-		$bytes = max(0, $bytes);
-		if ($bytes < 1000)
-				return floor($bytes) . " B";
-		elseif ($bytes < 1000 * 1024)
-				return floor($bytes / 1024) . " kB";
-		elseif ($bytes < 1000 * 1048576)
-				return floor($bytes / 1048576) . " MB";
-		elseif ($bytes < 1000 * 1073741824)
-				return floor($bytes / 1073741824) . " GB";
-		else
-				return floor($bytes / 1099511627776) . " TB";
+    // Неотрицательное значение (оригинальное поведение)
+    $bytes = max(0, $bytes);
+
+    // Множители (бинарные)
+    $kB = 1024;
+    $MB = $kB * 1024;       // 1 048 576
+    $GB = $MB * 1024;       // 1 073 741 824
+    $TB = $GB * 1024;       // 1 099 511 627 776
+
+    if ($bytes < 1000) {
+        return floor($bytes) . " B";
+    } elseif ($bytes < 1000 * $kB) {
+        return floor($bytes / $kB) . " kB";
+    } elseif ($bytes < 1000 * $MB) {
+        return floor($bytes / $MB) . " MB";
+    } elseif ($bytes < 1000 * $GB) {
+        return floor($bytes / $GB) . " GB";
+    } else {
+        return floor($bytes / $TB) . " TB";
+    }
 }
 
 function deadtime() {
-	global $announce_interval;
-	return time() - floor($announce_interval * 1.3);
+    global $announce_interval;
+
+    // Если интервал не задан или некорректен — возвращаем текущее время
+    if (!isset($announce_interval) || !is_numeric($announce_interval) || $announce_interval <= 0) {
+        return time();
+    }
+
+    // Оригинальная формула: вычитаем 130% от announce_interval
+    return time() - (int)floor($announce_interval * 1.3);
 }
 
 function mkprettytime($s) {
-    if ($s < 0)
-	$s = 0;
-    $t = array();
-    foreach (array("60:sec","60:min","24:hour","0:day") as $x) {
-		$y = explode(":", $x);
-		if ($y[0] > 1) {
-		    $v = $s % $y[0];
-		    $s = floor($s / $y[0]);
-		} else
-		    $v = $s;
-	$t[$y[1]] = $v;
+    // Приводим к целому и гарантируем неотрицательность
+    $s = (int)$s;
+    if ($s < 0) {
+        $s = 0;
     }
 
-    if ($t["day"])
-	return $t["day"] . "d " . sprintf("%02d:%02d:%02d", $t["hour"], $t["min"], $t["sec"]);
-    if ($t["hour"])
-	return sprintf("%d:%02d:%02d", $t["hour"], $t["min"], $t["sec"]);
-	return sprintf("%d:%02d", $t["min"], $t["sec"]);
+    // Массив для хранения единиц времени
+    $parts = [];
+
+    // Шаги преобразования: делитель → ключ массива
+    $steps = [
+        [60, 'sec'],   // секунды
+        [60, 'min'],   // минуты
+        [24, 'hour'],  // часы
+        [0,  'day']    // дни (делитель 0 означает «оставшееся значение»)
+    ];
+
+    foreach ($steps as $step) {
+        list($divisor, $key) = $step;
+        if ($divisor > 1) {
+            $parts[$key] = $s % $divisor;
+            $s = (int)($s / $divisor);
+        } else {
+            $parts[$key] = $s;   // остаток — это дни
+        }
+    }
+
+    // Выбор формата вывода в зависимости от наличия дней/часов
+    if ($parts['day']) {
+        return $parts['day'] . "d " . sprintf("%02d:%02d:%02d", $parts['hour'], $parts['min'], $parts['sec']);
+    }
+    if ($parts['hour']) {
+        return sprintf("%d:%02d:%02d", $parts['hour'], $parts['min'], $parts['sec']);
+    }
+    return sprintf("%d:%02d", $parts['min'], $parts['sec']);
 }
 
 function mkglobal($vars) {
@@ -794,85 +827,125 @@ function tr($x, $y, $noesc=0, $prints = true, $width = "", $relation = '') {
 }
 
 function validfilename($name) {
-	return preg_match('/^[^\0-\x1f:\\\\\/?*\xff#<>|]+$/si', $name);
+    return preg_match('/^[^\0-\x1f:\\\\\/?*\xff#<>|]+$/si', $name) === 1;
 }
 
 function validemail($email) {
-	return filter_var($email, FILTER_VALIDATE_EMAIL);
+	 $email = trim($email);
+    return filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
 function mail_possible($email) {
-	list(, $domain) = explode('@', $email);
-	if (function_exists('checkdnsrr'))
-		return checkdnsrr($domain, 'MX');
-	else
-		return true;
+    // Извлекаем домен после @
+    $parts = explode('@', $email);
+    if (count($parts) !== 2) {
+        return false; // Неверный email
+    }
+    $domain = $parts[1];
+
+    if (function_exists('checkdnsrr')) {
+        return checkdnsrr($domain, 'MX') === true;
+    }
+    return true; // Если проверка недоступна, считаем, что почта возможна
 }
 
 function send_pm($sender, $receiver, $added, $subject, $msg) {
-	sql_query('INSERT INTO messages (sender, receiver, added, subject, msg) VALUES ('.implode(', ', array_map('sqlesc', array($sender, $receiver, $added, $subject, $msg))).')') or sqlerr(__FILE__,__LINE__);
+    // Экранируем все параметры через sqlesc (предполагается, что функция определена)
+    $values = array_map('sqlesc', array($sender, $receiver, $added, $subject, $msg));
+    $query = 'INSERT INTO messages (sender, receiver, added, subject, msg) VALUES (' . implode(', ', $values) . ')';
+    sql_query($query) or sqlerr(__FILE__, __LINE__);
 }
 
-function sent_mail($to,$fromname,$fromemail,$subject,$body,$multiple=false,$multiplemail='') {
-	global $SITENAME,$SITEEMAIL,$smtptype,$smtp,$smtp_host,$smtp_port,$smtp_from,$smtpaddress,$accountname,$accountpassword,$rootpath;
-	# Sent Mail Function v.05 by xam (This function to help avoid spam-filters.)
-	$result = true;
-	if ($smtptype == 'default') {
-		@mail($to, $subject, $body, "From: $SITEEMAIL") or $result = false;
-	} elseif ($smtptype == 'advanced') {
-	# Is the OS Windows or Mac or Linux?
-	$headers = '';
-	$windows = false;
-	if (strtoupper(substr(PHP_OS,0,3)=='WIN')) {
-		$eol="\r\n";
-		$windows = true;
-	}
-	elseif (strtoupper(substr(PHP_OS,0,3)=='MAC'))
-		$eol="\r";
-	else
-		$eol="\n";
-	$mid = md5(getip() . $fromname);
-	$name = $_SERVER["SERVER_NAME"];
-	$headers .= "From: $fromname <$fromemail>".$eol;
-	$headers .= "Reply-To: $fromname <$fromemail>".$eol;
-	$headers .= "Return-Path: $fromname <$fromemail>".$eol;
-	$headers .= "Message-ID: <$mid.thesystem@$name>".$eol;
-	$headers .= "X-Mailer: PHP v".phpversion().$eol;
-	    $headers .= "MIME-Version: 1.0".$eol;
-	    $headers .= "Content-type: text/plain; charset=utf-8".$eol;
-	    $headers .= "X-Sender: PHP".$eol;
-    if ($multiple)
-    	$headers .= "Bcc: $multiplemail.$eol";
-	if ($smtp == "yes") {
-		ini_set('SMTP', $smtp_host);
-		ini_set('smtp_port', $smtp_port);
-		if ($windows)
-			ini_set('sendmail_from', $smtp_from);
-		}
+function sent_mail($to, $fromname, $fromemail, $subject, $body, $multiple = false, $multiplemail = '') {
+    global $SITENAME, $SITEEMAIL, $smtptype, $smtp, $smtp_host, $smtp_port, $smtp_from, $smtpaddress, $accountname, $accountpassword, $rootpath;
 
-    	@mail($to, $subject, $body, $headers) or $result = false;
+    $result = true;
 
-	    	ini_restore('SMTP');
-			ini_restore('smtp_port');
-			if ($windows)
-				ini_restore('sendmail_from');
-		} elseif ($smtptype == 'external') {
-		require_once($rootpath . 'include/smtp/smtp.lib.php');
-		$mail = new smtp;
-		$mail->debug(false);
-		$mail->open($smtp_host, $smtp_port);
-		if (!empty($accountname) && !empty($accountpassword))
-			$mail->auth($accountname, $accountpassword);
-		$mail->from($SITEEMAIL);
-		$mail->to($to);
-		$mail->subject($subject);
-		$mail->body($body);
-		$result = $mail->send();
-		$mail->close();
-	} else
-		$result = false;
+    // Режим 1: стандартная функция mail()
+    if ($smtptype == 'default') {
+        if (!@mail($to, $subject, $body, "From: $SITEEMAIL")) {
+            $result = false;
+        }
+        return $result;
+    }
 
-	return $result;
+    // Режим 2: расширенный (заголовки, Bcc, настройка SMTP через ini)
+    if ($smtptype == 'advanced') {
+        // Определяем символ конца строки в зависимости от ОС
+        if (stripos(PHP_OS, 'WIN') === 0) {
+            $eol = "\r\n";
+            $windows = true;
+        } elseif (stripos(PHP_OS, 'MAC') === 0) {
+            $eol = "\r";
+            $windows = false;
+        } else {
+            $eol = "\n";
+            $windows = false;
+        }
+
+        // Формируем уникальный Message-ID
+        $mid = md5(getip() . $fromname);
+        $serverName = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost';
+
+        $headers = "From: $fromname <$fromemail>" . $eol;
+        $headers .= "Reply-To: $fromname <$fromemail>" . $eol;
+        $headers .= "Return-Path: $fromname <$fromemail>" . $eol;
+        $headers .= "Message-ID: <$mid.thesystem@$serverName>" . $eol;
+        $headers .= "X-Mailer: PHP v" . phpversion() . $eol;
+        $headers .= "MIME-Version: 1.0" . $eol;
+        $headers .= "Content-type: text/plain; charset=utf-8" . $eol;
+        $headers .= "X-Sender: PHP" . $eol;
+
+        if ($multiple) {
+            $headers .= "Bcc: $multiplemail" . $eol; // исправлена лишняя точка
+        }
+
+        // Если требуется использовать внешний SMTP через настройки ini
+        if ($smtp == "yes") {
+            ini_set('SMTP', $smtp_host);
+            ini_set('smtp_port', $smtp_port);
+            if ($windows) {
+                ini_set('sendmail_from', $smtp_from);
+            }
+        }
+
+        if (!@mail($to, $subject, $body, $headers)) {
+            $result = false;
+        }
+
+        // Восстанавливаем настройки ini
+        ini_restore('SMTP');
+        ini_restore('smtp_port');
+        if ($windows) {
+            ini_restore('sendmail_from');
+        }
+
+        return $result;
+    }
+
+    // Режим 3: внешняя SMTP-библиотека
+    if ($smtptype == 'external') {
+        if (!file_exists($rootpath . 'include/smtp/smtp.lib.php')) {
+            return false;
+        }
+        require_once($rootpath . 'include/smtp/smtp.lib.php');
+        $mail = new smtp;
+        $mail->debug(false);
+        $mail->open($smtp_host, $smtp_port);
+        if (!empty($accountname) && !empty($accountpassword)) {
+            $mail->auth($accountname, $accountpassword);
+        }
+        $mail->from($SITEEMAIL);
+        $mail->to($to);
+        $mail->subject($subject);
+        $mail->body($body);
+        $result = $mail->send();
+        $mail->close();
+        return $result;
+    }
+
+    // Неизвестный тип
+    return false;
 }
 
 function sqlesc($value, $force = false)
@@ -1076,23 +1149,23 @@ function genbark($x,$y) {
 	exit();
 }
 
-function mksecret($length = 20)
-{
-    $set = array(
-        'a','A','b','B','c','C','d','D','e','E','f','F','g','G','h','H',
-        'i','I','j','J','k','K','l','L','m','M','n','N','o','O','p','P',
-        'q','Q','r','R','s','S','t','T','u','U','v','V','w','W','x','X',
-        'y','Y','z','Z','1','2','3','4','5','6','7','8','9'
-    );
+function mksecret($length = 20) {
+    // Набор символов: буквы (верхний и нижний регистр) + цифры
+    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $charsLen = strlen($chars);
+    $result = '';
 
-    $str = '';
-
-    for ($i = 1; $i <= $length; $i++) {
-        $ch = rand(0, count($set) - 1);
-        $str .= $set[$ch];
+    // Используем криптостойкий генератор, если доступен (PHP 7+)
+    for ($i = 0; $i < $length; $i++) {
+        if (function_exists('random_int')) {
+            $result .= $chars[random_int(0, $charsLen - 1)];
+        } else {
+            // fallback для старых версий PHP
+            $result .= $chars[mt_rand(0, $charsLen - 1)];
+        }
     }
 
-    return $str;
+    return $result;
 }
 
 function httperr($code = 404) {
@@ -1368,40 +1441,42 @@ function parked() {
 
 function magnet($arg1, $arg2 = null, $arg3 = null, $arg4 = null, $arg5 = array())
 {
-    // Старый порядок:
-    // magnet($html, $info_hash, $name, $size, $announces)
+    // Определяем стиль вызова по типу первого аргумента
     if (is_bool($arg1)) {
-        $html = $arg1;
-        $info_hash = $arg2;
-        $name = $arg3;
-        $size = $arg4;
-        $announces = $arg5;
+        // Старый порядок: magnet($html, $info_hash, $name, $size, $announces)
+        $html       = (bool)$arg1;
+        $info_hash  = (string)$arg2;
+        $name       = (string)$arg3;
+        $size       = (int)$arg4;
+        $announces  = is_array($arg5) ? $arg5 : array();
     } else {
-        // Новый порядок:
-        // magnet($info_hash, $name, $size, $announces, $html)
-        $info_hash = $arg1;
-        $name = $arg2;
-        $size = $arg3;
-        $announces = is_array($arg4) ? $arg4 : array();
-        $html = is_bool($arg5) ? $arg5 : true;
+        // Новый порядок: magnet($info_hash, $name, $size, $announces, $html)
+        $info_hash  = (string)$arg1;
+        $name       = (string)$arg2;
+        $size       = (int)$arg3;
+        $announces  = is_array($arg4) ? $arg4 : array();
+        $html       = is_bool($arg5) ? $arg5 : true; // по умолчанию true
     }
 
-    $ampersand = $html ? '&amp;' : '&';
+    // Разделитель параметров: & для обычной ссылки, &amp; для HTML-страницы
+    $separator = $html ? '&amp;' : '&';
 
+    // Собираем параметры трекеров: каждый получает вид &tr=URL
+    $trackers_part = '';
+    if (!empty($announces)) {
+        $trackers_part = implode($separator . 'tr=', (array)$announces);
+    }
+
+    // Формируем magnet-ссылку
     return sprintf(
         'magnet:?xt=urn:btih:%2$s%1$sdn=%3$s%1$sxl=%4$d%1$str=%5$s',
-        $ampersand,
-        (string) $info_hash,
-        urlencode((string) $name),
-        (int) $size,
-        implode($ampersand . 'tr=', (array) $announces)
+        $separator,
+        $info_hash,
+        urlencode($name),
+        $size,
+        $trackers_part
     );
 }
-
-// В этой строке забит копирайт. При его убирании можешь поплатиться рабочим трекером ;) В данном случае - убирая строчки ниже ты не сможешь использовать трекер.
-define ('VERSION', '');
-define ('NUM_VERSION', '2.1.18');
-define ('TBVERSION', 'Powered by <a href="http://www.tbdev.net" target="_blank" style="cursor: help;" title="Бесплатная OpenSource база" class="copyright">TBDev</a> v'.NUM_VERSION.' <a href="http://bit-torrent.kiev.ua" target="_blank" style="cursor: help;" title="Сайт разработчика движка" class="copyright">Yuna Scatari Edition</a> '.VERSION.' Copyright &copy; 2001-'.date('Y'));
 
 function mysql_modified_rows(): int
 {
