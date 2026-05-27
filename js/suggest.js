@@ -1,155 +1,228 @@
-//function $(e){if(typeof e=='string')e=document.getElementById(e);return e};
-function collect(a,f){var n=[];for(var i=0;i<a.length;i++){var v=f(a[i]);if(v!=null)n.push(v)}return n};
-
-ajax={};
-ajax.x=function(){try{return new ActiveXObject('Msxml2.XMLHTTP')}catch(e){try{return new ActiveXObject('Microsoft.XMLHTTP')}catch(e){return new XMLHttpRequest()}}};
-ajax.serialize=function(f){var g=function(n){return f.getElementsByTagName(n)};var nv=function(e){if(e.name)return encodeURIComponent(e.name)+'='+encodeURIComponent(e.value);else return ''};var i=collect(g('input'),function(i){if((i.type!='radio'&&i.type!='checkbox')||i.checked)return nv(i)});var s=collect(g('select'),nv);var t=collect(g('textarea'),nv);return i.concat(s).concat(t).join('&');};
-ajax.send=function(u,f,m,a){var x=ajax.x();x.open(m,u,true);x.onreadystatechange=function(){if(x.readyState==4)f(x.responseText)};if(m=='POST')x.setRequestHeader('Content-type','application/x-www-form-urlencoded');x.send(a)};
-ajax.get=function(url,func){ajax.send(url,func,'GET')};
-ajax.gets=function(url){var x=ajax.x();x.open('GET',url,false);x.send(null);return x.responseText};
-ajax.post=function(url,func,args){ajax.send(url,func,'POST',args)};
-ajax.update=function(url,elm){var e=$(elm);var f=function(r){e.innerHTML=r};ajax.get(url,f)};
-ajax.submit=function(url,elm,frm){var e=$(elm);var f=function(r){e.innerHTML=r};ajax.post(url,f,ajax.serialize(frm))};
-
-var pos = 0;
-var count = 0;
-
-function noenter(key) {
-	suggcont = document.getElementById("suggcontainer");
-	if (suggcont.style.display == "block") {
-		if (key == 13) {
-			choiceclick(document.getElementById(pos));
-			return false;
-		} else {
-			return true;
-		}
-	} else {
-		return true;
-	}
+// Вспомогательная функция, заменяющая закомментированную $
+function $(e) {
+    if (typeof e === 'string') e = document.getElementById(e);
+    return e;
 }
 
-document.onclick = function () { closechoices(); };
-
-function suggest(key,query) {
-	if (key == 38) {
-		goPrev();
-	} else if (key == 40) {
-		goNext();
-	} else if (key != 13) {
-		if (query.length > 3) {
-			t = new Date();
-			ajax.get('suggest.php?q='+query+'&bla='+t.getTime(),update);
-		} else {
-			update('');
-		}
-	}
+function collect(arr, fn) {
+    const result = [];
+    for (let i = 0; i < arr.length; i++) {
+        const val = fn(arr[i]);
+        if (val != null) result.push(val);
+    }
+    return result;
 }
 
+const ajax = {
+    // Создаёт XMLHttpRequest (без устаревших ActiveX)
+    x() {
+        return new XMLHttpRequest();
+    },
+
+    // Сериализует форму в строку запроса
+    serialize(form) {
+        const g = tag => Array.from(form.getElementsByTagName(tag));
+        const nv = el => el.name ? encodeURIComponent(el.name) + '=' + encodeURIComponent(el.value) : '';
+
+        const inputs = collect(g('input'), i => {
+            if ((i.type !== 'radio' && i.type !== 'checkbox') || i.checked) return nv(i);
+            return null;
+        });
+        const selects = collect(g('select'), nv);
+        const textareas = collect(g('textarea'), nv);
+
+        return inputs.concat(selects, textareas).join('&');
+    },
+
+    // Универсальная отправка запроса
+    send(url, callback, method, data) {
+        const xhr = this.x();
+        xhr.open(method, url, true);
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4) callback(xhr.responseText);
+        };
+        if (method === 'POST') {
+            xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        }
+        xhr.send(data);
+    },
+
+    // GET-запрос
+    get(url, callback) { this.send(url, callback, 'GET'); },
+
+    // Синхронный GET (оставлен для обратной совместимости, но НЕ рекомендуется)
+    gets(url) {
+        const xhr = this.x();
+        xhr.open('GET', url, false);
+        xhr.send(null);
+        return xhr.responseText;
+    },
+
+    // POST-запрос
+    post(url, callback, data) { this.send(url, callback, 'POST', data); },
+
+    // Загружает содержимое в элемент
+    update(url, elm) {
+        const e = $(elm);
+        this.get(url, r => { e.innerHTML = r; });
+    },
+
+    // Отправляет форму и загружает ответ в элемент
+    submit(url, elm, frm) {
+        const e = $(elm);
+        this.post(url, r => { e.innerHTML = r; }, this.serialize(frm));
+    }
+};
+
+// Глобальные переменные для подсказок
+let pos = 0;
+let count = 0;
+
+// Закрытие подсказок при клике (не перезаписываем другие обработчики)
+document.addEventListener('click', closechoices);
+
+// Запрет отправки формы по Enter, если список подсказок открыт
+function noenter(event) {
+    const suggcont = document.getElementById('suggcontainer');
+    if (suggcont && suggcont.style.display === 'block') {
+        const key = event.key || event.keyCode; // поддержка современных и старых браузеров
+        if (key === 'Enter' || key === 13) {
+            const selected = document.getElementById(pos);
+            if (selected) choiceclick(selected);
+            event.preventDefault();
+            return false;
+        }
+    }
+    return true;
+}
+
+// Основная функция обработки ввода в поле поиска
+function suggest(event, query) {
+    const key = event.key || event.keyCode;
+
+    if (key === 'ArrowUp' || key === 38) {
+        goPrev();
+    } else if (key === 'ArrowDown' || key === 40) {
+        goNext();
+    } else if (key !== 'Enter' && key !== 13) {
+        if (query.length > 3) {
+            const timestamp = new Date().getTime();
+            ajax.get('suggest.php?q=' + encodeURIComponent(query) + '&bla=' + timestamp, update);
+        } else {
+            update('');
+        }
+    }
+}
+
+// Обработка ответа от сервера
 function update(result) {
-	arr = new Array();
-	arr = result.split('\r\n');
+    const suggdiv = document.getElementById('suggestions');
+    const suggcont = document.getElementById('suggcontainer');
+    if (!suggdiv || !suggcont) return;
 
-	if (arr.length > 10) {
-		count = 10;
-	} else {
-		count = arr.length;
-	}
+    const arr = result.split('\r\n');
+    count = arr.length > 10 ? 10 : arr.length;
 
-	suggdiv = document.getElementById("suggestions");
-	suggcont = document.getElementById("suggcontainer");
-	if (arr[0].length > 0) {
-		suggcont.style.display = "block";
-		suggdiv.innerHTML = '';
-		suggdiv.style.height = count * 20;
-	
-		for (i = 1; i <= count; i++) {
-			novo = document.createElement("div");
-			suggdiv.appendChild(novo);
-			novo.id = i;
-			novo.style.height = "14px";
-			novo.style.padding = "3px";
-			novo.onmouseover = function() { select(this,true); };
-			novo.onmouseout = function() { unselect(this,true); };
-			novo.onclick = function() { choiceclick(this); };
-			novo.innerHTML = arr[i-1];
-		}
-	} else {
-		suggcont.style.display = "none";
-		count = 0;
-	}
+    if (arr[0].length > 0) {
+        suggcont.style.display = 'block';
+        suggdiv.innerHTML = '';
+        suggdiv.style.height = count * 20 + 'px';
+
+        for (let i = 1; i <= count; i++) {
+            const novo = document.createElement('div');
+            novo.id = i;
+            Object.assign(novo.style, {
+                height: '14px',
+                padding: '3px',
+                cursor: 'pointer'
+            });
+            novo.onmouseover = () => select(novo, true);
+            novo.onmouseout = () => unselect(novo, true);
+            novo.onclick = () => choiceclick(novo);
+            novo.textContent = arr[i - 1]; // безопасная вставка текста
+            suggdiv.appendChild(novo);
+        }
+    } else {
+        suggcont.style.display = 'none';
+        count = 0;
+    }
 }
 
-function select(obj,mouse) {
-	obj.style.backgroundColor = '#3399ff';
-	obj.style.color = '#ffffff';
-	if (mouse) {
-		pos = obj.id;
-		unselectAllOther(pos);
-	}
+function select(obj, mouse) {
+    if (!obj) return;
+    obj.style.backgroundColor = '#3399ff';
+    obj.style.color = '#ffffff';
+    if (mouse) {
+        pos = obj.id;
+        unselectAllOther(pos);
+    }
 }
 
-function unselect(obj,mouse) {
-	obj.style.backgroundColor = '#ffffff';
-	obj.style.color = '#000000';
-	if (mouse) {
-		pos = 0;
-	}
+function unselect(obj, mouse) {
+    if (!obj) return;
+    obj.style.backgroundColor = '#ffffff';
+    obj.style.color = '#000000';
+    if (mouse) {
+        pos = 0;
+    }
 }
 
 function goNext() {
-	if (pos <= count && count > 0) {
-		if (document.getElementById(pos)) {
-			unselect(document.getElementById(pos));
-		}
-		pos++;
-		if (document.getElementById(pos)) {
-			select(document.getElementById(pos));
-		} else {
-			pos = 0;
-		}
-	}
+    if (pos <= count && count > 0) {
+        const curr = document.getElementById(pos);
+        if (curr) unselect(curr);
+        pos++;
+        const next = document.getElementById(pos);
+        if (next) select(next);
+        else pos = 0;
+    }
 }
 
 function goPrev() {
-	if (count > 0) {
-		if (document.getElementById(pos)) {
-			unselect(document.getElementById(pos));
-			pos--;
-			if (document.getElementById(pos)) {
-				select(document.getElementById(pos));
-			} else {
-				pos = 0;
-			}
-		} else {
-			pos = count;
-			select(document.getElementById(count));
-		}
-	}
+    if (count > 0) {
+        const curr = document.getElementById(pos);
+        if (curr) {
+            unselect(curr);
+            pos--;
+            const prev = document.getElementById(pos);
+            if (prev) select(prev);
+            else pos = 0;
+        } else {
+            pos = count;
+            const last = document.getElementById(count);
+            if (last) select(last);
+        }
+    }
 }
 
 function choiceclick(obj) {
-	document.getElementById("searchinput").value = obj.innerHTML;
-	count = 0;
-	pos = 0;
-	suggcont = document.getElementById("suggcontainer");
-	suggcont.style.display = "none";
-	document.getElementById("searchinput").focus();
+    const searchInput = document.getElementById('searchinput');
+    if (!searchInput || !obj) return;
+    searchInput.value = obj.textContent || obj.innerHTML;
+    count = 0;
+    pos = 0;
+    const suggcont = document.getElementById('suggcontainer');
+    if (suggcont) suggcont.style.display = 'none';
+    searchInput.focus();
 }
 
 function closechoices() {
-	suggcont = document.getElementById("suggcontainer");
-	if (suggcont.style.display == "block") {
-		count = 0;
-		pos = 0;
-		suggcont.style.display = "none";
-	}
+    const suggcont = document.getElementById('suggcontainer');
+    if (suggcont && suggcont.style.display === 'block') {
+        count = 0;
+        pos = 0;
+        suggcont.style.display = 'none';
+    }
 }
 
 function unselectAllOther(id) {
-	for (i = 1; i <= count; i++) {
-		if (i != id) {
-			document.getElementById(i).style.backgroundColor = '#ffffff';
-			document.getElementById(i).style.color = '#000000';
-		}
-	}
+    for (let i = 1; i <= count; i++) {
+        if (i != id) {
+            const el = document.getElementById(i);
+            if (el) {
+                el.style.backgroundColor = '#ffffff';
+                el.style.color = '#000000';
+            }
+        }
+    }
 }
