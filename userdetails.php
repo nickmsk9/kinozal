@@ -77,6 +77,46 @@ function ud_table_row($title, $value) {
 	return "<tr><td class=\"w135\">" . $title . "</td><td>" . $value . "</td></tr>\n";
 }
 
+function ud_cup_history_modcomment($userid, $modcomment) {
+	$userid = (int)$userid;
+	$modcomment = (string)$modcomment;
+
+	if (!is_valid_id($userid)) {
+		return $modcomment;
+	}
+
+	$res = sql_query("
+		SELECT c.title, uc.source, uc.assigned_at, u.username AS assigned_username
+		FROM user_cups AS uc
+		INNER JOIN cups AS c ON c.id = uc.cup_id
+		LEFT JOIN users AS u ON u.id = uc.assigned_by
+		WHERE uc.userid = $userid
+		ORDER BY uc.assigned_at DESC, c.sort DESC, c.id DESC
+	") or sqlerr(__FILE__, __LINE__);
+
+	$lines = array();
+	while ($row = mysqli_fetch_assoc($res)) {
+		$title = (string)$row['title'];
+		if ($title === '' || strpos($modcomment, $title) !== false) {
+			continue;
+		}
+
+		$date = !empty($row['assigned_at']) && $row['assigned_at'] !== '0000-00-00 00:00:00'
+			? date('Y-m-d', strtotime($row['assigned_at']))
+			: date('Y-m-d');
+		$by = !empty($row['assigned_username'])
+			? 'пользователем ' . $row['assigned_username']
+			: ((string)$row['source'] === 'auto' ? 'автоматически' : 'администратором');
+		$lines[] = $date . ' - Назначен переходящий кубок "' . $title . '" ' . $by . '.';
+	}
+
+	if (!$lines) {
+		return $modcomment;
+	}
+
+	return implode("\n", $lines) . "\n" . $modcomment;
+}
+
 function ud_print_moderator_block($user, $id, $enabled) {
 	global $CURUSER, $DEFAULTBASEURL, $tracker_lang;
 
@@ -142,7 +182,8 @@ function ud_print_moderator_block($user, $id, $enabled) {
 	print("<tr><td class=\"rowhead w175\">Сбросить день рождения</td><td colspan=\"2\"><label><input type=\"radio\" name=\"resetb\" value=\"yes\"> Да</label> <label><input type=\"radio\" name=\"resetb\" value=\"no\" checked> Нет</label></td></tr>\n");
 	print("<tr><td class=\"rowhead w175\">Поддержка</td><td colspan=\"2\"><label><input type=\"radio\" name=\"support\" value=\"yes\"" . (($user["support"] ?? "no") == "yes" ? " checked" : "") . "> Да</label> <label><input type=\"radio\" name=\"support\" value=\"no\"" . (($user["support"] ?? "no") == "no" ? " checked" : "") . "> Нет</label></td></tr>\n");
 	print("<tr><td class=\"rowhead w175\">Поддержка для:</td><td colspan=\"2\"><textarea rows=\"6\" class=\"w100p\" name=\"supportfor\">" . ud_h($user["supportfor"] ?? "") . "</textarea></td></tr>\n");
-	print("<tr><td class=\"rowhead w175\">История пользователя</td><td colspan=\"2\"><textarea rows=\"6\" class=\"w100p\"" . (get_user_class() < UC_SYSOP ? " readonly" : " name=\"modcomment\"") . ">" . ud_h($user["modcomment"] ?? "") . "</textarea></td></tr>\n");
+	$history_modcomment = ud_cup_history_modcomment((int)$id, $user["modcomment"] ?? "");
+	print("<tr><td class=\"rowhead w175\">История пользователя</td><td colspan=\"2\"><textarea rows=\"6\" class=\"w100p\"" . (get_user_class() < UC_SYSOP ? " readonly" : " name=\"modcomment\"") . ">" . ud_h($history_modcomment) . "</textarea></td></tr>\n");
 	print("<tr><td class=\"rowhead w175\">Добавить заметку</td><td colspan=\"2\"><textarea rows=\"3\" class=\"w100p\" name=\"modcomm\"></textarea></td></tr>\n");
 
 	$warned = ($user["warned"] ?? "no") == "yes";

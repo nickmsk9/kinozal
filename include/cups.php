@@ -495,9 +495,13 @@ function kz_cups_save_profile_manual($userid, $selected_ids, $admin_id)
 
     $userid = (int)$userid;
     $admin_id = (int)$admin_id;
+    $changes = array(
+        'added' => array(),
+        'removed' => array(),
+    );
 
     if (!is_valid_id($userid)) {
-        return;
+        return $changes;
     }
 
     $selected = array();
@@ -515,12 +519,20 @@ function kz_cups_save_profile_manual($userid, $selected_ids, $admin_id)
     foreach ($current as $cup_id) {
         if (!isset($selected[$cup_id])) {
             sql_query("DELETE FROM user_cups WHERE cup_id = $cup_id AND userid = $userid AND source = 'manual'") or sqlerr(__FILE__, __LINE__);
+            $changes['removed'][] = $cup_id;
         }
     }
 
+    $current_map = array_fill_keys($current, true);
+
     foreach (array_keys($selected) as $cup_id) {
-        kz_cups_assign($cup_id, $userid, 'manual', 0, $admin_id, 'Назначено администратором');
+        if (!isset($current_map[$cup_id])) {
+            kz_cups_assign($cup_id, $userid, 'manual', 0, $admin_id, 'Назначено администратором');
+            $changes['added'][] = $cup_id;
+        }
     }
+
+    return $changes;
 }
 
 function kz_cups_find_user_by_username($username)

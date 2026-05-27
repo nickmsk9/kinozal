@@ -97,7 +97,24 @@ if ($action == "edituser") {
 
 	if (get_user_class() >= UC_ADMINISTRATOR) {
 		$manual_cups = isset($_POST["manual_cups"]) && is_array($_POST["manual_cups"]) ? $_POST["manual_cups"] : array();
-		kz_cups_save_profile_manual($userid, $manual_cups, (int)$CURUSER["id"]);
+		$cup_changes = kz_cups_save_profile_manual($userid, $manual_cups, (int)$CURUSER["id"]);
+
+		if (!empty($cup_changes['added']) || !empty($cup_changes['removed'])) {
+			$cup_titles = array();
+			foreach (kz_cups_catalog() as $cup) {
+				$cup_titles[(int)$cup['id']] = $cup['title'];
+			}
+
+			foreach ($cup_changes['added'] as $cup_id) {
+				$cup_title = $cup_titles[(int)$cup_id] ?? ('Кубок #' . (int)$cup_id);
+				$modcomment = date("Y-m-d") . " - Назначен переходящий кубок \"" . $cup_title . "\" пользователем " . $CURUSER["username"] . ".\n" . $modcomment;
+			}
+
+			foreach ($cup_changes['removed'] as $cup_id) {
+				$cup_title = $cup_titles[(int)$cup_id] ?? ('Кубок #' . (int)$cup_id);
+				$modcomment = date("Y-m-d") . " - Снят переходящий кубок \"" . $cup_title . "\" пользователем " . $CURUSER["username"] . ".\n" . $modcomment;
+			}
+		}
 	}
 
 	if($uploadtoadd > 0) {
