@@ -1,212 +1,282 @@
 <?php
 
+declare(strict_types=1);
+
 /*
+    Информация для разработчика
 
-	Programming info
+    Все функции возвращают небольшой массив $return.
 
-All functions output a small array, which we'll call $return for now.
+    $return[0] — данные, которые должна вернуть функция.
+    $return[1] — смещение по всей bencode-строке, откуда начинается следующий блок данных.
 
-$return[0] is the data expected of the function
-$return[1] is the offset over the whole bencoded data of the next
-           piece of data.
+    numberdecode() возвращает:
+    $return[0] — прочитанное число;
+    $return[1] — позицию следующего символа после завершителя.
 
-numberdecode returns [0] as the integer read, and [1]-1 points to the
-symbol that was interprented as the end of the interger (either "e" or
-":"). 
-numberdecode is used for integer decodes both for i11e and 11:hello there
-so it is tolerant of the ending symbol.
+    numberdecode() используется как для чисел вида i11e,
+    так и для строк вида 11:hello there, поэтому допускает завершители "e" и ":".
 
-decodelist returns $return[0] as an integer indexed array like you would use in C
-for all the entries. $return[1]-1 is the "e" that ends the list, so [1] is the next
-useful byte.
+    decodelist() возвращает:
+    $return[0] — обычный индексированный массив;
+    $return[1] — позицию следующего полезного байта после закрывающего "e".
 
-decodeDict returns $return[0] as an array of text-indexed entries. For example,
-$return[0]["announce"] = "http://www.whatever.com:6969/announce";
-$return[1]-1 again points to the "e" that ends the dictionary.
+    decodeDict() возвращает:
+    $return[0] — ассоциативный массив.
+    Например:
+    $return[0]["announce"] = "http://www.whatever.com:6969/announce";
 
-decodeEntry returns [0] as an integer in the case $offset points to
-i12345e or a string if $offset points to 11:hello there style strings.
-It also calls decodeDict or decodeList if it encounters a d or an l.
+    decodeEntry() возвращает:
+    - число, если текущий элемент вида i12345e;
+    - строку, если текущий элемент вида 11:hello there;
+    - массив, если найден словарь "d" или список "l".
 
-
-Known bugs:
-- The program doesn't pay attention to the string it's working on.
-  A zero-sized or truncated data block will cause string offset errors
-  before they get rejected by the decoder. This is worked around by
-  suppressing errors.
-
+    Исправлено под PHP 8+:
+    - добавлены проверки выхода за границы строки;
+    - убраны обращения к несуществующим offset;
+    - убран addslashes() для ключей массива;
+    - пустой словарь возвращается как пустой массив, а не true;
+    - сохранены старые имена класса и функции для совместимости.
 */
 
-// Protect our namespace using a class
 class BDecode
 {
+    private function charAt(string $wholefile, int $offset): ?string
+    {
+        return ($offset >= 0 && $offset < strlen($wholefile))
+            ? $wholefile[$offset]
+            : null;
+    }
 
-function numberdecode($wholefile, $start)
-{
-	$ret[0] = 0;
-	$offset = $start;
+    public function numberdecode(string $wholefile, int $start): array
+    {
+        $ret = [0, 0];
+        $offset = $start;
+        $negative = false;
 
-	// Funky handling of negative numbers and zero
-	$negative = false;
-	if ($wholefile[$offset] == '-')
-	{
-		$negative = true;
-		$offset++;
-	}
-	if ($wholefile[$offset] == '0')
-	{
-		$offset++;
-		if ($negative)
-			return array(false);
-		if ($wholefile[$offset] == ':' || $wholefile[$offset] == 'e')
-		{
-			$offset++;
-			$ret[0] = 0;
-			$ret[1] = $offset;
-			return $ret;
-		}
-		return array(false);
-	}
-	while (true)
-	{
+        $char = $this->charAt($wholefile, $offset);
 
-		if ($wholefile[$offset] >= '0' && $wholefile[$offset] <= '9')
-		{
-			
-			$ret[0] *= 10;
-			$ret[0] += ord($wholefile[$offset]) - ord("0");
-			$offset++;
-		}
-		// Tolerate : or e because this is a multiuse function
-		else if ($wholefile[$offset] == 'e' || $wholefile[$offset] == ':')
-		{
-			$ret[1] = $offset+1;
-			if ($negative)
-			{
-				if ($ret[0] == 0)
-					return array(false);
-				$ret[0] = - $ret[0];
-			}
-			return $ret;
-		}
-		else
-			return array(false);
-	}
+        if ($char === null) {
+            return [false];
+        }
 
+        // Обработка отрицательных чисел
+        if ($char === '-') {
+            $negative = true;
+            $offset++;
+
+            $char = $this->charAt($wholefile, $offset);
+
+            if ($char === null) {
+                return [false];
+            }
+        }
+
+        // Обработка нуля
+        if ($char === '0') {
+            $offset++;
+
+            if ($negative) {
+                return [false];
+            }
+
+            $next = $this->charAt($wholefile, $offset);
+
+            if ($next === ':' || $next === 'e') {
+                $ret[0] = 0;
+                $ret[1] = $offset + 1;
+
+                return $ret;
+            }
+
+            return [false];
+        }
+
+        while (true) {
+            $char = $this->charAt($wholefile, $offset);
+
+            if ($char === null) {
+                return [false];
+            }
+
+            if ($char >= '0' && $char <= '9') {
+                $ret[0] *= 10;
+                $ret[0] += ord($char) - ord('0');
+                $offset++;
+
+                continue;
+            }
+
+            // Допускаем ":" и "e", потому что функция используется и для чисел, и для строк
+            if ($char === 'e' || $char === ':') {
+                $ret[1] = $offset + 1;
+
+                if ($negative) {
+                    if ($ret[0] == 0) {
+                        return [false];
+                    }
+
+                    $ret[0] = -$ret[0];
+                }
+
+                return $ret;
+            }
+
+            return [false];
+        }
+    }
+
+    public function decodeEntry(string $wholefile, int $offset = 0): array
+    {
+        $char = $this->charAt($wholefile, $offset);
+
+        if ($char === null) {
+            return [false];
+        }
+
+        if ($char === 'd') {
+            return $this->decodeDict($wholefile, $offset);
+        }
+
+        if ($char === 'l') {
+            return $this->decodeList($wholefile, $offset);
+        }
+
+        if ($char === 'i') {
+            return $this->numberdecode($wholefile, $offset + 1);
+        }
+
+        // Строка: сначала читаем длину, затем берём указанное количество байт
+        $info = $this->numberdecode($wholefile, $offset);
+
+        if (!isset($info[0], $info[1]) || $info[0] === false) {
+            return [false];
+        }
+
+        $stringLength = (int)$info[0];
+        $stringOffset = (int)$info[1];
+
+        if ($stringLength < 0) {
+            return [false];
+        }
+
+        if ($stringOffset + $stringLength > strlen($wholefile)) {
+            return [false];
+        }
+
+        $ret = [];
+        $ret[0] = substr($wholefile, $stringOffset, $stringLength);
+        $ret[1] = $stringOffset + strlen($ret[0]);
+
+        return $ret;
+    }
+
+    public function decodeList(string $wholefile, int $start): array
+    {
+        $offset = $start + 1;
+        $i = 0;
+
+        if ($this->charAt($wholefile, $start) !== 'l') {
+            return [false];
+        }
+
+        $ret = [];
+
+        while (true) {
+            $char = $this->charAt($wholefile, $offset);
+
+            if ($char === null) {
+                return [false];
+            }
+
+            if ($char === 'e') {
+                break;
+            }
+
+            $value = $this->decodeEntry($wholefile, $offset);
+
+            if (!isset($value[0], $value[1]) || $value[0] === false) {
+                return [false];
+            }
+
+            $ret[$i] = $value[0];
+            $offset = (int)$value[1];
+            $i++;
+        }
+
+        $final = [];
+        $final[0] = $ret;
+        $final[1] = $offset + 1;
+
+        return $final;
+    }
+
+    public function decodeDict(string $wholefile, int $start = 0): array
+    {
+        $offset = $start;
+
+        if ($this->charAt($wholefile, $offset) === 'l') {
+            return $this->decodeList($wholefile, $start);
+        }
+
+        if ($this->charAt($wholefile, $offset) !== 'd') {
+            return [false];
+        }
+
+        $ret = [];
+        $offset++;
+
+        while (true) {
+            $char = $this->charAt($wholefile, $offset);
+
+            if ($char === null) {
+                return [false];
+            }
+
+            if ($char === 'e') {
+                $offset++;
+                break;
+            }
+
+            $left = $this->decodeEntry($wholefile, $offset);
+
+            if (!isset($left[0], $left[1]) || $left[0] === false || !is_string($left[0])) {
+                return [false];
+            }
+
+            $offset = (int)$left[1];
+
+            $value = $this->decodeEntry($wholefile, $offset);
+
+            if (!isset($value[0], $value[1]) || $value[0] === false) {
+                return [false];
+            }
+
+            /*
+                addslashes() убран специально.
+                Декодер не должен менять ключи.
+                Экранирование нужно делать отдельно при выводе в HTML или записи в SQL.
+            */
+            $ret[$left[0]] = $value[0];
+            $offset = (int)$value[1];
+        }
+
+        $final = [];
+        $final[0] = $ret;
+        $final[1] = $offset;
+
+        return $final;
+    }
 }
 
-function decodeEntry($wholefile, $offset=0)
+// Использовать эту функцию, как и раньше:
+// BDecode("d8:announce44:http://www...e");
+function BDecode(string $wholefile): mixed
 {
-	if ($wholefile[$offset] == 'd')
-		return $this->decodeDict($wholefile, $offset);
-	if ($wholefile[$offset] == 'l')
-		return $this->decodelist($wholefile, $offset);
-	if ($wholefile[$offset] == "i")
-	{
-		$offset++;
-		return $this->numberdecode($wholefile, $offset);
-	}
-	// String value: decode number, then grab substring
-	$info = $this->numberdecode($wholefile, $offset);
-	if ($info[0] === false)
-		return array(false);
-	$ret[0] = substr($wholefile, $info[1], $info[0]);
-	$ret[1] = $info[1]+strlen($ret[0]);
-	return $ret;
-}
+    $decoder = new BDecode();
+    $return = $decoder->decodeEntry($wholefile);
 
-function decodeList($wholefile, $start)
-{
-	$offset = $start+1;
-	$i = 0;
-	if ($wholefile[$start] != 'l')
-		return array(false);
-	$ret = array();
-	while (true)
-	{
-		if ($wholefile[$offset] == 'e')
-			break;
-		$value = $this->decodeEntry($wholefile, $offset);
-		if ($value[0] === false)
-			return array(false);
-		$ret[$i] = $value[0];
-		$offset = $value[1];
-		$i ++;
-	}
-
-	// The empy list is an empty array. Seems fine.
-	$final[0] = $ret;
-	$final[1] = $offset+1;
-	return $final;
-
-}
-
-// Tries to construct an array
-function decodeDict($wholefile, $start=0)
-{
-	$offset = $start;
-	if ($wholefile[$offset] == 'l')
-		return $this->decodeList($wholefile, $start);
-	if ($wholefile[$offset] != 'd')
-		return false;
-	$ret = array();
-	$offset++;
-	while (true)
-	{
-		if ($wholefile[$offset] == 'e')
-		{
-			$offset++;
-			break;
-		}
-		$left = $this->decodeEntry($wholefile, $offset);
-		if (!$left[0])
-			return false;
-		$offset = $left[1];
-		if ($wholefile[$offset] == 'd')
-		{
-			// Recurse
-			$value = $this->decodedict($wholefile, $offset);
-			if (!$value[0])
-				return false;
-			$ret[addslashes($left[0])] = $value[0];
-			$offset= $value[1];
-			continue;
-		}
-		else if ($wholefile[$offset] == 'l')
-		{
-			$value = $this->decodeList($wholefile, $offset);
-			if (!$value[0] && is_bool($value[0]))
-				return false;
-			$ret[addslashes($left[0])] = $value[0];
-			$offset = $value[1];
-		}
-		else
-		{
- 			$value = $this->decodeEntry($wholefile, $offset);
-			if ($value[0] === false)
-				return false;
-			$ret[addslashes($left[0])] = $value[0];
-			$offset = $value[1];
-		}
-	}
-	if (empty($ret))
-		$final[0] = true;
-	else
-		$final[0] = $ret;
-	$final[1] = $offset;
-   	return $final;
-
-
-}
-
-} // End of class declaration.
-
-// Use this function. eg:  BDecode("d8:announce44:http://www. ... e");
-function BDecode($wholefile)
-{
-	$decoder = new BDecode;
-	$return = $decoder->decodeEntry($wholefile);
-	return $return[0];
+    return $return[0] ?? false;
 }
 
 ?>
