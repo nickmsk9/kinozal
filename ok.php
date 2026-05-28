@@ -1,75 +1,155 @@
-<?
+<?php
 
-/*
-// +--------------------------------------------------------------------------+
-// | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
-// |                                               Do not remove above lines! |
-// +--------------------------------------------------------------------------+
-*/
-
-require_once("include/bittorrent.php");
+require_once __DIR__ . '/include/bittorrent.php';
 
 dbconn();
 
-if (!mkglobal("type"))
-	die();
+$type  = isset($_GET['type']) ? trim((string)$_GET['type']) : '';
+$email = isset($_GET['email']) ? trim((string)$_GET['email']) : '';
 
-if ($type == "signup" && mkglobal("email")) {
-	if (!validemail($email))
-		stderr($tracker_lang['error'], "Это не похоже на реальный email адрес.");
-	stdhead($tracker_lang['signup_successful']);
-        stdmsg($tracker_lang['signup_successful'],($use_email_act ? sprintf($tracker_lang['confirmation_mail_sent'], htmlspecialchars_uni($email)) : sprintf($tracker_lang['thanks_for_registering'], $SITENAME)));
-	stdfoot();
+if ($type === '') {
+    die();
 }
-elseif ($type == "sysop") {
-		stdhead($tracker_lang['sysop_activated']);
-	if (isset($CURUSER))
-		stdmsg($tracker_lang['sysop_activated'],sprintf($tracker_lang['sysop_account_activated'], $DEFAULTBASEURL));
-	else
-		print("<p>Your account has been activated! However, it appears that you could not be logged in automatically. A possible reason is that you disabled cookies in your browser. You have to enable cookies to use your account. Please do that and then <a href=\"login.php\">log in</a> and try again.</p>\n");
-	mkglobal('email');
-	stdfoot();
-	}
-elseif ($type == "confirmed") {
-	stdhead($tracker_lang['account_activated']);
-	stdmsg($tracker_lang['account_activated'], $tracker_lang['this_account_activated']);
-	stdfoot();
+
+function confirm_h($value)
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
-elseif ($type == "confirm") {
-	if (isset($CURUSER)) {
-		stdhead("Подтверждение регистрации");
-		print("<h1>Ваш аккаунт успешно подтвержден!</h1>\n");
-		print("<p>Ваш аккаунт теперь активирован! Вы автоматически вошли. Теперь вы можете <a href=\"$DEFAULTBASEURL/\"><b>перейти на главную</b></a> и начать использовать ваш аккаунт.</p>\n");
-		print("<p>Прежде чем начать использовать $SITENAME мы рекомендуем вам прочитать <a href=\"rules.php\"><b>правила</b></a> и <a href=\"faq.php\"><b>ЧаВо</b></a>.</p>\n");
-		stdfoot();
-	}
-	else {
-		stdhead("Signup confirmation");
-		print("<h1>Account successfully confirmed!</h1>\n");
-		print("<p>Your account has been activated! However, it appears that you could not be logged in automatically. A possible reason is that you disabled cookies in your browser. You have to enable cookies to use your account. Please do that and then <a href=\"login.php\">log in</a> and try again.</p>\n");
-		stdfoot();
-	}
+
+function confirm_url($url)
+{
+    return confirm_h($url);
 }
-else
-	die();
+
+function confirm_box($title, $message, $status = 'ok')
+{
+    $icon = $status === 'error' ? 'Ошибка' : 'Готово';
+
+    echo '<div class="bx1">';
+    echo '<div class="bx2">';
+    echo '<div class="bx2_0">';
+
+    echo '<table class="tables1" width="100%" cellspacing="0" cellpadding="5">';
+    echo '<tr>';
+    echo '<td class="colhead" colspan="2">' . confirm_h($title) . '</td>';
+    echo '</tr>';
+
+    echo '<tr>';
+    echo '<td width="90" align="center" valign="top">';
+    echo '<b>' . confirm_h($icon) . '</b>';
+    echo '</td>';
+
+    echo '<td valign="top">';
+    echo '<div style="padding:6px 4px; line-height:18px;">' . $message . '</div>';
+    echo '</td>';
+    echo '</tr>';
+
+    echo '</table>';
+
+    echo '</div>';
+    echo '</div>';
+    echo '</div>';
+}
+
+if ($type === 'signup') {
+    if ($email === '' || !validemail($email)) {
+        stderr($tracker_lang['error'] ?? 'Ошибка', 'Это не похоже на реальный email адрес.');
+    }
+
+    stdhead($tracker_lang['signup_successful'] ?? 'Регистрация завершена');
+
+    $title = $tracker_lang['signup_successful'] ?? 'Регистрация завершена';
+
+    if (!empty($use_email_act)) {
+        $message = sprintf(
+            $tracker_lang['confirmation_mail_sent'] ?? 'Письмо с подтверждением отправлено на адрес %s.',
+            confirm_h($email)
+        );
+    } else {
+        $message = sprintf(
+            $tracker_lang['thanks_for_registering'] ?? 'Спасибо за регистрацию на %s.',
+            confirm_h($SITENAME ?? '')
+        );
+    }
+
+    confirm_box($title, $message);
+    stdfoot();
+    exit;
+}
+
+if ($type === 'sysop') {
+    stdhead($tracker_lang['sysop_activated'] ?? 'Аккаунт администратора активирован');
+
+    if (isset($CURUSER)) {
+        $message = sprintf(
+            $tracker_lang['sysop_account_activated'] ?? 'Аккаунт активирован. Перейти на сайт: %s',
+            '<a class="altlink" href="' . confirm_url($DEFAULTBASEURL ?? '/') . '"><b>' . confirm_h($DEFAULTBASEURL ?? '/') . '</b></a>'
+        );
+
+        confirm_box($tracker_lang['sysop_activated'] ?? 'Аккаунт активирован', $message);
+    } else {
+        $message = '
+            Ваш аккаунт активирован, но автоматический вход не выполнен.
+            Возможно, в браузере отключены cookies.
+            Включите cookies и попробуйте
+            <a class="altlink" href="login.php"><b>войти</b></a>
+            снова.
+        ';
+
+        confirm_box($tracker_lang['sysop_activated'] ?? 'Аккаунт активирован', $message);
+    }
+
+    stdfoot();
+    exit;
+}
+
+if ($type === 'confirmed') {
+    stdhead($tracker_lang['account_activated'] ?? 'Аккаунт активирован');
+
+    confirm_box(
+        $tracker_lang['account_activated'] ?? 'Аккаунт активирован',
+        confirm_h($tracker_lang['this_account_activated'] ?? 'Этот аккаунт уже активирован.')
+    );
+
+    stdfoot();
+    exit;
+}
+
+if ($type === 'confirm') {
+    stdhead('Подтверждение регистрации');
+
+    if (isset($CURUSER)) {
+        $message = '
+            Ваш аккаунт успешно подтвержден и теперь активирован.
+            Вы автоматически вошли на сайт.
+            <br><br>
+            Теперь вы можете
+            <a class="altlink" href="' . confirm_url(($DEFAULTBASEURL ?? '') . '/') . '"><b>перейти на главную</b></a>
+            и начать пользоваться аккаунтом.
+            <br><br>
+            Перед началом использования ' . confirm_h($SITENAME ?? 'сайта') . ' рекомендуем прочитать
+            <a class="altlink" href="rules.php"><b>правила</b></a>
+            и
+            <a class="altlink" href="faq.php"><b>ЧаВо</b></a>.
+        ';
+
+        confirm_box('Ваш аккаунт успешно подтвержден!', $message);
+    } else {
+        $message = '
+            Ваш аккаунт активирован, но автоматический вход не выполнен.
+            Возможно, в браузере отключены cookies.
+            Включите cookies и попробуйте
+            <a class="altlink" href="login.php"><b>войти</b></a>
+            снова.
+        ';
+
+        confirm_box('Аккаунт успешно подтвержден!', $message);
+    }
+
+    stdfoot();
+    exit;
+}
+
+die();
 
 ?>

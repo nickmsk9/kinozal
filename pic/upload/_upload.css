@@ -1,0 +1,99 @@
+/* Upload form */
+div.upl { padding: 0 3px 3px; }
+
+ul.up { margin-right: 6px; }
+ul.up li { padding: 0 3px 2px; }
+ul.up li.hdr { margin: 4px -6px 0 0; font-weight: bold; }
+ul.up li.fhdr { margin: 6px -6px 3px 0; font-weight: bold; }
+
+div.n { margin-left: 2px; margin-top: 2px; color: #606060; text-align: justify; }
+div.n a { font-weight: normal; color: #606060; text-decoration: underline; }
+
+.up_tmpl { float: left; border-width: 1px; padding: 4px 8px; margin: 2px; cursor: pointer; font-weight: bold; }
+.up_tmplt { margin: 4px 0 2px 4px; font-weight: bold; }
+.up_tmpls { background: white; cursor: default; }
+
+.up_toggle { float: right; cursor: pointer; font-weight: bold; padding: 1px 4px; margin: -1px 0 0 0; box-shadow: 0 0 2px gray; }
+.up_fields { margin-right: -6px; display: none; }
+.up_hide { display: none; }
+
+/* Controls */
+
+input.up { border: 1px solid silver; margin: 0; padding: 2px; width: 100%; }
+textarea.up { margin: 0; width: 100%; font-size: 11px; }
+.up_clrl { clear: left; }
+
+.up_menuback { position: fixed; top: 0; left: 0; bottom: 0; right: 0; z-index: 49; display: none; }
+
+/* Text */
+.up_text_title { margin: 9px 0 0 3px; white-space: nowrap; }
+.up_text { margin: -16px 6px 0 140px; }
+.up_text_c { margin: 2px 3px 0 0; }
+
+/* Combo */
+.up_combo_menu { position: absolute; z-index: 50; box-shadow: 1px 2px 2px gray; margin-top: 20px; display: none; max-height: 300px; overflow-y: auto; }
+.up_combo { border: 1px solid silver; margin: 0; padding: 2px; background: #fff url(/pic/upload/combo.png) 100% 60% no-repeat; cursor: default; }
+.up_combo:hover { background-image: url(/pic/upload/comboh.png); }
+.up_combo_dd, .up_combo_dd:hover { position: relative; z-index: 49; cursor: text; background-image: url(/pic/upload/combod.png); }
+.up_combo_item { border-width: 1px; margin: -1px 0 0 0; padding: 3px; cursor: default; }
+.up_combo_mitem { padding: 1px; }
+.up_combo_item:hover { background: highlight; color: highlighttext; }
+.up_combo_item_t { margin: -16px 0 3px 23px; }
+
+/* Container */
+.up_container { border-collapse: collapse; margin-top: 6px; }
+.up_container td { padding: 0; vertical-align: top; }
+.up_container td.desc { vertical-align: middle; }
+
+/* BBList */
+.up_bblist { box-shadow: 0 0 2px gray; margin: 7px 0; }
+.up_bblist_nosh { margin: 5px 0; }
+.up_bblist_t { padding: 4px 5px; font-weight: normal; margin-bottom: 4px; }
+.up_bblist div.n { margin: 4px; }
+.up_bblist_nosh div.n { margin: 4px; }
+.up_bblist_it { width: 50%; float: left; }
+.up_bblist_ival { margin: 0 0 0 19px; font-weight: bold; }
+.up_bblist_itxt { margin: 0 0 0 1px; font-weight: bold; }
+.up_bblist_cnt { border-collapse: collapse; width: 100%; }
+.up_bblist_c0 { padding: 1px 3px 0 5px; }
+.up_bblist_val { width: 50%; padding: 4px 5px 1px 0; }
+.up_bblist_txt { width: 50%; padding: 4px 0 1px 4px; }
+.up_bblist_c1 { padding: 5px 1px 0 6px; }
+.up_bblist_del { background: url(/pic/upload/delete.png); width: 18px; height: 18px; cursor: pointer; }
+.up_bblist_del:hover { background-position: 0 18px; }
+.up_bblist_a { padding: 3px 0 5px 20px; }
+.up_bblist_a span { cursor: pointer; box-shadow: 0 0 2px gray; padding: 0 2px; }
+.up_bblist_inp { margin: 0 8px 10px 2px; display: none; }
+
+/* BBText */
+.up_bbtext { box-shadow: 0 0 2px gray; margin: 7px 0; }
+.up_bbtext div.n { margin: 4px; }
+.up_bbtext_t { padding: 1px; font-weight: normal; }
+.up_bbtext_title_t { margin: -16px 0 3px 22px; }
+.up_bbtext_ival { margin: 2px 0 0 8px; font-weight: bold; }
+.up_bbtext_itxt { margin: 2px 0 0 1px; font-weight: bold; }
+.up_bbtext_val { margin: 4px 7px 7px 8px; }
+.up_bbtext_txt { margin: 4px 12px 0 1px; }
+
+/* BBTabs */
+.up_bbtabs_body { margin-bottom: 2px; }
+.up_bbtabs_body div.n { margin: 4px; }
+ul.up_bbtabs_tabs li { margin: 5px 4px 0 1px;  padding: 2px 2px 0 2px; }
+ul.up_bbtabs_tabs li.up_bbtabs_add { margin: 5px 0 0 1px; padding: 0 0 2px 0; float: left; width: 22px; height: 19px; border-radius: 4px 4px 0 0; box-shadow: 0 -1px 2px gray; }
+.up_bbtabs_plus { background: url(/pic/upload/addtab.png) center 0 no-repeat; cursor: pointer; height: 100%; }
+.up_bbtabs_menu { width: 105px; padding: 1px; margin-top: 1px; position: absolute; z-index: 50; display: none; border-radius: 0 2px 2px 2px; box-shadow: 0 1px 2px gray; }
+.up_bbtabs_mi { padding: 5px; cursor: pointer; }
+.up_bbtabs_mi.t { margin-bottom: 1px; }
+.up_bbtabs_tab { float: left; border-radius: 4px 4px 0 0; box-shadow: 0 -1px 2px gray; cursor: pointer; }
+.up_bbtabs_tabtitle { min-width: 30px; float: left; margin: 1px; }
+.up_bbtabs_tabtitle input { margin: 0; border-width: 0; padding: 2px; }
+.up_bbtabs_del { float: left; background: url(/pic/upload/delete.png) top left no-repeat; width: 18px; height: 18px; margin-top: 1px; }
+.up_bbtabs_del:hover { background-position: bottom left; }
+.up_bbtabs_left { float: left; background: url(/pic/upload/movetab.png) top left no-repeat; width: 13px; height: 18px; margin-top: 1px; }
+.up_bbtabs_left:hover { background-position: bottom left; }
+.up_bbtabs_right { float: left; background: url(/pic/upload/movetab.png) top right no-repeat; width: 13px; height: 18px; margin-top: 1px; }
+.up_bbtabs_right:hover { background-position: bottom right; }
+.up_bbtabs_c { clear: left; border-radius: 0 4px 4px 4px; margin: 0; padding: 0; }
+.up_bbtabs_ctxt { margin-right: 6px; }
+.up_bbtabs_cc { margin: 5px; }
+textarea.up_bbtabs_txt { width: 100%; margin: 0; }
