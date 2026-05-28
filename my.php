@@ -90,7 +90,7 @@ if (strlen($CURUSER["passkey"]) < 10) {
 	$CURUSER["passkey"] = md5($CURUSER["username"] . get_date_time() . $CURUSER["passhash"]);
 	sql_query("UPDATE users SET passkey = " . sqlesc($CURUSER["passkey"]) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
 }
-
+$hide_right_blocks = true;
 stdhead($tracker_lang['my_my'] ?? 'Мой профиль');
 
 if (isset($_GET["edited"])) {
