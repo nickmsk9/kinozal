@@ -1,26 +1,8 @@
-<?
+<?php
 
 /*
 // +--------------------------------------------------------------------------+
 // | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
 // +--------------------------------------------------------------------------+
 // |                                               Do not remove above lines! |
 // +--------------------------------------------------------------------------+
@@ -28,304 +10,256 @@
 
 require_once("include/bittorrent.php");
 
-$action = $_GET["action"];
-
 dbconn(false);
+
+$action = $_GET['action'] ?? '';
+
+function comment_h($value)
+{
+	return htmlspecialchars_uni((string)$value);
+}
+
+function comment_back_url($torrentid, $commentid = 0)
+{
+	$torrentid = (int)$torrentid;
+	$commentid = (int)$commentid;
+	if ($commentid > 0) {
+		return "details.php?id=$torrentid&page=0#cm$commentid";
+	}
+	return "details.php?id=$torrentid#startcomments";
+}
+
+function comment_safe_return($url, $fallback)
+{
+	$url = (string)$url;
+	if ($url === '' || preg_match('/[\r\n]/', $url) || preg_match('#^[a-z]+://#i', $url)) {
+		return $fallback;
+	}
+	return $url;
+}
+
+function comment_form($title, $action_url, $torrentid, $text, $submit, $returnto = '')
+{
+	$hidden_return = $returnto !== '' ? '<input type="hidden" name="returnto" value="' . comment_h($returnto) . '">' : '';
+	stdhead($title);
+	print '<div class="bx1">';
+	print '<form method="post" name="comment" action="' . comment_h($action_url) . '">';
+	print '<input type="hidden" name="tid" value="' . (int)$torrentid . '">' . $hidden_return;
+	print '<div class="pad5x5"><b>' . comment_h($title) . '</b></div>';
+	print '<div class="pad10x10"><textarea id="text" name="text" cols="70" rows="8" class="w98p">' . comment_h($text) . '</textarea></div>';
+	print '<div class="pad5x5"><input type="submit" value="' . comment_h($submit) . '" class="buts"></div>';
+	print '</form></div>';
+	stdfoot();
+	exit;
+}
+
+if ($action === '' && isset($_GET['id'])) {
+	$torrentid = (int)$_GET['id'];
+	$page = max(0, (int)($_GET['page'] ?? 0));
+	if (is_valid_id($torrentid)) {
+		header("Location: details.php?id=$torrentid&page=$page#startcomments");
+		exit;
+	}
+}
 
 loggedinorreturn();
 parked();
 
-if ($action == "add")
-{
-  if ($_SERVER["REQUEST_METHOD"] == "POST")
-  {
-    $torrentid = intval($_POST["tid"]);
-	  if (!is_valid_id($torrentid))
+if ($action === 'add') {
+	if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+		$torrentid = (int)($_GET['tid'] ?? 0);
+		if (!is_valid_id($torrentid)) {
 			stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
-		$res = sql_query("SELECT name FROM torrents WHERE id = $torrentid") or sqlerr(__FILE__,__LINE__);
-		$arr = mysqli_fetch_array($res);
-		if (!$arr)
-		  stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
-		$name = $arr[0];
-	  $text = trim($_POST["text"]);
-	  if (!$text)
+		}
+		$res = sql_query("SELECT name FROM torrents WHERE id = $torrentid") or sqlerr(__FILE__, __LINE__);
+		$torrent = mysqli_fetch_assoc($res);
+		if (!$torrent) {
+			stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
+		}
+		comment_form('Добавление комментария к "' . $torrent['name'] . '"', 'comment.php?action=add', $torrentid, '', 'Добавить');
+	}
+
+	$torrentid = (int)($_POST['tid'] ?? 0);
+	if (!is_valid_id($torrentid)) {
+		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+	}
+
+	$res = sql_query("SELECT name FROM torrents WHERE id = $torrentid") or sqlerr(__FILE__, __LINE__);
+	$torrent = mysqli_fetch_assoc($res);
+	if (!$torrent) {
+		stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
+	}
+
+	$text = trim((string)($_POST['text'] ?? ''));
+	if ($text === '') {
+		stderr($tracker_lang['error'], $tracker_lang['comment_cant_be_empty']);
+	}
+
+	sql_query("
+		INSERT INTO comments (user, torrent, added, text, ori_text, ip)
+		VALUES (" . (int)$CURUSER['id'] . ", $torrentid, " . sqlesc(get_date_time()) . ", " . sqlesc($text) . ", " . sqlesc($text) . ", " . sqlesc(getip()) . ")
+	") or sqlerr(__FILE__, __LINE__);
+
+	global $link;
+	$newid = mysqli_insert_id($link);
+	sql_query("UPDATE torrents SET comments = comments + 1 WHERE id = $torrentid") or sqlerr(__FILE__, __LINE__);
+
+	header('Location: ' . comment_back_url($torrentid, $newid));
+	exit;
+}
+
+if ($action === 'quote') {
+	$commentid = (int)($_GET['cid'] ?? 0);
+	if (!is_valid_id($commentid)) {
+		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+	}
+
+	$res = sql_query("
+		SELECT c.text, t.name, t.id AS tid, u.username
+		FROM comments AS c
+		LEFT JOIN torrents AS t ON c.torrent = t.id
+		LEFT JOIN users AS u ON c.user = u.id
+		WHERE c.id = $commentid
+		LIMIT 1
+	") or sqlerr(__FILE__, __LINE__);
+	$arr = mysqli_fetch_assoc($res);
+	if (!$arr) {
+		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+	}
+
+	$text = '[quote=' . ($arr['username'] ?: 'unknown') . ']' . $arr['text'] . "[/quote]\n";
+	comment_form('Добавление комментария к "' . $arr['name'] . '"', 'comment.php?action=add', (int)$arr['tid'], $text, 'Добавить');
+}
+
+if ($action === 'edit') {
+	$commentid = (int)($_GET['cid'] ?? 0);
+	if (!is_valid_id($commentid)) {
+		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+	}
+
+	$res = sql_query("
+		SELECT c.*, t.name, t.id AS tid
+		FROM comments AS c
+		LEFT JOIN torrents AS t ON c.torrent = t.id
+		WHERE c.id = $commentid
+		LIMIT 1
+	") or sqlerr(__FILE__, __LINE__);
+	$arr = mysqli_fetch_assoc($res);
+	if (!$arr) {
+		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+	}
+
+	if ((int)$arr['user'] !== (int)$CURUSER['id'] && get_user_class() < UC_MODERATOR) {
+		stderr($tracker_lang['error'], $tracker_lang['access_denied']);
+	}
+
+	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		$text = trim((string)($_POST['text'] ?? ''));
+		if ($text === '') {
 			stderr($tracker_lang['error'], $tracker_lang['comment_cant_be_empty']);
+		}
 
-	  sql_query("INSERT INTO comments (user, torrent, added, text, ori_text, ip) VALUES (" .
-	      $CURUSER["id"] . ",$torrentid, '" . get_date_time() . "', " . sqlesc($text) .
-	       "," . sqlesc($text) . "," . sqlesc(getip()) . ")");
+		sql_query("
+			UPDATE comments
+			SET text = " . sqlesc($text) . ", editedat = " . sqlesc(get_date_time()) . ", editedby = " . (int)$CURUSER['id'] . "
+			WHERE id = $commentid
+		") or sqlerr(__FILE__, __LINE__);
 
-	  $newid = mysql_insert_id();
-
-	sql_query('INSERT INTO comments_parsed (cid, text_hash, text_parsed) VALUES ('.implode(', ', array_map('sqlesc', array($newid, md5($text), format_comment($text)))).')') or sqlerr(__FILE__,__LINE__);
-
-	  sql_query("UPDATE torrents SET comments = comments + 1 WHERE id = $torrentid");
-
-	/////////////////СЛЕЖЕНИЕ ЗА КОММЕНТАМИ///////////////// 
-    /*$res3 = sql_query("SELECT * FROM checkcomm WHERE checkid = $torrentid AND torrent = 1") or sqlerr(__FILE__,__LINE__);
-    $subject = sqlesc("Новый комментарий");
-    while ($arr3 = mysqli_fetch_array($res3)) {
-    	$msg = sqlesc("Для торрента [url=details.php?id=$torrentid&viewcomm=$newid#comm$newid]".$name."[/url] добавился новый комментарий.");
-    	if ($CURUSER[id] != $arr3[userid])
-     		sql_query("INSERT INTO messages (sender, receiver, added, msg, poster, subject) VALUES (0, $arr3[userid], NOW(), $msg, 0, $subject)") or sqlerr(__FILE__,__LINE__);
-    }*/
-
-	/*$subject = "Новый комментарий";
-	$msg = "Для торрента [url=details.php?id=$torrentid&viewcomm=$newid#comm$newid]".$name."[/url] добавился новый комментарий.";
-	send_pm(0, $userid, get_date_time(), $subject, $msg);*/
-	//sql_query("INSERT INTO messages (sender, receiver, added, msg, poster, subject) SELECT 0, userid, NOW(), $msg, 0, $subject FROM checkcomm WHERE checkid = $torrentid AND torrent = 1 AND userid != $CURUSER[id]") or sqlerr(__FILE__,__LINE__);
-
-    /////////////////СЛЕЖЕНИЕ ЗА КОММЕНТАМИ/////////////////
-
-	  header("Refresh: 0; url=details.php?id=$torrentid&viewcomm=$newid#comm$newid");
-	  die;
+		$returnto = comment_safe_return($_POST['returnto'] ?? '', comment_back_url((int)$arr['tid'], $commentid));
+		header("Location: $returnto");
+		exit;
 	}
 
-  $torrentid = intval($_GET["tid"]);
-  if (!is_valid_id($torrentid))
-		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+	comment_form(
+		'Редактирование комментария к "' . $arr['name'] . '"',
+		'comment.php?action=edit&amp;cid=' . $commentid,
+		(int)$arr['tid'],
+		$arr['text'],
+		'Отредактировать',
+		comment_back_url((int)$arr['tid'], $commentid)
+	);
+}
 
-	$res = sql_query("SELECT name FROM torrents WHERE id = $torrentid") or sqlerr(__FILE__,__LINE__);
-	$arr = mysqli_fetch_array($res);
-	if (!$arr)
-	  stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
-
-	stdhead("Добление комментария к \"" . $arr["name"] . "\"");
-
-	print("<p><form name=\"comment\" method=\"post\" action=\"comment.php?action=add\">\n");
-	print("<input type=\"hidden\" name=\"tid\" value=\"$torrentid\"/>\n");
-?>
-	<table class=main border=0 cellspacing=0 cellpadding=3>
-	<tr>
-	<td class="colhead">
-<?
-	print("".$tracker_lang['add_comment']." к \"" . htmlspecialchars_uni($arr["name"]) . "\"");
-?>
-	</td>
-	</tr>
-	<tr>
-	<td>
-<?
-	textbbcode("comment","text","");
-?>
-	</td></tr></table>
-<?
-	//print("<textarea name=\"text\" rows=\"10\" cols=\"60\"></textarea></p>\n");
-	print("<p><input type=\"submit\" value=\"Добавить\" /></p></form>\n");
-
-	$res = sql_query("SELECT comments.id, text, comments.ip, comments.added, username, title, class, users.id as user, users.avatar, users.donor, users.enabled, users.warned, users.parked FROM comments LEFT JOIN users ON comments.user = users.id WHERE torrent = $torrentid ORDER BY comments.id DESC LIMIT 5");
-
-	$allrows = array();
-	while ($row = mysqli_fetch_array($res))
-	  $allrows[] = $row;
-
-	if (count($allrows)) {
-	  print("<h2>Последние комментарии, в обратном порядке</h2>\n");
-	  commenttable($allrows);
+if ($action === 'delete') {
+	if (get_user_class() < UC_MODERATOR) {
+		stderr($tracker_lang['error'], $tracker_lang['access_denied']);
 	}
 
-  stdfoot();
-	die;
-}
-elseif ($action == "quote")
-{
-  $commentid = intval($_GET["cid"]);
-  if (!is_valid_id($commentid))
+	$commentid = (int)($_GET['cid'] ?? 0);
+	if (!is_valid_id($commentid)) {
 		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
-
-  $res = sql_query("SELECT c.*, t.name, t.id AS tid, u.username FROM comments AS c LEFT JOIN torrents AS t ON c.torrent = t.id JOIN users AS u ON c.user = u.id WHERE c.id=$commentid") or sqlerr(__FILE__,__LINE__);
-  $arr = mysqli_fetch_array($res);
-  if (!$arr)
-  	stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
-
- 	stdhead("Добавления комментария к \"" . $arr["name"] . "\"");
-
-	$text = "[quote=$arr[username]]" . $arr["text"] . "[/quote]\n";
-
-	print("<form method=\"post\" name=\"comment\" action=\"comment.php?action=add\">\n");
-	print("<input type=\"hidden\" name=\"tid\" value=\"$arr[tid]\" />\n");
-?>
-
-	<table class=main border=0 cellspacing=0 cellpadding=3>
-	<tr>
-	<td class="colhead">
-<?
-	print("Добавления комментария к \"" . htmlspecialchars_uni($arr["name"]) . "\"");
-?>
-	</td>
-	</tr>
-	<tr>
-	<td>
-<?
-	textbbcode("comment","text",htmlspecialchars_uni($text));
-?>
-	</td></tr></table>
-
-<?
-
-	print("<p><input type=\"submit\" value=\"Добавить\" /></p></form>\n");
-
-	stdfoot();
-
-}
-elseif ($action == "edit")
-{
-  $commentid = intval($_GET["cid"]);
-  if (!is_valid_id($commentid))
-		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
-
-  $res = sql_query("SELECT c.*, t.name, t.id AS tid FROM comments AS c LEFT JOIN torrents AS t ON c.torrent = t.id WHERE c.id=$commentid") or sqlerr(__FILE__,__LINE__);
-  $arr = mysqli_fetch_array($res);
-  if (!$arr)
-  	stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
-
-	if ($arr["user"] != $CURUSER["id"] && get_user_class() < UC_MODERATOR)
-		stderr($tracker_lang['error'], $tracker_lang['access_denied']);
-
-	if ($_SERVER["REQUEST_METHOD"] == "POST")
-	{
-	  $text = $_POST["text"];
-    $returnto = $_POST["returnto"];
-
-	  if ($text == "")
-	  	stderr($tracker_lang['error'], $tracker_lang['comment_cant_be_empty']);
-
-	$orig_text = $text;
-	  $text = sqlesc($text);
-
-	  $editedat = sqlesc(get_date_time());
-
-	  sql_query("UPDATE comments SET text=$text, editedat=$editedat, editedby=$CURUSER[id] WHERE id=$commentid") or sqlerr(__FILE__, __LINE__);
-
-	sql_query('REPLACE INTO comments_parsed (cid, text_hash, text_parsed) VALUES ('.implode(', ', array_map('sqlesc', array($commentid, md5($orig_text), format_comment($orig_text)))).')') or sqlerr(__FILE__,__LINE__);
-
-		if ($returnto)
-	  	header("Location: $returnto");
-		else
-		  header("Location: $DEFAULTBASEURL/");      // change later ----------------------
-		die;
 	}
 
- 	stdhead("Редактирование комментария к \"" . $arr["name"] . "\"");
-
-	print("<form method=\"post\" name=\"comment\" action=\"comment.php?action=edit&amp;cid=$commentid\">\n");
-	print("<input type=\"hidden\" name=\"returnto\" value=\"details.php?id={$arr["tid"]}&amp;viewcomm=$commentid#comm$commentid\" />\n");
-	print("<input type=\"hidden\" name=\"cid\" value=\"$commentid\" />\n");
-?>
-
-	<table class=main border=0 cellspacing=0 cellpadding=3>
-	<tr>
-	<td class="colhead">
-<?
-	print("Редактирование комментария к \"" . htmlspecialchars_uni($arr["name"]) . "\"");
-?>
-	</td>
-	</tr>
-	<tr>
-	<td>
-<?
-	textbbcode("comment","text",htmlspecialchars_uni($arr["text"]));
-?>
-	</td></tr></table>
-
-<?
-
-	print("<p><input type=\"submit\" value=\"Отредактировать\" /></p></form>\n");
-
-	stdfoot();
-	die;
-}
-/////////////////СЛЕЖЕНИЕ ЗА КОММЕНТАМИ///////////////// 
-elseif ($action == "check" || $action == "checkoff")
-{
-        $tid = intval($_GET["tid"]);
-        if (!is_valid_id($tid))
-                stderr($tracker_lang['error'], "Неверный идентификатор $tid.");
-        $docheck = mysqli_fetch_array(sql_query("SELECT COUNT(*) FROM checkcomm WHERE checkid = " . $tid . " AND userid = " . $CURUSER["id"] . " AND torrent = 1"));
-        if ($docheck[0] > 0 && $action=="check")
-                stderr($tracker_lang['error'], "<p>Вы уже подписаны на этот торрент.</p><a href=details.php?id=$tid#startcomments>Назад</a>");
-        if ($action == "check") {
-                sql_query("INSERT INTO checkcomm (checkid, userid, torrent) VALUES ($tid, $CURUSER[id], 1)") or sqlerr(__FILE__,__LINE__);
-                stderr($tracker_lang['success'], "<p>Теперь вы следите за комментариями к этому торренту.</p><a href=details.php?id=$tid#startcomments>Назад</a>");
-        }
-        else {
-                sql_query("DELETE FROM checkcomm WHERE checkid = $tid AND userid = $CURUSER[id] AND torrent = 1") or sqlerr(__FILE__,__LINE__);
-                stderr($tracker_lang['success'], "<p>Теперь вы не следите за комментариями к этому торренту.</p><a href=details.php?id=$tid#startcomments>Назад</a>");
-        }
-
-}
-/////////////////СЛЕЖЕНИЕ ЗА КОММЕНТАМИ/////////////////
-elseif ($action == "delete")
-{
-	if (get_user_class() < UC_MODERATOR)
-		stderr($tracker_lang['error'], $tracker_lang['access_denied']);
-
-  $commentid = intval($_GET["cid"]);
-
-  if (!is_valid_id($commentid))
+	$res = sql_query("SELECT torrent FROM comments WHERE id = $commentid LIMIT 1") or sqlerr(__FILE__, __LINE__);
+	$arr = mysqli_fetch_assoc($res);
+	if (!$arr) {
 		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+	}
 
-  $sure = $_GET["sure"];
+	global $link;
+	sql_query("DELETE FROM comments WHERE id = $commentid") or sqlerr(__FILE__, __LINE__);
+	$deleted = mysqli_affected_rows($link);
+	sql_query("DELETE FROM comments_parsed WHERE cid = $commentid");
 
-  if (!$sure)
-  {
-		stderr($tracker_lang['delete']." ".$tracker_lang['comment'], sprintf($tracker_lang['you_want_to_delete_x_click_here'],$tracker_lang['comment'],"?action=delete&cid=$commentid&sure=1"));
-  }
+	if ($deleted > 0) {
+		sql_query("UPDATE torrents SET comments = IF(comments > 0, comments - 1, 0) WHERE id = " . (int)$arr['torrent']) or sqlerr(__FILE__, __LINE__);
+	}
 
-
-	$res = sql_query("SELECT torrent FROM comments WHERE id=$commentid")  or sqlerr(__FILE__,__LINE__);
-	$arr = mysqli_fetch_array($res);
-	if ($arr)
-		$torrentid = $arr["torrent"];
-
-	sql_query("DELETE FROM comments WHERE id=$commentid") or sqlerr(__FILE__,__LINE__);
-	if ($torrentid && mysql_affected_rows() > 0)
-		sql_query("UPDATE torrents SET comments = comments - 1 WHERE id = $torrentid");
-
-	list($commentid) = mysql_fetch_row(sql_query("SELECT id FROM comments WHERE torrent = $torrentid ORDER BY added DESC LIMIT 1"));
-
-	$returnto = "details.php?id=$torrentid&viewcomm=$commentid#comm$commentid";
-
-	if ($returnto)
-	  header("Location: $returnto");
-	else
-	  header("Location: $DEFAULTBASEURL/");      // change later ----------------------
-	die;
+	header('Location: ' . comment_back_url((int)$arr['torrent']));
+	exit;
 }
-elseif ($action == "vieworiginal")
-{
-	if (get_user_class() < UC_MODERATOR)
+
+if ($action === 'vieworiginal') {
+	if (get_user_class() < UC_MODERATOR) {
 		stderr($tracker_lang['error'], $tracker_lang['access_denied']);
+	}
 
-  $commentid = intval($_GET["cid"]);
-
-  if (!is_valid_id($commentid))
+	$commentid = (int)($_GET['cid'] ?? 0);
+	if (!is_valid_id($commentid)) {
 		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+	}
 
-  $res = sql_query("SELECT c.*, t.name, t.id AS tid FROM comments AS c LEFT JOIN torrents AS t ON c.torrent = t.id WHERE c.id=$commentid") or sqlerr(__FILE__,__LINE__);
-  $arr = mysqli_fetch_array($res);
-  if (!$arr)
-  	stderr($tracker_lang['error'], "Неверный идентификатор $commentid.");
+	$res = sql_query("
+		SELECT c.ori_text, c.text, t.name, t.id AS tid
+		FROM comments AS c
+		LEFT JOIN torrents AS t ON t.id = c.torrent
+		WHERE c.id = $commentid
+		LIMIT 1
+	") or sqlerr(__FILE__, __LINE__);
+	$arr = mysqli_fetch_assoc($res);
+	if (!$arr) {
+		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+	}
 
-  stdhead("Просмотр оригинала");
-  print("<h1>Оригинальное содержание комментария №$commentid</h1><p>\n");
-	print("<table width=500 border=1 cellspacing=0 cellpadding=5>");
-  print("<tr><td class=comment>\n");
-	echo htmlspecialchars_uni($arr["ori_text"]);
-  print("</td></tr></table>\n");
-
-  $returnto = "details.php?id={$arr["tid"]}&amp;viewcomm=$commentid#comm$commentid";
-
-//	$returnto = "details.php?id=$torrentid&amp;viewcomm=$commentid#$commentid";
-
-	if ($returnto)
- 		print("<p><font size=small><a href=$returnto>Назад</a></font></p>\n");
-
+	stdhead('Оригинал комментария');
+	print '<div class="bx1"><div class="pad5x5"><b>' . comment_h($arr['name']) . '</b></div>';
+	print '<div class="pad10x10"><pre>' . comment_h($arr['ori_text'] !== '' ? $arr['ori_text'] : $arr['text']) . '</pre></div>';
+	print '<div class="pad5x5"><a href="' . comment_h(comment_back_url((int)$arr['tid'], $commentid)) . '" class="sba">Назад</a></div></div>';
 	stdfoot();
-	die;
+	exit;
 }
-else
-	stderr($tracker_lang['error'], "Unknown action");
 
-die;
+if ($action === 'check' || $action === 'checkoff') {
+	$tid = (int)($_GET['tid'] ?? 0);
+	if (!is_valid_id($tid)) {
+		stderr($tracker_lang['error'], "Неверный идентификатор $tid.");
+	}
+
+	$res = sql_query("SELECT COUNT(*) FROM checkcomm WHERE checkid = $tid AND userid = " . (int)$CURUSER['id'] . " AND torrent = 1") or sqlerr(__FILE__, __LINE__);
+	$exists = mysqli_fetch_row($res);
+
+	if ($action === 'check') {
+		if ((int)$exists[0] > 0) {
+			stderr($tracker_lang['error'], '<p>Вы уже подписаны на комментарии к этому торренту.</p><a href="details.php?id=' . $tid . '#startcomments">Назад</a>');
+		}
+		sql_query("INSERT INTO checkcomm (checkid, userid, torrent) VALUES ($tid, " . (int)$CURUSER['id'] . ", 1)") or sqlerr(__FILE__, __LINE__);
+		stderr($tracker_lang['success'], '<p>Теперь вы следите за комментариями к этому торренту.</p><a href="details.php?id=' . $tid . '#startcomments">Назад</a>');
+	}
+
+	sql_query("DELETE FROM checkcomm WHERE checkid = $tid AND userid = " . (int)$CURUSER['id'] . " AND torrent = 1") or sqlerr(__FILE__, __LINE__);
+	stderr($tracker_lang['success'], '<p>Теперь вы не следите за комментариями к этому торренту.</p><a href="details.php?id=' . $tid . '#startcomments">Назад</a>');
+}
+
+stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+
 ?>

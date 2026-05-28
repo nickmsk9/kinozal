@@ -1,84 +1,93 @@
 <?php
 
-# IMPORTANT: Do not edit below unless you know what you are doing!
-if(!defined('IN_TRACKER'))
-  die('Прямой вызов запрещён.');
+if (!defined('IN_TRACKER')) {
+	die('Прямой вызов запрещён.');
+}
 
-function commenttable($rows, $redaktor = "comment") {
-	global $CURUSER, $avatar_max_width;
+function commenttable_h($value)
+{
+	return htmlspecialchars_uni((string)$value);
+}
 
-	$count = 0;
-	foreach ($rows as $row)	{
-			    if ($row["downloaded"] > 0) {
-			    	$ratio = $row['uploaded'] / $row['downloaded'];
-			    	$ratio = number_format($ratio, 2);
-			    } elseif ($row["uploaded"] > 0) {
-			    	$ratio = "Inf.";
-			    } else {
-			    	$ratio = "---";
-			    }
-			     if (strtotime($row["last_access"]) > gmtime() - 600) {
-			     	$online = "online";
-			     	$online_text = "В сети";
-			     } else {
-			     	$online = "offline";
-			     	$online_text = "Не в сети";
-			     }
+function commenttable_format_text($text)
+{
+	$text = html_entity_decode((string)$text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	$text = preg_replace('#\[(color|size|font|family|left|right|center|justify|hide|spoiler|code|php)[^\]]*\](.*?)\[/\1\]#isu', '$2', $text);
+	$text = htmlspecialchars_uni($text);
+	$text = preg_replace('#\[b\](.*?)\[/b\]#isu', '<b>$1</b>', $text);
+	$text = preg_replace('#\[i\](.*?)\[/i\]#isu', '<i>$1</i>', $text);
+	$text = preg_replace('#\[u\](.*?)\[/u\]#isu', '<u>$1</u>', $text);
+	$text = preg_replace('#\[url\](https?://[^\s\[]+)\[/url\]#isu', '<a href="$1" class="sba" target="_blank">$1</a>', $text);
+	$text = preg_replace('#\[url=(https?://[^\]\s]+)\](.*?)\[/url\]#isu', '<a href="$1" class="sba" target="_blank">$2</a>', $text);
+	$text = preg_replace('#\[img\](https?://[^\s\[]+)\[/img\]#isu', '<img src="$1" class="p200" alt="">', $text);
+	$text = preg_replace('#\[quote=([^\]]+)\](.*?)\[/quote\]#isu', '<fieldset class="ft_cmt"><legend><span class="f_um b">$1</span></legend>$2</fieldset>', $text);
+	$text = preg_replace('#\[quote\](.*?)\[/quote\]#isu', '<fieldset class="ft_cmt"><legend><span class="f_um b">Цитата</span></legend>$1</fieldset>', $text);
 
-	   print("<table class=maibaugrand width=100% border=1 cellspacing=0 cellpadding=3>");
-	   print("<tr><td class=colhead align=\"left\" colspan=\"2\" height=\"24\">");
+	$text = preg_replace_callback('#(?<![">])(https?://[^\s<]+)#iu', function ($m) {
+		$url = rtrim($m[1], '.,!?');
+		$tail = substr($m[1], strlen($url));
+		return '<a href="' . commenttable_h($url) . '" class="sba" target="_blank">' . commenttable_h($url) . '</a>' . commenttable_h($tail);
+	}, $text);
 
-    if (isset($row["username"]))
-		{
-			$title = $row["title"];
-			if ($title == ""){
-				$title = get_user_class_name($row["class"]);
-			}else{
-				$title = htmlspecialchars_uni($title);
-			}
-		   print(":: <img src=\"pic/buttons/button_".$online.".gif\" alt=\"".$online_text."\" title=\"".$online_text."\" style=\"position: relative; top: 2px;\" border=\"0\" height=\"14\">"
-		       ." <a name=comm". $row["id"]." href=userdetails.php?id=" . $row["user"] . " class=altlink_white><b>". get_user_class_color($row["class"], htmlspecialchars_uni($row["username"])) . "</b></a> ::"
-		       .($row["donor"] == "yes" ? "<img src=pic/star.gif alt='Donor'>" : "") . ($row["warned"] == "yes" ? "<img src=\"/pic/warned.gif\" alt=\"Warned\">" : "") . " $title ::\n")
-		       ." <img src=\"pic/upl.gif\" alt=\"upload\" border=\"0\" width=\"12\" height=\"12\"> ".mksize($row["uploaded"]) ." :: <img src=\"pic/down.gif\" alt=\"download\" border=\"0\" width=\"12\" height=\"12\"> ".mksize($row["downloaded"])." :: <font color=\"".get_ratio_color($ratio)."\">$ratio</font> :: ";
+	return nl2br($text);
+}
 
-	       } else {
-			print("<a name=\"comm" . $row["id"] . "\"><i>[Anonymous]</i></a>\n");
-	       }
-
-	$avatar = ($CURUSER["avatars"] == "yes" ? htmlspecialchars_uni($row["avatar"]) : "");
-	if (!$avatar){$avatar = "pic/default_avatar.gif"; }
-	
-	if (md5($row['text']) == $row['text_hash'])
-		$text = $row['text_parsed'];
-	else {
-		$text = format_comment($row['text']);
-		sql_query('INSERT INTO comments_parsed (cid, text_hash, text_parsed) VALUES ('.implode(', ', array_map('sqlesc', array($row['id'], md5($row['text']), $text))).')') or sqlerr(__FILE__,__LINE__);
+function commenttable_user_link(array $row)
+{
+	$userid = (int)($row['user'] ?? $row['userid'] ?? 0);
+	$username = (string)($row['username'] ?? '');
+	$class = (int)($row['class'] ?? 0);
+	if ($userid <= 0 || $username === '') {
+		return '<i>unknown</i>';
 	}
 
-	if ($row["editedby"]) {
-	       //$res = mysql_fetch_assoc(sql_query("SELECT * FROM users WHERE id = $row[editedby]")) or sqlerr(__FILE__,__LINE__);
-	       $text .= "<p><font size=1 class=small>Последний раз редактировалось <a href=userdetails.php?id=$row[editedby]><b>$row[editedbyname]</b></a> в $row[editedat]</font></p>\n";
-	 }
-		print("</td></tr>");
-		print("<tr valign=top>\n");
-		print("<td style=\"padding: 0px; width: 5%;\" align=\"center\"><img src=$avatar width=\"$avatar_max_width\"> </td>\n");
-		print("<td width=100% class=text>");
-		//print("<span style=\"float: right\"><a href=\"#top\"><img title=\"Top\" src=\"pic/top.gif\" alt=\"Top\" border=\"0\" width=\"15\" height=\"13\"></a></span>");
-		print("$text</td>\n");
-		print("</tr>\n");
-		print("<tr><td class=colhead align=\"center\" colspan=\"2\">");
-		print"<div style=\"float: left; width: auto;\">"
-			.($CURUSER ? " [<a href=\"".$redaktor.".php?action=quote&amp;cid=$row[id]\" class=\"altlink_white\">Цитата</a>]" : "")
-			.($row["user"] == $CURUSER["id"] || get_user_class() >= UC_MODERATOR ? " [<a href=".$redaktor.".php?action=edit&amp;cid=$row[id] class=\"altlink_white\">Изменить</a>]" : "")
-		    .(get_user_class() >= UC_MODERATOR ? " [<a href=\"".$redaktor.".php?action=delete&amp;cid=$row[id]\" class=\"altlink_white\">Удалить</a>]" : "")
-		    .($row["editedby"] && get_user_class() >= UC_MODERATOR ? " [<a href=\"".$redaktor.".php?action=vieworiginal&amp;cid=$row[id]\" class=\"altlink_white\">Оригинал</a>]" : "")
-		    .(get_user_class() >= UC_MODERATOR ? " IP: ".($row["ip"] ? "<a href=\"usersearch.php?ip=$row[ip]\" class=\"altlink_white\">".$row["ip"]."</a>" : "Неизвестен" ) : "")
-		    ."</div>";
+	$icons = function_exists('get_user_icons') ? get_user_icons(array_merge($row, array('id' => $userid, 'class' => $class))) : '';
+	return '<a href="/userdetails.php?id=' . $userid . '" class="u' . $class . '">' . commenttable_h($username) . '</a>' . $icons;
+}
 
-		print("<div align=\"right\"><!--<font size=1 class=small>-->Комментарий добавлен: ".$row["added"]." GMT<!--</font>--></td></tr>");
-		print("</table><br>");
-  }
+function commenttable($rows, $redaktor = "comment")
+{
+	global $CURUSER;
 
+	foreach ($rows as $row) {
+		$avatar = trim((string)($row['avatar'] ?? ''));
+		$avatar_html = '';
+		if ($avatar !== '' && (!$CURUSER || ($CURUSER['avatars'] ?? 'yes') === 'yes')) {
+			$avatar_html = '<img class="cmet_ava" src="' . commenttable_h($avatar) . '" alt="">';
+		}
+
+		$country = (int)($row['country'] ?? 0);
+		$flag = $country > 0 ? "<img src='/pic/emty.gif' class='i2 c$country'/>" : '';
+		$user = commenttable_user_link($row);
+		$commentid = (int)($row['id'] ?? 0);
+		$userid = (int)($row['user'] ?? $row['userid'] ?? 0);
+		$actions = array();
+
+		if ($CURUSER) {
+			$actions[] = '<a href="/' . commenttable_h($redaktor) . '.php?action=quote&amp;cid=' . $commentid . '" class="sba">Ответить</a>';
+		}
+		if ($CURUSER && ($userid === (int)$CURUSER['id'] || get_user_class() >= UC_MODERATOR)) {
+			$actions[] = '<a href="/' . commenttable_h($redaktor) . '.php?action=edit&amp;cid=' . $commentid . '" class="sba">Изменить</a>';
+		}
+		if (get_user_class() >= UC_MODERATOR) {
+			$actions[] = '<a href="/' . commenttable_h($redaktor) . '.php?action=delete&amp;cid=' . $commentid . '" class="sba">Удалить</a>';
+			if (!empty($row['editedby'])) {
+				$actions[] = '<a href="/' . commenttable_h($redaktor) . '.php?action=vieworiginal&amp;cid=' . $commentid . '" class="sba">Оригинал</a>';
+			}
+			if (!empty($row['ip'])) {
+				$actions[] = '<a href="/usersearch.php?ip=' . commenttable_h($row['ip']) . '" class="sba">IP</a>';
+			}
+		}
+
+		$text = commenttable_format_text($row['text'] ?? '');
+		if (!empty($row['editedby'])) {
+			$text .= '<br><span class="small">Изменено: ' . commenttable_h($row['editedat'] ?? '') . ' пользователем ' . commenttable_h($row['editedbyname'] ?? $row['editedby']) . '</span>';
+		}
+
+		print '<div class="mn2 cmet_bx">' . $avatar_html;
+		print '<div class="cmet_sbx"><dl class="mn"><dt>' . $flag . $user . '</dt><dd>' . commenttable_h($row['added'] ?? '') . (count($actions) ? ' | ' . implode(' | ', $actions) : '') . '</dd></dl>';
+		print '<div class="tx" id="cm' . $commentid . '">' . $text . '</div></div><div class="clr"></div></div>';
+	}
 }
 
 ?>

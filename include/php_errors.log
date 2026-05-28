@@ -416,3 +416,32 @@ Stack trace:
 #4 [internal function]: autoclean()
 #5 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 189
+[28-May-2026 09:25:33 Europe/Moscow] PHP Warning:  Undefined array key "SERVER_PORT" in C:\OSPanel\domains\kinozal.lv\include\init.php on line 33
+[28-May-2026 09:25:33 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\init.php on line 33
+[28-May-2026 09:25:33 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[28-May-2026 09:25:33 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\config.php on line 23
+[28-May-2026 09:25:33 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\config.php on line 59
+[28-May-2026 09:25:33 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\config.local.php on line 22
+[28-May-2026 09:25:33 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\config.local.php on line 58
+[28-May-2026 09:25:33 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_USER_AGENT" in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 533
+[28-May-2026 09:26:09 Europe/Moscow] PHP Warning:  Undefined array key "REQUEST_URI" in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 1209
+[28-May-2026 09:26:09 Europe/Moscow] PHP Deprecated:  basename(): Passing null to parameter #1 ($path) of type string is deprecated in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 1209
+[28-May-2026 09:34:30 Europe/Moscow] PHP Warning:  Undefined array key "SERVER_PORT" in C:\OSPanel\domains\kinozal.lv\include\init.php on line 33
+[28-May-2026 09:34:30 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\init.php on line 33
+[28-May-2026 09:34:30 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\config.php on line 23
+[28-May-2026 09:34:30 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\config.php on line 59
+[28-May-2026 09:34:30 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\config.local.php on line 22
+[28-May-2026 09:34:30 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_HOST" in C:\OSPanel\domains\kinozal.lv\include\config.local.php on line 58
+[28-May-2026 09:34:30 Europe/Moscow] PHP Warning:  Undefined array key "HTTP_USER_AGENT" in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 533
+[28-May-2026 09:34:30 Europe/Moscow] PHP Warning:  Undefined array key "REQUEST_URI" in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 1209
+[28-May-2026 09:34:30 Europe/Moscow] PHP Deprecated:  basename(): Passing null to parameter #1 ($path) of type string is deprecated in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 1209
+[28-May-2026 09:34:30 Europe/Moscow] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\OSPanel\domains\kinozal.lv\include\bittorrent.php:37) in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 1209
+[28-May-2026 09:36:30 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect DATETIME value: '0000-00-00 00:00:00' in C:\OSPanel\domains\kinozal.lv\include\functions.php:189
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(189): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\include\cleanup.php(73): sql_query()
+#2 C:\OSPanel\domains\kinozal.lv\include\cleanup.php(228): cleanup_fetch_ids()
+#3 C:\OSPanel\domains\kinozal.lv\include\functions.php(696): docleanup()
+#4 [internal function]: autoclean()
+#5 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 189

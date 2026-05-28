@@ -4,656 +4,860 @@
 // +--------------------------------------------------------------------------+
 // | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
 // +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
 // |                                               Do not remove above lines! |
 // +--------------------------------------------------------------------------+
 */
 
 require_once("include/bittorrent.php");
 require_once("include/kz_upload.php");
+
 dbconn(false);
-if (!$allow_guests_details)
+
+if (!$allow_guests_details) {
 	loggedinorreturn();
-
-function getagent($httpagent, $peer_id = "") {
-	if (preg_match("/^Azureus ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]\_B([0-9][0-9|*])(.+)$)/", $httpagent, $matches))
-		return "Azureus/$matches[1]";
-	elseif (preg_match("/^Azureus ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]\_CVS)/", $httpagent, $matches))
-		return "Azureus/$matches[1]";
-	elseif (preg_match("/^Java\/([0-9]+\.[0-9]+\.[0-9]+)/", $httpagent, $matches))
-		return "Azureus/<2.0.7.0";
-	elseif (preg_match("/^Azureus ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/", $httpagent, $matches))
-		return "Azureus/$matches[1]";
-	elseif (preg_match("/BitTorrent\/S-([0-9]+\.[0-9]+(\.[0-9]+)*)/", $httpagent, $matches))
-		return "Shadow's/$matches[1]";
-	elseif (preg_match("/BitTorrent\/U-([0-9]+\.[0-9]+\.[0-9]+)/", $httpagent, $matches))
-		return "UPnP/$matches[1]";
-	elseif (preg_match("/^BitTor(rent|nado)\\/T-(.+)$/", $httpagent, $matches))
-		return "BitTornado/$matches[2]";
-	elseif (preg_match("/^BitTornado\\/T-(.+)$/", $httpagent, $matches))
-		return "BitTornado/$matches[1]";
-	elseif (preg_match("/^BitTorrent\/ABC-([0-9]+\.[0-9]+(\.[0-9]+)*)/", $httpagent, $matches))
-		return "ABC/$matches[1]";
-	elseif (preg_match("/^ABC ([0-9]+\.[0-9]+(\.[0-9]+)*)\/ABC-([0-9]+\.[0-9]+(\.[0-9]+)*)/", $httpagent, $matches))
-		return "ABC/$matches[1]";
-	elseif (preg_match("/^Python-urllib\/.+?, BitTorrent\/([0-9]+\.[0-9]+(\.[0-9]+)*)/", $httpagent, $matches))
-		return "BitTorrent/$matches[1]";
-	elseif (preg_match("/^BitTorrent\/brst(.+)/", $httpagent, $matches))
-		return "Burst";
-	elseif (preg_match("/^RAZA (.+)$/", $httpagent, $matches))
-		return "Shareaza/$matches[1]";
-	elseif (preg_match("/Rufus\/([0-9]+\.[0-9]+\.[0-9]+)/", $httpagent, $matches))
-		return "Rufus/$matches[1]";
-	elseif (preg_match("/^Python-urllib\\/([0-9]+\\.[0-9]+(\\.[0-9]+)*)/", $httpagent, $matches))
-		return "G3 Torrent";
-	elseif (preg_match("/MLDonkey\/([0-9]+).([0-9]+).([0-9]+)*/", $httpagent, $matches))
-		return "MLDonkey/$matches[1].$matches[2].$matches[3]";
-	elseif (preg_match("/ed2k_plugin v([0-9]+\\.[0-9]+).*/", $httpagent, $matches))
-		return "eDonkey/$matches[1]";
-	elseif (preg_match("/uTorrent\/([0-9]+)([0-9]+)([0-9]+)([0-9A-Z]+)/", $httpagent, $matches))
-		return "µTorrent/$matches[1].$matches[2].$matches[3].$matches[4]";
-	elseif (preg_match("/CT([0-9]+)([0-9]+)([0-9]+)([0-9]+)/", $peer_id, $matches))
-		return "cTorrent/$matches[1].$matches[2].$matches[3].$matches[4]";
-	elseif (preg_match("/Transmission\/([0-9]+).([0-9]+)/", $httpagent, $matches))
-		return "Transmission/$matches[1].$matches[2]";
-	elseif (preg_match("/KT([0-9]+)([0-9]+)([0-9]+)([0-9]+)/", $peer_id, $matches))
-		return "KTorrent/$matches[1].$matches[2].$matches[3].$matches[4]";
-	elseif (preg_match("/rtorrent\/([0-9]+\\.[0-9]+(\\.[0-9]+)*)/", $httpagent, $matches))
-		return "rTorrent/$matches[1]";
-	elseif (preg_match("/^ABC\/Tribler_ABC-([0-9]+\.[0-9]+(\.[0-9]+)*)/", $httpagent, $matches))
-		return "Tribler/$matches[1]";
-	elseif (preg_match("/^BitsOnWheels( |\/)([0-9]+\\.[0-9]+).*/", $httpagent, $matches))
-		return "BitsOnWheels/$matches[2]";
-	elseif (preg_match("/BitTorrentPlus\/(.+)$/", $httpagent, $matches))
-		return "BitTorrent Plus!/$matches[1]";
-	elseif (preg_match("/^Deadman Walking/", $httpagent))
-		return "Deadman Walking";
-	elseif (preg_match("/^eXeem( |\/)([0-9]+\\.[0-9]+).*/", $httpagent, $matches))
-		return "eXeem$matches[1]$matches[2]";
-	elseif (preg_match("/^libtorrent\/(.+)$/", $httpagent, $matches))
-		return "libtorrent/$matches[1]";
-	elseif (substr($peer_id, 0, 12) == "d0c")
-		return "Mainline";
-	elseif (substr($peer_id, 0, 1) == "M")
-		return "Mainline/Decoded";
-	elseif (substr($peer_id, 0, 3) == "-BB")
-		return "BitBuddy";
-	elseif (substr($peer_id, 0, 8) == "-AR1001-")
-		return "Arctic Torrent/1.2.3";
-	elseif (substr($peer_id, 0, 6) == "exbc\08")
-		return "BitComet/0.56";
-	elseif (substr($peer_id, 0, 6) == "exbc\09")
-		return "BitComet/0.57";
-	elseif (substr($peer_id, 0, 6) == "exbc\0:")
-		return "BitComet/0.58";
-	elseif (substr($peer_id, 0, 4) == "-BC0")
-		return "BitComet/0." . substr($peer_id, 5, 2);
-	elseif (substr($peer_id, 0, 7) == "exbc\0L")
-		return "BitLord/1.0";
-	elseif (substr($peer_id, 0, 7) == "exbcL")
-		return "BitLord/1.1";
-	elseif (substr($peer_id, 0, 3) == "346")
-		return "TorrenTopia";
-	elseif (substr($peer_id, 0, 8) == "-MP130n-")
-		return "MooPolice";
-	elseif (substr($peer_id, 0, 8) == "-SZ2210-")
-		return "Shareaza/2.2.1.0";
-	elseif (preg_match("/^0P3R4H/", $httpagent))
-		return "Opera BT Client";
-	elseif (substr($peer_id, 0, 6) == "A310--")
-		return "ABC/3.1";
-	elseif (preg_match("/^XBT Client/", $httpagent))
-		return "XBT Client";
-	elseif (preg_match("/^BitTorrent\/BitSpirit$/", $httpagent))
-		return "BitSpirit";
-	elseif (preg_match("/^DansClient/", $httpagent))
-		return "XanTorrent";
-	else
-		return "Unknown";
 }
 
-function dltable($name, $arr, $torrent) {
-	global $tracker_lang;
-	$s = "<b>" . count($arr) . " $name</b>\n";
-	if (!count($arr))
-		return $s;
-	$s .=	"\n";
-	$s .=	"<table width=\"100%\" class=\"main\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\">\n";
-	$s .=	"<tr><td class=colhead>{$tracker_lang['user']}</td>" .
-			"<td class=colhead align=center>{$tracker_lang['port_open']}</td>".
-			"<td class=colhead align=right>{$tracker_lang['uploaded']}</td>".
-			"<td class=colhead align=right>{$tracker_lang['ul_speed']}</td>".
-			"<td class=colhead align=right>{$tracker_lang['downloaded']}</td>" .
-			"<td class=colhead align=right>{$tracker_lang['dl_speed']}</td>" .
-			"<td class=colhead align=right>{$tracker_lang['ratio']}</td>" .
-			"<td class=colhead align=right>{$tracker_lang['completed']}</td>" .
-			"<td class=colhead align=right>{$tracker_lang['connected']}</td>" .
-			"<td class=colhead align=right>{$tracker_lang['idle']}</td>" .
-			"<td class=colhead align=left>{$tracker_lang['client']}</td></tr>\n";
-	$now = time();
-	//$moderator = (isset($CURUSER) && get_user_class() >= UC_MODERATOR); // Redundant
-	$mod = (get_user_class() >= UC_MODERATOR);
-	foreach ($arr as $e) {
-		// user/ip/port
-		// check if anyone has this ip
-		$s .= "<tr>\n";
-		if ($e["username"])
-			$s .= "<td><a href=\"userdetails.php?id=$e[userid]\"><b>".get_user_class_color($e["class"], $e["username"])."</b></a>".($mod ? "&nbsp;[<span title=\"{$e["ip"]}\" style=\"cursor: pointer\">IP</span>]" : "")."</td>\n";
-		else
-			$s .= "<td>" . ($mod ? $e["ip"] : preg_replace('/\.\d+$/', ".xxx", $e["ip"])) . "</td>\n";
-		$secs = max(10, ($e["la"]) - $e["pa"]);
-		$s .= "<td align=\"center\">" . ($e['connectable'] == "yes" ? "<span style=\"color: green; cursor: help;\" title=\"{$tracker_lang['peertable_port_open']}\">{$tracker_lang['yes']}</span>" : "<span style=\"color: red; cursor: help;\" title=\"{$tracker_lang['peertable_port_closed']}\">{$tracker_lang['no']}</span>") . "</td>\n";
-		$s .= "<td align=\"right\"><nobr>" . mksize($e["uploaded"]) . "</nobr></td>\n";
-		$s .= "<td align=\"right\"><nobr>" . mksize($e["uploadoffset"] / $secs) . "/s</nobr></td>\n";
-		$s .= "<td align=\"right\"><nobr>" . mksize($e["downloaded"]) . "</nobr></td>\n";
-		//if ($e["seeder"] == "no")
-		$s .= "<td align=\"right\"><nobr>" . mksize($e["downloadoffset"] / $secs) . "/s</nobr></td>\n";
-		/*else
-		$s .= "<td align=\"right\"><nobr>" . mksize($e["downloadoffset"] / max(1, $e["finishedat"] - $e["st"])) . "/s</nobr></td>\n";*/
-		if ($e["downloaded"]) {
-			$ratio = floor(($e["uploaded"] / $e["downloaded"]) * 1000) / 1000;
-			$s .= "<td align=\"right\"><font color=" . get_ratio_color($ratio) . ">" . number_format($ratio, 3) . "</font></td>\n";
-		} else
-			if ($e["uploaded"])
-				$s .= "<td align=\"right\">Inf.</td>\n";
-			else
-				$s .= "<td align=\"right\">---</td>\n";
-		$s .= "<td align=\"right\">" . sprintf("%.2f%%", 100 * (1 - ($e["to_go"] / $torrent["size"]))) . "</td>\n";
-		$s .= "<td align=\"right\">" . mkprettytime($now - $e["st"]) . "</td>\n";
-		$s .= "<td align=\"right\">" . mkprettytime($now - $e["la"]) . "</td>\n";
-		$s .= "<td align=\"left\">" . htmlspecialchars_uni(getagent($e["agent"], $e["peer_id"])) . "</td>\n";
-		$s .= "</tr>\n";
-	}
-	$s .= "</table>\n";
-	return $s;
+function details_h($value)
+{
+	return htmlspecialchars_uni((string)$value);
 }
 
-$id = intval($_GET["id"]);
-
-if (!isset($id) || !$id)
-	die();
-
-$res = sql_query("SELECT td.descr_hash, td.descr_parsed, t.multitracker, t.last_mt_update, t.keywords, t.description, t.free, t.seeders, t.banned, t.leechers, t.info_hash, t.filename, UNIX_TIMESTAMP() - UNIX_TIMESTAMP(t.last_action) AS lastseed, t.numratings, t.name, IF(t.numratings < $minvotes, NULL, ROUND(t.ratingsum / t.numratings, 1)) AS rating, t.owner, t.save_as, t.descr, t.visible, t.size, t.added, t.views, t.hits, t.times_completed, t.id, t.type, t.numfiles, t.image1, t.image2, t.image3, t.image4, t.image5, c.name AS cat_name, u.username FROM torrents AS t LEFT JOIN categories AS c ON t.category = c.id LEFT JOIN users AS u ON t.owner = u.id LEFT JOIN torrents_descr AS td ON td.tid = $id WHERE t.id = $id") or sqlerr(__FILE__, __LINE__);
-$row = mysqli_fetch_array($res);
-$torrent_details = kz_upload_load_details($id);
-
-$keywords = $row['keywords'];
-$description = $row['description'];
-
-if ($CURUSER) {
-	sql_query("INSERT IGNORE INTO readtorrents (userid, torrentid) VALUES (".sqlesc($CURUSER["id"]).", ".sqlesc($id).")");
+function details_plain($value)
+{
+	$value = html_entity_decode((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	$value = preg_replace('#\[(/?)(b|i|u|s|url|img|quote|hide|spoiler|color|size|font|family|center|left|right|justify|code|php)[^\]]*\]#iu', '', $value);
+	$value = strip_tags($value);
+	return trim(preg_replace('#\s+#u', ' ', $value));
 }
 
-$owned = $moderator = 0;
-if (get_user_class() >= UC_MODERATOR)
-	$owned = $moderator = 1;
-elseif ($CURUSER["id"] == $row["owner"])
-	$owned = 1;
-//}
-
-if (!$row || ($row["banned"] == "yes" && !$moderator))
-        stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
-
-if (isset($_GET["hit"])) {
-	sql_query("UPDATE torrents SET views = views + 1 WHERE id = $id");
-	if (isset($_GET["tocomm"]))
-		header("Location: $DEFAULTBASEURL/details.php?id=$id&page=0#startcomments");
-	elseif (isset($_GET["filelist"]))
-		header("Location: $DEFAULTBASEURL/details.php?id=$id&filelist=1#filelist");
-	elseif (isset($_GET["toseeders"]))
-		header("Location: $DEFAULTBASEURL/details.php?id=$id&dllist=1#seeders");
-	elseif (isset($_GET["todlers"]))
-		header("Location: $DEFAULTBASEURL/details.php?id=$id&dllist=1#leechers");
-	else
-		header("Location: $DEFAULTBASEURL/details.php?id=$id");
-	exit();
+function details_data(array $details)
+{
+	$data = isset($details['data']) && is_array($details['data']) ? $details['data'] : array();
+	$video = isset($data['video']) && is_array($data['video']) ? $data['video'] : array();
+	$design = isset($data['design']) && is_array($data['design']) ? $data['design'] : array();
+	return array($video, $design);
 }
 
-if (!isset($_GET["page"])) {
-	$hide_right_blocks = true;
-	stdhead($tracker_lang['torrent_details']." \"".htmlspecialchars_decode($row["name"])."\"");
+function details_guess_title($name)
+{
+	$name = preg_replace('#\s*/\s*[0-9]{4}\s*/.*$#u', '', (string)$name);
+	$name = preg_replace('#\s*/\s*(WEB|BD|DVD|HD|CAM|HDRip|WEBRip|BDRip|DVDRip).*$#iu', '', $name);
+	return trim($name);
+}
 
-	if ($CURUSER["id"] == $row["owner"] || get_user_class() >= UC_MODERATOR)
-		$owned = 1;
-	else
-		$owned = 0;
+function details_split($value, $limit = 30)
+{
+	$parts = preg_split('/\s*,\s*/u', (string)$value, -1, PREG_SPLIT_NO_EMPTY);
+	$out = array();
 
-	if ($row['multitracker'] == 'yes') {
-		$announces_a = $announces_urls = array();
-		$announces_r = sql_query('SELECT url, seeders, leechers, last_update, state, error FROM torrents_scrape WHERE tid = '.$id);
-		while ($announce = mysqli_fetch_array($announces_r)) {
-			$announces_a[] = $announce;
-			$announces_urls[] = $announce['url'];
+	foreach ($parts as $part) {
+		$part = trim($part, " \t\n\r\0\x0B\"'");
+		if ($part !== '') {
+			$out[] = $part;
 		}
-		unset($announce);
-	}
-
-	$details_descr = '';
-	if (!empty($row["descr"])) {
-		if (md5($row['descr']) == $row['descr_hash'])
-			$details_descr = $row['descr_parsed'];
-		else {
-			$details_descr = format_comment($row['descr']);
-			sql_query('INSERT INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES ('.implode(', ', array_map('sqlesc', array($id, md5($row['descr']), $details_descr))).') ON DUPLICATE KEY UPDATE descr_hash = VALUES(descr_hash), descr_parsed = VALUES(descr_parsed)') or sqlerr(__FILE__,__LINE__);
+		if (count($out) >= $limit) {
+			break;
 		}
 	}
 
-	if (!empty($torrent_details['exists']) && $details_descr !== '') {
-		kz_upload_render_details_panel($row, $torrent_details, $details_descr, $owned, isset($announces_urls) ? $announces_urls : array());
+	return $out;
+}
+
+function details_term_links($value, $kind)
+{
+	$items = details_split($value, $kind === 'person' ? 20 : 30);
+	if (!$items) {
+		return '';
 	}
 
-	$spacer = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-	$s = "";
-
-	print("<table width=\"100%\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\">\n");
-	print("<tr><td class=\"colhead\" colspan=\"2\"><div style=\"float: left; width: auto;\">:: {$tracker_lang['torrent_details']}</div><div align=\"right\"><a href=\"bookmark.php?torrent=$row[id]\"><b>{$tracker_lang['bookmark']}</b></a></div></td></tr>");
-	$url = "edit.php?id=" . $row["id"];
-	if (isset($_GET["returnto"])) {
-		$addthis = "&amp;returnto=" . urlencode($_GET["returnto"]);
-		$url .= $addthis;
-		$keepget .= $addthis;
-	}
-	$editlink = "a href=\"$url\" class=\"sublink\"";
-	$right_links = array();
-
-	$right_links[] = "<a href=\"download.php?id={$id}\"><img src=\"$pic_base_url/download.gif\" border=\"0\" alt=\"{$tracker_lang['download']}\" title=\"{$tracker_lang['download']}\"></a>";
-	if ($row['multitracker'] == 'yes')
-		$right_links[] = "<a href=\"".magnet(true, $row['info_hash'], $row['filename'], $row['size'], $announces_urls)."\"><img src=\"$pic_base_url/magnet.png\" border=\"0\" alt=\"{$tracker_lang['magnet']}\" title=\"{$tracker_lang['magnet']}\"></a>";
-	$right_links[] = "<a href=\"bookmark.php?torrent={$id}\"><img src=\"$pic_base_url/bookmark.gif\" border=\"0\" alt=\"{$tracker_lang['bookmark']}\" title=\"{$tracker_lang['bookmark']}\"></a>";
-
-	if (count($right_links))
-		$s .= '<span style="float: right;">'.implode('&nbsp;', $right_links).'</span>';
-
-	$s .= "<a class=\"index\" href=\"download.php?id=$id\"><b>{$row["name"]}</b></a>";
-
-	if ($owned)
-	    $s .= " $spacer<$editlink>[{$tracker_lang['edit']}]</a>";
-
-	switch ($row['free']) {
-		case 'yes':
-			$freepic = "<img src=\"$pic_base_url/freedownload.gif\" title=\"{$tracker_lang['golden']}\" alt=\"{$tracker_lang['golden']}\">&nbsp;";
-			break;
-		case 'silver':
-			$freepic = "<img src=\"$pic_base_url/silverdownload.gif\" title=\"{$tracker_lang['silver']}\" alt=\"{$tracker_lang['silver']}\">&nbsp;";
-			break;
-		case 'no':
-			$freepic = '';
+	$links = array();
+	foreach ($items as $item) {
+		$url = $kind === 'person'
+			? '/browse.php?s=' . rawurlencode($item)
+			: '/top.php?j=' . rawurlencode($item);
+		$links[] = '<a href="' . $url . '" class="sba">' . details_h($item) . '</a>';
 	}
 
-	tr ("<nobr>{$row["cat_name"]}</nobr>", $freepic.$s, 1, 1, "10%");
+	return implode(', ', $links);
+}
 
-	function hex_esc($matches) {
-	        return sprintf("%02x", ord($matches[0]));
+function details_line($title, $value, $kind = '')
+{
+	$value = trim((string)$value);
+	if ($value === '') {
+		return '';
 	}
 
-	tr($tracker_lang['info_hash'], $row["info_hash"]);
-
-	if (empty($torrent_details['exists']) && $row["image1"] != "") {
-		if ($row["image1"] != "")
-			$img1 = "<a href=\"viewimage.php?pic={$row['image1']}\"><img border=\"0\" src=\"thumbnail.php?{$row['image1']}\" /></a>";
-		tr($tracker_lang['details_poster'], $img1, 1);
+	if ($kind === 'genre' || $kind === 'released') {
+		$value = details_term_links($value, 'genre');
+	} elseif ($kind === 'person') {
+		$value = details_term_links($value, 'person');
+	} else {
+		$value = details_h($value);
 	}
 
-	if (empty($torrent_details['exists']) && $details_descr !== '') {
-		tr($tracker_lang['description'], $details_descr, 1, 1);
+	return '<b>' . details_h($title) . ':</b> ' . $value . '<br />';
+}
+
+function details_poster(array $row, array $details)
+{
+	$poster = trim((string)($details['poster_url'] ?? ''));
+	if ($poster !== '') {
+		return details_h($poster);
+	}
+	if (!empty($row['image1'])) {
+		return 'thumbnail.php?' . details_h($row['image1']);
+	}
+	return '/pic/default_avatar.gif';
+}
+
+function details_user_link($userid, $username, $class = 0, $user = array())
+{
+	$userid = (int)$userid;
+	if ($userid <= 0 || $username === '') {
+		return '<i>unknown</i>';
 	}
 
-	$images = array();
+	$user = array_merge($user, array('id' => $userid, 'class' => $class, 'username' => $username));
+	$icons = function_exists('get_user_icons') ? get_user_icons($user) : '';
+
+	return '<a href="/userdetails.php?id=' . $userid . '" class="u' . (int)$class . '">' . details_h($username) . '</a>' . $icons;
+}
+
+function details_owner(array $row)
+{
+	$owner = (int)$row['owner'];
+	$res = sql_query("
+		SELECT id, username, class, donor, gender, birthday, warned, enabled, uploaded, downloaded, country
+		FROM users
+		WHERE id = $owner
+		LIMIT 1
+	") or sqlerr(__FILE__, __LINE__);
+	$user = mysqli_fetch_assoc($res);
+
+	return $user ?: array(
+		'id' => $owner,
+		'username' => (string)($row['username'] ?? ''),
+		'class' => (int)($row['owner_class'] ?? 0),
+		'donor' => 'no',
+		'gender' => '1',
+		'birthday' => '',
+		'warned' => 'no',
+		'enabled' => 'yes',
+		'uploaded' => 0,
+		'downloaded' => 0,
+	);
+}
+
+function details_rating_value(array $row)
+{
+	$num = max(0, (int)($row['numratings'] ?? 0));
+	if ($num <= 0) {
+		return 0.0;
+	}
+
+	return round(((float)$row['ratingsum']) / $num, 1);
+}
+
+function details_starbar($id, $rating, $user_rating = 0)
+{
+	$rating = max(0, min(10, (float)$rating));
+	$width = round($rating * 20, 1);
+	$class = $user_rating > 0 ? ' class="user"' : '';
+	$html = '<div class="starbar"><div class="outer">';
+	$html .= '<div style="width:' . $width . 'px" id="starbar"' . $class . '></div>';
+
+	for ($i = 10; $i >= 1; $i--) {
+		$html .= '<a onclick="vote(' . (int)$id . ',' . $i . '); return false;" href="#" class="s' . $i . '" title="' . $i . '"></a>';
+	}
+
+	$html .= '</div></div>';
+	return $html;
+}
+
+function details_rating_cache_path($key)
+{
+	$dir = ROOT_PATH . 'cache';
+	if (!is_dir($dir)) {
+		@mkdir($dir, 0775, true);
+	}
+
+	if (!is_dir($dir) || !is_writable($dir)) {
+		return '';
+	}
+
+	return $dir . DIRECTORY_SEPARATOR . 'rating_' . preg_replace('/[^a-z0-9_]/i', '_', $key) . '.json';
+}
+
+function details_http_get($url)
+{
+	$url = trim((string)$url);
+	if ($url === '' || !preg_match('#^https?://#i', $url)) {
+		return '';
+	}
+
+	if (function_exists('curl_init')) {
+		$ch = curl_init($url);
+		curl_setopt_array($ch, array(
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_CONNECTTIMEOUT => 3,
+			CURLOPT_TIMEOUT => 5,
+			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
+			CURLOPT_HTTPHEADER => array('Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'),
+		));
+		$body = curl_exec($ch);
+		$code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+		curl_close($ch);
+
+		return ($code >= 200 && $code < 300 && is_string($body)) ? $body : '';
+	}
+
+	$context = stream_context_create(array(
+		'http' => array(
+			'timeout' => 5,
+			'header' => "User-Agent: Mozilla/5.0\r\nAccept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7\r\n",
+		),
+	));
+	$body = @file_get_contents($url, false, $context);
+
+	return is_string($body) ? $body : '';
+}
+
+function details_parse_rating_number($value)
+{
+	$value = str_replace(',', '.', trim((string)$value));
+	if ($value === '' || !preg_match('/^[0-9]+(?:\.[0-9]+)?$/', $value)) {
+		return '';
+	}
+
+	$rating = (float)$value;
+	if ($rating <= 0 || $rating > 10) {
+		return '';
+	}
+
+	return number_format($rating, 1);
+}
+
+function details_kinopoisk_id($url)
+{
+	if (preg_match('#kinopoisk\.ru/(?:film|series)/([0-9]+)#i', (string)$url, $m)) {
+		return $m[1];
+	}
+	if (preg_match('#(?:^|[?&])kp=([0-9]+)#i', (string)$url, $m)) {
+		return $m[1];
+	}
+	return '';
+}
+
+function details_kinopoisk_ratings($kp_url)
+{
+	$kp_id = details_kinopoisk_id($kp_url);
+	if ($kp_id === '') {
+		return array('kp' => '', 'imdb' => '');
+	}
+
+	$cache = details_rating_cache_path('kinopoisk_' . $kp_id);
+	if ($cache !== '' && is_file($cache) && filemtime($cache) > time() - 43200) {
+		$data = json_decode((string)@file_get_contents($cache), true);
+		if (is_array($data)) {
+			return array(
+				'kp' => details_parse_rating_number($data['kp'] ?? ''),
+				'imdb' => details_parse_rating_number($data['imdb'] ?? ''),
+			);
+		}
+	}
+
+	$body = details_http_get('https://rating.kinopoisk.ru/' . rawurlencode($kp_id) . '.xml');
+	$ratings = array('kp' => '', 'imdb' => '');
+
+	if ($body !== '') {
+		if (preg_match('#<kp_rating[^>]*>([^<]+)</kp_rating>#i', $body, $m)) {
+			$ratings['kp'] = details_parse_rating_number($m[1]);
+		}
+		if (preg_match('#<imdb_rating[^>]*>([^<]+)</imdb_rating>#i', $body, $m)) {
+			$ratings['imdb'] = details_parse_rating_number($m[1]);
+		}
+	}
+
+	if ($cache !== '' && ($ratings['kp'] !== '' || $ratings['imdb'] !== '')) {
+		@file_put_contents($cache, json_encode($ratings, JSON_UNESCAPED_UNICODE));
+	}
+
+	return $ratings;
+}
+
+function details_imdb_id($url)
+{
+	if (preg_match('#/title/(tt[0-9]+)#i', (string)$url, $m)) {
+		return $m[1];
+	}
+	return '';
+}
+
+function details_imdb_rating($imdb_url)
+{
+	$imdb_id = details_imdb_id($imdb_url);
+	if ($imdb_id === '') {
+		return '';
+	}
+
+	$cache = details_rating_cache_path('imdb_' . $imdb_id);
+	if ($cache !== '' && is_file($cache) && filemtime($cache) > time() - 43200) {
+		$data = json_decode((string)@file_get_contents($cache), true);
+		return details_parse_rating_number($data['rating'] ?? '');
+	}
+
+	$body = details_http_get('https://www.imdb.com/title/' . rawurlencode($imdb_id) . '/');
+	$rating = '';
+	if ($body !== '' && preg_match('#"aggregateRating"\s*:\s*\{.*?"ratingValue"\s*:\s*"?([0-9.]+)"?#is', $body, $m)) {
+		$rating = details_parse_rating_number($m[1]);
+	}
+
+	if ($cache !== '' && $rating !== '') {
+		@file_put_contents($cache, json_encode(array('rating' => $rating), JSON_UNESCAPED_UNICODE));
+	}
+
+	return $rating;
+}
+
+function details_external_ratings(array $design)
+{
+	$imdb_manual = details_parse_rating_number($design['imdb']['rating'] ?? '');
+	$kp_manual = details_parse_rating_number($design['kinopoisk']['rating'] ?? '');
+	$kp_remote = details_kinopoisk_ratings($design['kinopoisk']['url'] ?? '');
+	$imdb_remote = $kp_remote['imdb'] !== '' ? $kp_remote['imdb'] : details_imdb_rating($design['imdb']['url'] ?? '');
+
+	return array(
+		'imdb' => $imdb_remote !== '' ? $imdb_remote : $imdb_manual,
+		'kinopoisk' => $kp_remote['kp'] !== '' ? $kp_remote['kp'] : $kp_manual,
+	);
+}
+
+function details_query_terms(array $row, array $video, $mode)
+{
+	$seed = array($video['title'] ?? '', $video['original_title'] ?? '', $row['name'] ?? '');
+
+	if ($mode === 'genre') {
+		$seed = array($video['genre'] ?? '', $row['keywords'] ?? '');
+	} elseif ($mode === 'person') {
+		$seed = array($video['director'] ?? '', $video['cast'] ?? '');
+	}
+
+	$terms = array();
+	foreach ($seed as $text) {
+		foreach (preg_split('/[^\p{L}\p{N}]+/u', details_plain($text), -1, PREG_SPLIT_NO_EMPTY) as $word) {
+			$word = trim($word);
+			if (mb_strlen($word, 'UTF-8') >= 4 && !preg_match('/^[0-9]{4}$/', $word)) {
+				$terms[mb_strtolower($word, 'UTF-8')] = $word;
+			}
+		}
+	}
+
+	return array_slice(array_values($terms), 0, 8);
+}
+
+function details_related_rows(array $row, array $video, $mode)
+{
+	$id = (int)$row['id'];
+	$where = array("t.id <> $id", "t.visible = 'yes'", "t.banned = 'no'");
+
+	if ($mode === 'owner') {
+		$where[] = 't.owner = ' . (int)$row['owner'];
+	} else {
+		if (!empty($row['category'])) {
+			$where[] = 't.category = ' . (int)$row['category'];
+		}
+
+		$terms = details_query_terms($row, $video, $mode);
+		$likes = array();
+		foreach ($terms as $term) {
+			$q = sqlesc('%' . $term . '%', true);
+			$likes[] = "(t.name LIKE $q OR t.keywords LIKE $q OR t.description LIKE $q OR t.descr LIKE $q)";
+		}
+		if ($likes) {
+			$where[] = '(' . implode(' OR ', $likes) . ')';
+		}
+	}
+
+	$res = sql_query("
+		SELECT t.id, t.name, t.comments, t.size, t.seeders, t.leechers, t.ratingsum, t.numratings,
+		       u.id AS owner_id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded
+		FROM torrents AS t
+		LEFT JOIN users AS u ON u.id = t.owner
+		WHERE " . implode(' AND ', $where) . "
+		ORDER BY (t.seeders + t.times_completed + t.comments) DESC, t.id DESC
+		LIMIT 5
+	") or sqlerr(__FILE__, __LINE__);
+
+	$rows = array();
+	while ($item = mysqli_fetch_assoc($res)) {
+		$rows[] = $item;
+	}
+
+	if (!$rows && $mode !== 'owner') {
+		$fallback_where = array("t.id <> $id", "t.visible = 'yes'", "t.banned = 'no'");
+		if (!empty($row['category'])) {
+			$fallback_where[] = 't.category = ' . (int)$row['category'];
+		}
+
+		$res = sql_query("
+			SELECT t.id, t.name, t.comments, t.size, t.seeders, t.leechers, t.ratingsum, t.numratings,
+			       u.id AS owner_id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded
+			FROM torrents AS t
+			LEFT JOIN users AS u ON u.id = t.owner
+			WHERE " . implode(' AND ', $fallback_where) . "
+			ORDER BY (t.seeders + t.times_completed + t.comments) DESC, t.id DESC
+			LIMIT 5
+		") or sqlerr(__FILE__, __LINE__);
+
+		while ($item = mysqli_fetch_assoc($res)) {
+			$rows[] = $item;
+		}
+	}
+
+	return $rows;
+}
+
+function details_related_table($title, array $rows, $count_url = '')
+{
+	$html = '<div class="bx2_0"><table class="tables3 w100p">';
+	$html .= '<tr class="mn"><td class="w90p">' . details_h($title);
+	if ($count_url !== '') {
+		$html .= ' <a href="' . details_h($count_url) . '" class="sba">найти еще</a>';
+	}
+	$html .= '</td><td class="s">Комм.</td><td class="s">Размер</td><td class="s">Сидов</td><td class="s">Пиров</td><td class="sbl">Раздает</td></tr>';
+
+	if (!$rows) {
+		$html .= '<tr class="first"><td colspan="6">Подходящих раздач пока нет.</td></tr>';
+	} else {
+		foreach ($rows as $item) {
+			$rating = ((int)$item['numratings'] > 0) ? round((float)$item['ratingsum'] / (int)$item['numratings']) : 0;
+			$class = 'r' . max(0, min(10, (int)$rating));
+			$user = array(
+				'id' => (int)$item['owner_id'],
+				'username' => (string)$item['username'],
+				'class' => (int)$item['class'],
+				'donor' => $item['donor'] ?? 'no',
+				'gender' => $item['gender'] ?? '1',
+				'birthday' => $item['birthday'] ?? '',
+				'warned' => $item['warned'] ?? 'no',
+				'enabled' => $item['enabled'] ?? 'yes',
+				'uploaded' => $item['uploaded'] ?? 0,
+				'downloaded' => $item['downloaded'] ?? 0,
+			);
+
+			$html .= "<tr class='first'>";
+			$html .= "<td><a class='" . $class . "' href='/details.php?id=" . (int)$item['id'] . "'>" . details_h($item['name']) . "</a></td>";
+			$html .= "<td class='s'>" . (int)$item['comments'] . "</td>";
+			$html .= "<td class='s'>" . details_h(mksize($item['size'])) . "</td>";
+			$html .= "<td class='s green b'>" . (int)$item['seeders'] . "</td>";
+			$html .= "<td class='s red b'>" . (int)$item['leechers'] . "</td>";
+			$html .= "<td class='sbl'>" . details_user_link((int)$item['owner_id'], (string)$item['username'], (int)$item['class'], $user) . "</td>";
+			$html .= '</tr>';
+		}
+	}
+
+	$html .= '</table></div>';
+	return $html;
+}
+
+function details_file_list($id)
+{
+	$id = (int)$id;
+	$res = sql_query("SELECT filename, size FROM files WHERE torrent = $id ORDER BY id ASC") or sqlerr(__FILE__, __LINE__);
+	$rows = array();
+
+	while ($file = mysqli_fetch_assoc($res)) {
+		$rows[] = '<tr><td>' . details_h($file['filename']) . '</td><td class="sbr">' . details_h(mksize($file['size'])) . '</td></tr>';
+	}
+
+	if (!$rows) {
+		return '';
+	}
+
+	return '<table class="tables3 w100p"><tr class="mn"><td>Файл</td><td class="sbr">Размер</td></tr>' . implode('', $rows) . '</table>';
+}
+
+function details_screens_html(array $row, array $design)
+{
+	$out = array();
+	$screens = trim((string)($design['screens'] ?? ''));
+
+	if ($screens !== '') {
+		foreach (preg_split('#\r\n|\r|\n#', $screens) as $line) {
+			$line = trim($line);
+			if ($line !== '' && preg_match('#^(https?:)?//#i', $line)) {
+				$out[] = '<a href="' . details_h($line) . '" rel="lightbox"><img src="' . details_h($line) . '" class="p200" alt=""></a>';
+			}
+		}
+	}
 
 	for ($i = 2; $i <= 5; $i++) {
-		if ($row['image'.$i])
-			$images[] = '<a href="torrents/images/' . $row['image'.$i] . '" rel="lightbox" title="'.$tracker_lang['details_screenshot'].' №'.($i - 1).'"><img title="'.$tracker_lang['details_screenshot'].' №'.($i - 1).'" border="0" src="screenshot.php?' . $row['image'.$i] . '" /></a>';
+		if (!empty($row['image' . $i])) {
+			$img = details_h($row['image' . $i]);
+			$out[] = '<a href="torrents/images/' . $img . '" rel="lightbox"><img border="0" src="screenshot.php?' . $img . '" alt=""></a>';
+		}
 	}
-	if (count($images))
-		tr($tracker_lang['images'], implode('&nbsp; ', $images), 1);
 
-	if ($row["visible"] == "no")
-		tr($tracker_lang['visible'], "<b>{$tracker_lang['no']}</b> ({$tracker_lang['dead']})", 1);
-	if ($moderator)
-		tr($tracker_lang['banned'], ($row["banned"] == 'no' ? $tracker_lang['no'] : $tracker_lang['yes']) );
+	return $out ? implode(' ', $out) : 'Скриншоты не добавлены.';
+}
 
-	if (isset($row["cat_name"]))
-		tr($tracker_lang['type'], $row["cat_name"]);
-	else
-		tr($tracker_lang['type'], "({$tracker_lang['no_choose']})");
+function details_comment_format($text)
+{
+	$text = html_entity_decode((string)$text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	$text = preg_replace('#\[(color|size|font|family|left|right|center|justify|hide|spoiler|code|php)[^\]]*\](.*?)\[/\1\]#isu', '$2', $text);
+	$text = htmlspecialchars_uni($text);
 
-	tr($tracker_lang['seeder'], "{$tracker_lang['seeder_last_seen']} " . mkprettytime($row['lastseed']) . " {$tracker_lang['ago']}");
-	tr($tracker_lang['size'], mksize($row['size']) . " (" . number_format($row['size']) . " {$tracker_lang['bytes']})");
+	$text = preg_replace('#\[b\](.*?)\[/b\]#isu', '<b>$1</b>', $text);
+	$text = preg_replace('#\[i\](.*?)\[/i\]#isu', '<i>$1</i>', $text);
+	$text = preg_replace('#\[u\](.*?)\[/u\]#isu', '<u>$1</u>', $text);
+	$text = preg_replace('#\[url\](https?://[^\s\[]+)\[/url\]#isu', '<a href="$1" class="sba" target="_blank">$1</a>', $text);
+	$text = preg_replace('#\[url=(https?://[^\]\s]+)\](.*?)\[/url\]#isu', '<a href="$1" class="sba" target="_blank">$2</a>', $text);
+	$text = preg_replace('#\[img\](https?://[^\s\[]+)\[/img\]#isu', '<img src="$1" class="p200" alt="">', $text);
+	$text = preg_replace('#\[quote=([^\]]+)\](.*?)\[/quote\]#isu', '<fieldset class="ft_cmt"><legend><span class="f_um b">$1</span></legend>$2</fieldset>', $text);
+	$text = preg_replace('#\[quote\](.*?)\[/quote\]#isu', '<fieldset class="ft_cmt"><legend><span class="f_um b">Цитата</span></legend>$1</fieldset>', $text);
+
+	$text = preg_replace_callback('#(?<![">])(https?://[^\s<]+)#iu', function ($m) {
+		$url = rtrim($m[1], '.,!?');
+		$tail = substr($m[1], strlen($url));
+		return '<a href="' . details_h($url) . '" class="sba" target="_blank">' . details_h($url) . '</a>' . details_h($tail);
+	}, $text);
+
+	return nl2br($text);
+}
+
+function details_paginator($base_url, $page, $pages)
+{
+	$pages = max(1, (int)$pages);
+	$page = max(0, min((int)$page, $pages - 1));
+	if ($pages <= 1) {
+		return '';
+	}
+
+	$html = '<div class="paginator" style="margin: 0px; float: right;"><ul>';
+	$window = array_unique(array_merge(range(0, min(4, $pages - 1)), range(max(0, $page - 1), min($pages - 1, $page + 1)), array($pages - 1)));
+	sort($window);
+	$prev = -1;
+
+	foreach ($window as $p) {
+		if ($prev >= 0 && $p > $prev + 1) {
+			$html .= '<li class="dots">...</li>';
+		}
+		$class = $p === $page ? ' class="current"' : '';
+		$html .= '<li' . $class . '><a href="' . details_h($base_url) . 'page=' . $p . '#startcomments">' . ($p + 1) . '</a></li>';
+		$prev = $p;
+	}
+
+	if ($page + 1 < $pages) {
+		$html .= '<li><a rel="next" href="' . details_h($base_url) . 'page=' . ($page + 1) . '#startcomments">Вперед</a></li>';
+	}
+
+	$html .= '</ul></div><div class="clr"></div>';
+	return $html;
+}
+
+function details_comments_html($torrentid, $comment_count, $page = 0)
+{
+	global $CURUSER;
+
+	$perpage = 20;
+	$pages = max(1, (int)ceil(max(0, (int)$comment_count) / $perpage));
+	$page = max(0, min((int)$page, $pages - 1));
+	$offset = $page * $perpage;
+	$pager = details_paginator('/details.php?id=' . (int)$torrentid . '&amp;', $page, $pages);
+
+	$res = sql_query("
+		SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
+		       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+		       e.username AS editedbyname
+		FROM comments AS c
+		LEFT JOIN users AS u ON u.id = c.user
+		LEFT JOIN users AS e ON e.id = c.editedby
+		WHERE c.torrent = " . (int)$torrentid . "
+		ORDER BY c.id DESC
+		LIMIT $offset, $perpage
+	") or sqlerr(__FILE__, __LINE__);
+
+	$rows = array();
+	while ($row = mysqli_fetch_assoc($res)) {
+		$rows[] = $row;
+	}
+
+	$html = '<div class="bx2_0" id="startcomments">';
+	$html .= '<div class="pad5x5"><span class="bulet"></span><b>Комментарии ( <a onclick="$(\'#cmtcomm\').toggle(); return false;" href="#" class="sba" id="cmfoc">Комментировать</a> )</b>' . $pager . '</div>';
 
 	if ($CURUSER) {
-		$stars = '';
-		$rating_selector = '<form method="post" action="takerate.php">'
-			. '<input type="hidden" name="id" value="' . $id . '">'
-			. '<select name="rating">'
-			. '<option value="0">' . $tracker_lang['vote'] . '</option>'
-			. '<option value="5">5 - ' . $tracker_lang['vote_5'] . '</option>'
-			. '<option value="4">4 - ' . $tracker_lang['vote_4'] . '</option>'
-			. '<option value="3">3 - ' . $tracker_lang['vote_3'] . '</option>'
-			. '<option value="2">2 - ' . $tracker_lang['vote_2'] . '</option>'
-			. '<option value="1">1 - ' . $tracker_lang['vote_1'] . '</option>'
-			. '</select> <input type="submit" class="buttonS" value="' . $tracker_lang['vote'] . '">'
-			. '</form>';
-
-		$is_voted = mysqli_fetch_array(sql_query('SELECT rating FROM ratings WHERE torrent = ' . $id . ' AND user = ' . (int)$CURUSER['id']));
-		if ($is_voted) {
-			$stars .= ratingpic($row['rating']) . "(" . $row["rating"] . " " . $tracker_lang['from'] . " 5 ".$tracker_lang['with'] . " " . $row["numratings"] . " " . getWord($row["numratings"], array($tracker_lang['votes_1'], $tracker_lang['votes_2'], $tracker_lang['votes_3'])).")".' Ваша оценка <b>' . $is_voted['rating'] . '</b> - <b>' . $tracker_lang['vote_' . $is_voted['rating']] . '</b>';
-		} else {
-			$stars .= $rating_selector;
+		$html .= '<form id="cmt" method="post" action="/comment.php?action=add" onsubmit="return cmt_submit();">';
+		$html .= '<div class="pad10x10" id="cmtcomm">';
+		$html .= '<div class="cmet_e_but"><ul>';
+		foreach (array('b', 'i', 'u', 'quote', 'url', 'img') as $button) {
+			$html .= '<li><input class="buttonS" type="button" value="' . $button . '" onclick="InsertCode(\'text\',\'' . $button . '\')"></li>';
 		}
-		tr($tracker_lang['rating'], $stars, 1);
+		$html .= '</ul><div class="clr"></div></div>';
+		$html .= '<div class="cmet_e_inp"><textarea id="text" name="text" cols="70" rows="5" class="w98p"></textarea></div>';
+		$html .= '<input type="hidden" name="tid" value="' . (int)$torrentid . '">';
+		$html .= '<input type="submit" value="Добавить Комментарий" class="buts">';
+		$html .= '</div></form>';
 	}
 
-	tr($tracker_lang['added'], $row["added"]);
-	tr($tracker_lang['views'], $row["views"]);
-	tr($tracker_lang['hits'], $row["hits"]);
-	tr($tracker_lang['snatched'], $row["times_completed"] . " ".$tracker_lang['times']);
-
-	$keepget = "";
-	$uprow = (isset($row["username"]) ? ("<a href=userdetails.php?id={$row["owner"]}>" . htmlspecialchars_uni($row["username"]) . "</a>") : "<i>{$tracker_lang['details_anonymous']}</i>");
-/*
-if ($owned)
-        $uprow .= " $spacer<$editlink><b>[{$tracker_lang['edit']}]</b></a>";
-*/
-
-tr($tracker_lang['uploaded'], $uprow.'&nbsp;<a href="simpaty.php?action=add&amp;good&amp;targetid=' . $row["owner"] . '&amp;type=torrent' . $id . '&amp;returnto=' . urlencode($_SERVER["REQUEST_URI"]) . '" title="'.$tracker_lang['respect'].'"><img src="'.$pic_base_url.'/thum_good.gif" border="0" alt="'.$tracker_lang['respect'].'" title="'.$tracker_lang['respect'].'" /></a>&nbsp;&nbsp;<a href="simpaty.php?action=add&amp;bad&amp;targetid='.$row["owner"].'&amp;type=torrent' . $id . '&amp;returnto=' . urlencode($_SERVER["REQUEST_URI"]) . '" title="'.$tracker_lang['antirespect'].'"><img src="'.$pic_base_url.'/thum_bad.gif" border="0" alt="'.$tracker_lang['antirespect'].'" title="'.$tracker_lang['antirespect'].'" /></a>', 1);
-
-if ($row["type"] == "multi") {
-	if (!$_GET["filelist"])
-		tr($tracker_lang['files'] . "<br /><a href=\"details.php?id=$id&amp;filelist=1$keepget#filelist\" class=\"sublink\">[{$tracker_lang['open_list']}]</a>", $row["numfiles"] . " " . $tracker_lang['files_l'], 1);
-	else {
-		tr($tracker_lang['files'], $row["numfiles"] . " ".$tracker_lang['files_l'], 1);
-
-		$s = "<table class=\"main\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\">\n";
-
-		$subres = sql_query("SELECT * FROM files WHERE torrent = $id ORDER BY id");
-		$s.="<tr><td class=colhead>{$tracker_lang['path']}</td><td class=colhead align=right>{$tracker_lang['size']}</td></tr>\n";
-		while ($subrow = mysqli_fetch_array($subres)) {
-			$s .= "<tr><td>".iconv('utf-8', $subrow["filename"])."</td><td align=\"right\">" . mksize($subrow["size"]) . "</td></tr>\n";
+	foreach ($rows as $row) {
+		$avatar = trim((string)($row['avatar'] ?? ''));
+		$avatar_html = '';
+		if ($avatar !== '' && (!$CURUSER || ($CURUSER['avatars'] ?? 'yes') === 'yes')) {
+			$avatar_html = '<img class="cmet_ava" src="' . details_h($avatar) . '" alt="">';
 		}
 
-		$s .= "</table>\n";
-		tr("<a name=\"filelist\">{$tracker_lang['file_list']}</a><br /><a href=\"details.php?id=$id$keepget\" class=\"sublink\">[{$tracker_lang['close_list']}]</a>", $s, 1);
-	}
-}
+		$country = (int)($row['country'] ?? 0);
+		$flag = $country > 0 ? "<img src='/pic/emty.gif' class='i2 c$country'/>" : '';
+		$user = details_user_link((int)$row['user'], (string)($row['username'] ?? ''), (int)($row['class'] ?? 0), $row);
+		$username_js = json_encode((string)($row['username'] ?? ''), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		$reply = $CURUSER ? ' | <a class="sba" onclick="return c_replay(' . (int)$row['id'] . ',' . details_h($username_js) . ');" href="#">Ответить</a>' : '';
+		$edit = ($CURUSER && ((int)$row['user'] === (int)$CURUSER['id'] || get_user_class() >= UC_MODERATOR))
+			? ' | <a class="sba" href="/comment.php?action=edit&amp;cid=' . (int)$row['id'] . '">Изменить</a>'
+			: '';
+		$delete = (get_user_class() >= UC_MODERATOR)
+			? ' | <a class="sba" href="/comment.php?action=delete&amp;cid=' . (int)$row['id'] . '">Удалить</a>'
+			: '';
 
-if (!isset($_GET["dllist"])) {
-	tr($tracker_lang['downloading']."<br /><a href=\"details.php?id=$id&amp;dllist=1$keepget#seeders\" class=\"sublink\">[{$tracker_lang['open_list']}]</a>", $row["seeders"] . " {$tracker_lang['seeders_l']}, {$row["leechers"]} {$tracker_lang['leechers_l']} = " . ($row["seeders"] + $row["leechers"]) . " ".$tracker_lang['peers_l'], 1);
-} else {
-	$downloaders = array();
-	$seeders = array();
-	$subres = sql_query("SELECT seeder, finishedat, downloadoffset, uploadoffset, peers.ip, port, peers.uploaded, peers.downloaded, to_go, UNIX_TIMESTAMP(started) AS st, connectable, agent, peer_id, UNIX_TIMESTAMP(last_action) AS la, UNIX_TIMESTAMP(prev_action) AS pa, userid, users.username, users.class FROM peers INNER JOIN users ON peers.userid = users.id WHERE torrent = $id") or sqlerr(__FILE__, __LINE__);
-	while ($subrow = mysqli_fetch_array($subres)) {
-		if ($subrow["seeder"] == "yes")
-			$seeders[] = $subrow;
-		else
-			$downloaders[] = $subrow;
-	}
-
-	function leech_sort($a, $b) {
-		if (isset($_GET["usort"]))
-			return seed_sort($a, $b);
-		$x = $a["to_go"];
-		$y = $b["to_go"];
-		if ($x == $y)
-			return 0;
-		if ($x < $y)
-			return -1;
-		return 1;
-	}
-
-	function seed_sort($a, $b) {
-		$x = $a["uploaded"];
-		$y = $b["uploaded"];
-		if ($x == $y)
-			return 0;
-		if ($x < $y)
-			return 1;
-		return -1;
-	}
-
-	usort($seeders, "seed_sort");
-	usort($downloaders, "leech_sort");
-
-	tr("<a name=\"seeders\">{$tracker_lang['details_seeding']}</a><br /><a href=\"details.php?id=$id$keepget\" class=\"sublink\">[{$tracker_lang['close_list']}]</a>", dltable($tracker_lang['details_seeding'], $seeders, $row), 1);
-	tr("<a name=\"leechers\">{$tracker_lang['details_leeching']}</a><br /><a href=\"details.php?id=$id$keepget\" class=\"sublink\">[{$tracker_lang['close_list']}]</a>", dltable($tracker_lang['details_leeching'], $downloaders, $row), 1);
-}
-
-if ($row["multitracker"] == 'yes') {
-	if (count($announces_a)) {
-		foreach ($announces_a as $announce) {
-			if ($announce['state'] == 'ok')
-				$anns[] = '<li><b>' . $announce['url'] . '</b> - раздающие: <b>' . $announce['seeders'] . '</b>, качающие: <b>' . $announce['leechers'] . '</b>';
-			else
-				$anns[] = '<li><font color="red"><b>' . $announce['url'] . '</b></font> - не работает, ошибка: ' . $announce['error'] . '</b>';
+		$text = details_comment_format($row['text']);
+		if (!empty($row['editedby'])) {
+			$text .= '<br><span class="small">Изменено: ' . details_h($row['editedat']) . ' пользователем ' . details_h($row['editedbyname']) . '</span>';
 		}
-		if (strtotime($row['last_mt_update']) < (TIMENOW - 3600) && $CURUSER)
-			$update_link = '<br />Данные могли устареть. <a href="update_multi.php?id=' . $id . '" onclick="update_multi(); return false;">' . $tracker_lang['details_update_multitracker'] . '</a>';
-		if ($row['last_mt_update'] == '0000-00-00 00:00:00')
-			$update_link .= '<br />' . $tracker_lang['details_update_last_mt_update'] . ' <b>' . $tracker_lang['never'] . '</b>';
-		else
-			$update_link .= '<br />' . $tracker_lang['details_update_last_mt_update'] . ' <b>' . get_et(strtotime($row['last_mt_update'])) . '</b> ' . $tracker_lang['ago'];
-		tr($tracker_lang['details_multitracker'], '<div id="update_multi"><ul style="margin: 0;">' . implode($anns) . '</ul>' . $update_link . '</div>', 1);
-	} else
-		tr($tracker_lang['details_multitracker'], 'WTF? Multitracker = YES, but no announces', 1);
-}
 
-if ($row["times_completed"] > 0) {
-    $res = sql_query("SELECT users.id, users.username, users.title, users.uploaded, users.downloaded, users.donor, users.enabled, users.warned, users.last_access, users.class, snatched.startdat, snatched.last_action, snatched.completedat, snatched.seeder, snatched.userid, snatched.uploaded AS sn_up, snatched.downloaded AS sn_dn FROM snatched INNER JOIN users ON snatched.userid = users.id WHERE snatched.finished='yes' AND snatched.torrent =" . sqlesc($id) . " ORDER BY users.class DESC $limit") or sqlerr(__FILE__,__LINE__);
-	$snatched_full = "<table width=\"100%\" class=\"main\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\">\n";
-	$snatched_full .= "<tr><td class=colhead>Юзер</td><td class=colhead>Раздал</td><td class=colhead>Скачал</td><td class=colhead>Рейтинг</td><td class=colhead align=center>Начал / Закончил</td><td class=colhead align=center>Действие</td><td class=colhead align=center>Сидирует</td><td class=colhead align=center>ЛС</td></tr>";
-
-	while ($arr = mysql_fetch_assoc($res)) {
-		//start Global
-		if ($arr["downloaded"] > 0) {
-		        $ratio = number_format($arr["uploaded"] / $arr["downloaded"], 2);
-				//  $ratio = "<font color=" . get_ratio_color($ratio) . ">$ratio</font>";
-		}
-		else if ($arr["uploaded"] > 0)
-		$ratio = "Inf.";
-		else
-		$ratio = "---";
-		$uploaded = mksize($arr["uploaded"]);
-		$downloaded = mksize($arr["downloaded"]);
-		//start torrent
-		if ($arr["sn_dn"] > 0) {
-				$ratio2 = number_format($arr["sn_up"] / $arr["sn_dn"], 2);
-				$ratio2 = "<font color=" . get_ratio_color($ratio2) . ">$ratio2</font>";
-		}
-		else
-			if ($arr["sn_up"] > 0)
-				$ratio2 = "Inf.";
-			else
-				$ratio2 = "---";
-		$uploaded2 = mksize($arr["sn_up"]);
-		$downloaded2 = mksize($arr["sn_dn"]);
-		//end
-		//$highlight = $CURUSER["id"] == $arr["id"] ? " bgcolor=#00A527" : "";;
-		$snatched_small[] = "<a href=userdetails.php?id=$arr[userid]>".get_user_class_color($arr["class"], $arr["username"])." (<font color=" . get_ratio_color($ratio) . ">$ratio</font>)</a>";
-		$snatched_full .= "<tr$highlight><td><a href=userdetails.php?id=$arr[userid]>".get_user_class_color($arr["class"], $arr["username"])."</a>".get_user_icons($arr)."</td><td><nobr>$uploaded&nbsp;Общего<br>$uploaded2&nbsp;Торрент</nobr></td><td><nobr>$downloaded&nbsp;Общего<br>$downloaded2&nbsp;Торрент</nobr></td><td><nobr>$ratio&nbsp;Общего<br>$ratio2&nbsp;Торрент</nobr></td><td align=center><nobr>{$arr["startdat"]}<br />{$arr["completedat"]}</nobr></td><td align=center><nobr>{$arr["last_action"]}</nobr></td><td align=center>" . ($arr["seeder"] == "yes" ? "<b><font color=\"green\">Да</font>" : "<font color=\"red\">Нет</font></b>") .
-			"</td><td align=center><a href=\"message.php?action=sendmessage&amp;receiver={$arr['userid']}\"><img src=\"$pic_base_url/button_pm.gif\" border=\"0\"></a></td></tr>\n";
-    }
-    $snatched_full .= "</table>\n";
-	?><script language="javascript" type="text/javascript" src="js/show_hide.js"></script><?php
-	if ($row["seeders"] == 0 || ($row["leechers"] / $row["seeders"] >= 2))
-		$reseed_button = "<form action=\"takereseed.php\"><input type=\"hidden\" name=\"torrent\" value=\"$id\" /><input type=\"submit\" value=\"Позвать скачавших\" /></form>";
-	if (!$_GET["snatched"]==1)
-		tr("Скачавшие<br /><a href=\"details.php?id=$id&amp;snatched=1#snatched\" class=\"sublink\">[{$tracker_lang['open_list']}]</a>", '<a href="javascript: show_hide(\'s1\')"><img border="0" src="$pic_base_url/plus.gif" id="pics1"><div id="ss1" style="display: none;">'.@implode(", ", $snatched_small).$reseed_button.'</div>', 1);
-	else
-		tr("Скачавшие<br /><a href=\"details.php?id=$id\" class=\"sublink\" name=\"snatched\">[{$tracker_lang['close_list']}]</a>", $snatched_full,1);
-}
-
-tr($tracker_lang['torrent_info'], "<a href=\"torrent_info.php?id={$id}\">{$tracker_lang['show_data']}</a>", 1);
-
-
-$torrentid = (int) $_GET["id"];
-/*$count_sql = sql_query("SELECT COUNT(*) FROM thanks WHERE torrentid = $torrentid");
-$count_row = mysqli_fetch_array($count_sql);
-$count = $count_row[0];*/
-
-$thanked_sql = sql_query("SELECT thanks.userid, users.username, users.class FROM thanks INNER JOIN users ON thanks.userid = users.id WHERE thanks.torrentid = $torrentid");
-$count = mysqli_num_rows($thanked_sql);
-
-if ($count == 0) {
-	$thanksby = $tracker_lang['none_yet'];
-} else {
-	//$thanked_sql = sql_query("SELECT thanks.userid, users.username FROM thanks INNER JOIN users ON thanks.userid = users.id WHERE thanks.torrentid = $torrentid");
-	$thanksby = array();
-	while ($thanked_row = mysql_fetch_assoc($thanked_sql)) {
-		if ($thanked_row["userid"] == $CURUSER["id"])
-			$can_not_thanks = true;
-		$userid = $thanked_row["userid"];
-		$username = $thanked_row["username"];
-		$class = $thanked_row["class"];
-		$thanksby[] = "<a href=\"userdetails.php?id={$userid}\">".get_user_class_color($class, $username)."</a>";
+		$html .= '<div class="mn2 cmet_bx">' . $avatar_html . '<div class="cmet_sbx"><dl class="mn"><dt>' . $flag . $user . '</dt><dd>' . details_h($row['added']) . $reply . $edit . $delete . '</dd></dl>';
+		$html .= '<div class="tx" id="cm' . (int)$row['id'] . '">' . $text . '</div></div><div class="clr"></div></div>';
 	}
-	if ($thanksby)
-		$thanksby = implode(', ', $thanksby);
+
+	if (!$rows) {
+		$html .= '<div class="mn2 cmet_bx"><div class="cmet_sbx"><div class="tx">Комментариев пока нет.</div></div><div class="clr"></div></div>';
+	}
+
+	$html .= '<div class="pad5x5 mn2">' . $pager . '</div>';
+	$html .= '</div>';
+	$html .= '<script type="text/javascript">
+function InsertCode(field, tag) {
+	var el = document.getElementById(field);
+	if (!el) return false;
+	var start = el.selectionStart || 0;
+	var end = el.selectionEnd || 0;
+	var value = el.value;
+	var selected = value.substring(start, end);
+	var open = "[" + tag + "]";
+	var close = "[/" + tag + "]";
+	el.value = value.substring(0, start) + open + selected + close + value.substring(end);
+	el.focus();
+	return false;
 }
-if ($row["owner"] == $CURUSER["id"] || !$CURUSER)
-	$can_not_thanks = true;
-$thanksby = "<div id=\"ajax\"><form action=\"thanks.php\" method=\"post\">
-<input type=\"submit\" name=\"submit\" onclick=\"send(); return false;\" value=\"{$tracker_lang['thanks']}\"".($can_not_thanks == true ? " disabled" : "").">
-<input type=\"hidden\" name=\"torrentid\" value=\"{$torrentid}\">{$thanksby}
-</form></div>";
+function c_replay(id, username) {
+	var text = $("#cm" + id).text().replace(/\s+/g, " ").trim();
+	var el = document.getElementById("text");
+	if (!el) return false;
+	el.value += (el.value ? "\n\n" : "") + "[quote=" + username + "]" + text + "[/quote]\n";
+	$("#cmtcomm").show();
+	el.focus();
+	return false;
+}
+function cmt_submit() {
+	var el = document.getElementById("text");
+	return el && el.value.replace(/\s+/g, "") !== "";
+}
+</script>';
+
+	return $html;
+}
+
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if (!is_valid_id($id)) {
+	stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+}
+
+$res = sql_query("
+	SELECT t.*, td.descr_hash, td.descr_parsed, c.name AS cat_name, c.image AS cat_pic, u.username, u.class AS owner_class
+	FROM torrents AS t
+	LEFT JOIN categories AS c ON c.id = t.category
+	LEFT JOIN users AS u ON u.id = t.owner
+	LEFT JOIN torrents_descr AS td ON td.tid = t.id
+	WHERE t.id = $id
+	LIMIT 1
+") or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_assoc($res);
+
+if (!$row) {
+	stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
+}
+
+$moderator = get_user_class() >= UC_MODERATOR;
+if ($row['banned'] === 'yes' && !$moderator) {
+	stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
+}
+
+if ($CURUSER) {
+	sql_query("INSERT IGNORE INTO readtorrents (userid, torrentid) VALUES (" . (int)$CURUSER['id'] . ", $id)");
+}
+
+if (isset($_GET['hit'])) {
+	sql_query("UPDATE torrents SET views = views + 1 WHERE id = $id");
+	header("Location: details.php?id=$id");
+	exit;
+}
+
+$owned = $moderator || ($CURUSER && (int)$CURUSER['id'] === (int)$row['owner']);
+$torrent_details = kz_upload_load_details($id);
+list($video, $design) = details_data($torrent_details);
+$owner = details_owner($row);
+$rating = details_rating_value($row);
+$user_rating = 0;
+
+if ($CURUSER) {
+	$rated = mysqli_fetch_assoc(sql_query("SELECT rating FROM ratings WHERE torrent = $id AND user = " . (int)$CURUSER['id'] . " ORDER BY id DESC LIMIT 1"));
+	$user_rating = $rated ? (int)$rated['rating'] : 0;
+}
+
+$title = trim((string)($video['title'] ?? ''));
+if ($title === '') {
+	$title = details_guess_title($row['name']);
+}
+$original = trim((string)($video['original_title'] ?? ''));
+$about = trim((string)($video['about'] ?? ''));
+if ($about === '' && !empty($row['descr'])) {
+	$about = details_plain($row['descr']);
+}
+
+$poster = details_poster($row, $torrent_details);
+$cat_img = !empty($row['cat_pic']) ? '<img src="/pic/cat/' . details_h($row['cat_pic']) . '" class="cat_img_r" alt="">' : '';
+$free = (string)($row['free'] ?? 'no');
+$download_note = '';
+
+if ($free === 'yes') {
+	$download_note = '<b class="r1">Золотая раздача</b> Объем скачанного не учитывается, а отданное засчитывается полностью. На золотых раздачах появляется дополнительная возможность поднять свой рейтинг.';
+} elseif ($free === 'silver') {
+	$download_note = '<b class="r1">Серебряная раздача</b> Учитывается только часть скачанного, а отданное засчитывается полностью.';
+}
+
+$similar = details_related_rows($row, $video, 'similar');
+$by_genre = details_related_rows($row, $video, 'genre');
+$by_person = details_related_rows($row, $video, 'person');
+$by_owner = details_related_rows($row, $video, 'owner');
+$external_ratings = details_external_ratings($design);
+$comment_page = isset($_GET['page']) ? (int)$_GET['page'] : 0;
+$book_hash = $CURUSER ? '&amp;hash4u=' . details_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? '')) : '';
+
+$tech_tab = details_line('Качество', $video['quality'] ?? '') .
+	details_line('Видео', $video['video'] ?? '') .
+	details_line('Аудио', $video['audio'] ?? '') .
+	details_line('Размер', $video['size'] ?? '') .
+	details_line('Продолжительность', $video['duration'] ?? '') .
+	details_line('Перевод', $video['translation'] ?? '') .
+	details_line('Язык', $video['language'] ?? '') .
+	details_line('Субтитры', $video['subtitles'] ?? '');
+if ($tech_tab === '') {
+	$tech_tab = details_line('Размер', mksize($row['size'])) . details_line('Файлов', $row['numfiles']);
+}
+
+$release_tab = details_line('Категория', $row['cat_name'] ?? '') .
+	details_line('Файл', $row['filename'] ?? '') .
+	details_line('Сохранено как', $row['save_as'] ?? '') .
+	details_line('Добавлена', $row['added'] ?? '') .
+	details_file_list($id);
+
+$search_title = $original !== '' ? $original : $title;
+$hide_right_blocks = true;
+stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['name']) . '"');
 ?>
-<script language="javascript" type="text/javascript" src="js/ajax.js"></script>
-<script type="text/javascript">
-function send() {
-	//noinspection JSPotentiallyInvalidConstructorUsage
-	var ajax = new tbdev_ajax('thanks.php');
-	ajax.onShow ('');
-	var varsString = "";
-	//ajax.requestFile = "thanks.php";
-	ajax.setVar("torrentid", <?=$torrentid;?>);
-	ajax.setVar("ajax", "yes");
-	ajax.method = 'POST';
-	ajax.element = 'ajax';
-	ajax.sendAJAX(varsString);
-}
-
-function update_multi() {
-	//noinspection JSPotentiallyInvalidConstructorUsage
-	var ajax = new tbdev_ajax('update_multi.php');
-	ajax.onShow ('');
-	var varsString = "";
-	ajax.setVar("id", <?=$torrentid;?>);
-	ajax.setVar("ajax", "yes");
-	ajax.method = 'GET';
-	ajax.element = 'update_multi';
-	ajax.sendAJAX(varsString);
-}
-</script>
-<div id="loading-layer" style="display:none;font-family: Verdana;font-size: 11px;width:200px;height:50px;background:#FFF;padding:10px;text-align:center;border:1px solid #000">
-     <div style="font-weight:bold" id="loading-layer-text"><?=$tracker_lang['ajax_loading'];?></div><br />
-     <img src="<?=$pic_base_url;?>/loading.gif" border="0" />
+<div class="mn_wrap">
+	<div style="padding:0 5px 7px 0;"><h1><a href="/details.php?id=<?= $id ?>" class="r1"><?= details_h($row['name']) ?></a></h1></div>
+	<div class="mn1_menu"><ul class="men w200">
+		<li class="img"><a href="/details.php?id=<?= $id ?>" title="<?= details_h($row['name']) ?>"><img src="<?= $poster ?>" class="p200" alt=""></a></li>
+		<li class="tp">Меню раздачи</li>
+		<li><span class="bulet"></span><a href="/browse.php?s=<?= rawurlencode($search_title) ?>" target="_blank">Подобные раздачи</a></li>
+		<li><span class="bulet"></span><a href="/bookmarks.php?torrent=<?= $id . $book_hash ?>" onclick="return mess_out('Добавить раздачу в закладки ?')">Добавить в закладки</a></li>
+		<?php if ($owned) { ?><li><span class="bulet"></span><a href="/edit.php?id=<?= $id ?>">Редактировать</a></li><?php } ?>
+		<li class="tp">Участники</li>
+		<li><span class="bulet"></span><a href="#"><?= (int)$row['seeders'] ? 'Раздают' : 'Раздают' ?><span class="floatright"><?= (int)$row['seeders'] ?></span></a></li>
+		<li><span class="bulet"></span><a href="#">Скачивают<span class="floatright"><?= (int)$row['leechers'] ?></span></a></li>
+		<li><span class="bulet"></span><a href="#">Скачали<span class="floatright"><?= (int)$row['times_completed'] ?></span></a></li>
+		<li><span class="bulet"></span><a href="#tabs">Список файлов<span class="floatright"><?= (int)$row['numfiles'] ?></span></a></li>
+		<li><span class="bulet"></span><a href="#startcomments">Комментариев<span class="floatright"><?= (int)$row['comments'] ?></span></a></li>
+		<li class="tp">Залил раздачу</li>
+		<li><span class="bulet"></span><?= details_user_link((int)$owner['id'], (string)$owner['username'], (int)$owner['class'], $owner) ?></li>
+		<?php
+		$watch_rows = array();
+		if (!empty($design['watch']) && is_array($design['watch'])) {
+			foreach ($design['watch'] as $item) {
+				$wtitle = trim((string)($item['title'] ?? ''));
+				$wurl = trim((string)($item['url'] ?? ''));
+				if ($wtitle !== '' && $wurl !== '') {
+					$watch_rows[] = '<li><span class="bulet"></span><a href="' . details_h($wurl) . '" target="_blank">' . details_h($wtitle) . '</a></li>';
+				}
+			}
+		}
+		if ($watch_rows) {
+			echo '<li class="tp">Ознакомление</li>' . implode('', $watch_rows);
+		}
+		?>
+		<li class="tp">Голосование</li>
+		<?php if (!empty($design['imdb']['url'])) { ?><li><span class="bulet"></span><a href="<?= details_h($design['imdb']['url']) ?>" target="_blank">IMDb<span class="floatright"><?= details_h($external_ratings['imdb']) ?></span></a></li><?php } ?>
+		<?php if (!empty($design['kinopoisk']['url'])) { ?><li><span class="bulet"></span><a href="<?= details_h($design['kinopoisk']['url']) ?>" target="_blank">Кинопоиск<span class="floatright"><?= details_h($external_ratings['kinopoisk']) ?></span></a></li><?php } ?>
+		<li class="img"><?= details_starbar($id, $rating, $user_rating) ?></li>
+		<li class="b"><span class="bulet"></span><span itemscope itemtype="https://schema.org/Product"><meta content="<?= details_h($row['name']) ?>" itemprop="name">Оценка<span class="floatright" itemtype="https://schema.org/AggregateRating" itemscope itemprop="aggregateRating"><span id="rating_value" itemprop="ratingValue"><?= number_format($rating, 1) ?></span> из <span itemprop="bestRating">10</span><meta itemprop="ratingCount" content="<?= (int)$row['numratings'] ?>"></span></span></li>
+		<li class="b"><span class="bulet"></span>Голосов<span class="floatright" id="votes_count"><?= (int)$row['numratings'] ?></span></li>
+		<li><div class="justify" id="ratio_get">Просим Вас оценивать материал после ознакомления с ним. <?php if ($CURUSER) { ?>Ваши оценки вы можете просмотреть <a href="/uservotes.php?id=<?= (int)$CURUSER['id'] ?>" class="sba">здесь</a><?php } ?></div></li>
+		<li class="tp">Опубликовать ссылку</li>
+		<li><div class="share b"><a class="vkontakte" href="https://vk.com/share.php?url=<?= rawurlencode($DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку во ВКонтакте" onclick="window.open(this.href, 'Опубликовать ссылку во Вконтакте', 'width=800,height=300'); return false"></a><a class="facebook" href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку в Facebook" onclick="window.open(this.href, 'Опубликовать ссылку в Facebook', 'width=640,height=436,toolbar=0,status=0'); return false"></a><a class="twitter" href="https://twitter.com/intent/tweet?text=<?= rawurlencode($row['name'] . ' ' . $DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку в Twitter" onclick="window.open(this.href, 'Опубликовать ссылку в Twitter', 'width=800,height=300'); return false" target="_blank"></a></div><div class="clear"></div></li>
+		<li class="tp">Характеристика</li>
+		<li>Вес<span class="floatright green n"><?= details_h(mksize($row['size'])) ?> (<?= number_format((float)$row['size'], 0, '.', ',') ?>)</span></li>
+		<li>Залит<span class="floatright green n"><?= details_h($row['added']) ?></span></li>
+	</ul></div>
+	<div class="mn1_content">
+		<table class="w100p" style="margin: 0 0 5px 0;"><tr><td style="width: 210px" class="nw"><a href="/download.php?id=<?= $id ?>" title="Скачать <?= details_h($row['name']) ?>"><img src="/pic/dwn_torrent.gif" height="25" class="block w200" alt=""></a><td><?= $download_note ?></table>
+		<div class="bx1 justify"><h2><?= $cat_img ?>
+			<?= details_line('Название', $title) ?>
+			<?= details_line('Оригинальное название', $original) ?>
+			<?= details_line('Год выпуска', $video['year'] ?? '') ?>
+			<?= details_line('Жанр', $video['genre'] ?? '', 'genre') ?>
+			<?= details_line('Выпущено', $video['released'] ?? '', 'released') ?>
+			<?= details_line('Режиссер', $video['director'] ?? '', 'person') ?>
+			<?= details_line('В ролях', $video['cast'] ?? '', 'person') ?>
+		</h2></div>
+		<?php if ($about !== '') { ?><div class="bx1 justify"><p><b>О фильме:</b> <?= nl2br(details_h($about)) ?></p></div><?php } ?>
+		<div class="bx1"><div class="pad0x0x5x0"><ul class="lis"><li id="tbch100" class="mn"><a onclick="showtab(100); return false;" href="#">Техданные</a></li><li id="tbch0"><a onclick="showtab(0); return false;" href="#">Релиз</a></li><li id="tbch1"><a onclick="showtab(1); return false;" href="#">Скриншоты</a></li></ul></div><div class="clr"></div><div class="justify mn2 pad5x5" id="tabs"></div></div>
+		<div class="bx1"><div class="pad0x0x5x0"><ul class="lis"><li id="tbch2100" class="mn"><a onclick="showtab2(100); return false;" href="#">Подобные</a></li><li id="tbch2101"><a onclick="showtab2(101); return false;" href="#">Топ по жанрам</a></li><li id="tbch2102"><a onclick="showtab2(102); return false;" href="#">Топ по персонам</a></li><li id="tbch2103"><a onclick="showtab2(103); return false;" href="#">Топ раздающего</a></li></ul></div><div class="clr"></div><div class="justify mn2" id="tabs2"></div></div>
+		<?= details_comments_html($id, (int)$row['comments'], $comment_page) ?>
+	</div><div class="clear"></div>
 </div>
-<?php
-
-	tr($tracker_lang['said_thanks'], $thanksby, 1);
-
-	print("</table></p>\n");
-
-	} else {
-		stdhead($tracker_lang['comments_for']." \"".htmlspecialchars_decode($row["name"])."\"");
-		print("<h1>{$tracker_lang['comments_for']} <a href=\"details.php?id={$id}\">{$row["name"]}</a></h1>\n");
-	}
-
-	print("<p><a name=\"startcomments\"></a></p>\n");
-
-	$subres = sql_query("SELECT COUNT(*) FROM comments WHERE torrent = $id");
-	$subrow = mysqli_fetch_array($subres);
-	$count = $subrow[0];
-
-	$limited = 10;
-
-if (!$count) {
-	print("<table style=\"margin-top: 2px;\" cellpadding=\"5\" width=\"100%\">");
-	print("<tr><td class=\"colhead\" align=\"left\" colspan=\"2\">");
-	print("<div style=\"float: left; width: auto;\" align=\"left\"> :: {$tracker_lang['comments_list']}</div>");
-	if ($CURUSER)
-		print("<div align=\"right\"><a href=#comments class=\"altlink_white\">{$tracker_lang['comments_add']}</a></div>");
-	print("</td></tr><tr><td align=\"center\">");
-	print("Комментариев нет.".($CURUSER ? " <a href=\"#comments\">Желаете добавить?</a>" : ""));
-	print("</td></tr></table><br>");
-
-	if ($CURUSER) {
-		print("<table style=\"margin-top: 2px;\" cellpadding=\"5\" width=\"100%\">");
-		print("<tr><td class=\"colhead\" align=\"left\" colspan=\"2\"> <a name=\"comments\">&nbsp;</a><b>:: Без комментариев</b></td></tr>");
-		print("<tr><td align=\"center\" >");
-		//print("<b>Ваше имя:</b> ");
-		//print("{$CURUSER['username']}<p>");
-		print("<form name=\"comment\" method=\"post\" action=\"comment.php?action=add\">");
-		print("<div>");
-		textbbcode("comment","text","");
-		print("</div>");
-		print("</td></tr><tr><td  align=\"center\" colspan=\"2\">");
-		print("<input type=\"hidden\" name=\"tid\" value=\"$id\"/>");
-		print("<input type=\"submit\" class=btn value=\"Разместить комментарий\" />");
-		print("</td></tr></form></table>");
-	}
-} else {
-	list($pagertop, $pagerbottom, $limit) = pager($limited, $count, "details.php?id=$id&", array('lastpagedefault' => 1));
-
-	$subres = sql_query("SELECT cp.text_hash, cp.text_parsed, c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat, u.avatar, u.warned, ".
-	"u.username, u.title, u.class, u.donor, u.downloaded, u.uploaded, u.gender, u.last_access, e.username AS editedbyname FROM comments AS c LEFT JOIN users AS u ON c.user = u.id LEFT JOIN users AS e ON c.editedby = e.id LEFT JOIN comments_parsed AS cp ON cp.cid = c.id WHERE torrent = " .
-	"$id ORDER BY c.id $limit") or sqlerr(__FILE__, __LINE__);
-	$allrows = array();
-	while ($subrow = mysqli_fetch_array($subres))
-	    $allrows[] = $subrow;
-
-
-	print("<table class=\"main\" cellspacing=\"0\" cellpadding=\"5\" width=\"100%\" >");
-	print("<tr><td class=\"colhead\" align=\"center\" >");
-	print("<div style=\"float: left; width: auto;\" align=\"left\"> :: {$tracker_lang['comments_list']}</div>");
-	if ($CURUSER)
-		print("<div align=\"right\"><a href=#comments class=\"altlink_white\">{$tracker_lang['comments_add']}</a></div>");
-	print("</td></tr>");
-
-	print("<tr><td>");
-	print($pagertop);
-	print("</td></tr>");
-	print("<tr><td>");
-	commenttable($allrows);
-	print("</td></tr>");
-	print("<tr><td>");
-	print($pagerbottom);
-	print("</td></tr>");
-	print("</table>");
-
-	if ($CURUSER) {
-		print("<table style=\"margin-top: 2px;\" cellpadding=\"5\" width=\"100%\">");
-		print("<tr><td class=\"colhead\" align=\"left\" colspan=\"2\">  <a name=\"comments\">&nbsp;</a><b>:: Добавить комментарий к торренту</b></td></tr>");
-		print("<tr><td width=\"100%\" align=\"center\" >");
-		//print("Ваше имя: ");
-		//print("{$CURUSER['username']}<p>");
-		print("<form name=comment method=\"post\" action=\"comment.php?action=add\">");
-		print("<center><table border=\"0\"><tr><td class=\"clear\">");
-		print("<div align=\"center\">". textbbcode("comment","text","", 1) ."</div>");
-		print("</td></tr></table></center>");
-		print("</td></tr><tr><td  align=\"center\" colspan=\"2\">");
-		print("<input type=\"hidden\" name=\"tid\" value=\"$id\"/>");
-		print("<input type=\"submit\" class=btn value=\"Разместить комментарий\" />");
-		print("</td></tr></form></table>");
-	}
+<script type="text/javascript">
+var tabsData = {
+	100: <?= json_encode($tech_tab, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+	0: <?= json_encode($release_tab, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+	1: <?= json_encode(details_screens_html($row, $design), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+};
+var tabs2Data = {
+	100: <?= json_encode(details_related_table('Подобные раздачи', $similar, '/browse.php?s=' . rawurlencode($search_title) . '&c=' . (int)$row['category']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+	101: <?= json_encode(details_related_table('Топ по жанрам', $by_genre), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+	102: <?= json_encode(details_related_table('Топ по персонам', $by_person), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+	103: <?= json_encode(details_related_table('Топ раздающего', $by_owner), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+};
+function showtab(id) {
+	$('#tabs').html(tabsData[id] || '');
+	$('#tbch100,#tbch0,#tbch1').removeClass('mn');
+	$('#tbch' + id).addClass('mn');
 }
-
+function showtab2(id) {
+	$('#tabs2').html(tabs2Data[id] || '');
+	$('#tbch2100,#tbch2101,#tbch2102,#tbch2103').removeClass('mn');
+	$('#tbch2' + id).addClass('mn');
+}
+function vote(id, rating) {
+	$.post('/takerate.php', {id: id, rating: rating}, function (html) {
+		$('#ratio_get').html(html);
+		window.setTimeout(function () { window.location.reload(); }, 700);
+	});
+}
+showtab(100);
+showtab2(100);
+</script>
+<?php
 stdfoot();
 
 ?>

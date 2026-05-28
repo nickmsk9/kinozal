@@ -441,9 +441,11 @@ CREATE TABLE `ratings` (
   `id` int(6) NOT NULL auto_increment,
   `torrent` int(10) NOT NULL default '0',
   `user` int(6) NOT NULL default '0',
-  `rating` int(1) NOT NULL default '0',
+  `rating` int(2) NOT NULL default '0',
   `added` datetime NULL DEFAULT NULL,
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  KEY `torrent` (`torrent`),
+  KEY `user` (`user`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
