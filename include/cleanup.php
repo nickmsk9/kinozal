@@ -224,7 +224,7 @@ function docleanup()
           AND status = 'confirmed'
           AND class <= $maxclass
           AND last_access IS NOT NULL
-          AND last_access != '0000-00-00 00:00:00'
+          AND last_access > '1000-01-01 00:00:00'
           AND last_access < $inactive_dt
     ");
 
@@ -241,7 +241,7 @@ function docleanup()
           AND status = 'confirmed'
           AND class <= $maxclass
           AND last_access IS NOT NULL
-          AND last_access != '0000-00-00 00:00:00'
+          AND last_access > '1000-01-01 00:00:00'
           AND last_access < $parked_dt
     ");
 
@@ -257,13 +257,13 @@ function docleanup()
         FROM users
         WHERE status = 'pending'
           AND added IS NOT NULL
-          AND added != '0000-00-00 00:00:00'
+          AND added > '1000-01-01 00:00:00'
           AND added < FROM_UNIXTIME($signup_deadtime)
           AND last_login IS NOT NULL
-          AND last_login != '0000-00-00 00:00:00'
+          AND last_login > '1000-01-01 00:00:00'
           AND last_login < FROM_UNIXTIME($signup_deadtime)
           AND last_access IS NOT NULL
-          AND last_access != '0000-00-00 00:00:00'
+          AND last_access > '1000-01-01 00:00:00'
           AND last_access < FROM_UNIXTIME($signup_deadtime)
     ");
 
@@ -303,7 +303,7 @@ function docleanup()
         FROM users
         WHERE warned = 'yes'
           AND warneduntil IS NOT NULL
-          AND warneduntil != '0000-00-00 00:00:00'
+          AND warneduntil > '1000-01-01 00:00:00'
           AND warneduntil < NOW()
     ") or sqlerr(__FILE__, __LINE__);
 
@@ -315,7 +315,7 @@ function docleanup()
             modcomment = CONCAT($warn_modcomment, modcomment)
         WHERE warned = 'yes'
           AND warneduntil IS NOT NULL
-          AND warneduntil != '0000-00-00 00:00:00'
+          AND warneduntil > '1000-01-01 00:00:00'
           AND warneduntil < NOW()
     ") or sqlerr(__FILE__, __LINE__);
 
@@ -331,14 +331,14 @@ function docleanup()
             u.enabled = 'yes',
             u.modcomment = CONCAT($ban_modcomment, u.modcomment)
         WHERE b.disuntil IS NOT NULL
-          AND b.disuntil != '0000-00-00 00:00:00'
+          AND b.disuntil > '1000-01-01 00:00:00'
           AND b.disuntil < NOW()
     ") or sqlerr(__FILE__, __LINE__);
 
     sql_query("
         DELETE FROM users_ban
         WHERE disuntil IS NOT NULL
-          AND disuntil != '0000-00-00 00:00:00'
+          AND disuntil > '1000-01-01 00:00:00'
           AND disuntil < NOW()
     ") or sqlerr(__FILE__, __LINE__);
 

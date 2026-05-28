@@ -10,6 +10,7 @@
 
 require_once("include/bittorrent.php");
 require_once("include/kz_upload.php");
+require_once("include/persons.php");
 
 dbconn(false);
 
@@ -71,10 +72,16 @@ function details_term_links($value, $kind)
 	}
 
 	$links = array();
+	static $person_ids = array();
 	foreach ($items as $item) {
-		$url = $kind === 'person'
-			? '/browse.php?s=' . rawurlencode($item)
-			: '/top.php?j=' . rawurlencode($item);
+		if ($kind === 'person') {
+			if (!array_key_exists($item, $person_ids)) {
+				$person_ids[$item] = kz_persons_find_id_by_name($item);
+			}
+			$url = kz_persons_url($item, $person_ids[$item]);
+		} else {
+			$url = '/top.php?j=' . rawurlencode($item);
+		}
 		$links[] = '<a href="' . $url . '" class="sba">' . details_h($item) . '</a>';
 	}
 
