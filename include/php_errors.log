@@ -701,3 +701,5 @@ Stack trace:
 #4 C:\OSPanel\domains\kinozal.lv\index.php(32): stdhead()
 #5 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\blocks\block-releases.php on line 244
+[28-May-2026 12:50:41 Europe/Moscow] PHP Warning:  Undefined array key "id" in C:\OSPanel\domains\kinozal.lv\friends.php on line 33
+[28-May-2026 12:50:41 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\friends.php on line 34
