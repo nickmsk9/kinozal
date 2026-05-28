@@ -20,34 +20,35 @@ foreach ($cups as $cup) {
     }
 
     $display_num++;
-    $icon = '<i class="i1 ' . kz_cups_h($cup['icon']) . '"></i>';
+
     $cup_title = kz_cups_h($cup['title']);
     $userid = (int)$cup['userid'];
     $username = kz_cups_h($cup['username']);
     $class = isset($cup['class']) ? (int)$cup['class'] : UC_USER;
+
     $flag = '';
 
     if (!empty($cup['flagpic'])) {
         $flagpic = kz_cups_h($cup['flagpic']);
-        $flag = '<img src="pic/flag/' . $flagpic . '" alt="" style="vertical-align:middle; margin-right:2px;">';
+        $flag = '<img src="/pic/flag/' . $flagpic . '" alt="" width="16" height="11" style="vertical-align:middle; margin-right:3px;">';
     }
 
+    $cup_icon = '<i class="i1 ' . kz_cups_h($cup['icon']) . '"></i>';
+
     $icons = function_exists('get_user_icons') ? get_user_icons($cup) : '';
+
     $holder = $flag
-        . '<a href="userdetails.php?id=' . $userid . '" title="' . $cup_title . '">'
+        . '<a href="/userdetails.php?id=' . $userid . '" title="' . $cup_title . '">'
         . get_user_class_color($class, $username)
         . '</a>'
         . $icons
-        . ' ' . $icon;
+        . $cup_icon;
 
-    $rows .= '<tr>'
-        . '<td class="embedded" width="16" align="right">' . $display_num . '.</td>'
-        . '<td class="embedded">' . $holder . '</td>'
-        . '</tr>';
+    $rows .= '<li>' . $display_num . '. ' . $holder . '</li>';
 }
 
 if ($rows !== '') {
-    $content .= '<table width="100%" border="0" cellspacing="0" cellpadding="0">' . $rows . '</table>';
+    $content .= '<ul class="men">' . $rows . '</ul>';
 } else {
     $content .= 'тут пока пусто';
 }
