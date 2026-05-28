@@ -1275,84 +1275,89 @@ function deletetorrent($id) {
 	unlink($torrent_dir.'/'.$id.'.torrent');
 }
 
-function pager($rpp, $count, $href, $opts = array()) {
-	$pages = ceil($count / $rpp);
+function pager($rpp, $count, $href, $opts = array())
+{
+    $rpp   = max(1, (int)$rpp);
+    $count = max(0, (int)$count);
+    $pages = (int)ceil($count / $rpp);
 
-	if (!isset($opts['lastpagedefault']))
-		$pagedefault = 0;
-	else {
-		$pagedefault = floor(($count - 1) / $rpp);
-		if ($pagedefault < 0)
-			$pagedefault = 0;
-	}
+    if (!empty($opts['lastpagedefault'])) {
+        $pagedefault = (int)floor(($count - 1) / $rpp);
+        if ($pagedefault < 0) {
+            $pagedefault = 0;
+        }
+    } else {
+        $pagedefault = 0;
+    }
 
-	if (isset($_GET['page'])) {
-		$page = 0 + (int) $_GET['page'];
-		if ($page < 0)
-			$page = $pagedefault;
-	}
-	else
-		$page = $pagedefault;
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : $pagedefault;
 
-	$pager = "<td class=\"pager\">Страницы:</td><td class=\"pagebr\">&nbsp;</td>";
-	$pager2 = "";
-	$bregs = "";
+    if ($page < 0) {
+        $page = $pagedefault;
+    }
 
-	$mp = $pages - 1;
-	$as = "<b>«</b>";
-	if ($page >= 1) {
-		$pager .= "<td class=\"pager\">";
-		$pager .= "<a href=\"{$href}page=" . ($page - 1) . "\" style=\"text-decoration: none;\">$as</a>";
-		$pager .= "</td><td class=\"pagebr\">&nbsp;</td>";
-	}
+    if ($pages > 0 && $page >= $pages) {
+        $page = $pages - 1;
+    }
 
-	$as = "<b>»</b>";
-	if ($page < $mp && $mp >= 0) {
-		$pager2 .= "<td class=\"pager\">";
-		$pager2 .= "<a href=\"{$href}page=" . ($page + 1) . "\" style=\"text-decoration: none;\">$as</a>";
-		$pager2 .= "</td>$bregs";
-	} else
-		$pager2 .= $bregs;
+    $start = $page * $rpp;
 
-	if ($count) {
-		$pagerarr = array();
-		$dotted = 0;
-		$dotspace = 3;
-		$dotend = $pages - $dotspace;
-		$curdotend = $page - $dotspace;
-		$curdotstart = $page + $dotspace;
-		for ($i = 0; $i < $pages; $i++) {
-			if (($i >= $dotspace && $i <= $curdotend) || ($i >= $curdotstart && $i < $dotend)) {
-				if (!$dotted)
-				   $pagerarr[] = "<td class=\"pager\">...</td><td class=\"pagebr\">&nbsp;</td>";
-				$dotted = 1;
-				continue;
-			}
-			$dotted = 0;
-			$start = $i * $rpp + 1;
-			$end = $start + $rpp - 1;
-			if ($end > $count)
-				$end = $count;
+    if ($count < 1 || $pages < 1) {
+        return array('', '', "LIMIT 0,$rpp");
+    }
 
-			 $text = $i+1;
-			if ($i != $page)
-				$pagerarr[] = "<td class=\"pager\"><a title=\"$start&nbsp;-&nbsp;$end\" href=\"{$href}page=$i\" style=\"text-decoration: none;\"><b>$text</b></a></td><td class=\"pagebr\">&nbsp;</td>";
-			else
-				$pagerarr[] = "<td class=\"highlight\"><b>$text</b></td><td class=\"pagebr\">&nbsp;</td>";
+    $html = '<div class="paginator"><ul>';
 
-				  }
-		$pagerstr = join("", $pagerarr);
-		$pagertop = "<table class=\"main\"><tr>$pager $pagerstr $pager2</tr></table>\n";
-		$pagerbottom = "Всего $count на $i страницах по $rpp на каждой странице.<br /><br /><table class=\"main\">$pager $pagerstr $pager2</table>\n";
-	}
-	else {
-		$pagertop = $pager;
-		$pagerbottom = $pagertop;
-	}
+    if ($page > 0) {
+        $html .= '<li><a rel="prev" href="' . $href . 'page=' . ($page - 1) . '">Назад</a></li>';
+    }
 
-	$start = $page * $rpp;
+    $dotspace = 3;
+    $dotted = false;
 
-	return array($pagertop, $pagerbottom, "LIMIT $start,$rpp");
+    for ($i = 0; $i < $pages; $i++) {
+        $show_page =
+            $i < 5 ||
+            $i == ($pages - 1) ||
+            ($i >= ($page - 2) && $i <= ($page + 2));
+
+        if (!$show_page) {
+            if (!$dotted) {
+                $html .= '<li class="dots">...</li>';
+                $dotted = true;
+            }
+            continue;
+        }
+
+        $dotted = false;
+
+        $text = $i + 1;
+        $title_start = ($i * $rpp) + 1;
+        $title_end = min($title_start + $rpp - 1, $count);
+
+        if ($i == $page) {
+            $html .= '<li class="current"><a href="' . $href . 'page=' . $i . '">' . $text . '</a></li>';
+        } else {
+            $html .= '<li><a title="' . $title_start . ' - ' . $title_end . '" href="' . $href . 'page=' . $i . '">' . $text . '</a></li>';
+        }
+    }
+
+    if ($page < ($pages - 1)) {
+        $html .= '<li><a rel="next" href="' . $href . 'page=' . ($page + 1) . '">Вперед</a></li>';
+    }
+
+    $html .= '</ul></div>';
+
+    $pagertop = $html . "\n";
+
+    $pagerbottom =
+        '<div class="pager_info">Всего ' . $count .
+        ' на ' . $pages .
+        ' страницах по ' . $rpp .
+        ' на каждой странице.</div>' . "\n" .
+        $html . "\n";
+
+    return array($pagertop, $pagerbottom, "LIMIT $start,$rpp");
 }
 
 function kz_page_online_box($url_patterns, $empty_text = 'никого нет на странице')

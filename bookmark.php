@@ -1,88 +1,82 @@
-<?
-
-/*
-// +--------------------------------------------------------------------------+
-// | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
-// |                                               Do not remove above lines! |
-// +--------------------------------------------------------------------------+
-*/
-
+<?php
 
 require_once __DIR__ . '/include/bittorrent.php';
 
 dbconn();
 loggedinorreturn();
 
-function bark($msg, bool $error = true): void
-{
-    global $tracker_lang;
+if (!function_exists('bookmarks_h')) {
+    function bookmarks_h($value): string
+    {
+        if (function_exists('htmlspecialchars_uni')) {
+            return htmlspecialchars_uni((string)$value);
+        }
 
-    $title = $error
-        ? ($tracker_lang['error'] ?? 'Ошибка')
-        : (($tracker_lang['torrent'] ?? 'Торрент') . ' ' . ($tracker_lang['bookmarked'] ?? 'добавлен в закладки'));
+        return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
 
-    $caption = $error
-        ? ($tracker_lang['error'] ?? 'Ошибка')
-        : ($tracker_lang['success'] ?? 'Успешно');
+if (!function_exists('bookmarks_message')) {
+    function bookmarks_message(string $msg, bool $error = true): void
+    {
+        global $tracker_lang;
 
-    stdhead($title);
-    stdmsg($caption, $msg, $error ? 'error' : 'success');
-    stdfoot();
+        $title = $error
+            ? ($tracker_lang['error'] ?? 'Ошибка')
+            : ($tracker_lang['success'] ?? 'Успешно');
 
-    exit;
+        $caption = $error
+            ? ($tracker_lang['error'] ?? 'Ошибка')
+            : ($tracker_lang['success'] ?? 'Успешно');
+
+        stdhead($title);
+        stdmsg($caption, $msg, $error ? 'error' : 'success');
+        stdfoot();
+
+        exit;
+    }
+}
+
+if (!function_exists('bookmarks_redirect')) {
+    function bookmarks_redirect(int $torrentId): void
+    {
+        header('Location: details.php?id=' . $torrentId);
+        exit;
+    }
 }
 
 $id = isset($_GET['torrent']) ? (int)$_GET['torrent'] : 0;
 
 if (!is_valid_id($id)) {
-    bark($tracker_lang['torrent_not_selected'] ?? 'Торрент не выбран.');
+    bookmarks_message($tracker_lang['torrent_not_selected'] ?? 'Торрент не выбран.');
 }
 
 $userId = (int)$CURUSER['id'];
 
 $res = sql_query("
-    SELECT `name`
+    SELECT `id`, `name`
     FROM `torrents`
     WHERE `id` = " . $id . "
     LIMIT 1
 ") or sqlerr(__FILE__, __LINE__);
 
-$arr = mysqli_fetch_assoc($res);
+$torrent = mysqli_fetch_assoc($res);
 
-if (!$arr) {
-    bark($tracker_lang['torrent_not_found'] ?? 'Торрент не найден.');
+if (!$torrent) {
+    bookmarks_message($tracker_lang['torrent_not_found'] ?? 'Торрент не найден.');
 }
 
-$torrentName = (string)$arr['name'];
+$torrentName = (string)$torrent['name'];
 
-$bookmarkCount = get_row_count(
+$count = get_row_count(
     'bookmarks',
     'WHERE `userid` = ' . $userId . ' AND `torrentid` = ' . $id
 );
 
-if ($bookmarkCount > 0) {
-    bark(
+if ($count > 0) {
+    bookmarks_message(
         ($tracker_lang['torrent'] ?? 'Торрент') .
-        ' "' . htmlspecialchars_uni($torrentName) . '" ' .
+        ' "' . bookmarks_h($torrentName) . '" ' .
         ($tracker_lang['already_bookmarked'] ?? 'уже находится в закладках.')
     );
 }
@@ -94,12 +88,11 @@ sql_query("
         (" . $userId . ", " . $id . ")
 ") or sqlerr(__FILE__, __LINE__);
 
-header('Refresh: 3; url=browse.php');
-
-bark(
+bookmarks_message(
     ($tracker_lang['torrent'] ?? 'Торрент') .
-    ' "' . htmlspecialchars_uni($torrentName) . '" ' .
-    ($tracker_lang['bookmarked'] ?? 'добавлен в закладки.'),
+    ' "' . bookmarks_h($torrentName) . '" ' .
+    ($tracker_lang['bookmarked'] ?? 'добавлен в закладки.') .
+    '<br><br><a href="details.php?id=' . $id . '">Вернуться к раздаче</a>',
     false
 );
 

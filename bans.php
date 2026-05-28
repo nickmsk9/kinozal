@@ -1,41 +1,12 @@
-<?
-
-/*
-// +--------------------------------------------------------------------------+
-// | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
-// |                                               Do not remove above lines! |
-// +--------------------------------------------------------------------------+
-*/
-
-
+<?php
 
 require_once __DIR__ . '/include/bittorrent.php';
 
 dbconn(false);
-
 loggedinorreturn();
 
 if (get_user_class() < UC_MODERATOR) {
-    die;
+    stderr('Ошибка', 'Доступ запрещён.');
 }
 
 if (!function_exists('bans_h')) {
@@ -49,6 +20,13 @@ if (!function_exists('bans_h')) {
     }
 }
 
+if (!function_exists('bans_is_ipv4')) {
+    function bans_is_ipv4(string $ip): bool
+    {
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
+    }
+}
+
 if (!function_exists('bans_ip_to_db')) {
     function bans_ip_to_db(string $ip): string
     {
@@ -59,14 +37,35 @@ if (!function_exists('bans_ip_to_db')) {
 if (!function_exists('bans_db_to_ip')) {
     function bans_db_to_ip($ip): string
     {
+        $ip = (string)$ip;
+
+        if ($ip === '') {
+            return '';
+        }
+
         return long2ip((int)$ip);
     }
 }
 
-if (!function_exists('is_good_ip')) {
-    function is_good_ip(string $ip_addr): bool
+if (!function_exists('bans_user_link')) {
+    function bans_user_link($id, $username): string
     {
-        return filter_var($ip_addr, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
+        $id = (int)$id;
+        $username = trim((string)$username);
+
+        if ($id <= 0 || $username === '') {
+            return 'Пользователь удалён';
+        }
+
+        return '<a href="userdetails.php?id=' . $id . '">' . bans_h($username) . '</a>';
+    }
+}
+
+if (!function_exists('bans_redirect')) {
+    function bans_redirect(): void
+    {
+        header('Location: bans.php');
+        exit;
     }
 }
 
@@ -77,15 +76,17 @@ $remove = isset($_GET['remove']) ? (int)$_GET['remove'] : 0;
 
 if (is_valid_id($remove)) {
     $res = sql_query("
-        SELECT `first`, `last`
+        SELECT `id`, `first`, `last`
         FROM `bans`
         WHERE `id` = " . $remove . "
         LIMIT 1
     ") or sqlerr(__FILE__, __LINE__);
 
-    if ($ip = mysqli_fetch_assoc($res)) {
-        $first = bans_db_to_ip($ip['first']);
-        $last = bans_db_to_ip($ip['last']);
+    $ban = mysqli_fetch_assoc($res);
+
+    if ($ban) {
+        $first = bans_db_to_ip($ban['first']);
+        $last = bans_db_to_ip($ban['last']);
 
         sql_query("
             DELETE FROM `bans`
@@ -102,12 +103,11 @@ if (is_valid_id($remove)) {
         );
     }
 
-    header('Location: bans.php');
-    exit;
+    bans_redirect();
 }
 
 /*
- * Добавление нового IP-бана.
+ * Добавление IP-бана.
  */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && get_user_class() >= UC_ADMINISTRATOR) {
     $first = trim((string)($_POST['first'] ?? ''));
@@ -115,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && get_user_class() >= UC_ADMINISTRATO
     $comment = trim((string)($_POST['comment'] ?? ''));
 
     if ($first === '' || $last === '' || $comment === '') {
-        stderr($tracker_lang['error'] ?? 'Ошибка', $tracker_lang['missing_form_data'] ?? 'Заполнены не все поля.');
+        stderr('Ошибка', 'Заполнены не все поля.');
     }
 
-    if (!is_good_ip($first) || !is_good_ip($last)) {
+    if (!bans_is_ipv4($first) || !bans_is_ipv4($last)) {
         stderr('Ошибка', 'Укажите корректные IPv4-адреса.');
     }
 
@@ -129,16 +129,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && get_user_class() >= UC_ADMINISTRATO
         stderr('Ошибка', 'Первый IP-адрес не может быть больше последнего IP-адреса.');
     }
 
-    $added = sqlesc(get_date_time());
-    $addedBy = (int)$CURUSER['id'];
-
     sql_query("
         INSERT INTO `bans`
             (`added`, `addedby`, `first`, `last`, `comment`)
         VALUES
             (
-                " . $added . ",
-                " . $addedBy . ",
+                " . sqlesc(get_date_time()) . ",
+                " . (int)$CURUSER['id'] . ",
                 " . sqlesc($firstLong) . ",
                 " . sqlesc($lastLong) . ",
                 " . sqlesc($comment) . "
@@ -149,8 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && get_user_class() >= UC_ADMINISTRATO
         'IP-адреса с ' . $first . ' по ' . $last . ' были забанены пользователем ' . $CURUSER['username'] . '.'
     );
 
-    header('Location: bans.php');
-    exit;
+    bans_redirect();
 }
 
 /*
@@ -158,134 +154,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && get_user_class() >= UC_ADMINISTRATO
  */
 $res = sql_query("
     SELECT
-        `bans`.*,
-        `users`.`username`
-    FROM `bans`
-    LEFT JOIN `users` ON `bans`.`addedby` = `users`.`id`
-    ORDER BY `bans`.`added` DESC
+        b.`id`,
+        b.`added`,
+        b.`addedby`,
+        b.`first`,
+        b.`last`,
+        b.`comment`,
+        u.`username`
+    FROM `bans` AS b
+    LEFT JOIN `users` AS u ON u.`id` = b.`addedby`
+    ORDER BY b.`added` DESC
 ") or sqlerr(__FILE__, __LINE__);
 
 stdhead($tracker_lang['bans'] ?? 'Баны IP-адресов');
 
+/*
+ * Таблица списка банов.
+ */
+print '<table class="tables1" width="100%" border="1" cellspacing="0" cellpadding="5">';
+
+print '<tr>';
+print '<td class="colhead" colspan="6" align="center">Забаненные IP-адреса</td>';
+print '</tr>';
+
+print '<tr>';
+print '<td class="colhead" align="center" width="135">Добавлен</td>';
+print '<td class="colhead" align="center" width="120">Первый IP</td>';
+print '<td class="colhead" align="center" width="120">Последний IP</td>';
+print '<td class="colhead" align="center" width="150">Кем добавлен</td>';
+print '<td class="colhead" align="center">Комментарий</td>';
+print '<td class="colhead" align="center" width="95">Действие</td>';
+print '</tr>';
+
 if (mysqli_num_rows($res) === 0) {
-    print '<p align="center"><b>' . bans_h($tracker_lang['nothing_found'] ?? 'Ничего не найдено') . '</b></p>';
+    print '<tr>';
+    print '<td class="text" colspan="6" align="center"><b>Ничего не найдено</b></td>';
+    print '</tr>';
 } else {
-    /*
-     * Внешняя таблица нужна только для центрирования.
-     * Новые CSS-классы не добавляем.
-     */
-    print '<table border="0" cellspacing="0" cellpadding="0" align="center" width="95%">';
-    print '<tr><td>';
-
-    begin_table();
-
-    print '<tr>';
-    print '<td class="colhead" colspan="6">Забаненные IP-адреса</td>';
-    print '</tr>';
-
-    print '<tr>';
-    print '<td class="colhead">Добавлен</td>';
-    print '<td class="colhead" align="left">Первый IP</td>';
-    print '<td class="colhead" align="left">Последний IP</td>';
-    print '<td class="colhead" align="left">Кем добавлен</td>';
-    print '<td class="colhead" align="left">Комментарий</td>';
-    print '<td class="colhead">Действие</td>';
-    print '</tr>';
-
     while ($arr = mysqli_fetch_assoc($res)) {
         $id = (int)$arr['id'];
-        $addedBy = (int)$arr['addedby'];
-
-        $username = (!empty($arr['username']))
-            ? $arr['username']
-            : 'Пользователь удалён';
 
         $firstIp = bans_db_to_ip($arr['first']);
         $lastIp = bans_db_to_ip($arr['last']);
 
         print '<tr>';
 
-        print '<td class="text">';
+        print '<td class="text" align="center" valign="middle" nowrap="nowrap">';
         print bans_h($arr['added']);
         print '</td>';
 
-        print '<td class="text" align="left">';
+        print '<td class="text" align="center" valign="middle" nowrap="nowrap">';
         print bans_h($firstIp);
         print '</td>';
 
-        print '<td class="text" align="left">';
+        print '<td class="text" align="center" valign="middle" nowrap="nowrap">';
         print bans_h($lastIp);
         print '</td>';
 
-        print '<td class="text" align="left">';
-        if ($addedBy > 0 && !empty($arr['username'])) {
-            print '<a href="userdetails.php?id=' . $addedBy . '">' . bans_h($username) . '</a>';
-        } else {
-            print bans_h($username);
-        }
+        print '<td class="text" align="center" valign="middle" nowrap="nowrap">';
+        print bans_user_link($arr['addedby'], $arr['username']);
         print '</td>';
 
-        print '<td class="text" align="left">';
+        print '<td class="text" align="left" valign="middle">';
         print bans_h($arr['comment']);
         print '</td>';
 
-        print '<td class="text" align="center">';
+        print '<td class="text" align="center" valign="middle" nowrap="nowrap">';
         print '<a href="bans.php?remove=' . $id . '">Снять бан</a>';
         print '</td>';
 
         print '</tr>';
     }
-
-    end_table();
-
-    print '</td></tr>';
-    print '</table>';
 }
+
+print '</table>';
 
 /*
  * Форма добавления IP-бана.
  */
 if (get_user_class() >= UC_ADMINISTRATOR) {
     print '<br>';
+
     print '<form method="post" action="bans.php">';
 
-    /*
-     * Внешняя таблица центрирует форму.
-     * Ширина 420 подходит под три поля по 40 символов.
-     */
-    print '<table border="0" cellspacing="0" cellpadding="0" align="center" width="420">';
-    print '<tr><td>';
-
-    begin_table();
+    print '<table class="tables1" width="100%" border="1" cellspacing="0" cellpadding="5">';
 
     print '<tr>';
-    print '<td class="colhead" colspan="2">Забанить IP-адрес</td>';
+    print '<td class="colhead" colspan="2" align="center">Забанить IP-адрес</td>';
     print '</tr>';
 
     print '<tr>';
-    print '<td class="rowhead">Первый IP</td>';
-    print '<td class="text"><input type="text" name="first" size="40"></td>';
+    print '<td class="rowhead" width="170" align="right" valign="middle">Первый IP</td>';
+    print '<td class="text" align="left" valign="middle">';
+    print '<input type="text" name="first" size="45" maxlength="15">';
+    print '</td>';
     print '</tr>';
 
     print '<tr>';
-    print '<td class="rowhead">Последний IP</td>';
-    print '<td class="text"><input type="text" name="last" size="40"></td>';
+    print '<td class="rowhead" width="170" align="right" valign="middle">Последний IP</td>';
+    print '<td class="text" align="left" valign="middle">';
+    print '<input type="text" name="last" size="45" maxlength="15">';
+    print '</td>';
     print '</tr>';
 
     print '<tr>';
-    print '<td class="rowhead">Комментарий</td>';
-    print '<td class="text"><input type="text" name="comment" size="40"></td>';
+    print '<td class="rowhead" width="170" align="right" valign="middle">Комментарий</td>';
+    print '<td class="text" align="left" valign="middle">';
+    print '<input type="text" name="comment" size="45" maxlength="255">';
+    print '</td>';
     print '</tr>';
 
     print '<tr>';
-    print '<td class="text" align="center" colspan="2">';
+    print '<td class="text" colspan="2" align="center">';
     print '<input type="submit" value="Забанить" class="buttonS">';
     print '</td>';
     print '</tr>';
 
-    end_table();
-
-    print '</td></tr>';
     print '</table>';
 
     print '</form>';
