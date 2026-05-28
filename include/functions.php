@@ -504,37 +504,73 @@ function get_server_load() {
     return round($load, 4);
 }
 
-function user_session() {
+function user_session()
+{
 	global $CURUSER, $use_sessions;
 
-	if (!$use_sessions)
+	if (empty($use_sessions)) {
 		return;
-
-	$ip = getip();
-	$url = (string)getenv("REQUEST_URI");
-	if (function_exists('mb_strlen') && function_exists('mb_substr') && mb_strlen($url, 'UTF-8') > 150) {
-		$url = mb_substr($url, 0, 150, 'UTF-8');
-	} elseif (strlen($url) > 150) {
-		$url = substr($url, 0, 150);
 	}
 
-	if (!$CURUSER) {
+	$ip = getip();
+
+	// REQUEST_URI может отсутствовать, getenv() медленнее и менее предсказуем в PHP 8+
+	$url = isset($_SERVER['REQUEST_URI']) ? (string)$_SERVER['REQUEST_URI'] : '';
+
+	// Ограничиваем URL до 150 символов, чтобы не раздувать таблицу sessions
+	if ($url !== '') {
+		if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+			if (mb_strlen($url, 'UTF-8') > 150) {
+				$url = mb_substr($url, 0, 150, 'UTF-8');
+			}
+		} elseif (strlen($url) > 150) {
+			$url = substr($url, 0, 150);
+		}
+	}
+
+	if (empty($CURUSER) || !is_array($CURUSER)) {
 		$uid = -1;
 		$username = '';
 		$class = -1;
 	} else {
-		$uid = $CURUSER['id'];
-		$username = $CURUSER['username'];
-		$class = $CURUSER['class'];
+		$uid = isset($CURUSER['id']) ? (int)$CURUSER['id'] : -1;
+		$username = isset($CURUSER['username']) ? (string)$CURUSER['username'] : '';
+		$class = isset($CURUSER['class']) ? (int)$CURUSER['class'] : -1;
 	}
 
 	$sid = session_id();
 	$ctime = time();
-	$agent = $_SERVER["HTTP_USER_AGENT"];
+	$agent = isset($_SERVER['HTTP_USER_AGENT']) ? (string)$_SERVER['HTTP_USER_AGENT'] : '';
+
+	// Чтобы useragent не раздувал запрос и не бил по полю в БД
+	if ($agent !== '') {
+		if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+			if (mb_strlen($agent, 'UTF-8') > 255) {
+				$agent = mb_substr($agent, 0, 255, 'UTF-8');
+			}
+		} elseif (strlen($agent) > 255) {
+			$agent = substr($agent, 0, 255);
+		}
+	}
+
+	if ($sid === '') {
+		return;
+	}
+
 	session_write_close();
-	sql_query("
-		INSERT INTO sessions (sid, uid, username, class, ip, time, url, useragent)
-		VALUES (" . implode(", ", array_map("sqlesc", array($sid, $uid, $username, $class, $ip, $ctime, $url, $agent))) . ")
+
+	$sql = "
+		INSERT INTO sessions 
+			(sid, uid, username, class, ip, time, url, useragent)
+		VALUES 
+			(" . sqlesc($sid) . ",
+			 " . sqlesc($uid) . ",
+			 " . sqlesc($username) . ",
+			 " . sqlesc($class) . ",
+			 " . sqlesc($ip) . ",
+			 " . sqlesc($ctime) . ",
+			 " . sqlesc($url) . ",
+			 " . sqlesc($agent) . ")
 		ON DUPLICATE KEY UPDATE
 			uid = VALUES(uid),
 			username = VALUES(username),
@@ -543,7 +579,9 @@ function user_session() {
 			time = VALUES(time),
 			url = VALUES(url),
 			useragent = VALUES(useragent)
-	") or sqlerr(__FILE__,__LINE__);
+	";
+
+	sql_query($sql) or sqlerr(__FILE__, __LINE__);
 }
 
 function unesc($x)
@@ -991,27 +1029,34 @@ function parsedescr($d, $html) {
 	return $d;
 }
 
-function stdhead($title = "", $msgalert = true) {
+function stdhead($title = "", $msgalert = true)
+{
 	global $CURUSER, $SITE_ONLINE, $SITENAME, $ss_uri, $tracker_lang, $hide_right_blocks;
 
 	if (!$SITE_ONLINE) {
-		die('Site is down for maintenance, please check back again later... thanks<br />');
+		die('Сайт временно закрыт на техническое обслуживание. Пожалуйста, зайдите позже.<br />');
 	}
 
-	header('Content-Type: text/html; charset=' . $tracker_lang['language_charset']);
+	$charset = isset($tracker_lang['language_charset'])
+		? $tracker_lang['language_charset']
+		: 'UTF-8';
+
+	header('Content-Type: text/html; charset=' . $charset);
 	header('Cache-Control: no-cache');
 	header('Pragma: no-cache');
 
+	$title = trim((string)$title);
+
 	if ($title === '') {
-		$title = $SITENAME . (isset($_GET['yuna']) ? ' (' . TBVERSION . ')' : '');
+		$title = $SITENAME;
 	} else {
-		$title = $SITENAME . (isset($_GET['yuna']) ? ' (' . TBVERSION . ')' : '') . ' :: ' . htmlspecialchars_uni($title);
+		$title = $SITENAME . ' :: ' . htmlspecialchars_uni($title);
 	}
 
 	$ss_uri = select_theme();
 
-	require_once('themes/' . $ss_uri . '/template.php');
-	require_once('themes/' . $ss_uri . '/stdhead.php');
+	require_once 'themes/' . $ss_uri . '/template.php';
+	require_once 'themes/' . $ss_uri . '/stdhead.php';
 }
 
 function stdfoot() {
@@ -1354,31 +1399,77 @@ function kz_page_online_box($url_patterns, $empty_text = 'никого нет н
 		. "</table>\n";
 }
 
-function downloaderdata($res) {
+function downloaderdata($res)
+{
 	$rows = array();
 	$ids = array();
 	$peerdata = array();
-	while ($row = mysql_fetch_assoc($res)) {
-		$rows[] = $row;
-		$id = $row["id"];
-		$ids[] = $id;
-		$peerdata[$id] = array(downloaders => 0, seeders => 0, comments => 0);
+
+	if (!$res) {
+		return array($rows, $peerdata);
 	}
 
-	if (count($ids)) {
-		$allids = implode(",", $ids);
-		$res = sql_query("SELECT COUNT(*) AS c, torrent, seeder FROM peers WHERE torrent IN ($allids) GROUP BY torrent, seeder");
-		while ($row = mysql_fetch_assoc($res)) {
-			if ($row["seeder"] == "yes")
-				$key = "seeders";
-			else
-				$key = "downloaders";
-			$peerdata[$row["torrent"]][$key] = $row["c"];
+	while ($row = mysqli_fetch_assoc($res)) {
+		$id = isset($row['id']) ? (int)$row['id'] : 0;
+
+		if ($id <= 0) {
+			continue;
 		}
-		$res = sql_query("SELECT COUNT(*) AS c, torrent FROM comments WHERE torrent IN ($allids) GROUP BY torrent");
-		while ($row = mysql_fetch_assoc($res)) {
-			$peerdata[$row["torrent"]]["comments"] = $row["c"];
+
+		$rows[] = $row;
+		$ids[] = $id;
+
+		$peerdata[$id] = array(
+			'downloaders' => 0,
+			'seeders' => 0,
+			'comments' => 0
+		);
+	}
+
+	if (!$ids) {
+		return array($rows, $peerdata);
+	}
+
+	$allids = implode(',', array_unique($ids));
+
+	$peers_res = sql_query("
+		SELECT 
+			COUNT(*) AS c,
+			torrent,
+			seeder
+		FROM peers
+		WHERE torrent IN (" . $allids . ")
+		GROUP BY torrent, seeder
+	") or sqlerr(__FILE__, __LINE__);
+
+	while ($row = mysqli_fetch_assoc($peers_res)) {
+		$torrent_id = (int)$row['torrent'];
+
+		if (!isset($peerdata[$torrent_id])) {
+			continue;
 		}
+
+		$key = ($row['seeder'] === 'yes') ? 'seeders' : 'downloaders';
+		$peerdata[$torrent_id][$key] = (int)$row['c'];
+	}
+
+	$comments_res = sql_query("
+		SELECT 
+			COUNT(*) AS c,
+			torrent
+		FROM comments
+		WHERE torrent IN (" . $allids . ")
+		GROUP BY torrent
+	") or sqlerr(__FILE__, __LINE__);
+
+	while ($row = mysqli_fetch_assoc($comments_res)) {
+		$torrent_id = (int)$row['torrent'];
+
+		if (!isset($peerdata[$torrent_id])) {
+			continue;
+		}
+
+		$peerdata[$torrent_id]['comments'] = (int)$row['c'];
 	}
 
 	return array($rows, $peerdata);
@@ -1408,20 +1499,36 @@ function ratingpic($num) {
 	return "<img src=\"themes/$ss_uri/images/rating/$r.gif\" border=\"0\" alt=\"".$tracker_lang['rating'].": $num / 5\" />";
 }
 
-function writecomment($userid, $comment) {
-    $userid = intval($userid);
-    if (!$userid)
-        throw new Exception(E_FATAL_ERROR, 'User ID cannot be 0 or null');
-	/*$res = sql_query("SELECT modcomment FROM users WHERE id = $userid") or sqlerr(__FILE__, __LINE__);
-	$arr = mysql_fetch_assoc($res);
+function writecomment($userid, $comment)
+{
+	$userid = (int)$userid;
 
-	$modcomment = date('d-m-Y') . ' - ' . $comment . '' . ($arr['modcomment'] != '' ? "\n" : "") . $arr['modcomment'];
-	$modcom = sqlesc($modcomment);
+	if ($userid <= 0) {
+		throw new InvalidArgumentException('ID пользователя не может быть пустым или равным 0.');
+	}
 
-	return sql_query("UPDATE users SET modcomment = $modcom WHERE id = $userid") or sqlerr(__FILE__, __LINE__);*/
+	$comment = trim((string)$comment);
 
-    $modcomment = sqlesc(date('d-m-Y') . ' - ' . $comment);
-    return sql_query("UPDATE users SET modcomment = CONCAT_WS('\n', $modcomment, modcomment) WHERE id = $userid") or sqlerr(__FILE__,__LINE__);
+	if ($comment === '') {
+		return false;
+	}
+
+	$modcomment = sqlesc(date('d.m.Y') . ' - ' . $comment);
+
+	$sql = "
+		UPDATE users
+		SET modcomment = CONCAT_WS('\n', $modcomment, NULLIF(modcomment, ''))
+		WHERE id = " . $userid . "
+		LIMIT 1
+	";
+
+	$res = sql_query($sql);
+
+	if (!$res) {
+		sqlerr(__FILE__, __LINE__);
+	}
+
+	return $res;
 }
 
 function hash_pad($hash) {

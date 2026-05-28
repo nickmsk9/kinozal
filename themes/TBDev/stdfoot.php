@@ -1,53 +1,34 @@
 ﻿<?php
 
 if (!defined('UC_SYSOP')) {
-	die('Direct access denied.');
+	die('Прямой доступ запрещён.');
 }
 
-$seconds = 0;
-$phptime = 0;
-$query_time = 0;
-$percentphp = 0;
-$percentsql = 0;
+$seconds = 0.001;
 
 if (function_exists('timer') && isset($tstart)) {
-	$seconds = timer() - $tstart;
+	$seconds = (float)timer() - (float)$tstart;
 }
 
 if ($seconds <= 0) {
 	$seconds = 0.001;
 }
 
-$querytime = isset($querytime) ? (float)$querytime : 0;
+$querytime = isset($querytime) ? (float)$querytime : 0.0;
 $queries = isset($queries) ? (int)$queries : 0;
 
-$phptime = $seconds - $querytime;
-$query_time = $querytime;
+$phptime = max(0, $seconds - $querytime);
+$sqltime = max(0, $querytime);
 
 $percentphp = number_format(($phptime / $seconds) * 100, 2);
-$percentsql = number_format(($query_time / $seconds) * 100, 2);
-$seconds = substr((string)$seconds, 0, 8);
+$percentsql = number_format(($sqltime / $seconds) * 100, 2);
 
+$seconds = number_format($seconds, 4, '.', '');
 $year = date('Y');
 
-if (isset($tracker_lang['page_generated'])) {
-	$page_generated = sprintf(
-		$tracker_lang['page_generated'],
-		$seconds,
-		$queries,
-		$percentphp,
-		$percentsql
-	);
-} else {
-	$page_generated = 'Страница создана за ' . $seconds . ' сек. SQL-запросов: ' . $queries . '. PHP: ' . $percentphp . '%, SQL: ' . $percentsql . '%.';
-}
-
-$version = defined('TBVERSION') ? TBVERSION : '';
-$beta = '';
-
-if (defined('BETA') && BETA && defined('BETA_NOTICE')) {
-	$beta = BETA_NOTICE;
-}
+$page_generated = 'Страница создана за ' . $seconds . ' сек. '
+	. 'SQL-запросов: ' . $queries . '. '
+	. 'PHP: ' . $percentphp . '%, SQL: ' . $percentsql . '%.';
 
 if (function_exists('show_blocks')) {
 	show_blocks('d');
