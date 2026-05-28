@@ -39,7 +39,7 @@ function ud_datetime($value) {
 
 function ud_birthday($value, $link_class = "sba") {
 	if (empty($value) || $value == "0000-00-00") {
-		return "не указана";
+		return '<a href="/users.php" class="' . ud_h($link_class) . '">не указано</a>';
 	}
 	$months = array(
 		"01" => "января", "02" => "февраля", "03" => "марта", "04" => "апреля",
@@ -50,7 +50,7 @@ function ud_birthday($value, $link_class = "sba") {
 	$day = date("d", $ts);
 	$month = date("m", $ts);
 	$year = date("Y", $ts);
-	return '<a href="/users.php?s6=' . $day . '-' . $month . '" class="' . ud_h($link_class) . '">' . $day . ' ' . ($months[$month] ?? $month) . '</a> ' . $year . ' года';
+	return '<a href="/users.php?s6=' . $month . '-' . $day . '" class="' . ud_h($link_class) . '">' . $day . ' ' . ($months[$month] ?? $month) . '</a> ' . $year . ' года';
 }
 
 function ud_rank_name($user) {
@@ -66,6 +66,9 @@ function ud_ratio($uploaded, $downloaded) {
 }
 
 function ud_rating_img($ratio) {
+	if ($ratio === 'Inf.') {
+		return "<img src='/pic/r5.gif' title='Рейтинг: Inf.' alt=''> ";
+	}
 	if (!is_numeric($ratio)) {
 		return "";
 	}
@@ -80,7 +83,7 @@ function ud_table_row($title, $value) {
 function ud_search_links($value, $param, $link_class, $split = false) {
 	$value = trim((string)$value);
 	if ($value === '') {
-		return 'РЅРµ СѓРєР°Р·Р°РЅРѕ';
+		return '<a href="/users.php" class="' . ud_h($link_class) . '">не указано</a>';
 	}
 
 	$items = $split ? preg_split('/\s*,\s*/u', $value, -1, PREG_SPLIT_NO_EMPTY) : array($value);
@@ -93,7 +96,7 @@ function ud_search_links($value, $param, $link_class, $split = false) {
 		$links[] = '<a href="/users.php?' . rawurlencode($param) . '=' . urlencode($item) . '" class="' . ud_h($link_class) . '">' . ud_h($item) . '</a>';
 	}
 
-	return $links ? implode(', ', $links) : 'РЅРµ СѓРєР°Р·Р°РЅРѕ';
+	return $links ? implode(', ', $links) : '<a href="/users.php" class="' . ud_h($link_class) . '">не указано</a>';
 }
 
 function ud_cup_history_modcomment($userid, $modcomment) {
@@ -315,11 +318,12 @@ if ($last = mysqli_fetch_assoc($res_last)) {
 	$last_torrent_link = '<a href="/details.php?id=' . (int)$last["torrent"] . '" class="' . $user_class_css . '">здесь</a>';
 }
 
-$city = ud_search_links($user["city"] ?? '', 's2', $user_class_css);
-$favorite_movie = ud_search_links($user["favorite_movie"] ?? '', 's3', $user_class_css);
-$favorite_persons = ud_search_links($user["favorite_persons"] ?? '', 's4', $user_class_css, true);
+$city = ud_search_links($user["city"] ?? '', 's2', 'sba');
+$favorite_movie = ud_search_links($user["favorite_movie"] ?? '', 's3', 'sba');
+$favorite_persons = ud_search_links($user["favorite_persons"] ?? '', 's4', 'sba', true);
 $recent_reputation = function_exists('kz_reputation_rows') ? kz_reputation_rows($id, 1, 10) : array();
 
+$hide_right_blocks = true;
 stdhead("Пользователь :: " . $user["username"]);
 
 if (!$enabled) {
