@@ -703,3 +703,6 @@ Stack trace:
   thrown in C:\OSPanel\domains\kinozal.lv\blocks\block-releases.php on line 244
 [28-May-2026 12:50:41 Europe/Moscow] PHP Warning:  Undefined array key "id" in C:\OSPanel\domains\kinozal.lv\friends.php on line 33
 [28-May-2026 12:50:41 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\friends.php on line 34
+[28-May-2026 13:27:04 Europe/Moscow] PHP Warning:  Trying to access array offset on value of type null in C:\OSPanel\domains\kinozal.lv\captcha.php on line 55
+[28-May-2026 13:27:05 Europe/Moscow] PHP Warning:  Trying to access array offset on value of type null in C:\OSPanel\domains\kinozal.lv\captcha.php on line 55
+[28-May-2026 13:27:06 Europe/Moscow] PHP Warning:  Trying to access array offset on value of type null in C:\OSPanel\domains\kinozal.lv\captcha.php on line 55
