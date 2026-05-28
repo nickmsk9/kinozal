@@ -158,11 +158,9 @@ if ($file) {
 		bark("Для мультитрекерной раздачи torrent-файл не обновляется.");
 	}
 	$torrent_data = kz_takeedit_parse_torrent($file);
-	if ($details_data['video']['size'] === '') {
-		$details_data['video']['size'] = mksize($torrent_data['size']);
-	}
-} elseif ($details_data['video']['size'] === '') {
-	$details_data['video']['size'] = mksize((int)$row['size']);
+	kz_upload_apply_torrent_size($details_data, $kind, $torrent_data['size']);
+} else {
+	kz_upload_apply_torrent_size($details_data, $kind, (int)$row['size']);
 }
 
 $descr = kz_upload_build_description($details_data, $kind, $name, $torrent_data ? $torrent_data['size'] : (int)$row['size']);

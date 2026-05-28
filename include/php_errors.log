@@ -706,3 +706,13 @@ Stack trace:
 [28-May-2026 13:27:04 Europe/Moscow] PHP Warning:  Trying to access array offset on value of type null in C:\OSPanel\domains\kinozal.lv\captcha.php on line 55
 [28-May-2026 13:27:05 Europe/Moscow] PHP Warning:  Trying to access array offset on value of type null in C:\OSPanel\domains\kinozal.lv\captcha.php on line 55
 [28-May-2026 13:27:06 Europe/Moscow] PHP Warning:  Trying to access array offset on value of type null in C:\OSPanel\domains\kinozal.lv\captcha.php on line 55
+[28-May-2026 14:07:49 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_release_template() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1272
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\upload.php(46): kz_upload_render_form()
+#1 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1272
+[28-May-2026 14:07:56 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_release_template() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1272
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\upload.php(46): kz_upload_render_form()
+#1 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1272

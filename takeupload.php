@@ -171,9 +171,7 @@ if (!$file) {
 }
 
 $torrent_data = kz_takeupload_parse_torrent($file);
-if ($details_data['video']['size'] === '') {
-	$details_data['video']['size'] = mksize($torrent_data['size']);
-}
+kz_upload_apply_torrent_size($details_data, $kind, $torrent_data['size']);
 
 $descr = kz_upload_build_description($details_data, $kind, $name, $torrent_data['size']);
 if ($descr === '') {

@@ -228,6 +228,7 @@ function kz_upload_default_data()
 			'screens' => '',
 			'notes' => '',
 		),
+		'templates' => kz_upload_templates_default_data(),
 		'generic' => array(
 			'desc1' => '',
 			'desc2' => '',
@@ -235,6 +236,268 @@ function kz_upload_default_data()
 			'desc4' => '',
 		),
 	);
+}
+
+function kz_upload_empty_advanced()
+{
+	return array(
+		'desc1' => '',
+		'desc2' => '',
+		'desc3' => '',
+		'desc4' => '',
+	);
+}
+
+function kz_upload_empty_design()
+{
+	return array(
+		'related' => array(),
+		'watch' => array(),
+		'tabs' => array(),
+		'screens' => '',
+		'notes' => '',
+		'imdb' => array('enabled' => 0, 'url' => '', 'rating' => ''),
+		'kinopoisk' => array('enabled' => 0, 'url' => '', 'rating' => ''),
+	);
+}
+
+function kz_upload_templates_default_data()
+{
+	$out = array();
+	foreach (array('music', 'game', 'audiobook', 'program', 'book', 'graphic') as $kind) {
+		$out[$kind] = array(
+			'fields' => array(),
+			'advanced' => kz_upload_empty_advanced(),
+			'design' => kz_upload_empty_design(),
+		);
+	}
+
+	return $out;
+}
+
+function kz_upload_release_specs()
+{
+	static $specs = null;
+	if ($specs !== null) {
+		return $specs;
+	}
+
+	$desc = 'Рекомендуем писать собственное описание, а не копировать его из сети - это положительно скажется на количестве сидов и пиров и значительно увеличит срок жизни раздачи. Помощь по созданию описаний к раздачам <a href="//forum.kinozal.tv/forumdisplay.php?f=244" target="_blank">здесь</a>';
+	$size_desc = 'Устанавливается автоматически при выборе торрент-файла';
+
+	$specs = array(
+		'music' => array(
+			'sections' => array(
+				array('fields' => array(
+					array('key' => 'artist', 'label' => 'Исполнитель', 'placeholder' => 'Имя исполнителя, Artist name'),
+					array('key' => 'album', 'label' => 'Альбом', 'placeholder' => 'Название альбома, Album name'),
+					array('key' => 'year', 'label' => 'Год выпуска', 'placeholder' => '2009'),
+					array('key' => 'genre', 'label' => 'Жанр', 'placeholder' => 'Поп, рок, блюз'),
+				)),
+				array('fields' => array(
+					array('key' => 'about', 'label' => 'О музыке', 'placeholder' => 'Краткое описание...', 'textarea' => 10, 'desc' => $desc),
+				)),
+				array('fields' => array(
+					array('key' => 'audio', 'label' => 'Аудио', 'placeholder' => 'MP3, 192 Кбит/с'),
+					array('key' => 'size', 'label' => 'Размер', 'placeholder' => '600 МБ', 'desc' => $size_desc),
+					array('key' => 'duration', 'label' => 'Продолжительность', 'placeholder' => '01:15:14', 'desc' => 'Общая продолжительность в формате ЧЧ:ММ:СС'),
+				)),
+			),
+			'design' => array(
+				'related' => array(array('title' => 'Подобные раздачи', 'query' => 'Поисковое слово, название')),
+				'watch' => array(array('title' => 'Инфо', 'url' => 'https://ссылка')),
+				'tabs' => array(array('title' => 'Треклист', 'content' => '01. Перечень')),
+			),
+		),
+		'game' => array(
+			'sections' => array(
+				array('fields' => array(
+					array('key' => 'title', 'label' => 'Название', 'placeholder' => 'Название'),
+					array('key' => 'original_title', 'label' => 'Оригинальное название', 'placeholder' => 'Name'),
+					array('key' => 'year', 'label' => 'Год выпуска', 'placeholder' => '2009'),
+					array('key' => 'genre', 'label' => 'Жанр', 'placeholder' => 'Action, shooter, racing, strategy'),
+					array('key' => 'developer', 'label' => 'Разработчик', 'placeholder' => 'Наименование компании'),
+					array('key' => 'released', 'label' => 'Выпущено', 'placeholder' => 'Наименование издательства'),
+					array('key' => 'version', 'label' => 'Версия', 'placeholder' => '1.0'),
+					array('key' => 'language', 'label' => 'Язык', 'placeholder' => 'Русский, английский'),
+				)),
+				array('fields' => array(
+					array('key' => 'about', 'label' => 'Об игре', 'placeholder' => 'Краткое описание игры...', 'textarea' => 10, 'desc' => $desc),
+				)),
+				array('fields' => array(
+					array('key' => 'requirements', 'label' => 'Минимальные системные требования', 'textarea' => 4),
+					array('key' => 'os', 'label' => 'Операционная система', 'placeholder' => 'Windows 10/11 64-бит'),
+					array('key' => 'cpu', 'label' => 'Процессор', 'placeholder' => 'Core i5-8400 / Ryzen 5 2600'),
+					array('key' => 'memory', 'label' => 'Память', 'placeholder' => '8 ГБ'),
+					array('key' => 'gpu', 'label' => 'Видеокарта', 'placeholder' => '4 ГБ, GeForce GTX 960 / Radeon R9 380, DirectX 11'),
+					array('key' => 'sound', 'label' => 'Аудиокарта', 'placeholder' => 'Совместимая с ОС'),
+					array('key' => 'space', 'label' => 'Свободное место', 'placeholder' => '20 ГБ'),
+					array('key' => 'platform', 'label' => 'Платформа', 'placeholder' => 'Для мобильных, консольных и интерактивных игр'),
+					array('key' => 'size', 'label' => 'Занимаемое место', 'placeholder' => 'Для мобильных, консольных и интерактивных игр'),
+				)),
+			),
+			'design' => array(
+				'related' => array(array('title' => 'Подобные раздачи', 'query' => 'Поисковое слово, название')),
+				'watch' => array(array('title' => 'Полезная информация', 'url' => 'https://ссылка')),
+				'tabs' => array(
+					array('title' => 'Особенности', 'content' => '01. Перечень'),
+					array('title' => 'Установка', 'content' => ''),
+					array('title' => 'Русификация', 'content' => ''),
+					array('title' => 'Скриншоты', 'content' => ''),
+				),
+			),
+		),
+		'audiobook' => array(
+			'sections' => array(
+				array('fields' => array(
+					array('key' => 'author', 'label' => 'Автор', 'placeholder' => 'Имя Фамилия'),
+					array('key' => 'title', 'label' => 'Название', 'placeholder' => 'Название книги'),
+					array('key' => 'year', 'label' => 'Год выпуска', 'placeholder' => '2009'),
+					array('key' => 'genre', 'label' => 'Жанр', 'placeholder' => 'Классика, радиоспектакль, фантастика'),
+					array('key' => 'released', 'label' => 'Выпущено', 'placeholder' => 'Название издательства'),
+					array('key' => 'reader', 'label' => 'Озвучивает', 'placeholder' => 'Имя Фамилия'),
+				)),
+				array('fields' => array(
+					array('key' => 'about', 'label' => 'Описание', 'placeholder' => 'Краткая аннотация к книге...', 'textarea' => 10, 'desc' => $desc),
+				)),
+				array('fields' => array(
+					array('key' => 'audio', 'label' => 'Аудио', 'placeholder' => 'MP3, 96 Кбит/с, стерео'),
+					array('key' => 'size', 'label' => 'Размер', 'placeholder' => '635 МБ', 'desc' => $size_desc),
+					array('key' => 'duration', 'label' => 'Продолжительность', 'placeholder' => '29:55:41'),
+					array('key' => 'language', 'label' => 'Язык', 'placeholder' => 'Русский'),
+				)),
+			),
+			'design' => array(
+				'related' => array(
+					array('title' => 'Цикл аудиокниг', 'query' => 'Поисковое слово, название'),
+					array('title' => 'Подобные раздачи', 'query' => 'Поисковое слово, название'),
+				),
+				'watch' => array(array('title' => 'Послушать', 'url' => 'https://ссылка')),
+				'tabs' => array(
+					array('title' => 'Содержание', 'content' => '01. Перечень'),
+					array('title' => 'Об издании', 'content' => ''),
+					array('title' => 'Интересно', 'content' => ''),
+					array('title' => 'Обложки', 'content' => ''),
+				),
+			),
+		),
+		'program' => array(
+			'sections' => array(
+				array('fields' => array(
+					array('key' => 'original_title', 'label' => 'Оригинальное название', 'placeholder' => 'Program name'),
+					array('key' => 'year', 'label' => 'Год выпуска', 'placeholder' => '2009'),
+					array('key' => 'genre', 'label' => 'Жанр', 'placeholder' => 'Безопасность'),
+					array('key' => 'developer', 'label' => 'Разработчик', 'placeholder' => 'Наименование компании'),
+					array('key' => 'version', 'label' => 'Версия', 'placeholder' => '1.0'),
+					array('key' => 'language', 'label' => 'Язык', 'placeholder' => 'Русский, английский'),
+				)),
+				array('fields' => array(
+					array('key' => 'about', 'label' => 'О программе', 'placeholder' => 'Краткое описание программы...', 'textarea' => 10, 'desc' => $desc),
+				)),
+				array('fields' => array(
+					array('key' => 'requirements', 'label' => 'Минимальные системные требования', 'textarea' => 4),
+					array('key' => 'os', 'label' => 'Операционная система', 'placeholder' => 'Windows XP/Vista/7/8'),
+					array('key' => 'cpu', 'label' => 'Процессор', 'placeholder' => 'Pentium 4 2 ГГц'),
+					array('key' => 'memory', 'label' => 'Память', 'placeholder' => '512 МБ'),
+					array('key' => 'gpu', 'label' => 'Видеокарта', 'placeholder' => '128 МБ, GeForce FX 5600 / Radeon 9600, 1024х768, Shader 2.0, DirectX 9.0c'),
+					array('key' => 'sound', 'label' => 'Аудиокарта', 'placeholder' => 'Совместимая с ОС'),
+					array('key' => 'space', 'label' => 'Свободное место', 'placeholder' => '1 ГБ'),
+					array('key' => 'platform', 'label' => 'Платформа', 'placeholder' => 'Для мобильного и навигационного ПО'),
+					array('key' => 'size', 'label' => 'Занимаемое место', 'placeholder' => 'Для мобильного и навигационного ПО'),
+				)),
+			),
+			'design' => array(
+				'related' => array(array('title' => 'Подобные раздачи', 'query' => 'Поисковое слово, название')),
+				'watch' => array(
+					array('title' => 'Полезная информация', 'url' => 'https://ссылка'),
+					array('title' => 'Версия программы', 'url' => 'https://полноразмерный_скриншот'),
+				),
+				'tabs' => array(
+					array('title' => 'Особенности', 'content' => '01. Перечень'),
+					array('title' => 'Установка', 'content' => ''),
+					array('title' => 'Русификация', 'content' => ''),
+					array('title' => 'Скриншоты', 'content' => ''),
+				),
+			),
+		),
+		'book' => array(
+			'sections' => array(
+				array('fields' => array(
+					array('key' => 'author', 'label' => 'Автор', 'placeholder' => 'Имя Фамилия'),
+					array('key' => 'title', 'label' => 'Название', 'placeholder' => 'Название публикации'),
+					array('key' => 'original_title', 'label' => 'Оригинальное название', 'placeholder' => 'Publication title'),
+					array('key' => 'year', 'label' => 'Год выпуска', 'placeholder' => '2009'),
+					array('key' => 'series', 'label' => 'Серия', 'placeholder' => ''),
+					array('key' => 'genre', 'label' => 'Жанр', 'placeholder' => 'Периодика, раритеты, журнал'),
+					array('key' => 'released', 'label' => 'Выпущено', 'placeholder' => 'Страна, город, название издательства'),
+					array('key' => 'language', 'label' => 'Язык', 'placeholder' => 'Русский'),
+				)),
+				array('fields' => array(
+					array('key' => 'about', 'label' => 'Описание', 'placeholder' => 'Описание публикации...', 'textarea' => 10, 'desc' => $desc),
+				)),
+				array('fields' => array(
+					array('key' => 'format', 'label' => 'Формат', 'placeholder' => 'PDF'),
+					array('key' => 'quality', 'label' => 'Качество', 'placeholder' => 'Отсканированные страницы'),
+					array('key' => 'image_size', 'label' => 'Размеры изображений', 'placeholder' => 'от 2249х3350 до 2250х3350'),
+					array('key' => 'paper_size', 'label' => 'Размеры листа', 'placeholder' => '204x292 мм, А4'),
+					array('key' => 'resolution', 'label' => 'Разрешение', 'placeholder' => '72 пикс/дюйм, 300 пикс/дюйм'),
+					array('key' => 'color_depth', 'label' => 'Глубина цвета', 'placeholder' => '8 бит, 24 бит'),
+					array('key' => 'pages', 'label' => 'Количество страниц', 'placeholder' => '24'),
+					array('key' => 'size', 'label' => 'Размер', 'placeholder' => '500 МБ', 'desc' => $size_desc),
+				)),
+			),
+			'design' => array(
+				'related' => array(array('title' => 'Подобные раздачи', 'query' => 'Поисковое слово, название')),
+				'watch' => array(array('title' => 'Полезная информация', 'url' => 'https://ссылка')),
+				'tabs' => array(
+					array('title' => 'Содержание', 'content' => "01. Перечень\n[url=https://полноразмерный_скриншот]Страница-1[/url] | [url=https://полноразмерный_скриншот]Страница-2[/url]"),
+					array('title' => 'Интересно', 'content' => ''),
+					array('title' => 'Информация', 'content' => ''),
+					array('title' => 'Скриншоты', 'content' => ''),
+				),
+			),
+		),
+		'graphic' => array(
+			'sections' => array(
+				array('fields' => array(
+					array('key' => 'title', 'label' => 'Название', 'placeholder' => 'Название'),
+					array('key' => 'original_title', 'label' => 'Оригинальное название', 'placeholder' => 'Title'),
+					array('key' => 'year', 'label' => 'Год выпуска', 'placeholder' => '2009'),
+					array('key' => 'genre', 'label' => 'Жанр', 'placeholder' => 'Фотографии'),
+					array('key' => 'released', 'label' => 'Выпущено', 'placeholder' => 'Название издательства'),
+					array('key' => 'compiler', 'label' => 'Составитель', 'placeholder' => ''),
+				)),
+				array('fields' => array(
+					array('key' => 'about', 'label' => 'Описание', 'placeholder' => 'Описание раздачи...', 'textarea' => 10, 'desc' => $desc),
+				)),
+				array('fields' => array(
+					array('key' => 'format', 'label' => 'Формат', 'placeholder' => 'JPEG'),
+					array('key' => 'image_size', 'label' => 'Размеры изображений', 'placeholder' => '5000х4002, 6600х3004'),
+					array('key' => 'resolution', 'label' => 'Разрешение', 'placeholder' => '72 пикс/дюйм, 96 пикс/дюйм'),
+					array('key' => 'color_depth', 'label' => 'Глубина цвета', 'placeholder' => 'от 2 бит до 24 бит'),
+					array('key' => 'count', 'label' => 'Количество', 'placeholder' => '920'),
+					array('key' => 'size', 'label' => 'Размер', 'placeholder' => '887 МБ', 'desc' => $size_desc),
+				)),
+			),
+			'design' => array(
+				'related' => array(array('title' => 'Подобные раздачи', 'query' => 'Поисковое слово, название')),
+				'watch' => array(array('title' => 'Полезная информация', 'url' => 'https://ссылка')),
+				'tabs' => array(
+					array('title' => 'Обзор', 'content' => "Сводные листы изображений:\n[url=https://сводный_лист]Лист-1[/url] | [url=https://сводный_лист]Лист-2[/url] | [url=https://сводный_лист]Лист-3[/url]"),
+					array('title' => 'Скриншоты', 'content' => ''),
+				),
+			),
+		),
+	);
+
+	foreach ($specs as $kind => $spec) {
+		for ($i = 0; $i < 3; $i++) {
+			$specs[$kind]['advanced'][$i] = kz_upload_fields_to_advanced($spec['sections'][$i]['fields']);
+		}
+		$specs[$kind]['advanced'][3] = kz_upload_design_to_advanced($spec['design']);
+	}
+
+	return $specs;
 }
 
 function kz_upload_table_exists($table)
@@ -425,6 +688,28 @@ function kz_upload_collect_pairs($titles, $values, $value_key)
 	return $pairs;
 }
 
+function kz_upload_collect_design(array $design, array $defaults = array())
+{
+	$out = array_replace_recursive(kz_upload_empty_design(), $defaults);
+	$out['related'] = kz_upload_collect_pairs($design['related_title'] ?? array(), $design['related_query'] ?? array(), 'query');
+	$out['watch'] = kz_upload_collect_pairs($design['watch_title'] ?? array(), $design['watch_url'] ?? array(), 'url');
+	$out['tabs'] = kz_upload_collect_pairs($design['tab_title'] ?? array(), $design['tab_content'] ?? array(), 'content');
+	$out['screens'] = kz_upload_post_text($design, 'screens');
+	$out['notes'] = kz_upload_post_text($design, 'notes');
+	$out['imdb'] = array(
+		'enabled' => !empty($design['imdb_enabled']) ? 1 : 0,
+		'url' => kz_upload_post_text($design, 'imdb_url'),
+		'rating' => kz_upload_post_text($design, 'imdb_rating'),
+	);
+	$out['kinopoisk'] = array(
+		'enabled' => !empty($design['kinopoisk_enabled']) ? 1 : 0,
+		'url' => kz_upload_post_text($design, 'kinopoisk_url'),
+		'rating' => kz_upload_post_text($design, 'kinopoisk_rating'),
+	);
+
+	return $out;
+}
+
 function kz_upload_collect_post($torrent_size = 0)
 {
 	$data = kz_upload_default_data();
@@ -450,28 +735,67 @@ function kz_upload_collect_post($torrent_size = 0)
 	}
 
 	$design = is_array($_POST['design'] ?? null) ? $_POST['design'] : array();
-	$data['design']['related'] = kz_upload_collect_pairs($design['related_title'] ?? array(), $design['related_query'] ?? array(), 'query');
-	$data['design']['watch'] = kz_upload_collect_pairs($design['watch_title'] ?? array(), $design['watch_url'] ?? array(), 'url');
-	$data['design']['tabs'] = kz_upload_collect_pairs($design['tab_title'] ?? array(), $design['tab_content'] ?? array(), 'content');
-	$data['design']['screens'] = kz_upload_post_text($design, 'screens');
-	$data['design']['notes'] = kz_upload_post_text($design, 'notes');
-	$data['design']['imdb'] = array(
-		'enabled' => !empty($design['imdb_enabled']) ? 1 : 0,
-		'url' => kz_upload_post_text($design, 'imdb_url'),
-		'rating' => kz_upload_post_text($design, 'imdb_rating'),
-	);
-	$data['design']['kinopoisk'] = array(
-		'enabled' => !empty($design['kinopoisk_enabled']) ? 1 : 0,
-		'url' => kz_upload_post_text($design, 'kinopoisk_url'),
-		'rating' => kz_upload_post_text($design, 'kinopoisk_rating'),
-	);
+	$data['design'] = kz_upload_collect_design($design, $data['design']);
 
 	$generic = is_array($_POST['generic'] ?? null) ? $_POST['generic'] : array();
 	for ($i = 1; $i <= 4; $i++) {
 		$data['generic']['desc' . $i] = kz_upload_post_text($generic, 'desc' . $i);
 	}
 
+	$posted_templates = is_array($_POST['templates'] ?? null) ? $_POST['templates'] : array();
+	$specs = kz_upload_release_specs();
+	foreach ($specs as $template_kind => $spec) {
+		$template_post = is_array($posted_templates[$template_kind] ?? null) ? $posted_templates[$template_kind] : array();
+		$fields_post = is_array($template_post['fields'] ?? null) ? $template_post['fields'] : array();
+		$advanced_post = is_array($template_post['advanced'] ?? null) ? $template_post['advanced'] : array();
+		$design_post = is_array($template_post['design'] ?? null) ? $template_post['design'] : array();
+
+		foreach (kz_upload_release_field_keys($spec) as $field_key) {
+			$data['templates'][$template_kind]['fields'][$field_key] = kz_upload_post_text($fields_post, $field_key);
+		}
+		for ($i = 1; $i <= 4; $i++) {
+			$data['templates'][$template_kind]['advanced']['desc' . $i] = kz_upload_post_text($advanced_post, 'desc' . $i);
+		}
+		$data['templates'][$template_kind]['design'] = kz_upload_collect_design($design_post, $spec['design']);
+	}
+
+	kz_upload_apply_torrent_size($data, $kind, $torrent_size);
+
 	return array($kind, $data);
+}
+
+function kz_upload_release_field_keys(array $spec)
+{
+	$keys = array();
+	foreach (($spec['sections'] ?? array()) as $section) {
+		foreach (($section['fields'] ?? array()) as $field) {
+			$key = (string)($field['key'] ?? '');
+			if ($key !== '' && !in_array($key, $keys, true)) {
+				$keys[] = $key;
+			}
+		}
+	}
+
+	return $keys;
+}
+
+function kz_upload_apply_torrent_size(array &$data, $kind, $torrent_size)
+{
+	$torrent_size = (int)$torrent_size;
+	if ($torrent_size <= 0) {
+		return;
+	}
+
+	if ($kind === 'video') {
+		if (trim((string)($data['video']['size'] ?? '')) === '') {
+			$data['video']['size'] = mksize($torrent_size);
+		}
+		return;
+	}
+
+	if (isset($data['templates'][$kind]['fields']['size']) && trim((string)$data['templates'][$kind]['fields']['size']) === '') {
+		$data['templates'][$kind]['fields']['size'] = mksize($torrent_size);
+	}
 }
 
 function kz_upload_line($label, $value)
@@ -497,6 +821,52 @@ function kz_upload_section_from_lines(array $lines)
 	return implode("\n", $out);
 }
 
+function kz_upload_fields_to_advanced(array $fields, array $values = array())
+{
+	$lines = array();
+	foreach ($fields as $field) {
+		$label = trim((string)($field['label'] ?? ''));
+		$key = trim((string)($field['key'] ?? ''));
+		if ($label === '' || $key === '') {
+			continue;
+		}
+		$value = array_key_exists($key, $values)
+			? trim((string)$values[$key])
+			: trim((string)($field['placeholder'] ?? ''));
+		$lines[] = '[b]' . $label . ':[/b]' . ($value !== '' ? ' ' . $value : '');
+	}
+
+	return implode("\n", $lines);
+}
+
+function kz_upload_design_to_advanced(array $design)
+{
+	$parts = array();
+	foreach (($design['related'] ?? array()) as $item) {
+		$title = trim((string)($item['title'] ?? ''));
+		$query = trim((string)($item['query'] ?? ''));
+		if ($title !== '' && $query !== '') {
+			$parts[] = '[searchm=' . $title . ']' . $query . '[/searchm]';
+		}
+	}
+	foreach (($design['watch'] ?? array()) as $item) {
+		$title = trim((string)($item['title'] ?? ''));
+		$url = trim((string)($item['url'] ?? ''));
+		if ($title !== '' && $url !== '') {
+			$parts[] = '[linkm=' . $title . ']' . $url . '[/linkm]';
+		}
+	}
+	foreach (($design['tabs'] ?? array()) as $tab) {
+		$title = trim((string)($tab['title'] ?? ''));
+		$content = trim((string)($tab['content'] ?? ''));
+		if ($title !== '' && $content !== '') {
+			$parts[] = '[pagesd=' . $title . "]\n" . $content . "\n[/pagesd]";
+		}
+	}
+
+	return trim(implode("\n", $parts));
+}
+
 function kz_upload_build_description(array $data, $kind, $torrent_name = '', $torrent_size = 0)
 {
 	$kind = kz_upload_normalize_kind($kind);
@@ -504,12 +874,29 @@ function kz_upload_build_description(array $data, $kind, $torrent_name = '', $to
 	$advanced = $data['advanced'] ?? array();
 
 	if ($kind !== 'video') {
-		$generic = $data['generic'] ?? array();
+		$specs = kz_upload_release_specs();
+		$spec = $specs[$kind] ?? null;
+		if (!$spec) {
+			return '';
+		}
+		$template = array_replace_recursive(array(
+			'fields' => array(),
+			'advanced' => kz_upload_empty_advanced(),
+			'design' => kz_upload_empty_design(),
+		), $data['templates'][$kind] ?? array());
+		$fields = $template['fields'] ?? array();
+		$template_advanced = $template['advanced'] ?? array();
+		$normal = array();
+		for ($i = 0; $i < 3; $i++) {
+			$normal[$i] = kz_upload_fields_to_advanced($spec['sections'][$i]['fields'], $fields);
+		}
+		$normal[3] = kz_upload_build_design_bbcode($template['design'] ?? array());
+
 		$parts = array();
-		for ($i = 1; $i <= 4; $i++) {
-			$value = trim((string)($generic['desc' . $i] ?? ''));
-			if ($value === '') {
-				$value = trim((string)($advanced['desc' . $i] ?? ''));
+		for ($i = 0; $i < 4; $i++) {
+			$value = !empty($section_modes[$i]) ? trim((string)($template_advanced['desc' . ($i + 1)] ?? '')) : trim((string)($normal[$i] ?? ''));
+			if ($value === '' && !empty($section_modes[$i])) {
+				$value = trim((string)($normal[$i] ?? ''));
 			}
 			if ($value !== '') {
 				$parts[] = $value;
@@ -545,11 +932,14 @@ function kz_upload_build_description(array $data, $kind, $torrent_name = '', $to
 		kz_upload_line('Язык', $video['language'] ?? ''),
 		kz_upload_line('Субтитры', $video['subtitles'] ?? ''),
 	));
-	$normal[3] = kz_upload_build_design_section($design);
+	$normal[3] = kz_upload_build_design_bbcode($design);
 
 	$parts = array();
 	for ($i = 0; $i < 4; $i++) {
 		$value = !empty($section_modes[$i]) ? trim((string)($advanced['desc' . ($i + 1)] ?? '')) : trim((string)($normal[$i] ?? ''));
+		if ($value === '' && !empty($section_modes[$i])) {
+			$value = trim((string)($normal[$i] ?? ''));
+		}
 		if ($value !== '') {
 			$parts[] = $value;
 		}
@@ -557,6 +947,64 @@ function kz_upload_build_description(array $data, $kind, $torrent_name = '', $to
 
 	if (!$parts && trim((string)$torrent_name) !== '') {
 		$parts[] = kz_upload_line('Название', $torrent_name);
+	}
+
+	return trim(implode("\n\n", $parts));
+}
+
+function kz_upload_build_design_bbcode(array $design)
+{
+	$parts = array();
+	$related_lines = array();
+	foreach (($design['related'] ?? array()) as $item) {
+		$title = trim((string)($item['title'] ?? ''));
+		$query = trim((string)($item['query'] ?? ''));
+		if ($title !== '' && $query !== '') {
+			$related_lines[] = '[searchm=' . $title . ']' . $query . '[/searchm]';
+		}
+	}
+	if ($related_lines) {
+		$parts[] = implode("\n", $related_lines);
+	}
+
+	$imdb = $design['imdb'] ?? array();
+	if (!empty($imdb['enabled']) && trim((string)($imdb['url'] ?? '')) !== '') {
+		$parts[] = kz_upload_rating_line('IMDb', $imdb['url'], $imdb['rating'] ?? '');
+	}
+
+	$kinopoisk = $design['kinopoisk'] ?? array();
+	if (!empty($kinopoisk['enabled']) && trim((string)($kinopoisk['url'] ?? '')) !== '') {
+		$parts[] = kz_upload_rating_line('КиноПоиск', $kinopoisk['url'], $kinopoisk['rating'] ?? '');
+	}
+
+	$watch_lines = array();
+	foreach (($design['watch'] ?? array()) as $item) {
+		$title = trim((string)($item['title'] ?? ''));
+		$url = trim((string)($item['url'] ?? ''));
+		if ($title !== '' && $url !== '') {
+			$watch_lines[] = '[linkm=' . $title . ']' . $url . '[/linkm]';
+		}
+	}
+	if ($watch_lines) {
+		$parts[] = implode("\n", $watch_lines);
+	}
+
+	foreach (($design['tabs'] ?? array()) as $tab) {
+		$title = trim((string)($tab['title'] ?? ''));
+		$content = trim((string)($tab['content'] ?? ''));
+		if ($title !== '' && $content !== '') {
+			$parts[] = '[pagesd=' . $title . "]\n" . $content . "\n[/pagesd]";
+		}
+	}
+
+	$screens = kz_upload_screens_to_bbcode($design['screens'] ?? '');
+	if ($screens !== '') {
+		$parts[] = $screens;
+	}
+
+	$notes = trim((string)($design['notes'] ?? ''));
+	if ($notes !== '') {
+		$parts[] = $notes;
 	}
 
 	return trim(implode("\n\n", $parts));
@@ -680,7 +1128,18 @@ function kz_upload_keywords(array $data, $kind, $name)
 		return trim(implode(', ', array_filter(array_map('trim', $parts))));
 	}
 
-	return trim((string)$name);
+	$fields = $data['templates'][$kind]['fields'] ?? array();
+	$parts = array(
+		$name,
+		$fields['title'] ?? '',
+		$fields['original_title'] ?? '',
+		$fields['artist'] ?? '',
+		$fields['album'] ?? '',
+		$fields['author'] ?? '',
+		$fields['year'] ?? '',
+		$fields['genre'] ?? '',
+	);
+	return trim(implode(', ', array_filter(array_map('trim', $parts))));
 }
 
 function kz_upload_option_select($name, array $options, $selected, $class = 'w100p', $extra = '')
@@ -819,9 +1278,11 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 			<?php kz_upload_render_video_template($data, $section_modes); ?>
 		</div>
 
-		<div id="template_generic"<?= $kind === 'video' ? ' style="display:none;"' : '' ?>>
-			<?php kz_upload_render_generic_template($data); ?>
-		</div>
+		<?php foreach (kz_upload_release_specs() as $template_kind => $spec) { ?>
+			<div id="template_<?= kz_h($template_kind) ?>"<?= $kind === $template_kind ? '' : ' style="display:none;"' ?>>
+				<?php kz_upload_render_release_template($template_kind, $data, $section_modes); ?>
+			</div>
+		<?php } ?>
 
 		<div class="bx1">
 			<ul class="men">
@@ -1040,12 +1501,12 @@ function kz_upload_render_pair_rows($name1, $name2, array $rows, $value_key, $mi
 	}
 }
 
-function kz_upload_render_tab_rows(array $rows)
+function kz_upload_render_tab_rows(array $rows, $title_name = 'design[tab_title][]', $content_name = 'design[tab_content][]')
 {
 	for ($i = 0; $i < max(1, count($rows)); $i++) {
 		$row = $rows[$i] ?? array('title' => '', 'content' => '');
-		echo '<tr><td><input type="text" name="design[tab_title][]" class="w100p" value="' . kz_h($row['title'] ?? '') . '"></td>';
-		echo '<td>' . kz_upload_textarea('design[tab_content][]', $row['content'] ?? '', 5) . '</td>';
+		echo '<tr><td><input type="text" name="' . kz_h($title_name) . '" class="w100p" value="' . kz_h($row['title'] ?? '') . '"></td>';
+		echo '<td>' . kz_upload_textarea($content_name, $row['content'] ?? '', 5) . '</td>';
 		echo '<td class="center"><a href="#" class="sba" onclick="Upl.removeRow(this); return false;">×</a></td></tr>';
 	}
 }
@@ -1069,6 +1530,113 @@ function kz_upload_render_generic_template(array $data)
 	}
 }
 
+function kz_upload_render_release_template($kind, array $data, array $section_modes)
+{
+	$specs = kz_upload_release_specs();
+	if (empty($specs[$kind])) {
+		return;
+	}
+	$spec = $specs[$kind];
+	$template = array_replace_recursive(array(
+		'fields' => array(),
+		'advanced' => kz_upload_empty_advanced(),
+		'design' => $spec['design'],
+	), $data['templates'][$kind] ?? array());
+	$fields = $template['fields'] ?? array();
+	$advanced = $template['advanced'] ?? array();
+
+	for ($i = 0; $i < 3; $i++) {
+		kz_upload_render_section_start($i, kz_upload_section_title($i), $section_modes[$i]);
+		echo '<table class="tables1 w100p upl-normal upl-section-' . (int)$i . '">';
+		foreach (($spec['sections'][$i]['fields'] ?? array()) as $field) {
+			$key = (string)$field['key'];
+			$name = 'templates[' . $kind . '][fields][' . $key . ']';
+			$value = $fields[$key] ?? '';
+			$placeholder = $field['placeholder'] ?? '';
+			$label = $field['label'] ?? '';
+			$control = !empty($field['textarea'])
+				? kz_upload_textarea($name, $value, (int)$field['textarea'], $placeholder)
+				: kz_upload_input($name, $value, $placeholder);
+			echo '<tr><td class="w175">' . kz_h($label) . ':</td><td>' . $control;
+			if (!empty($field['desc'])) {
+				echo '<div class="n">' . $field['desc'] . '</div>';
+			}
+			echo '</td></tr>';
+		}
+		echo '</table>';
+		$default = kz_upload_fields_to_advanced($spec['sections'][$i]['fields'], $fields);
+		$value = (string)($advanced['desc' . ($i + 1)] ?? '');
+		if ($value === '') {
+			$value = $default;
+		}
+		echo '<div class="upl-advanced upl-section-' . (int)$i . '" style="display:none;">' . kz_upload_textarea('templates[' . $kind . '][advanced][desc' . ($i + 1) . ']', $value, $i === 1 ? 10 : 8) . '</div>';
+		kz_upload_render_section_end();
+	}
+
+	kz_upload_render_section_start(3, kz_upload_section_title(3), $section_modes[3]);
+	kz_upload_render_release_design_fields($kind, array_replace_recursive($spec['design'], $template['design'] ?? array()));
+	$default = kz_upload_design_to_advanced(array_replace_recursive($spec['design'], $template['design'] ?? array()));
+	$value = (string)($advanced['desc4'] ?? '');
+	if ($value === '') {
+		$value = $default;
+	}
+	echo '<div class="upl-advanced upl-section-3" style="display:none;">' . kz_upload_textarea('templates[' . $kind . '][advanced][desc4]', $value, 20) . '</div>';
+	kz_upload_render_section_end();
+}
+
+function kz_upload_section_title($index)
+{
+	$titles = array(
+		'Предварительное описание',
+		'Описание',
+		'Технические данные',
+		'Оформление, вкладки, примечания, скриншоты',
+	);
+
+	return $titles[(int)$index] ?? '';
+}
+
+function kz_upload_render_release_design_fields($kind, array $design)
+{
+	$related = $design['related'] ?? array();
+	$watch = $design['watch'] ?? array();
+	$tabs = $design['tabs'] ?? array();
+	$prefix = 'templates[' . $kind . '][design]';
+	$related_id = 'related_rows_' . $kind;
+	$watch_id = 'watch_rows_' . $kind;
+	$tab_id = 'tab_rows_' . $kind;
+	?>
+	<div class="upl-normal upl-section-3">
+		<ul class="men">
+			<li class="tp2">Меню: поиск раздач</li>
+			<li class="n">Добавьте ссылки на поиск других раздач, которые могут заинтересовать зрителей</li>
+		</ul>
+		<table class="tables1 w100p" id="<?= kz_h($related_id) ?>">
+			<tr><td class="w25p b">Заголовок ссылки</td><td class="b">Строка поиска</td><td class="w30"></td></tr>
+			<?php kz_upload_render_pair_rows($prefix . '[related_title][]', $prefix . '[related_query][]', $related, 'query', 1); ?>
+		</table>
+		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addPair('<?= kz_h($related_id) ?>', '<?= kz_h($prefix) ?>[related_title][]', '<?= kz_h($prefix) ?>[related_query][]'); return false;">Добавить элемент</a></div>
+
+		<ul class="men"><li class="tp2">Меню: ознакомление</li></ul>
+		<table class="tables1 w100p" id="<?= kz_h($watch_id) ?>">
+			<tr><td class="w25p b">Заголовок ссылки</td><td class="b">Адрес ссылки</td><td class="w30"></td></tr>
+			<?php kz_upload_render_pair_rows($prefix . '[watch_title][]', $prefix . '[watch_url][]', $watch, 'url', 1); ?>
+		</table>
+		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addPair('<?= kz_h($watch_id) ?>', '<?= kz_h($prefix) ?>[watch_title][]', '<?= kz_h($prefix) ?>[watch_url][]'); return false;">Добавить элемент</a></div>
+
+		<ul class="men">
+			<li class="tp2">Дополнительные вкладки</li>
+			<li class="n">Вы можете указать дополнительную информацию о раздаваемом материале. Допустимо использовать не больше шести вкладок</li>
+		</ul>
+		<table class="tables1 w100p" id="<?= kz_h($tab_id) ?>">
+			<tr><td class="w175 b">Название вкладки</td><td class="b">Содержимое</td><td class="w30"></td></tr>
+			<?php kz_upload_render_tab_rows($tabs, $prefix . '[tab_title][]', $prefix . '[tab_content][]'); ?>
+		</table>
+		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addTab('<?= kz_h($tab_id) ?>', '<?= kz_h($prefix) ?>[tab_title][]', '<?= kz_h($prefix) ?>[tab_content][]'); return false;">Добавить вкладку</a></div>
+	</div>
+	<?php
+}
+
 function kz_upload_render_js($kind, $mode, array $section_modes)
 {
 	?>
@@ -1084,8 +1652,10 @@ function kz_upload_render_js($kind, $mode, array $section_modes)
 				if (tab) tab.className = (k === kind ? 'tp' : '');
 				if (sel) sel.style.display = (k === kind ? '' : 'none');
 			}
-			document.getElementById('template_video').style.display = (kind === 'video' ? '' : 'none');
-			document.getElementById('template_generic').style.display = (kind === 'video' ? 'none' : '');
+			for (var j = 0; j < kinds.length; j++) {
+				var tmpl = document.getElementById('template_' + kinds[j]);
+				if (tmpl) tmpl.style.display = (kinds[j] === kind ? '' : 'none');
+			}
 			this.syncType();
 		},
 		syncType: function() {
@@ -1125,10 +1695,15 @@ function kz_upload_render_js($kind, $mode, array $section_modes)
 			row.innerHTML = '<td><input type="text" name="' + name1 + '" class="w100p"></td><td><input type="text" name="' + name2 + '" class="w100p"></td><td class="center"><a href="#" class="sba" onclick="Upl.removeRow(this); return false;">×</a></td>';
 			return false;
 		},
-		addTab: function() {
-			var table = document.getElementById('tab_rows');
+		addTab: function(tableId, titleName, contentName) {
+			tableId = tableId || 'tab_rows';
+			titleName = titleName || 'design[tab_title][]';
+			contentName = contentName || 'design[tab_content][]';
+			var table = document.getElementById(tableId);
 			if (!table || table.rows.length > 6) return false;
 			var row = table.insertRow(-1);
+			row.innerHTML = '<td><input type="text" name="' + titleName + '" class="w100p"></td><td><textarea name="' + contentName + '" rows="5" class="w100p"></textarea></td><td class="center"><a href="#" class="sba" onclick="Upl.removeRow(this); return false;">X</a></td>';
+			return false;
 			row.innerHTML = '<td><input type="text" name="design[tab_title][]" class="w100p"></td><td><textarea name="design[tab_content][]" rows="5" class="w100p"></textarea></td><td class="center"><a href="#" class="sba" onclick="Upl.removeRow(this); return false;">×</a></td>';
 			return false;
 		},

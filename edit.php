@@ -32,13 +32,17 @@ if (!isset($CURUSER) || ($CURUSER["id"] != $row["owner"] && get_user_class() < U
 }
 
 $details = kz_upload_load_details($id);
+$kind = !empty($details['exists']) ? kz_upload_normalize_kind($details['release_kind']) : kz_upload_kind_by_category((int)$row['category']);
 if (empty($details['exists']) && !empty($row['ori_descr'])) {
 	$details['data']['mode'] = 1;
 	$details['data']['section_modes'] = array(1, 1, 1, 1);
-	$details['data']['advanced']['desc2'] = $row['ori_descr'];
+	if ($kind === 'video') {
+		$details['data']['advanced']['desc2'] = $row['ori_descr'];
+	} else {
+		$details['data']['templates'][$kind]['advanced']['desc2'] = $row['ori_descr'];
+	}
 }
 
-$kind = !empty($details['exists']) ? kz_upload_normalize_kind($details['release_kind']) : kz_upload_kind_by_category((int)$row['category']);
 $returnto = isset($_GET["returnto"]) ? htmlspecialchars_uni($_GET["returnto"]) : '';
 
 $service_controls = '';
