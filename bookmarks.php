@@ -1,9 +1,90 @@
 <?php
 
 require_once __DIR__ . '/include/bittorrent.php';
+require_once __DIR__ . '/include/groupex.php';
 
 dbconn(false);
 loggedinorreturn();
+
+$bookmarkType = (int)($_GET['type'] ?? 1);
+
+if ($bookmarkType === 2) {
+    kz_groups_ensure_schema();
+
+    $userId = (int)$CURUSER['id'];
+
+    if (isset($_GET['add'])) {
+        $groupId = (int)$_GET['add'];
+        if (kz_groups_fetch($groupId)) {
+            kz_groups_add_bookmark($groupId, $userId);
+        }
+        header('Location: /bookmarks.php?type=2');
+        exit;
+    }
+
+    if (isset($_GET['delete'])) {
+        kz_groups_remove_bookmark((int)$_GET['delete'], $userId);
+        header('Location: /bookmarks.php?type=2');
+        exit;
+    }
+
+    $res = sql_query("
+        SELECT COUNT(*)
+        FROM groupex_bookmarks AS b
+        INNER JOIN groupex_groups AS g ON g.id = b.group_id
+        WHERE b.userid = $userId
+          AND g.visible = 'yes'
+    ") or sqlerr(__FILE__, __LINE__);
+    $row = mysqli_fetch_row($res);
+    $count = (int)($row[0] ?? 0);
+
+    $perpage = 25;
+    list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, 'bookmarks.php?type=2&amp;');
+
+    $groups = sql_query("
+        SELECT g.*, b.added_at AS bookmark_added
+        FROM groupex_bookmarks AS b
+        INNER JOIN groupex_groups AS g ON g.id = b.group_id
+        WHERE b.userid = $userId
+          AND g.visible = 'yes'
+        ORDER BY b.added_at DESC, g.name ASC
+        $limit
+    ") or sqlerr(__FILE__, __LINE__);
+
+    stdhead('Закладки :: Группы');
+    ?>
+    <div class="bx2">
+        <div class="pad0x0x5x0">
+            <a href="/bookmarks.php?type=1" class="sbab">Раздачи</a>
+            ::
+            <a href="/bookmarks.php?type=2" class="sbab">Группы</a>
+            ::
+            <a href="/groupexlist.php" class="sbab">Список групп</a>
+        </div>
+        <div class="bx1">
+            <span class="bulet"></span>
+            <b>Закладки групп</b>
+            <span class="floatright">Всего: <b><?= (int)$count ?></b></span>
+            <div class="clr"></div>
+        </div>
+        <?php if ($pagertop) { ?><div class="pad0x0x5x0"><?= $pagertop ?></div><?php } ?>
+        <div class="bx2_0">
+            <?php
+            if ($count < 1) {
+                echo '<div class="pad10x10 center">В закладках пока нет групп.</div>';
+            } else {
+                while ($group = mysqli_fetch_assoc($groups)) {
+                    kz_groups_group_card($group);
+                }
+            }
+            ?>
+        </div>
+        <?php if ($pagerbottom) { ?><div class="pad5x5"><?= $pagerbottom ?></div><?php } ?>
+    </div>
+    <?php
+    stdfoot();
+    exit;
+}
 
 stdhead($tracker_lang['bookmarks'] ?? 'Закладки');
 
