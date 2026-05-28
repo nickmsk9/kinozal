@@ -445,3 +445,12 @@ Stack trace:
 #4 [internal function]: autoclean()
 #5 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 189
+[28-May-2026 11:36:00 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\news.php on line 37
+[28-May-2026 11:36:00 Europe/Moscow] PHP Warning:  Undefined variable $warning in C:\OSPanel\domains\kinozal.lv\news.php on line 137
+[28-May-2026 11:36:00 Europe/Moscow] PHP Warning:  Undefined variable $arr in C:\OSPanel\domains\kinozal.lv\news.php on line 143
+[28-May-2026 11:36:00 Europe/Moscow] PHP Warning:  Trying to access array offset on value of type null in C:\OSPanel\domains\kinozal.lv\news.php on line 143
+[28-May-2026 11:36:00 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[28-May-2026 11:36:07 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_affected_rows() in C:\OSPanel\domains\kinozal.lv\news.php:72
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\news.php on line 72
