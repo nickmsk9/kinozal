@@ -58,6 +58,10 @@ if ($action == 'add') {
                 stderr ($tracker_lang['error'],"Вы уже давали респект за это действие этому пользователю.");
         }
 
+        if (function_exists('kz_reputation_left_today') && kz_reputation_left_today((int)$CURUSER['id']) <= 0 && get_user_class() < UC_ADMINISTRATOR) {
+                stderr($tracker_lang['error'], "РЎСѓС‚РѕС‡РЅС‹Р№ Р»РёРјРёС‚ РѕС‚Р·С‹РІРѕРІ Рє СЂРµРїСѓС‚Р°С†РёРё РёСЃС‡РµСЂРїР°РЅ.");
+        }
+
         if (isset($_POST["description"]) && trim($_POST["description"]) == '') {
                 stderr($tracker_lang['error'], "Комментарий не может быть пустым.");
         }

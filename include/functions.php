@@ -511,7 +511,12 @@ function user_session() {
 		return;
 
 	$ip = getip();
-	$url = getenv("REQUEST_URI");
+	$url = (string)getenv("REQUEST_URI");
+	if (function_exists('mb_strlen') && function_exists('mb_substr') && mb_strlen($url, 'UTF-8') > 150) {
+		$url = mb_substr($url, 0, 150, 'UTF-8');
+	} elseif (strlen($url) > 150) {
+		$url = substr($url, 0, 150);
+	}
 
 	if (!$CURUSER) {
 		$uid = -1;

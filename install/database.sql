@@ -482,6 +482,22 @@ CREATE TABLE `sessions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
+# Structure for the `site_settings` table :
+#
+
+DROP TABLE IF EXISTS `site_settings`;
+
+CREATE TABLE `site_settings` (
+  `setting_key` varchar(80) NOT NULL,
+  `setting_value` text NOT NULL,
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES
+  ('reputation_daily_limit', '1'),
+  ('reputation_signup_value', '1');
+
+#
 # Structure for the `simpaty` table :
 #
 
@@ -500,7 +516,9 @@ CREATE TABLE `simpaty` (
   PRIMARY KEY  (`id`),
   KEY `touserid` (`touserid`),
   KEY `fromuserid` (`fromuserid`),
-  KEY `fromusername` (`fromusername`)
+  KEY `fromusername` (`fromusername`),
+  KEY `respect_time` (`respect_time`),
+  KEY `profile_wall` (`touserid`,`respect_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
@@ -706,7 +724,7 @@ CREATE TABLE `users` (
   `parked` enum('yes','no') NOT NULL default 'no',
   `avatars` enum('yes','no') NOT NULL default 'yes',
   `donor` enum('yes','no') NOT NULL default 'no',
-  `simpaty` int(10) NOT NULL default '0',
+  `simpaty` int(10) NOT NULL default '1',
   `warned` enum('yes','no') NOT NULL default 'no',
   `warneduntil` datetime NULL DEFAULT NULL,
   `torrentsperpage` int(3) unsigned NOT NULL default '0',

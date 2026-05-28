@@ -279,7 +279,8 @@ $fields = array(
     'invitedroot',
     'theme',
     'ip',
-    'passkey'
+    'passkey',
+    'simpaty'
 );
 
 $values = array(
@@ -297,7 +298,8 @@ $values = array(
     $invitedroot,
     $theme,
     $ip,
-    $passkey
+    $passkey,
+    function_exists('kz_reputation_signup_value') ? kz_reputation_signup_value() : 1
 );
 
 if (!$users) {

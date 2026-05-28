@@ -336,3 +336,83 @@ Stack trace:
 #4 [internal function]: autoclean()
 #5 {main}
   thrown in /var/www/html/include/functions.php on line 189
+[28-May-2026 08:31:39 Europe/Moscow] PHP Warning:  mysqli_connect(): php_network_getaddresses: getaddrinfo for db failed: пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.  in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 268
+[28-May-2026 08:31:39 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: php_network_getaddresses: getaddrinfo for db failed: Этот хост неизвестен.  in C:\OSPanel\domains\kinozal.lv\include\functions.php:268
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(268): mysqli_connect()
+#1 C:\OSPanel\domains\kinozal.lv\index.php(30): dbconn()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 268
+[28-May-2026 08:31:50 Europe/Moscow] PHP Warning:  mysqli_connect(): php_network_getaddresses: getaddrinfo for db failed: пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.  in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 268
+[28-May-2026 08:31:50 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: php_network_getaddresses: getaddrinfo for db failed: Этот хост неизвестен.  in C:\OSPanel\domains\kinozal.lv\include\functions.php:268
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(268): mysqli_connect()
+#1 C:\OSPanel\domains\kinozal.lv\index.php(30): dbconn()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 268
+[28-May-2026 08:33:07 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect DATETIME value: '0000-00-00 00:00:00' in C:\OSPanel\domains\kinozal.lv\include\functions.php:189
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(189): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\include\cleanup.php(73): sql_query()
+#2 C:\OSPanel\domains\kinozal.lv\include\cleanup.php(228): cleanup_fetch_ids()
+#3 C:\OSPanel\domains\kinozal.lv\include\functions.php(691): docleanup()
+#4 [internal function]: autoclean()
+#5 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 189
+[28-May-2026 08:34:42 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\message.php on line 40
+[28-May-2026 08:34:42 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\message.php on line 43
+[28-May-2026 08:34:42 Europe/Moscow] PHP Warning:  Undefined array key "box" in C:\OSPanel\domains\kinozal.lv\message.php on line 53
+[28-May-2026 08:34:43 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_assoc() in C:\OSPanel\domains\kinozal.lv\message.php:119
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\message.php on line 119
+[28-May-2026 08:35:43 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\message.php on line 15
+[28-May-2026 08:35:43 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\message.php on line 18
+[28-May-2026 08:35:43 Europe/Moscow] PHP Warning:  Undefined array key "box" in C:\OSPanel\domains\kinozal.lv\message.php on line 28
+[28-May-2026 08:35:43 Europe/Moscow] PHP Warning:  Undefined array key "receiver_username" in C:\OSPanel\domains\kinozal.lv\message.php on line 113
+[28-May-2026 08:35:43 Europe/Moscow] PHP Warning:  Undefined array key "tzoffset" in C:\OSPanel\domains\kinozal.lv\message.php on line 143
+[28-May-2026 08:35:46 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_assoc() in C:\OSPanel\domains\kinozal.lv\message.php:179
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\message.php on line 179
+[28-May-2026 08:36:17 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\message.php on line 15
+[28-May-2026 08:36:17 Europe/Moscow] PHP Warning:  Undefined array key "id" in C:\OSPanel\domains\kinozal.lv\message.php on line 527
+[28-May-2026 08:36:17 Europe/Moscow] PHP Warning:  Undefined array key "move" in C:\OSPanel\domains\kinozal.lv\message.php on line 530
+[28-May-2026 08:36:17 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_assoc() in C:\OSPanel\domains\kinozal.lv\message.php:568
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\message.php on line 568
+[28-May-2026 08:36:28 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\message.php on line 15
+[28-May-2026 08:36:28 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\message.php on line 18
+[28-May-2026 08:36:28 Europe/Moscow] PHP Warning:  Undefined array key "box" in C:\OSPanel\domains\kinozal.lv\message.php on line 28
+[28-May-2026 08:36:28 Europe/Moscow] PHP Warning:  Undefined array key "receiver_username" in C:\OSPanel\domains\kinozal.lv\message.php on line 113
+[28-May-2026 08:36:28 Europe/Moscow] PHP Warning:  Undefined array key "tzoffset" in C:\OSPanel\domains\kinozal.lv\message.php on line 143
+[28-May-2026 08:36:47 Europe/Moscow] PHP Warning:  Undefined array key "id" in C:\OSPanel\domains\kinozal.lv\friends.php on line 33
+[28-May-2026 08:36:47 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\friends.php on line 34
+[28-May-2026 08:43:18 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'url' at row 1 in C:\OSPanel\domains\kinozal.lv\include\functions.php:189
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(189): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\include\functions.php(532): sql_query()
+#2 C:\OSPanel\domains\kinozal.lv\include\functions.php(459): user_session()
+#3 C:\OSPanel\domains\kinozal.lv\include\functions.php(282): userlogin()
+#4 C:\OSPanel\domains\kinozal.lv\users.php(31): dbconn()
+#5 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 189
+[28-May-2026 08:43:45 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Data too long for column 'url' at row 1 in C:\OSPanel\domains\kinozal.lv\include\functions.php:189
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(189): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\include\functions.php(532): sql_query()
+#2 C:\OSPanel\domains\kinozal.lv\include\functions.php(459): user_session()
+#3 C:\OSPanel\domains\kinozal.lv\include\functions.php(282): userlogin()
+#4 C:\OSPanel\domains\kinozal.lv\users.php(31): dbconn()
+#5 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 189
+[28-May-2026 08:50:34 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect DATETIME value: '0000-00-00 00:00:00' in C:\OSPanel\domains\kinozal.lv\include\functions.php:189
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(189): mysqli_query()
+#1 C:\OSPanel\domains\kinozal.lv\include\cleanup.php(73): sql_query()
+#2 C:\OSPanel\domains\kinozal.lv\include\cleanup.php(228): cleanup_fetch_ids()
+#3 C:\OSPanel\domains\kinozal.lv\include\functions.php(691): docleanup()
+#4 [internal function]: autoclean()
+#5 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 189

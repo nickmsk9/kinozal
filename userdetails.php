@@ -77,6 +77,25 @@ function ud_table_row($title, $value) {
 	return "<tr><td class=\"w135\">" . $title . "</td><td>" . $value . "</td></tr>\n";
 }
 
+function ud_search_links($value, $param, $link_class, $split = false) {
+	$value = trim((string)$value);
+	if ($value === '') {
+		return 'РЅРµ СѓРєР°Р·Р°РЅРѕ';
+	}
+
+	$items = $split ? preg_split('/\s*,\s*/u', $value, -1, PREG_SPLIT_NO_EMPTY) : array($value);
+	$links = array();
+	foreach ($items as $item) {
+		$item = trim((string)$item);
+		if ($item === '') {
+			continue;
+		}
+		$links[] = '<a href="/users.php?' . rawurlencode($param) . '=' . urlencode($item) . '" class="' . ud_h($link_class) . '">' . ud_h($item) . '</a>';
+	}
+
+	return $links ? implode(', ', $links) : 'РЅРµ СѓРєР°Р·Р°РЅРѕ';
+}
+
 function ud_cup_history_modcomment($userid, $modcomment) {
 	$userid = (int)$userid;
 	$modcomment = (string)$modcomment;
@@ -265,6 +284,7 @@ $user_class_css = 'u' . (int)$user["class"];
 $user_icons = function_exists('get_user_icons') ? get_user_icons($user) : '';
 $daily_limit = function_exists('kz_user_effective_torrent_limit') ? kz_user_effective_torrent_limit($user) : 20;
 $daily_downloaded = function_exists('kz_torrent_downloads_today') ? kz_torrent_downloads_today($id) : 0;
+$is_own_profile = !empty($CURUSER["id"]) && (int)$CURUSER["id"] === $id;
 
 $country_name = "не указано";
 $country_flag = "";
@@ -295,9 +315,10 @@ if ($last = mysqli_fetch_assoc($res_last)) {
 	$last_torrent_link = '<a href="/details.php?id=' . (int)$last["torrent"] . '" class="' . $user_class_css . '">здесь</a>';
 }
 
-$city = !empty($user["city"]) ? '<a href="/users.php?s2=' . urlencode($user["city"]) . '" class="' . $user_class_css . '">' . ud_h($user["city"]) . '</a>' : 'не указано';
-$favorite_movie = !empty($user["favorite_movie"]) ? '<a href="/users.php?s3=' . urlencode($user["favorite_movie"]) . '" class="' . $user_class_css . '">' . ud_h($user["favorite_movie"]) . '</a>' : 'не указано';
-$favorite_persons = !empty($user["favorite_persons"]) ? '<a href="/users.php?s4=' . urlencode($user["favorite_persons"]) . '" class="' . $user_class_css . '">' . ud_h($user["favorite_persons"]) . '</a>' : 'не указано';
+$city = ud_search_links($user["city"] ?? '', 's2', $user_class_css);
+$favorite_movie = ud_search_links($user["favorite_movie"] ?? '', 's3', $user_class_css);
+$favorite_persons = ud_search_links($user["favorite_persons"] ?? '', 's4', $user_class_css, true);
+$recent_reputation = function_exists('kz_reputation_rows') ? kz_reputation_rows($id, 1, 10) : array();
 
 stdhead("Пользователь :: " . $user["username"]);
 
@@ -307,6 +328,8 @@ if (!$enabled) {
 ?>
 <div class="mn_wrap">
 	<div class="mn1_menu">
+		<?= function_exists('kz_profile_menu_html') ? kz_profile_menu_html($user, $CURUSER) : '' ?>
+		<? if (false) { ?>
 		<ul class="men w200">
 			<li class="img"><a href="/userdetails.php?id=<?= $id ?>"><img src="<?= $avatar_url ?>" class="p200" alt=""></a></li>
 			<li class="tp">Меню пользователя</li>
@@ -334,6 +357,7 @@ if (!$enabled) {
 			<li><span class="bulet"></span><a href="/pay_mode.php" class="<?= $user_class_css ?>">Оставить пожелание</a></li>
 			<li><span class="bulet"></span><a href="/pay_mode.php" class="<?= $user_class_css ?>">Обнулить счетчик скачиваний</a></li>
 		</ul>
+		<? } ?>
 	</div>
 	<div class="mn1_content">
 		<div class="bx1 <?= $user_class_css ?>"><a href="/userdetails.php?id=<?= $id ?>" class="<?= $user_class_css ?>"><?= $profile_name ?></a> <?= $user_icons ?></div>
@@ -372,6 +396,10 @@ if (!$enabled) {
 			});
 		}
 		</script>
+		<? if (!$is_own_profile && trim((string)($user["info"] ?? "")) !== '') { ?>
+		<div class="bx1"><div class="<?= $user_class_css ?>"><span class="bulet"></span>&#1048;&#1085;&#1092;&#1086;&#1088;&#1084;&#1072;&#1094;&#1080;&#1103; &#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1103;</div><div class="pad5x5"><?= function_exists('format_comment') ? format_comment($user["info"]) : nl2br(ud_h($user["info"])) ?></div></div>
+		<? } ?>
+		<?= function_exists('kz_reputation_table_html') ? kz_reputation_table_html($recent_reputation, $user_class_css, 1, true) : '' ?>
 	</div>
 	<div class="clear"></div>
 </div>
