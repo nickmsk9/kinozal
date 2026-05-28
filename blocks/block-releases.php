@@ -61,22 +61,16 @@ if (!function_exists('kz_rel_image_url')) {
 if (!function_exists('kz_rel_poster_src')) {
     function kz_rel_poster_src(array $row)
     {
-        /*
-         * В твоей таблице torrents нет image0.
-         * Есть только image1-image5.
-         * Поэтому берём image1 как основной постер.
-         */
-        foreach (array('image1', 'image2', 'image3', 'image4', 'image5') as $field) {
-            if (!empty($row[$field])) {
-                $url = kz_rel_image_url($row[$field]);
-
-                if ($url !== '') {
-                    return $url;
-                }
-            }
+        $poster = trim((string)($row['poster_url'] ?? ''));
+        if ($poster !== '') {
+            return $poster;
         }
 
-        return 'pic/none.jpg';
+        if (!empty($row['image1'])) {
+            return 'thumbnail.php?' . $row['image1'];
+        }
+
+        return '/pic/default_avatar.gif';
     }
 }
 
@@ -301,6 +295,7 @@ $res = sql_query("
         t.image3,
         t.image4,
         t.image5,
+        td.poster_url,
         t.size,
         t.added,
         c.id AS catid,
@@ -308,6 +303,7 @@ $res = sql_query("
         c.image AS catimage
     FROM torrents AS t
     LEFT JOIN categories AS c ON c.id = t.category
+    LEFT JOIN torrent_details AS td ON td.tid = t.id
     WHERE t.visible = 'yes'
       AND (t.banned <> 'yes' OR t.banned IS NULL)
     ORDER BY t.added DESC, t.id DESC

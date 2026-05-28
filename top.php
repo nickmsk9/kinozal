@@ -116,18 +116,19 @@ function top_build_query($params)
     return http_build_query($params, '', '&amp;');
 }
 
-function top_poster_src($image)
+function top_poster_src(array $row)
 {
-    $image = trim((string)$image);
-    if ($image === '') {
-        return 'pic/none.jpg';
+    $poster = trim((string)($row['poster_url'] ?? ''));
+    if ($poster !== '') {
+        return top_h($poster);
     }
 
-    if (preg_match('#^(https?:)?//#i', $image)) {
-        return top_h($image);
+    $image = trim((string)($row['image1'] ?? ''));
+    if ($image !== '') {
+        return 'thumbnail.php?' . top_h($image);
     }
 
-    return 'torrents/images/' . top_h($image);
+    return '/pic/default_avatar.gif';
 }
 
 $selectedTop = top_get_int('t', 0);
@@ -216,6 +217,7 @@ if ($count > 0) {
 			t.id,
 			t.name,
 			t.image1,
+			td.poster_url,
 			t.added,
 			t.seeders + t.remote_seeders AS seeders,
 			t.leechers + t.remote_leechers AS leechers,
@@ -226,6 +228,7 @@ if ($count > 0) {
 			c.name AS cat_name
 		FROM torrents AS t
 		LEFT JOIN categories AS c ON t.category = c.id
+		LEFT JOIN torrent_details AS td ON td.tid = t.id
 		$whereSql
 		$orderBy
 		$limit
@@ -379,7 +382,7 @@ stdhead("Топ раздач");
                     <?php
                     $id = (int)$torrent['id'];
                     $title = top_h($torrent['name']);
-                    $poster = top_poster_src($torrent['image1']);
+                    $poster = top_poster_src($torrent);
                     $cat = !empty($torrent['cat_name']) ? ' / ' . top_h($torrent['cat_name']) : '';
                     $tip = $title . $cat . ' / сидов: ' . (int)$torrent['seeders'] . ' / пиров: ' . (int)$torrent['leechers'];
                     ?>
