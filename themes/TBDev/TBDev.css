@@ -524,3 +524,25 @@ table.brd td { border-width: 1px; padding: 5px; border-style: solid; border-colo
 .t_peer td.sl_p {line-height: 32px; text-align: center; white-space: nowrap; font-size: 10px;font-weight: bold; color: #ee0000;}
 .t_peer tr.bgn {background: rgb(240, 240, 240);}
 .t_peer tr.bg:hover {background: none repeat scroll 0 0 rgb(235, 235, 235);}
+<style>
+.prs, .prs2 { padding: 1px; }
+.prs a, .prs2 a { cursor: pointer; float: left; margin: 2px; position: relative; border: 1px solid silver; }
+.prs a:hover, .prs2 a:hover { border-color: gray; text-decoration: none;}
+.prs a:hover span, .prs2 a:hover span { background: #fff; }
+.prs i, .prs2 i { position: absolute; top: 3px; left: 3px;  margin: 0; padding: 0;}
+
+.prs img { width: 121px; height: 169px; margin: 1px; display: block; border: 0;}
+.prs span { position: absolute; bottom: 0; left: 0; width: 119px; background: url(/pic/prs_title.png); margin: 1px; text-align: center; padding: 1px;}
+.prs2 img { width: 200px; height: 280px; margin: 1px; display: block; border: 0;}
+.prs2 span { position: absolute; bottom: 0; left: 0; width: 198px; background: url(/pic/prs_title.png); margin: 1px; text-align: center; padding: 1px;}
+
+ul.men li.letters { padding: 0 0 2px 3px; }
+.letters a { border: 1px solid #DDDDDD; display: block; float: left; margin: 0 2px 2px 0; padding: 1px; text-align: center; width: 13px; text-decoration: none; }
+.letters a.sel { background-color: #F1F1F1; color: #AF2BAD; }
+
+.p_srch { width: 137px; box-sizing: border-box; -moz-box-sizing: border-box; }
+#bday { border-collapse: collapse; margin: 0 3px 0 -3px; }
+#bday td { padding: 0; border: 3px solid transparent; }
+#d { width: 30%; }
+#m { width: 40%; }
+</style>
