@@ -617,7 +617,7 @@ function kz_groups_search_sidebar($info_text = 'Здесь отображены 
 	echo '<div class="mn3_menu">';
 	echo '<form method="get" action="/groupexlist.php"><ul class="men">';
 	if ($show_banner) {
-		echo '<li class="img"><a href="/groupexlist.php"><img src="/pic/info/group.gif" height="75" class="block w200" alt=""></a></li>';
+		echo '<li class="img"><a href="/groupexlist.php"><img src="/pic/bn/p_groupexlist.jpg" height="75" class="block w200" alt=""></a></li>';
 	}
 	echo '<li class="tp">Поиск группы<input type="hidden" name="action" value="search"></li>';
 	echo '<li class="img"><dl><dt>Название</dt><dd><input type="text" name="name" value="' . kz_groups_h($name) . '" class="w100"></dd></dl></li>';

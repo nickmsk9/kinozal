@@ -30,3 +30,17 @@ Stack trace:
 [28-May-2026 15:10:51 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/message.php on line 15
 [28-May-2026 15:10:51 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/message.php on line 18
 [28-May-2026 15:10:51 UTC] PHP Warning:  Undefined array key "box" in /var/www/html/message.php on line 28
+[29-May-2026 08:35:37 Europe/Moscow] PHP Warning:  mysqli_connect(): php_network_getaddresses: getaddrinfo for db failed: пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.  in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 268
+[29-May-2026 08:35:37 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: php_network_getaddresses: getaddrinfo for db failed: Этот хост неизвестен.  in C:\OSPanel\domains\kinozal.lv\include\functions.php:268
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(268): mysqli_connect()
+#1 C:\OSPanel\domains\kinozal.lv\index.php(30): dbconn()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 268
+[29-May-2026 08:36:09 Europe/Moscow] PHP Warning:  mysqli_connect(): php_network_getaddresses: getaddrinfo for db failed: пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.  in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 268
+[29-May-2026 08:36:09 Europe/Moscow] PHP Fatal error:  Uncaught mysqli_sql_exception: php_network_getaddresses: getaddrinfo for db failed: Этот хост неизвестен.  in C:\OSPanel\domains\kinozal.lv\include\functions.php:268
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(268): mysqli_connect()
+#1 C:\OSPanel\domains\kinozal.lv\index.php(30): dbconn()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 268

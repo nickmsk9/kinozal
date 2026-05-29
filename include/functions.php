@@ -1348,7 +1348,7 @@ function pager($rpp, $count, $href, $opts = array())
 
     $html .= '</ul></div>';
 
-    $pagertop = $html . "\n";
+    $pagertop = '';
 
     $pagerbottom =
         '<div class="pager_info">Всего ' . $count .
