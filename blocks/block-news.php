@@ -61,9 +61,9 @@ if (mysqli_num_rows($resource) > 0) {
 
         if ($is_admin) {
             $content .= " <span class=\"small\">";
-            $content .= "[<a class=\"altlink\" href=\"news.php?action=edit&amp;newsid=" . $news_id . "&amp;returnto=" . $returnto . "\"><b>E</b></a>]";
+            $content .= "[<a class=\"altlink\" href=\"news.php?action=edit&amp;newsid=" . $news_id . "&amp;returnto=" . $returnto . "\"><b>Редактировать</b></a>]";
             $content .= " ";
-            $content .= "[<a class=\"altlink\" href=\"news.php?action=delete&amp;newsid=" . $news_id . "&amp;returnto=" . $returnto . "\"><b>D</b></a>]";
+            $content .= "[<a class=\"altlink\" href=\"news.php?action=delete&amp;newsid=" . $news_id . "&amp;returnto=" . $returnto . "\"><b>Удалить</b></a>]";
             $content .= "</span>";
         }
 
