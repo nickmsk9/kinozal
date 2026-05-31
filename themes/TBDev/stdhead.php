@@ -399,4 +399,10 @@ $page_title = $title !== '' ? $title : $site_name;
                         echo '</div>';
                         echo '</div>';
                     }
-                    show_blocks('c');
+                    $current_module = isset($current_module)
+                        ? $current_module
+                        : str_replace('.php', '', basename($_SERVER['PHP_SELF'] ?? ''));
+
+                    if ($current_module !== 'radio') {
+                        show_blocks('c');
+                    }
