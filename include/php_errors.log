@@ -107,3 +107,14 @@ Stack trace:
 #5 {main}
   thrown in /var/www/html/include/functions.php on line 189
 [31-May-2026 14:30:17 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/friends.php on line 9
+[31-May-2026 15:47:32 UTC] PHP Warning:  Undefined array key "id" in /var/www/html/friends.php on line 8
+[31-May-2026 15:47:32 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/friends.php on line 9
+[31-May-2026 15:49:33 UTC] PHP Warning:  Undefined array key "id" in /var/www/html/friends.php on line 8
+[31-May-2026 15:49:33 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/friends.php on line 9
+[31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "SERVER_PORT" in /Users/nick/docker/kinozal/include/init.php on line 33
+[31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /Users/nick/docker/kinozal/include/init.php on line 33
+[31-May-2026 15:50:20 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /Users/nick/docker/kinozal/include/init.php on line 16
+[31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /Users/nick/docker/kinozal/include/config.php on line 23
+[31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /Users/nick/docker/kinozal/include/config.php on line 59
+[31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /Users/nick/docker/kinozal/include/config.local.php on line 22
+[31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /Users/nick/docker/kinozal/include/config.local.php on line 58
