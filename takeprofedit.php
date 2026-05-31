@@ -26,6 +26,16 @@ function profile_redirect($extra = '') {
 	exit;
 }
 
+function profile_ensure_avatar_column() {
+	$res = sql_query("SHOW COLUMNS FROM users LIKE 'avatar'") or sqlerr(__FILE__, __LINE__);
+	$row = mysqli_fetch_assoc($res);
+	$type = isset($row['Type']) ? strtolower((string)$row['Type']) : '';
+
+	if (preg_match('/varchar\((\d+)\)/', $type, $m) && (int)$m[1] < 500) {
+		sql_query("ALTER TABLE users MODIFY avatar varchar(500) NOT NULL default ''") or sqlerr(__FILE__, __LINE__);
+	}
+}
+
 $act = isset($_GET["act"]) ? (int)$_GET["act"] : 1;
 $updateset = array();
 
@@ -70,14 +80,15 @@ if ($act === 1) {
 	$avatar = trim((string)($_POST["avatar"] ?? ""));
 
 	if ($avatar !== '') {
-		if (mb_strlen($avatar, "UTF-8") > 100) {
-			bark("Ошибка! Длина ссылки превышает 100 символов.");
+		if (mb_strlen($avatar, "UTF-8") > 500) {
+			bark("Ошибка! Длина ссылки превышает 500 символов.");
 		}
-		if (!preg_match('#^https://.+\.(jpe?g|png|gif)$#i', $avatar)) {
+		if (!preg_match('#^https://.+\.(jpe?g|png|gif)(\?.*)?$#i', $avatar)) {
 			bark("Ошибка! Укажите HTTPS ссылку на картинку JPG, JPEG, PNG или GIF.");
 		}
 	}
 
+	profile_ensure_avatar_column();
 	$updateset[] = "avatar = " . sqlesc($avatar);
 } elseif ($act === 10) {
 	profile_require_password((string)($_POST["psw"] ?? ""));

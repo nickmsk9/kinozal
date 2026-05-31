@@ -106,3 +106,4 @@ Stack trace:
 #4 /var/www/html/admincp.php(36): include_once('/var/www/html/a...')
 #5 {main}
   thrown in /var/www/html/include/functions.php on line 189
+[31-May-2026 14:30:17 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/friends.php on line 9

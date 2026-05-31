@@ -3,54 +3,83 @@
 require_once 'include/bittorrent.php';
 
 dbconn(false);
+require_once 'include/kz_uarch.php';
 
-function uarch_h($value)
-{
-	return htmlspecialchars_uni((string)$value);
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+	loggedinorreturn();
+	$error = kz_uarch_add_smile((string)($_POST['image_url'] ?? ''));
+
+	if ($error === '') {
+		header('Location: /uarch.php?added=1');
+		exit;
+	}
 }
 
-$smiles = array(
-	array('userid' => 2396813, 'username' => 'Ananasix', 'class' => 8, 'flag' => 'c8', 'icons' => array('s_dv'), 'image' => '/pic/uarch_smile.jpg'),
-	array('userid' => 2396813, 'username' => 'Ananasix', 'class' => 8, 'flag' => 'c8', 'icons' => array('s_dv'), 'image' => 'https://i5.imageban.ru/out/2026/05/20/b8c58358e2cafa5f3c184cf88940e2bd.jpg'),
-	array('userid' => 2396813, 'username' => 'Ananasix', 'class' => 8, 'flag' => 'c8', 'icons' => array('s_dv'), 'image' => 'https://i2.imageban.ru/out/2026/05/20/471f11a790b3c8f17f0e49f986c29b50.jpg'),
-	array('userid' => 6324626, 'username' => 'LuckyDevil', 'class' => 6, 'flag' => 'c4', 'icons' => array('s9-10'), 'image' => 'https://i127.fastpic.org/big/2026/0519/48/2ac2588d07108b1b5b8b8124c9663a48.jpg'),
-	array('userid' => 3381063, 'username' => 'Аneta', 'class' => 7, 'flag' => 'c8', 'icons' => array('s_dv', 's17'), 'image' => 'https://i1.imageban.ru/out/2026/05/17/d4360d3ac113891ee612343ad9c60c98.png'),
-	array('userid' => 3381063, 'username' => 'Аneta', 'class' => 7, 'flag' => 'c8', 'icons' => array('s_dv', 's17'), 'image' => 'https://i6.imageban.ru/out/2026/05/17/922d9438d05157cc93fb5c51be1ae4ba.jpg'),
-);
+$smiles = kz_uarch_smiles(true, 96);
 
 stdhead('Архив улыбки');
 ?>
 <style>
-.ulib { float:left; width:190px; min-height:230px; margin:0 8px 10px 0; }
-.ulib img.uarch-img { max-width:175px; height:auto; }
+.ulib { float:left; width:190px; min-height:245px; margin:0 8px 10px 0; }
+.ulib img.uarch-img { max-width:175px; max-height:190px; height:auto; }
 .uarch-intro { line-height:1.45; }
+.uarch-form input[type=text] { width:78%; max-width:620px; }
 </style>
 
 <div class="bx1 uarch-intro">
 	<b>Архив улыбки</b>
-	- Здесь Вы можете приятно провести время и посмотреть улыбки, добавленные ранее на проект. Улыбнитесь вместе с нами, хорошего Вам настроения!
+	- Здесь Вы можете приятно провести время и посмотреть улыбки, добавленные пользователями проекта. Улыбнитесь вместе с нами, хорошего Вам настроения!
+</div>
+
+<div class="bx1 uarch-form">
+	<?php if (!empty($_GET['added'])) { ?>
+		<div class="green"><b>Улыбка добавлена.</b></div>
+	<?php } ?>
+	<?php if ($error !== '') { ?>
+		<div class="red"><b><?= kz_uarch_h($error) ?></b></div>
+	<?php } ?>
+	<?php if (!empty($CURUSER)) { ?>
+		<form method="post" action="/uarch.php">
+			<input type="text" name="image_url" value="" placeholder="https://site.ru/image.jpg">
+			<input type="submit" class="buttonS" value="Добавить улыбку">
+		</form>
+	<?php } else { ?>
+		<a href="/login.php?returnto=uarch.php" class="sba">Войдите</a>, чтобы добавить улыбку.
+	<?php } ?>
 </div>
 
 <div class="bx1">
-	<?php foreach ($smiles as $smile) { ?>
-		<div class="ulib">
-			<ul class="men">
-				<li class="tp2 lh center">
-					Улыбка от
-					<img src="/pic/emty.gif" class="i2 <?= uarch_h($smile['flag']) ?>" alt="">
-					<a href="/userdetails.php?id=<?= (int)$smile['userid'] ?>" class="u<?= (int)$smile['class'] ?>"><?= uarch_h($smile['username']) ?></a>
-					<?php foreach ($smile['icons'] as $icon) { ?>
-						<i class="i1 <?= uarch_h($icon) ?>"></i>
-					<?php } ?>
-				</li>
-				<li class="center">
-					<img src="<?= uarch_h($smile['image']) ?>" width="175" class="uarch-img" alt="">
-				</li>
-			</ul>
-		</div>
+	<?php if ($smiles) { ?>
+		<?php foreach ($smiles as $smile) {
+			$userid = (int)$smile['userid'];
+			$username = (string)$smile['display_username'];
+			$userclass = (int)$smile['display_class'];
+			$image = (string)$smile['image_url'];
+		?>
+			<div class="ulib">
+				<ul class="men">
+					<li class="tp2 lh center">
+						Улыбка от
+						<?php if ($userid > 0 && $username !== '') { ?>
+							<a href="/userdetails.php?id=<?= $userid ?>" class="u<?= $userclass ?>"><?= kz_uarch_h($username) ?></a>
+						<?php } else { ?>
+							<span class="u<?= $userclass ?>"><?= kz_uarch_h($username !== '' ? $username : 'Пользователь') ?></span>
+						<?php } ?>
+					</li>
+					<li class="center">
+						<img src="<?= kz_uarch_h($image) ?>" width="175" class="uarch-img" alt="">
+					</li>
+				</ul>
+			</div>
+		<?php } ?>
+	<?php } else { ?>
+		<div class="center">Улыбок пока нет. Будьте первым, кто добавит хорошее настроение.</div>
 	<?php } ?>
 	<div class="clr"></div>
 </div>
 <?php
 stdfoot();
 
+?>

@@ -7,20 +7,16 @@ dbconn(false);
 
 $hide_right_blocks = true;
 
-$title = "Новинки кино - Анонс новых работ отечественного и зарубежного кинематографа";
+$title = "Новинки раздач - новые материалы Кинозал.ТВ";
 stdhead($title);
 
-$movie_categories = range(1, 26);
-$where_categories = implode(',', array_map('intval', $movie_categories));
-
 $res = sql_query("
-	SELECT id, name, image1
+	SELECT id, name, image1, category, added
 	FROM torrents
 	WHERE visible = 'yes'
-	  AND category IN ($where_categories)
-	  AND image1 <> ''
+	  AND banned = 'no'
 	ORDER BY added DESC
-	LIMIT 60
+	LIMIT 120
 ") or sqlerr(__FILE__, __LINE__);
 
 $posters = array();
@@ -35,7 +31,7 @@ $page_patterns = array('/novinki.php%', 'novinki.php%');
         <table class="main" width="100%" border="0" cellspacing="0" cellpadding="0">
             <tr>
                 <td style="background:#F1D29C; padding:3px 6px;">
-                    <a class="sbab" href="novinki.php">Новинки кино - Анонс новых работ отечественного и зарубежного кинематографа</a>
+                    <a class="sbab" href="novinki.php">Новинки раздач - новые материалы Кинозал.ТВ</a>
                 </td>
             </tr>
             <tr valign="top">
@@ -44,13 +40,13 @@ $page_patterns = array('/novinki.php%', 'novinki.php%');
                         <div style="padding-bottom:4px;">
                             <img src="pic/p_novinki.jpg" alt="Новинки кино" title="Новинки кино" border="0">
                         </div>
-                        <div style="background:#F1D29C; color:#000000; font-weight:bold; padding:3px 6px;">Новинки кино Кинозал.ТВ</div>
+                        <div style="background:#F1D29C; color:#000000; font-weight:bold; padding:3px 6px;">Новинки Кинозал.ТВ</div>
                         <div style="padding:6px 4px 10px 4px; text-align:justify;">
-                            Новинки кино - Раздел анонсирует новые работы отечественного и зарубежного кинематографа. Предлагаем Вам ознакомиться с новинками фильмов и мультфильмов. Качество представленных видеоматериалов сомнительно. Претензии к качеству видео и звука не принимаются.
+                            Здесь собираются новые раздачи трекера: фильмы, сериалы, мультфильмы, музыка, программы и другие свежие материалы.
                         </div>
                         <div style="background:#F1D29C; color:#000000; font-weight:bold; padding:3px 6px;">Информация</div>
                         <div style="padding:6px 4px 4px 4px; text-align:justify;">
-                            В разделе представлены раздачи новинок фильмов и мультфильмов в форматах: CAMRip, Telesync (TS, SuperTS), Telecine (TC), Workprint (WP), Screener (SCR, DVDScr, VHSScr), WEBRip; звук CAMRip, TS. После добавления на трекер видеофайлов с лучшим качеством раздачи будут заменены.
+                            Раздачи отсортированы по дате добавления. Если у материала нет постера, показывается иконка его категории.
                         </div>
                     </div>
 
@@ -67,7 +63,13 @@ $page_patterns = array('/novinki.php%', 'novinki.php%');
                                         }
 
                                         $poster_title = htmlspecialchars_uni($poster['name']);
-                                        $poster_src = "torrents/images/" . htmlspecialchars_uni($poster['image1']);
+                                        $image = trim((string)$poster['image1']);
+                                        $category = (int)$poster['category'];
+                                        if ($image !== '') {
+                                            $poster_src = "thumbnail.php?" . htmlspecialchars_uni($image);
+                                        } else {
+                                            $poster_src = "pic/cat/" . $category . ".gif";
+                                        }
                                         $poster_id = (int)$poster['id'];
 
                                         print("<td style=\"padding:0; width:104px; vertical-align:top;\">");

@@ -70,9 +70,9 @@ if ($action === 'getch') {
 		</div>
 	<?php } ?>
 	<script>
-		if (window.parent && window.parent !== window && window.parent.document.forms.mss) {
+		var radioMessagePosted = <?= ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['t'])) ? 'true' : 'false' ?>;
+		if (radioMessagePosted && window.parent && window.parent !== window && window.parent.document.forms.mss) {
 			window.parent.document.forms.mss.t.value = '';
-			window.parent.document.forms.mss.t.focus();
 		}
 		window.scrollTo(0, document.body.scrollHeight);
 	</script>

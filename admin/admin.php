@@ -19,7 +19,12 @@ function BuildMenu($url, $title, $image = '')
     $titleSafe = htmlspecialchars((string)$title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     $image     = trim((string)$image);
 
-    $imageHtml = '<span aria-hidden="true">[ + ]</span><br />';
+    if ($image !== '') {
+        $imageSafe = htmlspecialchars(basename($image), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $imageHtml = '<img src="admin/pic/' . $imageSafe . '" width="32" height="32" alt="" style="margin-bottom:4px;"><br />';
+    } else {
+        $imageHtml = '<img src="admin/pic/system.png" width="32" height="32" alt="" style="margin-bottom:4px;"><br />';
+    }
 
     echo '
         <td class="center top w15p">

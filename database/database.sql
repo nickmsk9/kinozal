@@ -578,6 +578,26 @@ CREATE TABLE `thanks` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
+# Structure for the `uarch_smiles` table :
+#
+
+DROP TABLE IF EXISTS `uarch_smiles`;
+
+CREATE TABLE `uarch_smiles` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `userid` int unsigned NOT NULL DEFAULT '0',
+  `username` varchar(40) NOT NULL DEFAULT '',
+  `userclass` tinyint unsigned NOT NULL DEFAULT '0',
+  `image_url` text NOT NULL,
+  `active` enum('yes','no') NOT NULL DEFAULT 'yes',
+  `ip` varchar(45) NOT NULL DEFAULT '',
+  `added` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `active_added` (`active`,`added`),
+  KEY `userid` (`userid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
 # Structure for the `torrents` table :
 #
 
@@ -803,7 +823,7 @@ CREATE TABLE `users` (
   `override_class` tinyint(3) unsigned NOT NULL default '255',
   `support` enum('no','yes') NOT NULL default 'no',
   `supportfor` text,
-  `avatar` varchar(100) NOT NULL default '',
+  `avatar` varchar(500) NOT NULL default '',
   `uploaded` bigint(20) unsigned NOT NULL default '0',
   `downloaded` bigint(20) unsigned NOT NULL default '0',
   `bonus` decimal(7,2) NOT NULL default '0.00',

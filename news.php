@@ -22,10 +22,16 @@ function news_text($value)
 	return nl2br(htmlspecialchars_uni((string)$value));
 }
 
-function news_form($action_url, $title, $subject = '', $body = '', $button = 'Сохранить')
+function news_form($action_url, $title, $subject = '', $body = '', $button = 'Сохранить', $newsid = 0, $returnto = '')
 {
 	?>
 	<form name="news" method="post" action="<?php echo news_h($action_url); ?>">
+		<?php if ((int)$newsid > 0) { ?>
+			<input type="hidden" name="newsid" value="<?php echo (int)$newsid; ?>" />
+		<?php } ?>
+		<?php if ($returnto !== '') { ?>
+			<input type="hidden" name="returnto" value="<?php echo news_h($returnto); ?>" />
+		<?php } ?>
 		<table class="tables2 w100p">
 			<tr>
 				<td class="colhead" colspan="2"><?php echo news_h($title); ?></td>
@@ -110,7 +116,8 @@ if ($action === 'add') {
  * Редактирование новости
  */
 if ($action === 'edit') {
-	$newsid = isset($_GET['newsid']) ? (int)$_GET['newsid'] : 0;
+	$newsid = isset($_GET['newsid']) ? (int)$_GET['newsid'] : (int)($_POST['newsid'] ?? 0);
+	$returnto = isset($_GET['returnto']) ? (string)$_GET['returnto'] : (string)($_POST['returnto'] ?? '');
 
 	if (!is_valid_id($newsid)) {
 		stderr($tracker_lang['error'], 'Неверный идентификатор новости.');
@@ -145,16 +152,28 @@ if ($action === 'edit') {
 			LIMIT 1
 		") or sqlerr(__FILE__, __LINE__);
 
+		if ($returnto !== '' && strpos($returnto, "\n") === false && strpos($returnto, "\r") === false && preg_match('#^/[A-Za-z0-9_./?=&%+-]*$#', $returnto)) {
+			header('Location: ' . $returnto);
+			exit;
+		}
+
 		$warning = 'Новость успешно отредактирована.';
 	} else {
 		stdhead('Редактирование новости');
 
+		$action_url = '?action=edit&newsid=' . $newsid;
+		if ($returnto !== '') {
+			$action_url .= '&returnto=' . urlencode($returnto);
+		}
+
 		news_form(
-			'?action=edit&amp;newsid=' . $newsid,
+			$action_url,
 			'Редактирование новости',
 			isset($arr['subject']) ? $arr['subject'] : '',
 			isset($arr['body']) ? $arr['body'] : '',
-			'Отредактировать'
+			'Отредактировать',
+			$newsid,
+			$returnto
 		);
 
 		stdfoot();
