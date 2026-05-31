@@ -118,3 +118,5 @@ Stack trace:
 [31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /Users/nick/docker/kinozal/include/config.php on line 59
 [31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /Users/nick/docker/kinozal/include/config.local.php on line 22
 [31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /Users/nick/docker/kinozal/include/config.local.php on line 58
+[31-May-2026 16:05:50 UTC] PHP Warning:  Undefined array key "page" in /var/www/html/userhistory.php on line 42
+[31-May-2026 16:05:50 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/userhistory.php on line 44
