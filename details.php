@@ -701,6 +701,14 @@ $total_seeders = (int)$row['seeders'] + (int)($row['remote_seeders'] ?? 0);
 $total_leechers = (int)$row['leechers'] + (int)($row['remote_leechers'] ?? 0);
 
 $moderator = get_user_class() >= UC_MODERATOR;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['mt_force_update'])) {
+	if (!$moderator) {
+		stderr($tracker_lang['error'], $tracker_lang['access_denied'] ?? 'Доступ запрещен');
+	}
+	$mt_result = kz_mt_update_torrent_trackers($id);
+	header('Location: details.php?id=' . $id . '&mtupdated=1&mts=' . (int)$mt_result['success'] . '&mte=' . (int)$mt_result['errors']);
+	exit;
+}
 if ($row['banned'] === 'yes' && !$moderator) {
 	stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
 }
@@ -741,10 +749,13 @@ $poster = details_poster($row, $torrent_details);
 $cat_img = !empty($row['cat_pic']) ? '<img src="/pic/cat/' . details_h($row['cat_pic']) . '" class="cat_img_r" alt="">' : '';
 $free = (string)($row['free'] ?? 'no');
 $download_note = '';
+if (!empty($_GET['mtupdated'])) {
+	$download_note = '<b class="green">Мультитрекер обновлен.</b> Успешно: ' . (int)($_GET['mts'] ?? 0) . ', ошибок: ' . (int)($_GET['mte'] ?? 0) . '.';
+}
 
-if ($free === 'yes') {
+if ($download_note === '' && $free === 'yes') {
 	$download_note = '<b class="r1">Золотая раздача</b> Объем скачанного не учитывается, а отданное засчитывается полностью. На золотых раздачах появляется дополнительная возможность поднять свой рейтинг.';
-} elseif ($free === 'silver') {
+} elseif ($download_note === '' && $free === 'silver') {
 	$download_note = '<b class="r2">Серебряная раздача</b> Объем скачанного учитывается только на 50%, а отданное засчитывается полностью. На серебряных раздачах появляется дополнительная возможность поднять свой рейтинг.';
 }
 

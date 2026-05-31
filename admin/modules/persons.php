@@ -85,6 +85,117 @@ if (!function_exists('PersonsAdmin')) {
 		return (int)mysqli_insert_id($link);
 	}
 
+	function persons_admin_split_names($text)
+	{
+		$text = html_entity_decode(strip_tags((string)$text), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		$text = preg_replace('#\s+#u', ' ', $text);
+		$parts = preg_split('/\s*(?:,|;|\/|\s+и\s+|\s+&\s+)\s*/u', $text, -1, PREG_SPLIT_NO_EMPTY);
+		$out = array();
+		foreach ($parts as $part) {
+			$part = trim($part, " \t\n\r\0\x0B.,;:()[]{}\"'");
+			$len = function_exists('mb_strlen') ? mb_strlen($part, 'UTF-8') : strlen($part);
+			if ($part === '' || $len < 5 || $len > 80) {
+				continue;
+			}
+			if (preg_match('/[0-9@<>\/\\\\]/u', $part)) {
+				continue;
+			}
+			if (!preg_match('/^[\p{L}][\p{L}\s\.\'-]+$/u', $part)) {
+				continue;
+			}
+			$out[] = $part;
+		}
+		return $out;
+	}
+
+	function persons_admin_extract_from_text($text)
+	{
+		$text = html_entity_decode((string)$text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		$found = array();
+		$patterns = array(
+			'Режиссер' => 'director',
+			'Режиссёр' => 'director',
+			'В ролях' => 'actor',
+		);
+		foreach ($patterns as $label => $role) {
+			if (preg_match_all('/' . preg_quote($label, '/') . '\s*:\s*([^\r\n<\[]+)/iu', $text, $matches)) {
+				foreach ($matches[1] as $value) {
+					foreach (persons_admin_split_names($value) as $name) {
+						$found[$name] = $role;
+					}
+				}
+			}
+		}
+		return $found;
+	}
+
+	function persons_admin_extract_from_torrent(array $row)
+	{
+		$found = array();
+		$data = json_decode((string)($row['data'] ?? ''), true);
+		if (is_array($data)) {
+			$video = isset($data['video']) && is_array($data['video']) ? $data['video'] : array();
+			foreach (persons_admin_split_names($video['director'] ?? '') as $name) {
+				$found[$name] = 'director';
+			}
+			foreach (persons_admin_split_names($video['cast'] ?? '') as $name) {
+				$found[$name] = 'actor';
+			}
+		}
+		foreach (persons_admin_extract_from_text((string)($row['descr'] ?? '')) as $name => $role) {
+			if (!isset($found[$name])) {
+				$found[$name] = $role;
+			}
+		}
+		return $found;
+	}
+
+	function persons_admin_autoparse($limit, $fill_wikipedia)
+	{
+		$limit = max(1, min(500, (int)$limit));
+		$fill_wikipedia = (bool)$fill_wikipedia;
+		$res = sql_query("
+			SELECT t.id, t.name, t.descr, td.data
+			FROM torrents AS t
+			LEFT JOIN torrent_details AS td ON td.tid = t.id
+			WHERE t.visible = 'yes' AND t.banned = 'no'
+			ORDER BY t.id DESC
+			LIMIT $limit
+		") or sqlerr(__FILE__, __LINE__);
+
+		$created = 0;
+		$existing = 0;
+		$seen = array();
+		while ($row = mysqli_fetch_assoc($res)) {
+			foreach (persons_admin_extract_from_torrent($row) as $name => $role) {
+				$key = function_exists('mb_strtolower') ? mb_strtolower($name, 'UTF-8') : strtolower($name);
+				if (isset($seen[$key])) {
+					continue;
+				}
+				$seen[$key] = true;
+				if (kz_persons_find(0, $name)) {
+					$existing++;
+					continue;
+				}
+
+				$person = persons_admin_default_row($name);
+				$person['career'] = $role === 'director' ? 'режиссер' : 'актер';
+				if ($fill_wikipedia) {
+					$import = kz_persons_import_from_wikipedia($name, 'ru');
+					if ($import) {
+						$person = kz_persons_merge_import($person, $import, false);
+						$person['name'] = $name;
+					}
+				}
+				if (persons_admin_save($person) > 0) {
+					$created++;
+				}
+			}
+		}
+
+		return array('created' => $created, 'existing' => $existing, 'found' => count($seen));
+	}
+
 	function PersonsAdmin()
 	{
 		global $admin_file;
@@ -119,6 +230,11 @@ if (!function_exists('PersonsAdmin')) {
 			}
 		}
 
+		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['autoparse_persons'])) {
+			$result = persons_admin_autoparse((int)($_POST['autoparse_limit'] ?? 100), !empty($_POST['fill_wikipedia']));
+			stdmsg('Персоны', 'Автопарсинг завершен. Найдено: ' . (int)$result['found'] . ', создано: ' . (int)$result['created'] . ', уже было: ' . (int)$result['existing'] . '.');
+		}
+
 		echo '<div class="mn_wrap">';
 		echo '<div class="tp1_title"><b>Персоны</b></div>';
 		echo '<div class="tp1_body">';
@@ -130,6 +246,16 @@ if (!function_exists('PersonsAdmin')) {
 		echo '<tr><td>ID существующей персоны</td><td><input type="text" name="person_id" size="8"> <span class="small">оставьте пустым, чтобы найти по имени или создать новую</span></td></tr>';
 		echo '<tr><td>Перезаписывать заполненные поля</td><td><input type="checkbox" name="overwrite" value="1"></td></tr>';
 		echo '<tr><td colspan="2" class="center"><input type="submit" class="buttonS" value="Загрузить и сохранить"></td></tr>';
+		echo '</table>';
+		echo '</form>';
+
+		echo '<div class="tp1_title"><b>Автопарсинг персон из раздач</b></div>';
+		echo '<form method="post" action="' . htmlspecialchars_uni($admin_file) . '.php?op=PersonsAdmin">';
+		echo '<input type="hidden" name="autoparse_persons" value="1">';
+		echo '<table class="tables2 w100p">';
+		echo '<tr><td class="w250">Сколько последних раздач обработать</td><td><input type="text" name="autoparse_limit" value="100" size="6"></td></tr>';
+		echo '<tr><td>Заполнять карточки из Wikipedia</td><td><input type="checkbox" name="fill_wikipedia" value="1"> <span class="small">медленнее, делает внешние запросы по новым персонам</span></td></tr>';
+		echo '<tr><td colspan="2" class="center"><input type="submit" class="buttonS" value="Найти и добавить персон"></td></tr>';
 		echo '</table>';
 		echo '</form>';
 

@@ -281,7 +281,14 @@ function kz_mt_render_details_block($torrentid)
 		$html .= '<tr><td>' . ($is_primary ? '<b>наш трекер</b><br>' : '') . '<span title="' . kz_mt_h($row['announce_url']) . '">' . kz_mt_h($row['announce_url']) . '</span>' . $error . '</td>';
 		$html .= '<td class="center">' . kz_mt_h($status) . '</td><td class="center green b">' . $seeders . '</td><td class="center red b">' . $leechers . '</td><td class="center">' . $checked . '</td></tr>';
 	}
-	return $html . '</table></li></ul></div>';
+	$html .= '</table></li>';
+	if (function_exists('get_user_class') && get_user_class() >= UC_MODERATOR) {
+		$html .= '<li class="center"><form method="post" action="details.php?id=' . (int)$torrentid . '">';
+		$html .= '<input type="hidden" name="mt_force_update" value="1">';
+		$html .= '<input type="submit" class="buttonS" value="Принудительно обновить мультитрекер">';
+		$html .= '</form></li>';
+	}
+	return $html . '</ul></div>';
 }
 
 function kz_mt_scrape_tracker($url, $info_hash)
@@ -333,6 +340,46 @@ function kz_mt_update_due_trackers($limit = 25)
 	foreach (array_keys($seen_torrents) as $torrentid) {
 		kz_mt_sync_torrent_totals($torrentid);
 	}
+}
+
+function kz_mt_update_torrent_trackers($torrentid)
+{
+	kz_mt_ensure_schema();
+	$torrentid = (int)$torrentid;
+	if ($torrentid <= 0) {
+		return array('success' => 0, 'errors' => 0, 'total' => 0);
+	}
+
+	$res = sql_query("
+		SELECT tt.id, tt.announce_url, t.info_hash
+		FROM torrent_trackers AS tt
+		INNER JOIN torrents AS t ON t.id = tt.torrentid
+		WHERE tt.torrentid = $torrentid AND tt.enabled = 'yes' AND tt.is_primary = 'no'
+		ORDER BY tt.id ASC
+	") or sqlerr(__FILE__, __LINE__);
+
+	$success = 0;
+	$errors = 0;
+	$total = 0;
+	while ($row = mysqli_fetch_assoc($res)) {
+		$total++;
+		$tracker_id = (int)$row['id'];
+		$info_hash = strtolower((string)$row['info_hash']);
+		try {
+			$stats = kz_mt_scrape_tracker($row['announce_url'], $info_hash);
+			if (!$stats) {
+				throw new Exception('no scrape data');
+			}
+			sql_query("UPDATE torrent_trackers SET seeders = " . (int)$stats['seeders'] . ", leechers = " . (int)$stats['leechers'] . ", completed = " . (int)$stats['completed'] . ", last_checked = NOW(), last_error = '' WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			$success++;
+		} catch (Exception $e) {
+			sql_query("UPDATE torrent_trackers SET last_checked = NOW(), last_error = " . sqlesc(substr($e->getMessage(), 0, 255)) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			$errors++;
+		}
+	}
+
+	kz_mt_sync_torrent_totals($torrentid);
+	return array('success' => $success, 'errors' => $errors, 'total' => $total);
 }
 
 ?>
