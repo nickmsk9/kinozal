@@ -2,9 +2,11 @@
 
 
 require_once("include/bittorrent.php");
+require_once("include/kz_test_torrents.php");
 
 dbconn(false);
 parked();
+kz_test_torrents_ensure_schema();
 
 function browse_fmt_added($datetime) {
     if (empty($datetime) || $datetime === '0000-00-00 00:00:00') {
@@ -145,6 +147,7 @@ $wherecatina = array();
 $joins = array();
 $wherea[] = "t.visible = 'yes'";
 $wherea[] = "t.banned != 'yes'";
+$wherea[] = "t.is_test = 'no'";
 
 if ($category > 0) {
     $categoryGroups = array(

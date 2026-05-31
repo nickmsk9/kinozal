@@ -4,6 +4,7 @@ require_once("include/BDecode.php");
 require_once("include/BEncode.php");
 require_once("include/bittorrent.php");
 require_once("include/kz_upload.php");
+require_once("include/kz_test_torrents.php");
 
 ini_set("upload_max_filesize", $max_torrent_size);
 
@@ -119,11 +120,10 @@ dbconn();
 loggedinorreturn();
 parked();
 
-if (get_user_class() < UC_UPLOADER) {
-	die;
-}
-
 kz_upload_ensure_schema();
+kz_test_torrents_ensure_schema();
+
+$is_test_upload = get_user_class() < UC_VIP || !empty($_GET['test']) || !empty($_POST['test']);
 
 $is_preview = isset($_GET['preview']) || isset($_POST['preview']);
 
@@ -194,7 +194,7 @@ if (get_user_class() >= UC_ADMINISTRATOR && isset($_POST['not_sticky']) && $_POS
 
 global $link, $torrent_dir;
 
-$ret = sql_query("INSERT INTO torrents (filename, owner, visible, not_sticky, info_hash, name, keywords, description, size, numfiles, type, descr, ori_descr, free, image1, image2, image3, image4, image5, category, save_as, added, last_action, multitracker) VALUES (" . implode(",", array_map("sqlesc", array(
+$ret = sql_query("INSERT INTO torrents (filename, owner, visible, not_sticky, info_hash, name, keywords, description, size, numfiles, type, descr, ori_descr, free, image1, image2, image3, image4, image5, category, save_as, added, last_action, multitracker, is_test) VALUES (" . implode(",", array_map("sqlesc", array(
 	$torrent_data['fname'],
 	$CURUSER["id"],
 	"yes",
@@ -216,7 +216,7 @@ $ret = sql_query("INSERT INTO torrents (filename, owner, visible, not_sticky, in
 	'',
 	$catid,
 	$torrent_data['save_as'],
-))) . ", '" . get_date_time() . "', '" . get_date_time() . "', 'no')");
+))) . ", '" . get_date_time() . "', '" . get_date_time() . "', 'no', " . sqlesc($is_test_upload ? 'yes' : 'no') . ")");
 
 if (!$ret) {
 	if (mysqli_errno($link) == 1062) {
@@ -246,7 +246,7 @@ if (file_put_contents("$torrent_dir/$id.torrent", $encoded) === false) {
 	bark("Не удалось сохранить torrent-файл.");
 }
 
-write_log("Торрент номер $id ($torrent) был залит пользователем " . $CURUSER["username"], "5DDB6E", "torrent");
+write_log("Торрент номер $id ($torrent) был залит пользователем " . $CURUSER["username"] . ($is_test_upload ? " как тестовая раздача" : ""), "5DDB6E", "torrent");
 
 header("Location: $DEFAULTBASEURL/details.php?id=$id");
 

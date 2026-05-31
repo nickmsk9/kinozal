@@ -2,18 +2,12 @@
 
 require_once("include/bittorrent.php");
 require_once("include/kz_upload.php");
+require_once("include/kz_test_torrents.php");
 
 dbconn(false);
 
 loggedinorreturn();
 parked();
-
-if (get_user_class() < UC_UPLOADER) {
-	stdhead($tracker_lang['upload_torrent']);
-	stdmsg($tracker_lang['error'], $tracker_lang['access_denied']);
-	stdfoot();
-	exit;
-}
 
 if (strlen($CURUSER['passkey']) != 32) {
 	$CURUSER['passkey'] = md5($CURUSER['username'] . get_date_time() . $CURUSER['passhash']);
@@ -21,9 +15,12 @@ if (strlen($CURUSER['passkey']) != 32) {
 }
 
 kz_upload_ensure_schema();
+kz_test_torrents_ensure_schema();
+
+$is_test_upload = get_user_class() < UC_VIP || !empty($_GET['test']);
 
 $hide_right_blocks = true;
-stdhead($tracker_lang['upload_torrent']);
+stdhead($is_test_upload ? 'Залить тестовую раздачу' : $tracker_lang['upload_torrent']);
 
 $state = array(
 	'id' => 0,
@@ -43,7 +40,7 @@ $state = array(
 <div class="bx2">
 	<? kz_upload_render_info_sidebar(); ?>
 	<div class="mn3_content">
-		<? kz_upload_render_form('/takeupload.php', 'Залить раздачу', $state, false); ?>
+		<? kz_upload_render_form('/takeupload.php' . ($is_test_upload ? '?test=1' : ''), $is_test_upload ? 'Залить тестовую раздачу' : 'Залить раздачу', $state, false); ?>
 	</div>
 </div>
 <? kz_upload_render_online_block(); ?>

@@ -624,12 +624,19 @@ CREATE TABLE `torrents` (
   `moderated` enum('yes','no') NOT NULL default 'no',
   `moderatedby` int(10) unsigned default '0',
   `multitracker` enum('yes','no') NOT NULL DEFAULT 'no',
+  `is_test` enum('yes','no') NOT NULL DEFAULT 'no',
+  `test_approved_at` datetime NULL DEFAULT NULL,
+  `test_approved_by` int(10) unsigned NOT NULL DEFAULT '0',
+  `test_helper_user_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `test_helper_until` datetime NULL DEFAULT NULL,
   PRIMARY KEY  (`id`),
   UNIQUE KEY `info_hash` (`info_hash`),
   KEY `owner` (`owner`),
   KEY `visible` (`visible`),
   KEY `category_visible` (`category`,`visible`),
-  KEY `vnsi` (`visible`, `not_sticky`, `id`)
+  KEY `vnsi` (`visible`, `not_sticky`, `id`),
+  KEY `is_test_visible` (`is_test`, `visible`, `banned`, `added`),
+  KEY `test_helper_until` (`test_helper_until`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
