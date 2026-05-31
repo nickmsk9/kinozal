@@ -11,8 +11,10 @@
 require_once("include/bittorrent.php");
 require_once("include/kz_upload.php");
 require_once("include/persons.php");
+require_once("include/kz_multitracker.php");
 
 dbconn(false);
+kz_mt_ensure_schema();
 
 if (!$allow_guests_details) {
 	loggedinorreturn();
@@ -694,6 +696,10 @@ if (!$row) {
 	stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
 }
 
+kz_mt_sync_local_tracker($id, (int)$row['seeders'], (int)$row['leechers'], (int)$row['times_completed']);
+$total_seeders = (int)$row['seeders'] + (int)($row['remote_seeders'] ?? 0);
+$total_leechers = (int)$row['leechers'] + (int)($row['remote_leechers'] ?? 0);
+
 $moderator = get_user_class() >= UC_MODERATOR;
 if ($row['banned'] === 'yes' && !$moderator) {
 	stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
@@ -781,8 +787,8 @@ stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['
 		<li><span class="bulet"></span><a href="/bookmarks.php?torrent=<?= $id . $book_hash ?>" onclick="return mess_out('Добавить раздачу в закладки ?')">Добавить в закладки</a></li>
 		<?php if ($owned) { ?><li><span class="bulet"></span><a href="/edit.php?id=<?= $id ?>">Редактировать</a></li><?php } ?>
 		<li class="tp">Участники</li>
-		<li><span class="bulet"></span><a href="#"><?= (int)$row['seeders'] ? 'Раздают' : 'Раздают' ?><span class="floatright"><?= (int)$row['seeders'] ?></span></a></li>
-		<li><span class="bulet"></span><a href="#">Скачивают<span class="floatright"><?= (int)$row['leechers'] ?></span></a></li>
+		<li><span class="bulet"></span><a href="#"><?= $total_seeders ? 'Раздают' : 'Раздают' ?><span class="floatright"><?= $total_seeders ?></span></a></li>
+		<li><span class="bulet"></span><a href="#">Скачивают<span class="floatright"><?= $total_leechers ?></span></a></li>
 		<li><span class="bulet"></span><a href="#">Скачали<span class="floatright"><?= (int)$row['times_completed'] ?></span></a></li>
 		<li><span class="bulet"></span><a href="#tabs">Список файлов<span class="floatright"><?= (int)$row['numfiles'] ?></span></a></li>
 		<li><span class="bulet"></span><a href="#startcomments">Комментариев<span class="floatright"><?= (int)$row['comments'] ?></span></a></li>
@@ -828,6 +834,7 @@ stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['
 			<?= details_line('В ролях', $video['cast'] ?? '', 'person') ?>
 		</h2></div>
 		<?php if ($about !== '') { ?><div class="bx1 justify"><p><b>О фильме:</b> <?= nl2br(details_h($about)) ?></p></div><?php } ?>
+		<?= kz_mt_render_details_block($id) ?>
 		<div class="bx1"><div class="pad0x0x5x0"><ul class="lis"><li id="tbch100" class="mn"><a onclick="showtab(100); return false;" href="#">Техданные</a></li><li id="tbch0"><a onclick="showtab(0); return false;" href="#">Релиз</a></li><li id="tbch1"><a onclick="showtab(1); return false;" href="#">Скриншоты</a></li></ul></div><div class="clr"></div><div class="justify mn2 pad5x5" id="tabs"></div></div>
 		<div class="bx1"><div class="pad0x0x5x0"><ul class="lis"><li id="tbch2100" class="mn"><a onclick="showtab2(100); return false;" href="#">Подобные</a></li><li id="tbch2101"><a onclick="showtab2(101); return false;" href="#">Топ по жанрам</a></li><li id="tbch2102"><a onclick="showtab2(102); return false;" href="#">Топ по персонам</a></li><li id="tbch2103"><a onclick="showtab2(103); return false;" href="#">Топ раздающего</a></li></ul></div><div class="clr"></div><div class="justify mn2" id="tabs2"></div></div>
 		<?= details_comments_html($id, (int)$row['comments'], $comment_page) ?>

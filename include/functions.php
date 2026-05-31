@@ -1271,6 +1271,7 @@ function deletetorrent($id) {
 	foreach(explode('.','peers.files.comments.ratings') as $x)
 		sql_query('DELETE FROM '.$x.' WHERE torrent = '.$id);
 	sql_query('DELETE FROM torrents_scrape WHERE tid = '.$id);
+	sql_query('DELETE FROM torrent_trackers WHERE torrentid = '.$id);
 	sql_query('DELETE FROM torrents_descr WHERE tid = '.$id);
 	unlink($torrent_dir.'/'.$id.'.torrent');
 }

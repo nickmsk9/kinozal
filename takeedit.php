@@ -4,6 +4,7 @@ require_once("include/BDecode.php");
 require_once("include/BEncode.php");
 require_once("include/bittorrent.php");
 require_once("include/kz_upload.php");
+require_once("include/kz_multitracker.php");
 
 function bark($msg) {
 	stderr("Ошибка", $msg);
@@ -81,10 +82,10 @@ function kz_takeedit_parse_torrent($file)
 		$type = "multi";
 	}
 
-	$dict['announce'] = $announce_urls[0];
+	$announce_list = kz_mt_extract_announces($dict);
+	$dict = kz_mt_apply_announces_to_dict($dict, $announce_list);
 	$dict['info']['private'] = 1;
 	$dict['info']['source'] = "[$DEFAULTBASEURL] $SITENAME";
-	unset($dict['announce-list'], $dict['nodes'], $dict['azureus_properties']);
 	unset($dict['info']['crc32'], $dict['info']['ed2k'], $dict['info']['md5sum'], $dict['info']['sha1'], $dict['info']['tiger']);
 
 	$dict = BDecode(BEncode($dict));
@@ -104,6 +105,7 @@ function kz_takeedit_parse_torrent($file)
 		'type' => $type,
 		'filelist' => $filelist,
 		'dict' => $dict,
+		'announces' => $announce_list,
 	);
 }
 
@@ -111,6 +113,7 @@ dbconn();
 loggedinorreturn();
 
 kz_upload_ensure_schema();
+kz_mt_ensure_schema();
 
 if (!isset($_POST['id'], $_POST['name'], $_POST['type'])) {
 	bark("missing form data");
@@ -207,6 +210,8 @@ if ($torrent_data) {
 	foreach ($torrent_data['filelist'] as $file_row) {
 		sql_query("INSERT INTO files (torrent, filename, size) VALUES ($id, " . sqlesc($file_row[0]) . ", " . (int)$file_row[1] . ")");
 	}
+
+	kz_mt_save_trackers($id, $torrent_data['announces']);
 }
 
 if (get_user_class() >= UC_ADMINISTRATOR) {
@@ -222,6 +227,12 @@ if (get_user_class() >= UC_ADMINISTRATOR) {
 	if (isset($_POST['free']) && in_array($_POST['free'], array('yes', 'silver', 'no'), true)) {
 		$updateset[] = "free = " . sqlesc($_POST['free']);
 	}
+}
+
+if (get_user_class() >= UC_MODERATOR && !$torrent_data && isset($_POST['external_trackers'])) {
+	$posted_trackers = kz_mt_parse_posted_urls($_POST['external_trackers']);
+	kz_mt_save_trackers($id, $posted_trackers);
+	kz_mt_rewrite_torrent_file_announces($id, $posted_trackers);
 }
 
 $updateset[] = "visible = " . sqlesc(!empty($_POST["visible"]) ? "yes" : "no");

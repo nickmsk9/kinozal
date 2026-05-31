@@ -5,6 +5,7 @@ require_once("include/BEncode.php");
 require_once("include/bittorrent.php");
 require_once("include/kz_upload.php");
 require_once("include/kz_test_torrents.php");
+require_once("include/kz_multitracker.php");
 
 ini_set("upload_max_filesize", $max_torrent_size);
 
@@ -88,10 +89,10 @@ function kz_takeupload_parse_torrent($file)
 		$type = "multi";
 	}
 
-	$dict['announce'] = $announce_urls[0];
+	$announce_list = kz_mt_extract_announces($dict);
+	$dict = kz_mt_apply_announces_to_dict($dict, $announce_list);
 	$dict['info']['private'] = 1;
 	$dict['info']['source'] = "[$DEFAULTBASEURL] $SITENAME";
-	unset($dict['announce-list'], $dict['nodes'], $dict['azureus_properties']);
 	unset($dict['info']['crc32'], $dict['info']['ed2k'], $dict['info']['md5sum'], $dict['info']['sha1'], $dict['info']['tiger']);
 
 	$dict = BDecode(BEncode($dict));
@@ -112,6 +113,7 @@ function kz_takeupload_parse_torrent($file)
 		'type' => $type,
 		'filelist' => $filelist,
 		'dict' => $dict,
+		'announces' => $announce_list,
 	);
 }
 
@@ -122,6 +124,7 @@ parked();
 
 kz_upload_ensure_schema();
 kz_test_torrents_ensure_schema();
+kz_mt_ensure_schema();
 
 $is_test_upload = get_user_class() < UC_VIP || !empty($_GET['test']) || !empty($_POST['test']);
 
@@ -216,7 +219,7 @@ $ret = sql_query("INSERT INTO torrents (filename, owner, visible, not_sticky, in
 	'',
 	$catid,
 	$torrent_data['save_as'],
-))) . ", '" . get_date_time() . "', '" . get_date_time() . "', 'no', " . sqlesc($is_test_upload ? 'yes' : 'no') . ")");
+))) . ", '" . get_date_time() . "', '" . get_date_time() . "', " . sqlesc(count($torrent_data['announces']) > 1 ? 'yes' : 'no') . ", " . sqlesc($is_test_upload ? 'yes' : 'no') . ")");
 
 if (!$ret) {
 	if (mysqli_errno($link) == 1062) {
@@ -226,6 +229,7 @@ if (!$ret) {
 }
 
 $id = mysqli_insert_id($link);
+kz_mt_save_trackers($id, $torrent_data['announces']);
 
 kz_upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
 

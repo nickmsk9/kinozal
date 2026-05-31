@@ -2,6 +2,7 @@
 
 require_once("include/bittorrent.php");
 require_once("include/kz_upload.php");
+require_once("include/kz_multitracker.php");
 
 if (!mkglobal("id")) {
 	die();
@@ -17,6 +18,7 @@ dbconn();
 loggedinorreturn();
 
 kz_upload_ensure_schema();
+kz_mt_ensure_schema();
 
 $res = sql_query("SELECT * FROM torrents WHERE id = $id");
 $row = mysqli_fetch_array($res);
@@ -53,6 +55,11 @@ if (get_user_class() >= UC_ADMINISTRATOR) {
 	$service_controls .= '<label><input type="radio" name="free" value="silver"' . (($row["free"] == "silver") ? ' checked="checked"' : '') . '> Серебряная раздача</label><br>';
 	$service_controls .= '<label><input type="radio" name="free" value="no"' . (($row["free"] == "no") ? ' checked="checked"' : '') . '> Обычная раздача</label><br>';
 	$service_controls .= '<label><input type="checkbox" name="not_sticky" value="no"' . (($row["not_sticky"] == "no") ? ' checked="checked"' : '') . '> Прикрепить этот торрент</label>';
+}
+if (get_user_class() >= UC_MODERATOR) {
+	$service_controls .= '<br><br><b>Внешние трекеры</b><br>';
+	$service_controls .= '<textarea name="external_trackers" rows="6" class="w100p">' . kz_h(kz_mt_external_textarea_value($id)) . '</textarea>';
+	$service_controls .= '<div class="n">По одному announce URL на строку. Наш announce добавляется первым автоматически.</div>';
 }
 
 $state = array(

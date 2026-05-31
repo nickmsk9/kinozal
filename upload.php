@@ -3,6 +3,7 @@
 require_once("include/bittorrent.php");
 require_once("include/kz_upload.php");
 require_once("include/kz_test_torrents.php");
+require_once("include/kz_multitracker.php");
 
 dbconn(false);
 
@@ -16,6 +17,7 @@ if (strlen($CURUSER['passkey']) != 32) {
 
 kz_upload_ensure_schema();
 kz_test_torrents_ensure_schema();
+kz_mt_ensure_schema();
 
 $is_test_upload = get_user_class() < UC_VIP || !empty($_GET['test']);
 

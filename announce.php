@@ -80,6 +80,7 @@ mysql_query("SELECT id FROM users WHERE passkey = " . sqlesc($passkey)) or err(m
 if (mysql_affected_rows() == 0)
 	err('Invalid passkey! Re-download the .torrent from '.$DEFAULTBASEURL);
 $hash = bin2hex($info_hash);
+// Announce works with local peers only; external tracker stats live outside `peers`.
 $res = mysql_query('SELECT id, visible, banned, free, seeders + leechers AS numpeers, UNIX_TIMESTAMP(added) AS ts FROM torrents WHERE info_hash = "'.$hash.'"') or err('Torrents error 1 (select)');
 $torrent = mysqli_fetch_array($res);
 if (!$torrent)

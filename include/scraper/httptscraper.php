@@ -47,9 +47,9 @@
 				if(!preg_match('#^[a-f0-9]{40}$#i',$hash)){ throw new ScraperException('Invalid infohash: ' . $hash . '.'); }
 			}
 			$url = trim($url);		
-			if (preg_match('%(http://.*?/)announce([^/]*)$%i', $url, $m)){ 
+			if (preg_match('%(https?://.*?/)announce([^/]*)$%i', $url, $m)){ 
 				$url = $m[1] . 'scrape' . $m[2];
-			}else if (preg_match('%(http://.*?/)scrape([^/]*)$%i', $url, $m)){ 
+			}else if (preg_match('%(https?://.*?/)scrape([^/]*)$%i', $url, $m)){ 
 			}else{
 				throw new ScraperException('Invalid tracker url.');
 			}
