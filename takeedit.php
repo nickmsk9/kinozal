@@ -49,6 +49,7 @@ function kz_takeedit_parse_torrent($file)
 		bark("Загруженный файл не похож на корректный torrent.");
 	}
 
+	$external_info_hash = sha1(BEncode($dict['info']));
 	$info = $dict['info'];
 	$dname = $info['name'] ?? $matches[1];
 	$pieces = $info['pieces'] ?? '';
@@ -106,6 +107,7 @@ function kz_takeedit_parse_torrent($file)
 		'filelist' => $filelist,
 		'dict' => $dict,
 		'announces' => $announce_list,
+		'external_info_hash' => $external_info_hash,
 	);
 }
 
@@ -211,7 +213,7 @@ if ($torrent_data) {
 		sql_query("INSERT INTO files (torrent, filename, size) VALUES ($id, " . sqlesc($file_row[0]) . ", " . (int)$file_row[1] . ")");
 	}
 
-	kz_mt_save_trackers($id, $torrent_data['announces']);
+	kz_mt_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
 }
 
 if (get_user_class() >= UC_ADMINISTRATOR) {
@@ -231,7 +233,7 @@ if (get_user_class() >= UC_ADMINISTRATOR) {
 
 if (get_user_class() >= UC_MODERATOR && !$torrent_data && isset($_POST['external_trackers'])) {
 	$posted_trackers = kz_mt_parse_posted_urls($_POST['external_trackers']);
-	kz_mt_save_trackers($id, $posted_trackers);
+	kz_mt_save_trackers($id, $posted_trackers, kz_mt_recover_external_info_hash($id, $row['info_hash'] ?? ''));
 	kz_mt_rewrite_torrent_file_announces($id, $posted_trackers);
 }
 

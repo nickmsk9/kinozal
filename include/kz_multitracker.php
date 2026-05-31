@@ -65,6 +65,12 @@ function kz_mt_is_local_url($url)
 	return kz_mt_url_key($url) === kz_mt_url_key(kz_mt_primary_announce());
 }
 
+function kz_mt_column_exists($table, $column)
+{
+	$res = sql_query("SHOW COLUMNS FROM `$table` LIKE " . sqlesc($column));
+	return $res && mysqli_num_rows($res) > 0;
+}
+
 function kz_mt_ensure_schema()
 {
 	static $done = false;
@@ -78,6 +84,7 @@ function kz_mt_ensure_schema()
 			id int(10) unsigned NOT NULL auto_increment,
 			torrentid int(10) unsigned NOT NULL,
 			announce_url varchar(500) NOT NULL,
+			external_info_hash varchar(40) NOT NULL DEFAULT '',
 			is_primary enum('yes','no') NOT NULL DEFAULT 'no',
 			seeders int(10) unsigned NULL DEFAULT NULL,
 			leechers int(10) unsigned NULL DEFAULT NULL,
@@ -91,6 +98,16 @@ function kz_mt_ensure_schema()
 			KEY enabled_checked (enabled, last_checked)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
+
+	if (!kz_mt_column_exists('torrent_trackers', 'external_info_hash')) {
+		sql_query("ALTER TABLE torrent_trackers ADD external_info_hash varchar(40) NOT NULL DEFAULT '' AFTER announce_url") or sqlerr(__FILE__, __LINE__);
+	}
+}
+
+function kz_mt_normalize_info_hash($hash)
+{
+	$hash = strtolower(trim((string)$hash));
+	return preg_match('/^[a-f0-9]{40}$/', $hash) ? $hash : '';
 }
 
 function kz_mt_extract_announces(array $dict)
@@ -150,7 +167,36 @@ function kz_mt_apply_announces_to_dict(array $dict, array $urls)
 	return $dict;
 }
 
-function kz_mt_save_trackers($torrentid, array $urls)
+function kz_mt_recover_external_info_hash($torrentid, $local_info_hash = '')
+{
+	global $torrent_dir;
+
+	$torrentid = (int)$torrentid;
+	$local_info_hash = kz_mt_normalize_info_hash($local_info_hash);
+	$path = rtrim((string)$torrent_dir, '/\\') . '/' . $torrentid . '.torrent';
+	if (!is_file($path) || !is_readable($path)) {
+		return $local_info_hash;
+	}
+
+	if (!function_exists('bdecode')) {
+		require_once ROOT_PATH . 'include/BDecode.php';
+	}
+	if (!function_exists('BEncode')) {
+		require_once ROOT_PATH . 'include/BEncode.php';
+	}
+
+	$dict = bdecode((string)file_get_contents($path));
+	if (!is_array($dict) || empty($dict['info']) || !is_array($dict['info'])) {
+		return $local_info_hash;
+	}
+
+	$info = $dict['info'];
+	unset($info['private'], $info['source']);
+	$hash = kz_mt_normalize_info_hash(sha1(BEncode($info)));
+	return $hash !== '' ? $hash : $local_info_hash;
+}
+
+function kz_mt_save_trackers($torrentid, array $urls, $external_info_hash = '')
 {
 	kz_mt_ensure_schema();
 	$torrentid = (int)$torrentid;
@@ -158,15 +204,21 @@ function kz_mt_save_trackers($torrentid, array $urls)
 		return;
 	}
 
+	$external_info_hash = kz_mt_normalize_info_hash($external_info_hash);
+	if ($external_info_hash === '') {
+		$external_info_hash = kz_mt_recover_external_info_hash($torrentid);
+	}
+
 	$urls = kz_mt_extract_announces(array('announce-list' => array($urls)));
 	$active = array();
 	foreach ($urls as $url) {
 		$is_primary = kz_mt_is_local_url($url) ? 'yes' : 'no';
+		$row_external_hash = $is_primary === 'yes' ? '' : $external_info_hash;
 		$active[] = sqlesc($url);
 		sql_query("
-			INSERT INTO torrent_trackers (torrentid, announce_url, is_primary, enabled)
-			VALUES ($torrentid, " . sqlesc($url) . ", " . sqlesc($is_primary) . ", 'yes')
-			ON DUPLICATE KEY UPDATE is_primary = VALUES(is_primary), enabled = 'yes'
+			INSERT INTO torrent_trackers (torrentid, announce_url, external_info_hash, is_primary, enabled)
+			VALUES ($torrentid, " . sqlesc($url) . ", " . sqlesc($row_external_hash) . ", " . sqlesc($is_primary) . ", 'yes')
+			ON DUPLICATE KEY UPDATE external_info_hash = VALUES(external_info_hash), is_primary = VALUES(is_primary), enabled = 'yes'
 		") or sqlerr(__FILE__, __LINE__);
 	}
 
@@ -213,7 +265,7 @@ function kz_mt_get_trackers($torrentid)
 {
 	kz_mt_ensure_schema();
 	$rows = array();
-	$res = sql_query("SELECT * FROM torrent_trackers WHERE torrentid = " . (int)$torrentid . " ORDER BY is_primary DESC, id ASC") or sqlerr(__FILE__, __LINE__);
+	$res = sql_query("SELECT * FROM torrent_trackers WHERE torrentid = " . (int)$torrentid . " ORDER BY (is_primary = 'yes') DESC, id ASC") or sqlerr(__FILE__, __LINE__);
 	while ($row = mysqli_fetch_assoc($res)) {
 		$rows[] = $row;
 	}
@@ -296,10 +348,10 @@ function kz_mt_scrape_tracker($url, $info_hash)
 	$url = kz_mt_normalize_url($url);
 	if (stripos($url, 'udp://') === 0) {
 		require_once ROOT_PATH . 'include/scraper/udptscraper.php';
-		$scraper = new udptscraper(4);
+		$scraper = new udptscraper(10);
 	} else {
 		require_once ROOT_PATH . 'include/scraper/httptscraper.php';
-		$scraper = new httptscraper(4, 65536);
+		$scraper = new httptscraper(12, 65536);
 	}
 	$result = $scraper->scrape($url, $info_hash);
 	return !empty($result[$info_hash]) && is_array($result[$info_hash]) ? $result[$info_hash] : false;
@@ -310,7 +362,7 @@ function kz_mt_update_due_trackers($limit = 25)
 	kz_mt_ensure_schema();
 	$limit = max(1, min(100, (int)$limit));
 	$res = sql_query("
-		SELECT tt.id, tt.torrentid, tt.announce_url, t.info_hash
+		SELECT tt.id, tt.torrentid, tt.announce_url, tt.external_info_hash, t.info_hash
 		FROM torrent_trackers AS tt
 		INNER JOIN torrents AS t ON t.id = tt.torrentid
 		WHERE tt.enabled = 'yes'
@@ -324,7 +376,13 @@ function kz_mt_update_due_trackers($limit = 25)
 	while ($row = mysqli_fetch_assoc($res)) {
 		$tracker_id = (int)$row['id'];
 		$torrentid = (int)$row['torrentid'];
-		$info_hash = strtolower((string)$row['info_hash']);
+		$info_hash = kz_mt_normalize_info_hash($row['external_info_hash'] ?? '');
+		if ($info_hash === '') {
+			$info_hash = kz_mt_recover_external_info_hash($torrentid, $row['info_hash'] ?? '');
+			if ($info_hash !== '') {
+				sql_query("UPDATE torrent_trackers SET external_info_hash = " . sqlesc($info_hash) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			}
+		}
 		try {
 			$stats = kz_mt_scrape_tracker($row['announce_url'], $info_hash);
 			if (!$stats) {
@@ -351,7 +409,7 @@ function kz_mt_update_torrent_trackers($torrentid)
 	}
 
 	$res = sql_query("
-		SELECT tt.id, tt.announce_url, t.info_hash
+		SELECT tt.id, tt.announce_url, tt.external_info_hash, t.info_hash
 		FROM torrent_trackers AS tt
 		INNER JOIN torrents AS t ON t.id = tt.torrentid
 		WHERE tt.torrentid = $torrentid AND tt.enabled = 'yes' AND tt.is_primary = 'no'
@@ -364,7 +422,13 @@ function kz_mt_update_torrent_trackers($torrentid)
 	while ($row = mysqli_fetch_assoc($res)) {
 		$total++;
 		$tracker_id = (int)$row['id'];
-		$info_hash = strtolower((string)$row['info_hash']);
+		$info_hash = kz_mt_normalize_info_hash($row['external_info_hash'] ?? '');
+		if ($info_hash === '') {
+			$info_hash = kz_mt_recover_external_info_hash($torrentid, $row['info_hash'] ?? '');
+			if ($info_hash !== '') {
+				sql_query("UPDATE torrent_trackers SET external_info_hash = " . sqlesc($info_hash) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			}
+		}
 		try {
 			$stats = kz_mt_scrape_tracker($row['announce_url'], $info_hash);
 			if (!$stats) {

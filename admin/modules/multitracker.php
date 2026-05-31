@@ -36,9 +36,9 @@ if (!function_exists('MultitrackerAdmin')) {
 
 		$stats = mysqli_fetch_assoc(sql_query("
 			SELECT COUNT(*) AS trackers,
-			       SUM(is_primary = 'no') AS external_trackers,
-			       SUM(enabled = 'yes' AND is_primary = 'no') AS enabled_external,
-			       SUM(enabled = 'yes' AND is_primary = 'no' AND (last_checked IS NULL OR last_checked < DATE_SUB(NOW(), INTERVAL " . (int)ceil(KZ_MT_TTL / 60) . " MINUTE)) AS due_external
+			       SUM(CASE WHEN is_primary = 'no' THEN 1 ELSE 0 END) AS external_trackers,
+			       SUM(CASE WHEN enabled = 'yes' AND is_primary = 'no' THEN 1 ELSE 0 END) AS enabled_external,
+			       SUM(CASE WHEN enabled = 'yes' AND is_primary = 'no' AND (last_checked IS NULL OR last_checked < DATE_SUB(NOW(), INTERVAL " . (int)ceil(KZ_MT_TTL / 60) . " MINUTE)) THEN 1 ELSE 0 END) AS due_external
 			FROM torrent_trackers
 		")) ?: array();
 

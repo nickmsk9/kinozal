@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS `torrent_trackers` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `torrentid` int(10) unsigned NOT NULL,
   `announce_url` varchar(500) NOT NULL,
+  `external_info_hash` varchar(40) NOT NULL DEFAULT '',
   `is_primary` enum('yes','no') NOT NULL DEFAULT 'no',
   `seeders` int(10) unsigned NULL DEFAULT NULL,
   `leechers` int(10) unsigned NULL DEFAULT NULL,

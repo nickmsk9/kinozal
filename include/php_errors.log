@@ -56,3 +56,53 @@ Stack trace:
 [31-May-2026 11:10:19 UTC] PHP Warning:  Undefined array key "tzoffset" in /var/www/html/message.php on line 206
 [31-May-2026 11:16:21 UTC] PHP Parse error:  syntax error, unexpected token "<<" in /var/www/html/include/groupex.php on line 617
 [31-May-2026 11:17:21 UTC] PHP Parse error:  syntax error, unexpected token "===" in /var/www/html/include/groupex.php on line 649
+[31-May-2026 11:49:50 UTC] PHP Deprecated:  Using ${var} in strings is deprecated, use {$var} instead in /var/www/html/include/scraper/lightbenc.php on line 144
+[31-May-2026 11:49:50 UTC] PHP Deprecated:  Using ${var} in strings is deprecated, use {$var} instead in /var/www/html/include/scraper/lightbenc.php on line 153
+[31-May-2026 11:51:02 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect date value: '1970-00-00' for column 'birth_date' at row 1 in /var/www/html/include/functions.php:189
+Stack trace:
+#0 /var/www/html/include/functions.php(189): mysqli_query(Object(mysqli), '\n\t\t\tINSERT INTO...')
+#1 /var/www/html/admin/modules/persons.php(78): sql_query('\n\t\t\tINSERT INTO...')
+#2 /var/www/html/admin/modules/persons.php(190): persons_admin_save(Array)
+#3 /var/www/html/admin/modules/persons.php(234): persons_admin_autoparse(1, true)
+#4 /var/www/html/admin/modules/persons.php(281): PersonsAdmin()
+#5 /var/www/html/admin/admin.php(93): require_once('/var/www/html/a...')
+#6 /var/www/html/admincp.php(36): include_once('/var/www/html/a...')
+#7 {main}
+  thrown in /var/www/html/include/functions.php on line 189
+[31-May-2026 11:58:32 UTC] PHP Warning:  Undefined array key "SERVER_PORT" in /var/www/html/include/init.php on line 33
+[31-May-2026 11:58:32 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /var/www/html/include/init.php on line 33
+[31-May-2026 11:58:32 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[31-May-2026 11:58:32 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /var/www/html/include/config.php on line 23
+[31-May-2026 11:58:32 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /var/www/html/include/config.php on line 59
+[31-May-2026 11:58:32 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /var/www/html/include/config.local.php on line 22
+[31-May-2026 11:58:32 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /var/www/html/include/config.local.php on line 58
+[31-May-2026 12:00:38 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'AS due_external
+			FROM torrent_trackers' at line 4 in /var/www/html/include/functions.php:189
+Stack trace:
+#0 /var/www/html/include/functions.php(189): mysqli_query(Object(mysqli), '\n\t\t\tSELECT COUN...')
+#1 /var/www/html/admin/modules/multitracker.php(37): sql_query('\n\t\t\tSELECT COUN...')
+#2 /var/www/html/admin/modules/multitracker.php(97): MultitrackerAdmin()
+#3 /var/www/html/admin/admin.php(93): require_once('/var/www/html/a...')
+#4 /var/www/html/admincp.php(36): include_once('/var/www/html/a...')
+#5 {main}
+  thrown in /var/www/html/include/functions.php on line 189
+[31-May-2026 12:00:45 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'AS due_external
+			FROM torrent_trackers' at line 4 in /var/www/html/include/functions.php:189
+Stack trace:
+#0 /var/www/html/include/functions.php(189): mysqli_query(Object(mysqli), '\n\t\t\tSELECT COUN...')
+#1 /var/www/html/admin/modules/multitracker.php(37): sql_query('\n\t\t\tSELECT COUN...')
+#2 /var/www/html/admin/modules/multitracker.php(97): MultitrackerAdmin()
+#3 /var/www/html/admin/admin.php(93): require_once('/var/www/html/a...')
+#4 /var/www/html/admincp.php(36): include_once('/var/www/html/a...')
+#5 {main}
+  thrown in /var/www/html/include/functions.php on line 189
+[31-May-2026 12:01:50 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'AS due_external
+			FROM torrent_trackers' at line 4 in /var/www/html/include/functions.php:189
+Stack trace:
+#0 /var/www/html/include/functions.php(189): mysqli_query(Object(mysqli), '\n\t\t\tSELECT COUN...')
+#1 /var/www/html/admin/modules/multitracker.php(37): sql_query('\n\t\t\tSELECT COUN...')
+#2 /var/www/html/admin/modules/multitracker.php(97): MultitrackerAdmin()
+#3 /var/www/html/admin/admin.php(93): require_once('/var/www/html/a...')
+#4 /var/www/html/admincp.php(36): include_once('/var/www/html/a...')
+#5 {main}
+  thrown in /var/www/html/include/functions.php on line 189

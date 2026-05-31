@@ -55,6 +55,7 @@ function kz_takeupload_parse_torrent($file)
 		bark("Загруженный файл не похож на корректный torrent.");
 	}
 
+	$external_info_hash = sha1(BEncode($dict['info']));
 	$info = $dict['info'];
 	$dname = $info['name'] ?? $matches[1];
 	$pieces = $info['pieces'] ?? '';
@@ -114,6 +115,7 @@ function kz_takeupload_parse_torrent($file)
 		'filelist' => $filelist,
 		'dict' => $dict,
 		'announces' => $announce_list,
+		'external_info_hash' => $external_info_hash,
 	);
 }
 
@@ -229,7 +231,7 @@ if (!$ret) {
 }
 
 $id = mysqli_insert_id($link);
-kz_mt_save_trackers($id, $torrent_data['announces']);
+kz_mt_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
 
 kz_upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
 

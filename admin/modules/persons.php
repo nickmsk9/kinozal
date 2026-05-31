@@ -43,7 +43,13 @@ if (!function_exists('PersonsAdmin')) {
 	function persons_admin_birth_sql($birth_date)
 	{
 		$birth_date = trim((string)$birth_date);
-		return preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/', $birth_date) ? sqlesc($birth_date) : 'NULL';
+		if (!preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/', $birth_date, $m)) {
+			return 'NULL';
+		}
+		if (!checkdate((int)$m[2], (int)$m[3], (int)$m[1])) {
+			return 'NULL';
+		}
+		return sqlesc($birth_date);
 	}
 
 	function persons_admin_save(array $person)
