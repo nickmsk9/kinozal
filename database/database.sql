@@ -75,6 +75,38 @@ CREATE TABLE `bookmarks` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
+# Structure for the `user_bookmarks` table :
+#
+
+DROP TABLE IF EXISTS `user_bookmarks`;
+
+CREATE TABLE `user_bookmarks` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `userid` int(10) unsigned NOT NULL default '0',
+  `target_userid` int(10) unsigned NOT NULL default '0',
+  `added_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_target` (`userid`,`target_userid`),
+  KEY `target_userid` (`target_userid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `person_bookmarks` table :
+#
+
+DROP TABLE IF EXISTS `person_bookmarks`;
+
+CREATE TABLE `person_bookmarks` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `userid` int(10) unsigned NOT NULL default '0',
+  `person_id` int(10) unsigned NOT NULL default '0',
+  `added_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_person` (`userid`,`person_id`),
+  KEY `person_id` (`person_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
 # Structure for the `captcha` table :
 #
 
