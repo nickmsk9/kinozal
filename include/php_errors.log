@@ -44,3 +44,15 @@ Stack trace:
 #1 C:\OSPanel\domains\kinozal.lv\index.php(30): dbconn()
 #2 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\include\functions.php on line 268
+[31-May-2026 11:10:15 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/message.php on line 15
+[31-May-2026 11:10:15 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/message.php on line 18
+[31-May-2026 11:10:15 UTC] PHP Warning:  Undefined array key "box" in /var/www/html/message.php on line 28
+[31-May-2026 11:10:15 UTC] PHP Warning:  Undefined array key "receiver_username" in /var/www/html/message.php on line 113
+[31-May-2026 11:10:15 UTC] PHP Warning:  Undefined array key "tzoffset" in /var/www/html/message.php on line 143
+[31-May-2026 11:10:15 UTC] PHP Warning:  Undefined array key "receiver_username" in /var/www/html/message.php on line 113
+[31-May-2026 11:10:15 UTC] PHP Warning:  Undefined array key "tzoffset" in /var/www/html/message.php on line 143
+[31-May-2026 11:10:15 UTC] PHP Warning:  Undefined array key "receiver_username" in /var/www/html/message.php on line 113
+[31-May-2026 11:10:15 UTC] PHP Warning:  Undefined array key "tzoffset" in /var/www/html/message.php on line 143
+[31-May-2026 11:10:19 UTC] PHP Warning:  Undefined array key "tzoffset" in /var/www/html/message.php on line 206
+[31-May-2026 11:16:21 UTC] PHP Parse error:  syntax error, unexpected token "<<" in /var/www/html/include/groupex.php on line 617
+[31-May-2026 11:17:21 UTC] PHP Parse error:  syntax error, unexpected token "===" in /var/www/html/include/groupex.php on line 649

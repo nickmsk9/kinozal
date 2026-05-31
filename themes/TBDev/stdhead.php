@@ -224,6 +224,9 @@ $page_title = $title !== '' ? $title : $site_name;
                 <ul>
                     <li><a href="/" title="Главная">Главная</a></li>
                     <li><a href="/forums.php" title="Форум">Форум</a></li>
+                    <?php if (!$is_logged) { ?>
+                        <li><a href="/signup.php" title="Регистрация">Регистрация</a></li>
+                    <?php } ?>
                     <li><a href="/browse.php" title="Каталог раздач">Раздачи</a></li>
                     <li><a href="/top.php" title="Топ раздач">Топ раздач</a></li>
                     <li><a href="/personsearch.php" title="Персоны">Персоны</a></li>

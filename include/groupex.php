@@ -606,81 +606,65 @@ function kz_groups_subcat_script($selected_map = array())
 
 function kz_groups_search_sidebar($info_text = 'Здесь отображены все группы, которые существуют. Для поиска определенных групп можете воспользоваться формой поиска, размещенной выше.', $show_banner = true)
 {
-    $name = kz_groups_request_text($_GET['name'] ?? '');
-    $userid = (int)($_GET['userid'] ?? 0);
-    $type = (int)($_GET['type'] ?? 0);
-    $cat = (int)($_GET['cat'] ?? 0);
-    $subcat = (int)($_GET['subcatsel'] ?? 0);
-    $sort = (int)($_GET['sort'] ?? 0);
+    $name    = kz_groups_request_text($_GET['name'] ?? '');
+    $userid  = (int)($_GET['userid'] ?? 0);
+    $type    = (int)($_GET['type'] ?? 0);
+    $cat     = (int)($_GET['cat'] ?? 0);
+    $subcat  = (int)($_GET['subcatsel'] ?? 0);
+    $sort    = (int)($_GET['sort'] ?? 0);
     $subcats = $cat > 0 ? kz_groups_subcategories_for($cat) : array();
 
-<<<<<<< HEAD
-	echo '<div class="mn3_menu">';
-	echo '<form method="get" action="/groupexlist.php"><ul class="men">';
-	if ($show_banner) {
-		echo '<li class="img"><a href="/groupexlist.php"><img src="/pic/bn/p_groupexlist.jpg" height="75" class="block w200" alt=""></a></li>';
-	}
-	echo '<li class="tp">Поиск группы<input type="hidden" name="action" value="search"></li>';
-	echo '<li class="img"><dl><dt>Название</dt><dd><input type="text" name="name" value="' . kz_groups_h($name) . '" class="w100"></dd></dl></li>';
-	echo '<li class="img"><dl><dt>Ид создателя</dt><dd><input type="text" name="userid" value="' . ($userid > 0 ? $userid : '') . '" class="w100"></dd></dl></li>';
-	echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="type">' . kz_groups_options(kz_groups_types(), $type, 'Выберите тип группы') . '</select></span></li>';
-	echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="cat" id="gsearch_cat" onchange="kzGroupsSubcatFor(\'gsearch_cat\', \'gsearch_subcatsel\');">' . kz_groups_options(kz_groups_categories(), $cat, 'Выберите из списка категорию') . '</select></span></li>';
-	echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="subcatsel" id="gsearch_subcatsel">';
-	if ($subcats) {
-		echo kz_groups_options($subcats, $subcat, 'Выберите подкатегорию');
-	} else {
-		echo '<option value="0">Не выбрана категория</option>';
-	}
-	echo '</select></span></li>';
-	echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="sort" id="sort">';
-	echo '<option value="0"' . kz_groups_selected($sort, 0) . '>Сортировать по добавлению</option>';
-	echo '<option value="1"' . kz_groups_selected($sort, 1) . '>Сортировать по участникам</option>';
-	echo '<option value="2"' . kz_groups_selected($sort, 2) . '>Сортировать по раздачам</option>';
-	echo '<option value="3"' . kz_groups_selected($sort, 3) . '>Сортировать по обсуждениям</option>';
-	echo '</select></span></li>';
-	echo '<li class="img"><input type="submit" value="Искать" class="w200 buttonS"></li>';
-	echo '<li class="tp">Меню</li>';
-	echo '<li><span class="bulet"></span><a href="/groupexcreate.php">Создание новой группы</a></li>';
-	echo '<li><span class="bulet"></span><a href="/groupexlist.php">Список групп</a></li>';
-	echo '<li><span class="bulet"></span><a href="/mygroups.php">Мои группы</a></li>';
-	echo '<li><span class="bulet"></span><a href="/bookmarks.php?type=2">Закладки</a></li>';
-	echo '<li class="tp">Информация</li>';
-	echo '<li class="justify">' . kz_groups_h($info_text) . '</li>';
-	echo '</ul></form></div>';
-=======
     echo '<div class="mn3_menu">';
-    echo '<form method="get" action="/groupexlist.php"><ul class="men">';
+    echo '<form method="get" action="/groupexlist.php">';
+    echo '<ul class="men">';
+
     if ($show_banner) {
         echo '<li class="img"><a href="/groupexlist.php"><img src="/pic/bn/p_groupexlist.jpg" height="75" class="block w200" alt=""></a></li>';
     }
+
     echo '<li class="tp">Поиск группы<input type="hidden" name="action" value="search"></li>';
     echo '<li class="img"><dl><dt>Название</dt><dd><input type="text" name="name" value="' . kz_groups_h($name) . '" class="w100"></dd></dl></li>';
     echo '<li class="img"><dl><dt>Ид создателя</dt><dd><input type="text" name="userid" value="' . ($userid > 0 ? $userid : '') . '" class="w100"></dd></dl></li>';
-    echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="type">' . kz_groups_options(kz_groups_types(), $type, 'Выберите тип группы') . '</select></span></li>';
-    echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="cat" id="gsearch_cat" onchange="kzGroupsSubcatFor(\'gsearch_cat\', \'gsearch_subcatsel\');">' . kz_groups_options(kz_groups_categories(), $cat, 'Выберите из списка категорию') . '</select></span></li>';
+
+    echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="type">';
+    echo kz_groups_options(kz_groups_types(), $type, 'Выберите тип группы');
+    echo '</select></span></li>';
+
+    echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="cat" id="gsearch_cat" onchange="kzGroupsSubcatFor(\'gsearch_cat\', \'gsearch_subcatsel\');">';
+    echo kz_groups_options(kz_groups_categories(), $cat, 'Выберите из списка категорию');
+    echo '</select></span></li>';
+
     echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="subcatsel" id="gsearch_subcatsel">';
+
     if ($subcats) {
         echo kz_groups_options($subcats, $subcat, 'Выберите подкатегорию');
     } else {
         echo '<option value="0">Не выбрана категория</option>';
     }
+
     echo '</select></span></li>';
+
     echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="sort" id="sort">';
     echo '<option value="0"' . kz_groups_selected($sort, 0) . '>Сортировать по добавлению</option>';
     echo '<option value="1"' . kz_groups_selected($sort, 1) . '>Сортировать по участникам</option>';
     echo '<option value="2"' . kz_groups_selected($sort, 2) . '>Сортировать по раздачам</option>';
     echo '<option value="3"' . kz_groups_selected($sort, 3) . '>Сортировать по обсуждениям</option>';
     echo '</select></span></li>';
+
     echo '<li class="img"><input type="submit" value="Искать" class="w200 buttonS"></li>';
+
     echo '<li class="tp">Меню</li>';
     echo '<li><span class="bulet"></span><a href="/groupexcreate.php">Создание новой группы</a></li>';
     echo '<li><span class="bulet"></span><a href="/groupexlist.php">Список групп</a></li>';
     echo '<li><span class="bulet"></span><a href="/mygroups.php">Мои группы</a></li>';
     echo '<li><span class="bulet"></span><a href="/bookmarks.php?type=2">Закладки</a></li>';
+
     echo '<li class="tp">Информация</li>';
     echo '<li class="justify">' . kz_groups_h($info_text) . '</li>';
-    echo '</ul></form></div>';
->>>>>>> cdb2e31 (fix)
+
+    echo '</ul>';
+    echo '</form>';
+    echo '</div>';
 }
 
 function kz_groups_status_text(array $group, $member)
