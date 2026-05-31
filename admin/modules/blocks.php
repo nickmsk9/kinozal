@@ -31,8 +31,12 @@ $allowed_modules = array_merge($allowed_modules, array(
 	"recover" => "Восстан. пароля",
 	"signup" => "Регистрация",
 	"login" => "Вход",
-	"mybonus" => "Мой Бонус",
-	"invite" => "Приглашения",
+		"mybonus" => "Мой Бонус",
+		"pay" => "Голоса и рейтинг",
+		"pay_mode" => "Управление голосами",
+		"pay_wishes" => "Пожелания",
+		"pay_help" => "Техподдержка",
+		"invite" => "Приглашения",
 	"bookmarks" => "Закладки",
 ));
 

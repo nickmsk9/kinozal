@@ -14,7 +14,7 @@ function my_menu($user) {
 	$name = my_h($user["username"]);
 	$avatar = !empty($user["avatar"]) ? my_h($user["avatar"]) : "/pic/default_avatar.gif";
 	$reputation = isset($user["simpaty"]) ? (int)$user["simpaty"] : 0;
-	$bonus = isset($user["bonus"]) ? number_format((float)$user["bonus"], 0, '.', ' ') : 0;
+	$bonus = function_exists('kz_pay_user_votes_from_array') ? number_format(kz_pay_user_votes_from_array($user), 0, '.', ' ') : (isset($user["bonus"]) ? number_format((float)$user["bonus"], 0, '.', ' ') : 0);
 
 	return '
 	<div class="mn1_menu">
@@ -42,8 +42,9 @@ function my_menu($user) {
 			<li class="tp">Голоса<span class="floatright b">' . $bonus . '</span></li>
 			<li><span class="bulet"></span><a href="/pay.php">Получить голоса</a></li>
 			<li><span class="bulet"></span><a href="/pay_mode.php">Управление голосами</a></li>
-			<li><span class="bulet"></span><a href="/pay_mode.php">Оставить пожелание</a></li>
-			<li><span class="bulet"></span><a href="/pay_mode.php">Обнулить счетчик скачиваний</a></li>
+				<li><span class="bulet"></span><a href="/pay_wishes.php">Пожелания</a></li>
+				<li><span class="bulet"></span><a href="/pay_mode.php">Обнулить счетчик скачиваний</a></li>
+				<li><span class="bulet"></span><a href="/pay_help.php">Техподдержка</a></li>
 		</ul>
 	</div>';
 }
@@ -165,7 +166,7 @@ if (isset($_GET["mailsent"])) {
 		<form name="mymail" method="post" action="/takeprofedit.php?act=13">
 			<div class="bx1"><div class="pad5x5 u2"><span class="bulet"></span>Сменить почтовый ящик</div><table class="tables4">
 				<tr><td class="w120 right nw">Ваша почта</td><td colspan="2"><b><?= my_h($CURUSER["email"]) ?></b> ( При смене адреса письмо для подтверждения высылается на новый адрес )</td></tr>
-				<tr><td class="w120 right nw">Новая почта</td><td><input type="text" name="mail" value="" size="28" autocomplete="off"></td><td><a class="sba" href="/helpdesk.php">Для смены почты обратитесь в Помощь Администрации</a></td></tr>
+					<tr><td class="w120 right nw">Новая почта</td><td><input type="text" name="mail" value="" size="28" autocomplete="off"></td><td><a class="sba" href="/pay_help.php">Для смены почты обратитесь в техподдержку</a></td></tr>
 				<tr><td class="w120 right nw">Подтвердите почту</td><td><input type="text" name="mailagain" value="" size="28" autocomplete="off"></td><td></td></tr>
 				<tr><td colspan="3"><input type="submit" value="Сменить почту" class="buttonS w200"></td></tr>
 			</table></div>

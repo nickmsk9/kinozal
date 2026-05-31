@@ -997,6 +997,22 @@ function kz_user_daily_torrent_limit($class)
 function kz_user_effective_torrent_limit($user)
 {
 	$limit = kz_user_daily_torrent_limit((int)($user['class'] ?? UC_USER));
+	$class = (int)($user['class'] ?? UC_USER);
+
+	$vipUntil = (string)($user['pay_vip_until'] ?? '');
+	$hasTemporaryVip = $vipUntil !== '' && $vipUntil !== '0000-00-00 00:00:00';
+	$temporaryVipActive = $hasTemporaryVip && strtotime($vipUntil) >= time();
+	if (($class >= UC_VIP && !$hasTemporaryVip) || $temporaryVipActive) {
+		$limit = max($limit, 80);
+	}
+
+	$donorUntil = (string)($user['pay_donor_until'] ?? '');
+	$hasTemporaryDonor = $donorUntil !== '' && $donorUntil !== '0000-00-00 00:00:00';
+	$donorActive = ($user['donor'] ?? 'no') === 'yes' && (!$hasTemporaryDonor || strtotime($donorUntil) >= time());
+	if ($donorActive) {
+		$limit = max($limit, 32);
+	}
+
 	$downloaded = (float)($user['downloaded'] ?? 0);
 	$uploaded = (float)($user['uploaded'] ?? 0);
 

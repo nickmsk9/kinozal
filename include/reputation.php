@@ -263,7 +263,9 @@ function kz_profile_menu_html($user, $viewer)
 	$class = 'u' . (int)$user['class'];
 	$avatar = !empty($user['avatar']) ? kz_rep_h($user['avatar']) : '/pic/default_avatar.gif';
 	$reputation = (int)($user['simpaty'] ?? 0);
-	$bonus = isset($viewer['bonus']) ? number_format((float)$viewer['bonus'], 0, '.', ' ') : 0;
+	$bonus = function_exists('kz_pay_user_votes_from_array')
+		? number_format(kz_pay_user_votes_from_array($viewer), 0, '.', ' ')
+		: (isset($viewer['bonus']) ? number_format((float)$viewer['bonus'], 0, '.', ' ') : 0);
 	$isOwn = !empty($viewer['id']) && (int)$viewer['id'] === $id;
 	$hash = kz_rep_h($viewer['hash4u'] ?? ($viewer['logout_hash'] ?? ''));
 
@@ -367,6 +369,13 @@ function kz_reputation_add($targetid, $direction, $description)
 	$left = kz_reputation_left_today((int)$CURUSER['id']);
 	if ($left <= 0 && get_user_class() < UC_ADMINISTRATOR) {
 		stderr('&#1054;&#1096;&#1080;&#1073;&#1082;&#1072;', '&#1057;&#1091;&#1090;&#1086;&#1095;&#1085;&#1099;&#1081; &#1083;&#1080;&#1084;&#1080;&#1090; &#1086;&#1090;&#1079;&#1099;&#1074;&#1086;&#1074; &#1080;&#1089;&#1095;&#1077;&#1088;&#1087;&#1072;&#1085;.');
+	}
+
+	if (function_exists('kz_pay_charge_votes') && get_user_class() < UC_ADMINISTRATOR) {
+		$vote_cost = function_exists('kz_pay_int_setting') ? kz_pay_int_setting('reputation_vote_cost', 1) : 1;
+		if ($vote_cost > 0 && !kz_pay_charge_votes((int)$CURUSER['id'], $vote_cost, 'reputation', 'Отзыв к репутации пользователя #' . $targetid)) {
+			stderr('&#1054;&#1096;&#1080;&#1073;&#1082;&#1072;', '&#1053;&#1077;&#1076;&#1086;&#1089;&#1090;&#1072;&#1090;&#1086;&#1095;&#1085;&#1086; &#1075;&#1086;&#1083;&#1086;&#1089;&#1086;&#1074; &#1076;&#1083;&#1103; &#1086;&#1090;&#1079;&#1099;&#1074;&#1072;.');
+		}
 	}
 
 	$good = $direction === 'plus' ? 1 : 0;

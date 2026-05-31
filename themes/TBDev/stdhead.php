@@ -26,7 +26,7 @@ $user_class     = $is_logged ? (int)$CURUSER['class'] : 0;
 $user_class_css = 'u' . $user_class;
 $user_uploaded  = $is_logged ? (float)$CURUSER['uploaded'] : 0;
 $user_download  = $is_logged ? (float)$CURUSER['downloaded'] : 0;
-$user_bonus     = $is_logged && isset($CURUSER['bonus']) ? $CURUSER['bonus'] : 0;
+$user_bonus     = $is_logged && function_exists('kz_pay_user_votes_from_array') ? kz_pay_user_votes_from_array($CURUSER) : ($is_logged && isset($CURUSER['bonus']) ? $CURUSER['bonus'] : 0);
 
 $uped   = ($is_logged && function_exists('mksize')) ? mksize($user_uploaded) : '0 Б';
 $downed = ($is_logged && function_exists('mksize')) ? mksize($user_download) : '0 Б';
@@ -321,7 +321,7 @@ $page_title = $title !== '' ? $title : $site_name;
                         <ul class="men">
                             <li><span class="bulet"></span><a href="/pay.php">Поднять рейтинг и голоса</a></li>
                             <li><span class="bulet"></span><a href="/pay_wishes.php">Пожелания проекту</a></li>
-                            <li><span class="bulet"></span><a href="/helpdesk.php">Помощь Администрации</a></li>
+                            <li><span class="bulet"></span><a href="/pay_help.php">Техподдержка</a></li>
                             <li><span class="bulet"></span><a href="/users.php">Список пользователей</a></li>
                         </ul>
                     </div>

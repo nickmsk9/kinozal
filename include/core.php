@@ -15,6 +15,7 @@ require_once($rootpath . 'include/functions.php');
 require_once($rootpath . 'include/cups.php');
 require_once($rootpath . 'include/user_statuses.php');
 require_once($rootpath . 'include/reputation.php');
+require_once($rootpath . 'include/kz_pay.php');
 require_once($rootpath . 'include/blocks.php');
 require_once($rootpath . 'include/secrets.php');
 require_once($rootpath . 'include/secrets.local.php');

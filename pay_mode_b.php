@@ -33,20 +33,26 @@ $left_today = kz_reputation_left_today((int)$CURUSER["id"]);
 $daily_limit = kz_reputation_daily_limit();
 $checked_plus = $vote === "plus" ? " checked" : "";
 $checked_minus = $vote === "minus" ? " checked" : "";
+$viewer = function_exists('kz_pay_user') ? kz_pay_user((int)$CURUSER['id']) : $CURUSER;
+$vote_cost = function_exists('kz_pay_int_setting') ? kz_pay_int_setting('reputation_vote_cost', 1) : 1;
+$viewer_votes = function_exists('kz_pay_user_votes_from_array') ? kz_pay_user_votes_from_array($viewer) : 0;
 
+$hide_right_blocks = true;
 stdhead("&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; :: " . $user["username"]);
 
 ?>
-<div class="content">
-<div class="bx1_0"><table class="tables1 w100p"><tr><td class="w200 top">
-<?= kz_profile_menu_html($user, $CURUSER) ?>
-</td><td class="w95p top">
+<div class="mn_wrap">
+<div class="mn1_menu">
+<?= kz_profile_menu_html($user, $viewer ?: $CURUSER) ?>
+</div>
+<div class="mn1_content">
 <div class="bx1 <?= $profile_class ?>"><a href="/userdetails.php?id=<?= $userid ?>" class="<?= $profile_class ?>"><?= $profile_name ?></a><?= function_exists('get_user_icons') ? get_user_icons($user) : '' ?></div>
 <div class="bx1">
 	<div class="<?= $profile_class ?>"><span class="bulet"></span>&#1054;&#1089;&#1090;&#1072;&#1074;&#1080;&#1090;&#1100; &#1086;&#1090;&#1079;&#1099;&#1074; &#1082; &#1088;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1080;</div>
 	<div class="pad5x5">
 		&#1057;&#1091;&#1090;&#1086;&#1095;&#1085;&#1099;&#1081; &#1083;&#1080;&#1084;&#1080;&#1090;: <b><?= $daily_limit ?></b>,
 		&#1086;&#1089;&#1090;&#1072;&#1083;&#1086;&#1089;&#1100; &#1089;&#1077;&#1075;&#1086;&#1076;&#1085;&#1103;: <b><?= $left_today ?></b>.
+		Стоимость отзыва: <b><?= (int)$vote_cost ?></b> голосов. На Вашем счете: <b><?= (int)$viewer_votes ?></b>.
 	</div>
 </div>
 <div class="bx1_0">
@@ -69,7 +75,8 @@ stdhead("&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; :: " . 
 </table>
 </form>
 </div>
-</td></tr></table></div>
+</div>
+<div class="clr"></div>
 </div>
 <?
 

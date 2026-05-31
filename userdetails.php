@@ -37,6 +37,20 @@ function ud_datetime($value) {
 	return ud_h(date('d.m.Y в H:i', $ts)) . " ( " . get_et($ts) . " назад )";
 }
 
+function ud_pay_until($value) {
+	if (empty($value) || $value == "0000-00-00 00:00:00") {
+		return "активен";
+	}
+	$ts = strtotime($value);
+	if (!$ts) {
+		return "активен";
+	}
+	if ($ts < time()) {
+		return "истек";
+	}
+	return "до " . ud_h(date('d.m.Y в H:i', $ts));
+}
+
 function ud_birthday($value, $link_class = "sba") {
 	if (empty($value) || $value == "0000-00-00") {
 		return '<a href="/users.php" class="' . ud_h($link_class) . '">не указано</a>';
@@ -280,7 +294,7 @@ $uploaded_total = ud_size($user["uploaded"]);
 $downloaded_total = ud_size($user["downloaded"]);
 $seed_total = ud_minutes($user["seedtime"] ?? 0);
 $leech_total = ud_minutes($user["leechtime"] ?? 0);
-$bonus = isset($user["bonus"]) ? (float)$user["bonus"] : 0;
+$bonus = function_exists('kz_pay_user_votes_from_array') ? kz_pay_user_votes_from_array($user) : (isset($user["bonus"]) ? (float)$user["bonus"] : 0);
 $reputation = isset($user["simpaty"]) ? (int)$user["simpaty"] : 0;
 $rank_name = ud_h(ud_rank_name($user));
 $user_class_css = 'u' . (int)$user["class"];
@@ -288,6 +302,8 @@ $user_icons = function_exists('get_user_icons') ? get_user_icons($user) : '';
 $daily_limit = function_exists('kz_user_effective_torrent_limit') ? kz_user_effective_torrent_limit($user) : 20;
 $daily_downloaded = function_exists('kz_torrent_downloads_today') ? kz_torrent_downloads_today($id) : 0;
 $is_own_profile = !empty($CURUSER["id"]) && (int)$CURUSER["id"] === $id;
+$donor_status = ($user["donor"] ?? "no") === "yes" ? ud_pay_until($user["pay_donor_until"] ?? "") : "";
+$vip_status = (!empty($user["pay_vip_until"]) && ($user["pay_vip_until"] ?? "0000-00-00 00:00:00") !== "0000-00-00 00:00:00") ? ud_pay_until($user["pay_vip_until"]) : "";
 
 $country_name = "не указано";
 $country_flag = "";
@@ -374,10 +390,13 @@ if (!$enabled) {
 			<?= ud_table_row("Залил", $uploaded_total . " ( сегодня: 0 Б )") ?>
 			<?= ud_table_row("Скачал", $downloaded_total . " ( сегодня: 0 Б )") ?>
 			<?= ud_table_row("Рейтинг", ud_rating_img($ratio_value) . $ratio_value) ?>
-			<?= ud_table_row("Сид", $seed_total . " ( сегодня: 0 мин. )") ?>
-			<?= ud_table_row("Пир", $leech_total . " ( сегодня: 0 мин. )") ?>
-			<?= ud_table_row("Торренты", "Доступно в сутки ( $daily_limit ) Скачано ( $daily_downloaded ) Последний ( $last_torrent_link )") ?>
-		</table></div>
+				<?= ud_table_row("Сид", $seed_total . " ( сегодня: 0 мин. )") ?>
+				<?= ud_table_row("Пир", $leech_total . " ( сегодня: 0 мин. )") ?>
+				<?= ud_table_row("Торренты", "Доступно в сутки ( $daily_limit ) Скачано ( $daily_downloaded ) Последний ( $last_torrent_link )") ?>
+				<?= ud_table_row("Голоса", number_format($bonus, 0, '.', ' ') . ' [ <a href="/pay.php" class="' . $user_class_css . '">получить</a> ]') ?>
+				<? if ($donor_status !== "") { echo ud_table_row("Меценат", $donor_status); } ?>
+				<? if ($vip_status !== "") { echo ud_table_row("ВИП", $vip_status); } ?>
+			</table></div>
 		<div class="bx1_0"><table class="tables1 <?= $user_class_css ?>">
 			<?= ud_table_row("Раздачи", $torrent_count > 0 ? '<a href="/mytorrents.php?id=' . $id . '" class="' . $user_class_css . '">' . $torrent_count . ' раздач</a>' : "нет раздач") ?>
 			<?= ud_table_row("Комментарии", $comment_count > 0 ? '<a href="/userhistory.php?id=' . $id . '" class="' . $user_class_css . '">' . $comment_count . ' комментариев</a>' : "нет комментариев") ?>

@@ -64,7 +64,7 @@ function kz_msg_profile_menu(array $user, $self = true)
 	$id = (int)$user['id'];
 	$avatar = kz_msg_h(kz_msg_avatar($user));
 	$rep = (int)($user['simpaty'] ?? 0);
-	$bonus = number_format((float)($user['bonus'] ?? 0), 0, '.', ' ');
+	$bonus = function_exists('kz_pay_user_votes_from_array') ? number_format(kz_pay_user_votes_from_array($user), 0, '.', ' ') : number_format((float)($user['bonus'] ?? 0), 0, '.', ' ');
 	$hash = kz_msg_h($user['hash4u'] ?? ($user['logout_hash'] ?? ''));
 
 	if (!$self) {

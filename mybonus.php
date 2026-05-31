@@ -101,11 +101,19 @@ function send(){
 	<img src="pic/loading.gif" border="0" />
 </div>
 <div id="ajax">
-<table class="embedded" width="550" border="1" cellspacing="0" cellpadding="5">
+<div class="success">
+	<b>Голоса и рейтинг</b><br />
+	Бонусы можно обменять на голоса в разделе <a href="/pay.php" class="sbab">Голоса и рейтинг</a>.
+	<?php if (function_exists('kz_pay_user_votes_from_array')) { ?>
+		Сейчас у Вас <b><?= kz_pay_user_votes_from_array($CURUSER) ?></b> голосов.
+	<?php } ?>
+</div>
+	<table class="embedded" width="550" border="1" cellspacing="0" cellpadding="5">
 <?
 	$my_points = $CURUSER["bonus"];
+	$output = "";
 	$res = sql_query("SELECT * FROM bonus") or sqlerr(__FILE__,__LINE__);
-	while ($arr = mysql_fetch_assoc($res)) {
+	while ($arr = mysqli_fetch_assoc($res)) {
 		$id = $arr["id"];
 		$bonus = $arr["name"];
 		$points = $arr["points"];

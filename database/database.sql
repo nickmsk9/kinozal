@@ -532,6 +532,93 @@ INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES
   ('reputation_signup_value', '1');
 
 #
+# Structure for the `pay_settings` table :
+#
+
+DROP TABLE IF EXISTS `pay_settings`;
+
+CREATE TABLE `pay_settings` (
+  `setting_key` varchar(80) NOT NULL,
+  `setting_value` text NOT NULL,
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `pay_settings` (`setting_key`, `setting_value`) VALUES
+  ('exchange_options', '25:1:25 бонусов - получить 1 голос\n100:5:100 бонусов - получить 5 голосов\n180:10:180 бонусов - получить 10 голосов\n350:25:350 бонусов - получить 25 голосов'),
+  ('donor_cost', '75'),
+  ('wish_cost', '5'),
+  ('reset_counter_cost', '5'),
+  ('delete_history_cost', '5'),
+  ('vip_cost', '1500'),
+  ('vip_enabled', '0'),
+  ('reputation_vote_cost', '1'),
+  ('home_block_enabled', '1'),
+  ('chat_enabled', '1');
+
+#
+# Structure for the `pay_transactions` table :
+#
+
+DROP TABLE IF EXISTS `pay_transactions`;
+
+CREATE TABLE `pay_transactions` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `userid` int(10) unsigned NOT NULL default '0',
+  `username` varchar(40) NOT NULL default '',
+  `operation` varchar(40) NOT NULL default '',
+  `bonus_delta` decimal(10,2) NOT NULL default '0.00',
+  `votes_delta` int(10) NOT NULL default '0',
+  `uploaded_delta` bigint(20) NOT NULL default '0',
+  `details` text NOT NULL,
+  `ip` varchar(45) NOT NULL default '',
+  `created_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY  (`id`),
+  KEY `userid_created` (`userid`,`created_at`),
+  KEY `operation_created` (`operation`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `pay_wishes` table :
+#
+
+DROP TABLE IF EXISTS `pay_wishes`;
+
+CREATE TABLE `pay_wishes` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `userid` int(10) unsigned NOT NULL default '0',
+  `username` varchar(40) NOT NULL default '',
+  `userclass` tinyint(3) unsigned NOT NULL default '0',
+  `text` text NOT NULL,
+  `cost_votes` int(10) unsigned NOT NULL default '0',
+  `active` enum('yes','no') NOT NULL default 'yes',
+  `added` datetime NULL DEFAULT NULL,
+  PRIMARY KEY  (`id`),
+  KEY `active_added` (`active`,`added`),
+  KEY `userid` (`userid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `pay_chat` table :
+#
+
+DROP TABLE IF EXISTS `pay_chat`;
+
+CREATE TABLE `pay_chat` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `tab` tinyint(3) unsigned NOT NULL default '1',
+  `userid` int(10) unsigned NOT NULL default '0',
+  `username` varchar(40) NOT NULL default '',
+  `userclass` tinyint(3) unsigned NOT NULL default '0',
+  `text` text NOT NULL,
+  `ip` varchar(45) NOT NULL default '',
+  `visible` enum('yes','no') NOT NULL default 'yes',
+  `added` datetime NULL DEFAULT NULL,
+  PRIMARY KEY  (`id`),
+  KEY `tab_added` (`tab`,`added`),
+  KEY `userid` (`userid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
 # Structure for the `simpaty` table :
 #
 
@@ -859,6 +946,7 @@ CREATE TABLE `users` (
   `uploaded` bigint(20) unsigned NOT NULL default '0',
   `downloaded` bigint(20) unsigned NOT NULL default '0',
   `bonus` decimal(7,2) NOT NULL default '0.00',
+  `pay_votes` int(10) unsigned NOT NULL DEFAULT '0',
   `title` varchar(30) NOT NULL default '',
   `country` int(10) unsigned NOT NULL default '0',
   `notifs` varchar(100) NOT NULL default '',
@@ -867,6 +955,8 @@ CREATE TABLE `users` (
   `parked` enum('yes','no') NOT NULL default 'no',
   `avatars` enum('yes','no') NOT NULL default 'yes',
   `donor` enum('yes','no') NOT NULL default 'no',
+  `pay_donor_until` datetime NULL DEFAULT NULL,
+  `pay_vip_until` datetime NULL DEFAULT NULL,
   `simpaty` int(10) NOT NULL default '1',
   `warned` enum('yes','no') NOT NULL default 'no',
   `warneduntil` datetime NULL DEFAULT NULL,
@@ -1292,6 +1382,7 @@ INSERT INTO `orbital_blocks` (`bid`, `bkey`, `title`, `content`, `bposition`, `w
   (4,'','Поиск','','r',3,0,'','block-search.php',0,'0','d','all'),
   (5,'','Опрос','','c',4,1,'','block-polls.php',1,'0','d','ihome,'),
   (6,'','Релизы','','c',5,1,'','block-releases.php',0,'0','d','ihome,'),
-  (11,'','Загрузка сервера','','c',8,1,'','block-server_load.php',0,'0','d','ihome,');
+  (11,'','Загрузка сервера','','c',8,1,'','block-server_load.php',0,'0','d','ihome,'),
+  (15,'','Меценаты','','c',100,1,'0','block-pay.php',1,'0','d','ihome,');
 
 COMMIT;
