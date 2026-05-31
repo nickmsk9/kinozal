@@ -374,13 +374,17 @@ $page_title = $title !== '' ? $title : $site_name;
                         <?php
                         $current_module = str_replace('.php', '', basename($_SERVER['PHP_SELF'] ?? ''));
 
-                        if (in_array($current_module, array('index', 'radio'), true)) {
-                            echo '<div class="pad0x0x5x0 center">';
-                            echo '<a href="/radio.php" title="Радио Кинозал.ТВ">';
-                            echo '<img src="/pic/radio_ban.jpg" height="57" class="w190 block" alt="Радио Кинозал.ТВ">';
-                            echo '</a>';
-                            echo '</div>';
-                        }
+                        echo '<div class="bx2_0">';
+                        echo '<ul class="men">';
+                        echo '<li class="tp2 center"><a href="/uarch.php" class="sbab">Улыбка</a> от <img src="/pic/emty.gif" class="i2 c8" alt=""><a href="/userdetails.php?id=2396813" class="u8">Ananasix</a><i class="i1 s_dv"></i></li>';
+                        echo '<li class="center"><a href="/uarch.php"><img src="/pic/uarch_smile.jpg" width="175" alt=""></a></li>';
+                        echo '</ul>';
+                        echo '</div>';
+                        echo '<div class="pad0x0x5x0 center">';
+                        echo '<a href="/radio.php" title="Радио Кинозал.ТВ">';
+                        echo '<img src="/pic/radio_ban.jpg" height="57" class="w190 block" alt="Радио Кинозал.ТВ">';
+                        echo '</a>';
+                        echo '</div>';
 
                         if (function_exists('show_blocks')) {
                             show_blocks('r');
