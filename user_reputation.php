@@ -43,21 +43,37 @@ if ($limitNumber > 0) {
 	$rows = array_slice($rows, $offsetNumber, $limitNumber);
 }
 
+$hide_right_blocks = true;
 stdhead("&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; :: " . $user["username"]);
 
 ?>
-<div class="content">
-<div class="bx1_0"><table class="tables1 w100p"><tr><td class="w200 top">
-<?= kz_profile_menu_html($user, $CURUSER) ?>
-</td><td class="w95p top">
-<div class="bx1 <?= $profile_class ?>"><a href="/userdetails.php?id=<?= $userid ?>" class="<?= $profile_class ?>"><?= $profile_name ?></a><?= function_exists('get_user_icons') ? get_user_icons($user) : '' ?></div>
-<div class="bx1 justify"><span class="<?= $profile_class ?>"><?= $title ?></span> - &#1047;&#1076;&#1077;&#1089;&#1100; &#1087;&#1088;&#1077;&#1076;&#1089;&#1090;&#1072;&#1074;&#1083;&#1077;&#1085;&#1099; &#1086;&#1090;&#1079;&#1099;&#1074;&#1099; &#1082; &#1088;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1080;. &#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; &#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1103; <a href="/userdetails.php?id=<?= $userid ?>" class="<?= $profile_class ?>"><?= $profile_name ?></a> &#1088;&#1072;&#1074;&#1085;&#1072; <b><?= (int)$user["simpaty"] ?></b>. &#1042;&#1099; &#1084;&#1086;&#1078;&#1077;&#1090;&#1077; <a href="/pay_mode_b.php?userid=<?= $userid ?>" class="sbab">&#1086;&#1089;&#1090;&#1072;&#1074;&#1080;&#1090;&#1100; &#1086;&#1090;&#1079;&#1099;&#1074;</a> &#1080; &#1087;&#1086;&#1074;&#1083;&#1080;&#1103;&#1090;&#1100; &#1085;&#1072; &#1088;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1102;.</div>
-<div class="pad0x0x5x0"><ul class="lis"><li<?= $type === 1 ? ' class="mn"' : '' ?>><a href="/user_reputation.php?id=<?= $userid ?>">&#1055;&#1086;&#1083;&#1091;&#1095;&#1077;&#1085;&#1085;&#1099;&#1077; &#1086;&#1090;&#1079;&#1099;&#1074;&#1099;</a><li<?= $type === 2 ? ' class="mn"' : '' ?>><a href="/user_reputation.php?id=<?= $userid ?>&amp;type=2">&#1054;&#1090;&#1076;&#1072;&#1085;&#1085;&#1099;&#1077; &#1086;&#1090;&#1079;&#1099;&#1074;&#1099;</a></ul></div>
-<? if (!empty($pagertop) && $count > $perpage) { ?><div class="pad5x5"><?= $pagertop ?></div><? } ?>
-<?= kz_reputation_table_html($rows, $profile_class, $type, false) ?>
-<? if (!$rows) { ?><div class="bx1 center">&#1054;&#1090;&#1079;&#1099;&#1074;&#1086;&#1074; &#1087;&#1086;&#1082;&#1072; &#1085;&#1077;&#1090;.</div><? } ?>
-<? if (!empty($pagerbottom) && $count > $perpage) { ?><div class="pad5x5"><?= $pagerbottom ?></div><? } ?>
-</td></tr></table></div>
+<div class="mn_wrap">
+	<div class="mn1_menu">
+		<?= kz_profile_menu_html($user, $CURUSER) ?>
+	</div>
+	<div class="mn1_content">
+		<div class="bx1 <?= $profile_class ?>">
+			<a href="/userdetails.php?id=<?= $userid ?>" class="<?= $profile_class ?>"><?= $profile_name ?></a><?= function_exists('get_user_icons') ? get_user_icons($user) : '' ?>
+		</div>
+
+		<div class="bx1 justify">
+			<span class="<?= $profile_class ?>"><?= $title ?></span>
+			- &#1047;&#1076;&#1077;&#1089;&#1100; &#1087;&#1088;&#1077;&#1076;&#1089;&#1090;&#1072;&#1074;&#1083;&#1077;&#1085;&#1099; &#1086;&#1090;&#1079;&#1099;&#1074;&#1099; &#1082; &#1088;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1080;. &#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; &#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1103; <a href="/userdetails.php?id=<?= $userid ?>" class="<?= $profile_class ?>"><?= $profile_name ?></a> &#1088;&#1072;&#1074;&#1085;&#1072; <b><?= (int)$user["simpaty"] ?></b>. &#1042;&#1099; &#1084;&#1086;&#1078;&#1077;&#1090;&#1077; <a href="/pay_mode_b.php?userid=<?= $userid ?>" class="sbab">&#1086;&#1089;&#1090;&#1072;&#1074;&#1080;&#1090;&#1100; &#1086;&#1090;&#1079;&#1099;&#1074;</a> &#1080; &#1087;&#1086;&#1074;&#1083;&#1080;&#1103;&#1090;&#1100; &#1085;&#1072; &#1088;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1102;.
+		</div>
+
+		<div class="pad0x0x5x0">
+			<ul class="lis">
+				<li<?= $type === 1 ? ' class="mn"' : '' ?>><a href="/user_reputation.php?id=<?= $userid ?>">&#1055;&#1086;&#1083;&#1091;&#1095;&#1077;&#1085;&#1085;&#1099;&#1077; &#1086;&#1090;&#1079;&#1099;&#1074;&#1099;</a></li>
+				<li<?= $type === 2 ? ' class="mn"' : '' ?>><a href="/user_reputation.php?id=<?= $userid ?>&amp;type=2">&#1054;&#1090;&#1076;&#1072;&#1085;&#1085;&#1099;&#1077; &#1086;&#1090;&#1079;&#1099;&#1074;&#1099;</a></li>
+			</ul>
+		</div>
+
+		<? if (!empty($pagertop) && $count > $perpage) { ?><div class="pad5x5"><?= $pagertop ?></div><? } ?>
+		<?= kz_reputation_table_html($rows, $profile_class, $type, false) ?>
+		<? if (!$rows) { ?><div class="bx1 center">&#1054;&#1090;&#1079;&#1099;&#1074;&#1086;&#1074; &#1087;&#1086;&#1082;&#1072; &#1085;&#1077;&#1090;.</div><? } ?>
+		<? if (!empty($pagerbottom) && $count > $perpage) { ?><div class="pad5x5"><?= $pagerbottom ?></div><? } ?>
+	</div>
+	<div class="clr"></div>
 </div>
 <?
 
