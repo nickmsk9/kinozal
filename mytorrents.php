@@ -1,73 +1,134 @@
 <?
 
-/*
-// +--------------------------------------------------------------------------+
-// | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
-// |                                               Do not remove above lines! |
-// +--------------------------------------------------------------------------+
-*/
-
 require_once("include/bittorrent.php");
 
 dbconn(false);
-
 loggedinorreturn();
 
-stdhead("Мои торренты");
-
-$where = "WHERE owner = " . $CURUSER["id"] . " AND banned != 'yes'";
-$res = sql_query("SELECT COUNT(*) FROM torrents $where");
-$row = mysqli_fetch_array($res);
-$count = $row[0];
-
-if (!$count) {
-	stdmsg($tracker_lang['error'], "Вы не загружали торренты на этот трекер.");
-	stdfoot();
-	die();
+function myt_h($value) {
+	return htmlspecialchars_uni((string)$value);
 }
-else {
+
+$userid = (int)($_GET['id'] ?? ($_GET['userid'] ?? $CURUSER['id']));
+
+if (!is_valid_id($userid)) {
+	stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+}
+
+$res = sql_query("SELECT * FROM users WHERE id = $userid LIMIT 1") or sqlerr(__FILE__, __LINE__);
+$user = mysqli_fetch_assoc($res) or stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
+
+$isOwn = ((int)$CURUSER['id'] === $userid);
+$canSeeHidden = $isOwn || get_user_class() >= UC_MODERATOR;
+$where = "WHERE t.owner = $userid AND t.banned != 'yes'";
+
+if (!$canSeeHidden) {
+	$where .= " AND t.visible = 'yes'";
+}
+
+$res = sql_query("SELECT COUNT(*) FROM torrents AS t $where") or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_row($res);
+$count = (int)($row[0] ?? 0);
+
+$perpage = 20;
+$pagerHref = 'mytorrents.php?id=' . $userid . '&amp;';
+list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, $pagerHref);
+
+$torrents = false;
+if ($count > 0) {
+	$torrents = sql_query("
+		SELECT
+			t.type,
+			t.comments,
+			(t.leechers + t.remote_leechers) AS leechers,
+			(t.seeders + t.remote_seeders) AS seeders,
+			t.multitracker,
+			t.last_mt_update,
+			IF(t.numratings < $minvotes, NULL, ROUND(t.ratingsum / t.numratings, 1)) AS rating,
+			t.id,
+			t.owner,
+			c.name AS cat_name,
+			c.image AS cat_pic,
+			t.name,
+			t.info_hash,
+			t.save_as,
+			t.filename,
+			t.numfiles,
+			t.added,
+			t.size,
+			t.views,
+			t.visible,
+			t.free,
+			t.hits,
+			t.times_completed,
+			t.category,
+			t.image1
+		FROM torrents AS t
+		LEFT JOIN categories AS c ON t.category = c.id
+		$where
+		ORDER BY t.id DESC
+		$limit
+	") or sqlerr(__FILE__, __LINE__);
+}
+
+$profileClass = 'u' . (int)($user['class'] ?? UC_USER);
+$pageTitle = $isOwn ? 'Мои раздачи' : 'Раздачи пользователя :: ' . (string)$user['username'];
+$hide_right_blocks = true;
+
+stdhead($pageTitle);
 ?>
-<table class="embedded" cellspacing="0" cellpadding="3" width="100%">
-<tr><td class="colhead" align="center" colspan="12">Мои торренты</td></tr>
-<?
-
-	list($pagertop, $pagerbottom, $limit) = pager(20, $count, "mytorrents.php?");
-
-	$res = sql_query("SELECT torrents.type, torrents.comments, (torrents.leechers + torrents.remote_leechers) AS leechers, (torrents.seeders + torrents.remote_seeders) AS seeders, torrents.multitracker, torrents.last_mt_update, IF(torrents.numratings < $minvotes, NULL, ROUND(torrents.ratingsum / torrents.numratings, 1)) AS rating, torrents.id, categories.name AS cat_name, categories.image AS cat_pic, torrents.name, torrents.info_hash, save_as, filename, numfiles, added, size, views, visible, free, hits, times_completed, category FROM torrents LEFT JOIN categories ON torrents.category = categories.id $where ORDER BY id DESC $limit");
-
-	print("<tr><td class=\"index\" colspan=\"12\">");
-	print($pagertop);
-	print("</td></tr>");
-
-	torrenttable($res, "mytorrents");
-
-	print("<tr><td class=\"index\" colspan=\"12\">");
-	print($pagerbottom);
-	print("</td></tr>");
-
-	print("</table>");
-
+<style type="text/css">
+.stable {
+	float: left;
+	margin: 0 5px 5px 0;
+	text-align: center;
 }
+.stable a img {
+	border: 0;
+	display: block;
+	width: 100px;
+	height: 150px;
+}
+</style>
 
+<div class="mn_wrap">
+	<div class="mn1_menu">
+		<?= function_exists('kz_profile_menu_html') ? kz_profile_menu_html($user, $CURUSER) : '' ?>
+	</div>
+	<div class="mn1_content">
+		<div class="bx1 <?= $profileClass ?>">
+			<a href="/userdetails.php?id=<?= $userid ?>" class="<?= $profileClass ?>"><?= myt_h($user['username']) ?></a>
+		</div>
+
+		<div class="bx1 justify">
+			<b class="<?= $profileClass ?>">Раздачи пользователя</b>
+			- В таблице представлен полный список раздач добавленных пользователем. При случае не забудьте поблагодарить пользователя за труд и за предоставленный интересный материал.
+		</div>
+
+		<? if ($count < 1) { ?>
+			<div class="bx1">Нет залитых в данный момент раздач</div>
+		<? } else { ?>
+			<? if ($pagertop) { ?>
+				<div class="pad0x0x5x0"><?= $pagertop ?></div>
+			<? } ?>
+
+			<table class="embedded w100p" cellspacing="0" cellpadding="3">
+				<tr>
+					<td class="colhead center" colspan="12"><?= $isOwn ? 'Мои раздачи' : 'Раздачи пользователя' ?></td>
+				</tr>
+				<?
+				torrenttable($torrents, "mytorrents");
+				?>
+			</table>
+
+			<? if ($pagerbottom) { ?>
+				<div class="pad5x5"><?= $pagerbottom ?></div>
+			<? } ?>
+		<? } ?>
+	</div>
+	<div class="clr"></div>
+</div>
+<?
 stdfoot();
 
 ?>
