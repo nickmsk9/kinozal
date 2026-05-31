@@ -109,7 +109,7 @@ else
     	get_user_icons($friend) . " ($title)<br /><br />" . $tracker_lang['last_seen'] . $friend['last_access'] .
     	"<br />(" . get_et(sql_ts_to_ut($friend[last_access])) . " ".$tracker_lang['ago'].")";
 		$body2 = "<br /><a href=\"friends.php?id=$userid&action=delete&type=friend&targetid=" . $friend['id'] . "\">".$tracker_lang['delete']."</a>" .
-			"<br /><br /><a href=\"message.php?action=sendmessage&amp;receiver=" . $friend['id'] . "\">".$tracker_lang['pm']."</a>";
+			"<br /><br /><a href=\"sendmessage.php?receiver=" . $friend['id'] . "\">".$tracker_lang['pm']."</a>";
     $avatar = ($CURUSER["avatars"] == "yes" ? htmlspecialchars_uni($friend["avatar"]) : "");
 		if (!$avatar)
 			$avatar = "pic/default_avatar.gif";

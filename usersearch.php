@@ -895,24 +895,6 @@ if (count($_GET) > 0 && !$_GET['h'])
     if ($count > $perpage)
     	echo "$pagerbottom";
 
-?>
-    <br /><br />
-    <form method=post action=message.php> 
-      <table border="1" cellpadding="5" cellspacing="0"> 
-        <tr> 
-          <td> 
-            <div align="center"> 
-            Рассылка сообщений найденным юзерам<br /> 
-              <input name="pmees" type="hidden" value="<?echo $querypm?>" size=10> 
-              <input name="PM" type="submit" value="PM" class=btn> 
-              <input name="n_pms" type="hidden" value="<?echo $count?>" size=10> 
-              <input name="action" type="hidden" value="mass_pm" size=10> 
-            </div></td> 
-        </tr> 
-      </table> 
-    </form>
-<?
-
   }
 }
 

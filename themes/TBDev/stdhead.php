@@ -274,7 +274,7 @@ $page_title = $title !== '' ? $title : $site_name;
 
                             <li style="padding-left:14px;">
                                 <span class="bulet"></span>
-                                <a href="/message.php">
+                                <a href="/inbox.php">
                                     ЛС:
                                     <?php if ($unread > 0) { ?>
                                         ( <?= $unread ?> новых )
@@ -385,7 +385,7 @@ $page_title = $title !== '' ? $title : $site_name;
                     if ($is_logged && $unread > 0) {
                         echo '<div class="bx1">';
                         echo '<div class="pad10x10 center b">';
-                        echo '<a href="/message.php" class="sba">У вас новых личных сообщений: ' . (int)$unread . '</a>';
+                        echo '<a href="/inbox.php" class="sba">У вас новых личных сообщений: ' . (int)$unread . '</a>';
                         echo '</div>';
                         echo '</div>';
                     }

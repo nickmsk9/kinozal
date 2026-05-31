@@ -337,7 +337,7 @@ if (!$enabled) {
 		<ul class="men w200">
 			<li class="img"><a href="/userdetails.php?id=<?= $id ?>"><img src="<?= $avatar_url ?>" class="p200" alt=""></a></li>
 			<li class="tp">Меню пользователя</li>
-			<li><span class="bulet"></span><a href="/message.php" class="<?= $user_class_css ?>">Личные сообщения</a></li>
+			<li><span class="bulet"></span><a href="/inbox.php" class="<?= $user_class_css ?>">Личные сообщения</a></li>
 			<li><span class="bulet"></span><a href="/userdetails.php?id=<?= $id ?>" class="<?= $user_class_css ?>">Мой профиль</a></li>
 			<li><span class="bulet"></span><a href="/my.php" class="<?= $user_class_css ?>">Редактировать профиль</a></li>
 			<li><span class="bulet"></span><a href="/mygroups.php" class="<?= $user_class_css ?>">Мои группы</a></li>

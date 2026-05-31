@@ -477,7 +477,7 @@ stdhead('Список пользователей - Поиск пользоват
                     <div class="bx5x5">
                         <img class="imgg rot180" src="<?= $avatar ?>" alt="">
                         <div class="ptable_r">
-                            <a href="/message.php?action=sendmessage&amp;receiver=<?= $uid ?>" class="sba">Отправить сообщение</a>
+                            <a href="/sendmessage.php?receiver=<?= $uid ?>" class="sba">Отправить сообщение</a>
                             <br>
                             <a href="/bookmarks.php?type=3&amp;add=<?= $uid ?>&amp;hash4u=<?= users_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? '')) ?>" class="sba">Добавить в закладки</a>
                         </div>

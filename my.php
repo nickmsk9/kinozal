@@ -21,7 +21,7 @@ function my_menu($user) {
 		<ul class="men u2 w200">
 			<li class="img"><a href="/userdetails.php?id=' . $id . '"><img src="' . $avatar . '" class="p200" alt=""></a></li>
 			<li class="tp">Меню пользователя</li>
-			<li><span class="bulet"></span><a href="/message.php">Личные сообщения</a></li>
+			<li><span class="bulet"></span><a href="/inbox.php">Личные сообщения</a></li>
 			<li><span class="bulet"></span><a href="/userdetails.php?id=' . $id . '">Мой профиль</a></li>
 			<li><span class="bulet"></span><a href="/my.php">Редактировать профиль</a></li>
 			<li><span class="bulet"></span><a href="/mygroups.php">Мои группы</a></li>

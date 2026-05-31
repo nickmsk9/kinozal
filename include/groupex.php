@@ -858,7 +858,7 @@ function kz_groups_profile_menu_html()
     echo '<div class="mn1_menu"><ul class="men u2 w200">';
     echo '<li class="img"><a href="/userdetails.php?id=' . $user_id . '"><img src="' . kz_groups_h($avatar) . '" class="p200" alt=""></a></li>';
     echo '<li class="tp">Меню пользователя</li>';
-    echo '<li><span class="bulet"></span><a href="/message.php">Личные сообщения</a></li>';
+    echo '<li><span class="bulet"></span><a href="/inbox.php">Личные сообщения</a></li>';
     echo '<li><span class="bulet"></span><a href="/userdetails.php?id=' . $user_id . '">Мой профиль</a></li>';
     echo '<li><span class="bulet"></span><a href="/my.php">Редактировать профиль</a></li>';
     echo '<li><span class="bulet"></span><a href="/mygroups.php">Мои группы</a></li>';

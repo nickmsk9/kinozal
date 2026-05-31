@@ -121,7 +121,7 @@ echo "<td>" . get_elapsed_time(sql_timestamp_to_unix_timestamp($lastadded)) . " 
 }
 else
 echo "<td>---</td>";
-echo "<td align=center><a href=message.php?action=sendmessage&amp;receiver=$id><img border=0 src=pic/button_pm.gif></a></td>";
+echo "<td align=center><a href=sendmessage.php?receiver=$id><img border=0 src=pic/button_pm.gif></a></td>";
 
 echo "</tr>";
 
