@@ -22,25 +22,36 @@ if ($is_admin) {
     $blocktitle .= " <span class=\"small\">- [<a class=\"altlink\" href=\"news.php\"><b>" . $create_title . "</b></a>]</span>";
 }
 
-$resource = sql_query("
-    SELECT id, added, subject, body
-    FROM news
-    WHERE added > DATE_SUB(NOW(), INTERVAL 45 DAY)
-    ORDER BY added DESC
-    LIMIT 10
-") or sqlerr(__FILE__, __LINE__);
+$rows = isset($GLOBALS['index_news']) && is_array($GLOBALS['index_news'])
+    ? $GLOBALS['index_news']
+    : null;
+
+if ($rows === null) {
+    $resource = sql_query("
+        SELECT id, added, subject, body
+        FROM news
+        WHERE added > DATE_SUB(NOW(), INTERVAL 45 DAY)
+        ORDER BY added DESC
+        LIMIT 10
+    ") or sqlerr(__FILE__, __LINE__);
+
+    $rows = array();
+    while ($array = mysqli_fetch_assoc($resource)) {
+        $rows[] = $array;
+    }
+}
 
 $content .= "<script type=\"text/javascript\" src=\"js/show_hide.js\"></script>\n";
 
 $content .= "<div class=\"mn2_content\" style=\"width:100%;\">";
 $content .= "<div class=\"bx1\" style=\"width:100%; box-sizing:border-box;\">";
 
-if (mysqli_num_rows($resource) > 0) {
+if ($rows) {
     $content .= "<ul class=\"men\">\n";
 
     $i = 0;
 
-    while ($array = mysqli_fetch_assoc($resource)) {
+    foreach ($rows as $array) {
         $news_id = (int)$array['id'];
         $subject = htmlspecialchars_uni($array['subject']);
         $date = date('d.m.Y', strtotime($array['added']));

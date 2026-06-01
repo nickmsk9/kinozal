@@ -371,6 +371,10 @@ function cups_update_auto($force = false)
 
 function cups_current()
 {
+    if (isset($GLOBALS['index_cups_current']) && is_array($GLOBALS['index_cups_current'])) {
+        return $GLOBALS['index_cups_current'];
+    }
+
     cups_ensure_schema();
 
     $rows = array();

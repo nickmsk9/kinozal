@@ -67,6 +67,16 @@ function uarch_add_smile($url)
 
 function uarch_smiles($active_only = true, $limit = 60)
 {
+	if ($active_only && isset($GLOBALS['index_uarch_smiles']) && is_array($GLOBALS['index_uarch_smiles'])) {
+		$rows = array_slice($GLOBALS['index_uarch_smiles'], 0, max(1, min(200, (int)$limit)));
+		foreach ($rows as &$row) {
+			$row['display_username'] = (string)($row['real_username'] ?: $row['username']);
+			$row['display_class'] = (int)($row['real_username'] !== null ? $row['real_class'] : $row['userclass']);
+		}
+		unset($row);
+		return $rows;
+	}
+
 	uarch_ensure_schema();
 
 	$limit = max(1, min(200, (int)$limit));

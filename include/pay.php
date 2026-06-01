@@ -721,6 +721,20 @@ function pay_wishes_count()
 
 function pay_home_block_html()
 {
+	if (isset($GLOBALS['index_pay_enabled'])) {
+		if ((string)$GLOBALS['index_pay_enabled'] !== '1') {
+			return '<div class="bx1"><ul class="men"><li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Раздел меценатов временно скрыт</a></li></ul></div>';
+		}
+
+		$recent = isset($GLOBALS['index_pay_recent']) && is_array($GLOBALS['index_pay_recent']) ? $GLOBALS['index_pay_recent'] : array();
+		$best = isset($GLOBALS['index_pay_best']) && is_array($GLOBALS['index_pay_best']) ? $GLOBALS['index_pay_best'] : array();
+
+		return '<div class="bx1"><ul class="men">'
+			. '<li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Спасибо за помощь, поднимите свой рейтинг и помогите проекту</a><div class="pad5x5">' . pay_user_list_html($recent, 'пока никто не обменивал бонусы') . '</div></li>'
+			. '<li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Спасибо Меценатам за их поддержку</a><div class="pad5x5">' . pay_user_list_html($best, 'пока нет меценатов') . '</div></li>'
+			. '</ul></div>';
+	}
+
 	if (pay_setting('home_block_enabled', '1') !== '1') {
 		return '<div class="bx1"><ul class="men"><li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Раздел меценатов временно скрыт</a></li></ul></div>';
 	}

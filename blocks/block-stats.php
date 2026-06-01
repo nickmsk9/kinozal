@@ -5,25 +5,31 @@ if (!defined('BLOCK_FILE')) {
     exit;
 }
 
-require_once(dirname(__DIR__) . '/include/test_torrents.php');
-test_torrents_ensure_schema();
-
 global $content;
 
 $blocktitle = 'Статистика трекера';
 $content = '';
 
-$stats_res = sql_query("
-    SELECT
-        (SELECT COUNT(*) FROM users WHERE status = 'confirmed') AS users_total,
-        (SELECT COUNT(*) FROM users WHERE status = 'confirmed' AND gender = '2') AS girls_total,
-        (SELECT COUNT(*) FROM users WHERE status = 'confirmed' AND class = " . (int)UC_UPLOADER . ") AS uploaders_total,
-        (SELECT COUNT(*) FROM torrents WHERE visible = 'yes' AND banned != 'yes' AND (is_test <> 'yes' OR test_approved_at IS NOT NULL)) AS torrents_total,
-        (SELECT COALESCE(SUM(seeders), 0) FROM torrents WHERE visible = 'yes' AND banned != 'yes' AND (is_test <> 'yes' OR test_approved_at IS NOT NULL)) AS seeders_total,
-        (SELECT COALESCE(SUM(leechers), 0) FROM torrents WHERE visible = 'yes' AND banned != 'yes' AND (is_test <> 'yes' OR test_approved_at IS NOT NULL)) AS leechers_total
-");
+$stats_row = isset($GLOBALS['index_stats']) && is_array($GLOBALS['index_stats'])
+    ? $GLOBALS['index_stats']
+    : array();
 
-$stats_row = $stats_res ? mysqli_fetch_assoc($stats_res) : array();
+if (!$stats_row) {
+    require_once(dirname(__DIR__) . '/include/test_torrents.php');
+    test_torrents_ensure_schema();
+
+    $stats_res = sql_query("
+        SELECT
+            (SELECT COUNT(*) FROM users WHERE status = 'confirmed') AS users_total,
+            (SELECT COUNT(*) FROM users WHERE status = 'confirmed' AND gender = '2') AS girls_total,
+            (SELECT COUNT(*) FROM users WHERE status = 'confirmed' AND class = " . (int)UC_UPLOADER . ") AS uploaders_total,
+            (SELECT COUNT(*) FROM torrents WHERE visible = 'yes' AND banned != 'yes' AND (is_test <> 'yes' OR test_approved_at IS NOT NULL)) AS torrents_total,
+            (SELECT COALESCE(SUM(seeders), 0) FROM torrents WHERE visible = 'yes' AND banned != 'yes' AND (is_test <> 'yes' OR test_approved_at IS NOT NULL)) AS seeders_total,
+            (SELECT COALESCE(SUM(leechers), 0) FROM torrents WHERE visible = 'yes' AND banned != 'yes' AND (is_test <> 'yes' OR test_approved_at IS NOT NULL)) AS leechers_total
+    ");
+
+    $stats_row = $stats_res ? mysqli_fetch_assoc($stats_res) : array();
+}
 
 $stats = array(
     'Зрителей в зале' => (int)($stats_row['users_total'] ?? 0),

@@ -10,20 +10,31 @@ global $content;
 $blocktitle = 'День рождения';
 $content = '';
 
-$today = date('m-d');
-
-$res = sql_query("
-    SELECT id, username, class
-    FROM users
-    WHERE status = 'confirmed'
-      AND enabled = 'yes'
-      AND birthday IS NOT NULL
-      AND DATE_FORMAT(birthday, '%m-%d') = " . sqlesc($today) . "
-    ORDER BY class DESC, username ASC
-") or sqlerr(__FILE__, __LINE__);
-
 $users = array();
-while ($row = mysqli_fetch_assoc($res)) {
+$rows = isset($GLOBALS['index_birthdays']) && is_array($GLOBALS['index_birthdays'])
+    ? $GLOBALS['index_birthdays']
+    : null;
+
+if ($rows === null) {
+    $today = date('m-d');
+
+    $res = sql_query("
+        SELECT id, username, class
+        FROM users
+        WHERE status = 'confirmed'
+          AND enabled = 'yes'
+          AND birthday IS NOT NULL
+          AND DATE_FORMAT(birthday, '%m-%d') = " . sqlesc($today) . "
+        ORDER BY class DESC, username ASC
+    ") or sqlerr(__FILE__, __LINE__);
+
+    $rows = array();
+    while ($row = mysqli_fetch_assoc($res)) {
+        $rows[] = $row;
+    }
+}
+
+foreach ($rows as $row) {
     $users[] = '<a href="/userdetails.php?id=' . (int)$row['id'] . '" class="u' . (int)$row['class'] . '">'
         . htmlspecialchars_uni($row['username'])
         . '</a>';

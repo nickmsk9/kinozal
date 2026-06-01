@@ -7,9 +7,6 @@ if (!defined('BLOCK_FILE')) {
 
 global $content;
 
-require_once(dirname(__DIR__) . '/include/test_torrents.php');
-test_torrents_ensure_schema();
-
 $blocktitle = '';
 $content = '';
 
@@ -288,36 +285,44 @@ $page = isset($_GET['relpage']) ? max(0, (int)$_GET['relpage']) : 0;
 $offset = $page * $perPage;
 $limit = $perPage + 1;
 
-$res = sql_query("
-    SELECT
-        t.id,
-        t.name,
-        t.descr,
-        t.image1,
-        t.image2,
-        t.image3,
-        t.image4,
-        t.image5,
-        td.poster_url,
-        t.size,
-        t.added,
-        c.id AS catid,
-        c.name AS catname,
-        c.image AS catimage
-    FROM torrents AS t
-    LEFT JOIN categories AS c ON c.id = t.category
-    LEFT JOIN torrent_details AS td ON td.tid = t.id
-    WHERE t.visible = 'yes'
-      AND (t.banned <> 'yes' OR t.banned IS NULL)
-      AND (t.is_test <> 'yes' OR t.test_approved_at IS NOT NULL)
-    ORDER BY t.added DESC, t.id DESC
-    LIMIT " . (int)$offset . ", " . (int)$limit
-) or sqlerr(__FILE__, __LINE__);
+$rows = isset($GLOBALS['index_releases']) && is_array($GLOBALS['index_releases'])
+    ? $GLOBALS['index_releases']
+    : null;
 
-$rows = array();
+if ($rows === null) {
+    require_once(dirname(__DIR__) . '/include/test_torrents.php');
+    test_torrents_ensure_schema();
 
-while ($row = mysqli_fetch_assoc($res)) {
-    $rows[] = $row;
+    $res = sql_query("
+        SELECT
+            t.id,
+            t.name,
+            t.descr,
+            t.image1,
+            t.image2,
+            t.image3,
+            t.image4,
+            t.image5,
+            td.poster_url,
+            t.size,
+            t.added,
+            c.id AS catid,
+            c.name AS catname,
+            c.image AS catimage
+        FROM torrents AS t
+        LEFT JOIN categories AS c ON c.id = t.category
+        LEFT JOIN torrent_details AS td ON td.tid = t.id
+        WHERE t.visible = 'yes'
+          AND (t.banned <> 'yes' OR t.banned IS NULL)
+          AND (t.is_test <> 'yes' OR t.test_approved_at IS NOT NULL)
+        ORDER BY t.added DESC, t.id DESC
+        LIMIT " . (int)$offset . ", " . (int)$limit
+    ) or sqlerr(__FILE__, __LINE__);
+
+    $rows = array();
+    while ($row = mysqli_fetch_assoc($res)) {
+        $rows[] = $row;
+    }
 }
 
 if (empty($rows)) {

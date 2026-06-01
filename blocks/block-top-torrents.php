@@ -5,33 +5,44 @@ if (!defined('BLOCK_FILE')) {
     exit;
 }
 
-require_once(dirname(__DIR__) . '/include/test_torrents.php');
-test_torrents_ensure_schema();
-
 global $content;
 
 $blocktitle = 'Топ раздач';
 $content = '';
 
-$res = sql_query("
-    SELECT
-        id,
-        name,
-        seeders + remote_seeders AS seeders
-    FROM torrents
-    WHERE visible = 'yes'
-      AND banned != 'yes'
-      AND (is_test <> 'yes' OR test_approved_at IS NOT NULL)
-    ORDER BY seeders DESC, leechers + remote_leechers DESC, added DESC, id DESC
-    LIMIT 10
-") or sqlerr(__FILE__, __LINE__);
+$rows = isset($GLOBALS['index_top_torrents']) && is_array($GLOBALS['index_top_torrents'])
+    ? $GLOBALS['index_top_torrents']
+    : null;
 
-if (mysqli_num_rows($res) < 1) {
+if ($rows === null) {
+    require_once(dirname(__DIR__) . '/include/test_torrents.php');
+    test_torrents_ensure_schema();
+
+    $res = sql_query("
+        SELECT
+            id,
+            name,
+            seeders + remote_seeders AS seeders
+        FROM torrents
+        WHERE visible = 'yes'
+          AND banned != 'yes'
+          AND (is_test <> 'yes' OR test_approved_at IS NOT NULL)
+        ORDER BY seeders DESC, leechers + remote_leechers DESC, added DESC, id DESC
+        LIMIT 10
+    ") or sqlerr(__FILE__, __LINE__);
+
+    $rows = array();
+    while ($row = mysqli_fetch_assoc($res)) {
+        $rows[] = $row;
+    }
+}
+
+if (!$rows) {
     $content .= '<li class="small">раздач пока что нет</li>';
     return;
 }
 
-while ($row = mysqli_fetch_assoc($res)) {
+foreach ($rows as $row) {
     $id = (int)$row['id'];
     $name = htmlspecialchars_uni($row['name']);
     $shortName = htmlspecialchars_uni(cut_text($row['name'], 24));

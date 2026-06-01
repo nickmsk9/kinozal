@@ -57,29 +57,33 @@ $activeleech = 0;
 
 if ($is_logged) {
     $res = sql_query("
-		SELECT
-			COALESCE(SUM(receiver = $user_id AND location = 1), 0) AS messages,
-			COALESCE(SUM(receiver = $user_id AND location = 1 AND unread = 'yes'), 0) AS unread,
-			COALESCE(SUM(sender = $user_id AND saved = 'yes'), 0) AS outmessages
-		FROM messages
-		WHERE receiver = $user_id OR sender = $user_id
-	");
+        SELECT
+            m.messages,
+            m.unread,
+            m.outmessages,
+            p.activeseed,
+            p.activeleech
+        FROM (
+            SELECT
+                COALESCE(SUM(receiver = $user_id AND location = 1), 0) AS messages,
+                COALESCE(SUM(receiver = $user_id AND location = 1 AND unread = 'yes'), 0) AS unread,
+                COALESCE(SUM(sender = $user_id AND saved = 'yes'), 0) AS outmessages
+            FROM messages
+            WHERE receiver = $user_id OR sender = $user_id
+        ) AS m
+        CROSS JOIN (
+            SELECT
+                COALESCE(SUM(seeder = 'yes'), 0) AS activeseed,
+                COALESCE(SUM(seeder = 'no'), 0) AS activeleech
+            FROM peers
+            WHERE userid = $user_id
+        ) AS p
+    ");
 
     if ($res && ($row = mysqli_fetch_assoc($res))) {
         $messages    = (int)$row['messages'];
         $unread      = (int)$row['unread'];
         $outmessages = (int)$row['outmessages'];
-    }
-
-    $res = sql_query("
-		SELECT
-			COALESCE(SUM(seeder = 'yes'), 0) AS activeseed,
-			COALESCE(SUM(seeder = 'no'), 0) AS activeleech
-		FROM peers
-		WHERE userid = $user_id
-	");
-
-    if ($res && ($row = mysqli_fetch_assoc($res))) {
         $activeseed  = (int)$row['activeseed'];
         $activeleech = (int)$row['activeleech'];
     }
