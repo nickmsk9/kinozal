@@ -19,9 +19,27 @@ function display_date_time($timestamp = 0, $tzoffset = 0) {
 }
 
 function cut_text($txt, $car) {
-	while (strlen($txt) > $car) {
+	$txt = (string)$txt;
+	$car = (int)$car;
+
+	if ($car <= 0) {
+		return '';
+	}
+
+	if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+		return mb_strlen($txt, 'UTF-8') > $car
+			? mb_substr($txt, 0, $car, 'UTF-8') . "..."
+			: $txt;
+	}
+
+	if (preg_match_all('/./us', $txt, $chars) && count($chars[0]) > $car) {
+		return implode('', array_slice($chars[0], 0, $car)) . "...";
+	}
+
+	if (strlen($txt) > $car) {
 		return substr($txt, 0, $car) . "...";
 	}
+
 	return $txt;
 }
 

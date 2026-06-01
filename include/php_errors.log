@@ -176,3 +176,5 @@ Stack trace:
 #2 C:\OSPanel\domains\kinozal.lv\upload.php(45): kz_upload_render_form()
 #3 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
+[01-Jun-2026 12:38:30 Europe/Moscow] PHP Warning:  Undefined array key "page" in C:\OSPanel\domains\kinozal.lv\userhistory.php on line 42
+[01-Jun-2026 12:38:30 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\userhistory.php on line 44
