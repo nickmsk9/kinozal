@@ -10,12 +10,28 @@ $hide_right_blocks = true;
 $title = "Новинки раздач - новые материалы Кинозал.ТВ";
 stdhead($title);
 
+function novinki_poster_src(array $row)
+{
+    $poster = trim((string)($row['poster_url'] ?? ''));
+    if ($poster !== '') {
+        return htmlspecialchars_uni($poster);
+    }
+
+    $image = trim((string)($row['image1'] ?? ''));
+    if ($image !== '') {
+        return 'thumbnail.php?' . htmlspecialchars_uni($image);
+    }
+
+    return '/pic/default_avatar.gif';
+}
+
 $res = sql_query("
-	SELECT id, name, image1, category, added
-	FROM torrents
-	WHERE visible = 'yes'
-	  AND banned = 'no'
-	ORDER BY added DESC
+	SELECT t.id, t.name, t.image1, t.category, t.added, td.poster_url
+	FROM torrents AS t
+	LEFT JOIN torrent_details AS td ON td.tid = t.id
+	WHERE t.visible = 'yes'
+	  AND t.banned = 'no'
+	ORDER BY t.added DESC
 	LIMIT 120
 ") or sqlerr(__FILE__, __LINE__);
 
@@ -63,13 +79,7 @@ $page_patterns = array('/novinki.php%', 'novinki.php%');
                                         }
 
                                         $poster_title = htmlspecialchars_uni($poster['name']);
-                                        $image = trim((string)$poster['image1']);
-                                        $category = (int)$poster['category'];
-                                        if ($image !== '') {
-                                            $poster_src = "thumbnail.php?" . htmlspecialchars_uni($image);
-                                        } else {
-                                            $poster_src = "pic/cat/" . $category . ".gif";
-                                        }
+                                        $poster_src = novinki_poster_src($poster);
                                         $poster_id = (int)$poster['id'];
 
                                         print("<td style=\"padding:0; width:104px; vertical-align:top;\">");
