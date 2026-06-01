@@ -13,9 +13,7 @@ require_once("include/upload.php");
 require_once("include/persons.php");
 require_once("include/multitracker.php");
 
-dbconn(false);
-upload_ensure_schema();
-multitracker_ensure_schema();
+dbconn(false, true);
 
 if (!$allow_guests_details) {
 	loggedinorreturn();
@@ -112,10 +110,9 @@ function details_term_links($value, $kind)
 	}
 
 	$links = array();
-	$person_ids = $kind === 'person' ? details_person_ids_by_names($items) : array();
 	foreach ($items as $item) {
 		if ($kind === 'person') {
-			$url = persons_url($item, $person_ids[$item] ?? 0);
+			$url = persons_url($item);
 		} else {
 			$url = '/top.php?j=' . rawurlencode($item);
 		}
@@ -123,76 +120,6 @@ function details_term_links($value, $kind)
 	}
 
 	return implode(', ', $links);
-}
-
-function details_person_ids_by_names(array $names)
-{
-	static $known = array();
-	static $schema_checked = false;
-
-	$lookup = array();
-	foreach ($names as $name) {
-		$name = trim((string)$name);
-		if ($name === '') {
-			continue;
-		}
-		if (!array_key_exists($name, $known)) {
-			$lookup[$name] = true;
-		}
-	}
-
-	if ($lookup) {
-		if (!$schema_checked) {
-			persons_ensure_schema();
-			$schema_checked = true;
-		}
-
-		$values = array();
-		foreach (array_keys($lookup) as $name) {
-			$values[] = sqlesc($name);
-			$known[$name] = 0;
-		}
-
-		$res = sql_query("
-			SELECT id, name, original_name
-			FROM persons
-			WHERE name IN (" . implode(',', $values) . ")
-			   OR original_name IN (" . implode(',', $values) . ")
-			ORDER BY id ASC
-		") or sqlerr(__FILE__, __LINE__);
-
-		while ($row = mysqli_fetch_assoc($res)) {
-			foreach (array_keys($lookup) as $name) {
-				if ($known[$name] <= 0 && ($row['name'] === $name || $row['original_name'] === $name)) {
-					$known[$name] = (int)$row['id'];
-				}
-			}
-		}
-
-		foreach (array_keys($lookup) as $name) {
-			if ($known[$name] > 0) {
-				continue;
-			}
-
-			$q = sqlesc('%' . $name . '%', true);
-			$res = sql_query("
-				SELECT id
-				FROM persons
-				WHERE name LIKE $q OR original_name LIKE $q
-				ORDER BY id ASC
-				LIMIT 1
-			") or sqlerr(__FILE__, __LINE__);
-			$row = mysqli_fetch_assoc($res);
-			$known[$name] = $row ? (int)$row['id'] : 0;
-		}
-	}
-
-	$result = array();
-	foreach ($names as $name) {
-		$result[$name] = $known[$name] ?? 0;
-	}
-
-	return $result;
 }
 
 function details_line($title, $value, $kind = '')
@@ -352,55 +279,6 @@ function details_starbar($id, $rating, $user_rating = 0)
 	return $html;
 }
 
-function details_rating_cache_path($key)
-{
-	$dir = ROOT_PATH . 'cache';
-	if (!is_dir($dir)) {
-		@mkdir($dir, 0775, true);
-	}
-
-	if (!is_dir($dir) || !is_writable($dir)) {
-		return '';
-	}
-
-	return $dir . DIRECTORY_SEPARATOR . 'rating_' . preg_replace('/[^a-z0-9_]/i', '_', $key) . '.json';
-}
-
-function details_http_get($url)
-{
-	$url = trim((string)$url);
-	if ($url === '' || !preg_match('#^https?://#i', $url)) {
-		return '';
-	}
-
-	if (function_exists('curl_init')) {
-		$ch = curl_init($url);
-		curl_setopt_array($ch, array(
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_CONNECTTIMEOUT => 3,
-			CURLOPT_TIMEOUT => 5,
-			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
-			CURLOPT_HTTPHEADER => array('Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'),
-		));
-		$body = curl_exec($ch);
-		$code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-		curl_close($ch);
-
-		return ($code >= 200 && $code < 300 && is_string($body)) ? $body : '';
-	}
-
-	$context = stream_context_create(array(
-		'http' => array(
-			'timeout' => 5,
-			'header' => "User-Agent: Mozilla/5.0\r\nAccept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7\r\n",
-		),
-	));
-	$body = @file_get_contents($url, false, $context);
-
-	return is_string($body) ? $body : '';
-}
-
 function details_parse_rating_number($value)
 {
 	$value = str_replace(',', '.', trim((string)$value));
@@ -416,98 +294,11 @@ function details_parse_rating_number($value)
 	return number_format($rating, 1);
 }
 
-function details_kinopoisk_id($url)
-{
-	if (preg_match('#kinopoisk\.ru/(?:film|series)/([0-9]+)#i', (string)$url, $m)) {
-		return $m[1];
-	}
-	if (preg_match('#(?:^|[?&])kp=([0-9]+)#i', (string)$url, $m)) {
-		return $m[1];
-	}
-	return '';
-}
-
-function details_kinopoisk_ratings($kp_url)
-{
-	$kp_id = details_kinopoisk_id($kp_url);
-	if ($kp_id === '') {
-		return array('kp' => '', 'imdb' => '');
-	}
-
-	$cache = details_rating_cache_path('kinopoisk_' . $kp_id);
-	if ($cache !== '' && is_file($cache) && filemtime($cache) > time() - 43200) {
-		$data = json_decode((string)@file_get_contents($cache), true);
-		if (is_array($data)) {
-			return array(
-				'kp' => details_parse_rating_number($data['kp'] ?? ''),
-				'imdb' => details_parse_rating_number($data['imdb'] ?? ''),
-			);
-		}
-	}
-
-	$body = details_http_get('https://rating.kinopoisk.ru/' . rawurlencode($kp_id) . '.xml');
-	$ratings = array('kp' => '', 'imdb' => '');
-
-	if ($body !== '') {
-		if (preg_match('#<kp_rating[^>]*>([^<]+)</kp_rating>#i', $body, $m)) {
-			$ratings['kp'] = details_parse_rating_number($m[1]);
-		}
-		if (preg_match('#<imdb_rating[^>]*>([^<]+)</imdb_rating>#i', $body, $m)) {
-			$ratings['imdb'] = details_parse_rating_number($m[1]);
-		}
-	}
-
-	if ($cache !== '' && ($ratings['kp'] !== '' || $ratings['imdb'] !== '')) {
-		@file_put_contents($cache, json_encode($ratings, JSON_UNESCAPED_UNICODE));
-	}
-
-	return $ratings;
-}
-
-function details_imdb_id($url)
-{
-	if (preg_match('#/title/(tt[0-9]+)#i', (string)$url, $m)) {
-		return $m[1];
-	}
-	return '';
-}
-
-function details_imdb_rating($imdb_url)
-{
-	$imdb_id = details_imdb_id($imdb_url);
-	if ($imdb_id === '') {
-		return '';
-	}
-
-	$cache = details_rating_cache_path('imdb_' . $imdb_id);
-	if ($cache !== '' && is_file($cache) && filemtime($cache) > time() - 43200) {
-		$data = json_decode((string)@file_get_contents($cache), true);
-		return details_parse_rating_number($data['rating'] ?? '');
-	}
-
-	$body = details_http_get('https://www.imdb.com/title/' . rawurlencode($imdb_id) . '/');
-	$rating = '';
-	if ($body !== '' && preg_match('#"aggregateRating"\s*:\s*\{.*?"ratingValue"\s*:\s*"?([0-9.]+)"?#is', $body, $m)) {
-		$rating = details_parse_rating_number($m[1]);
-	}
-
-	if ($cache !== '' && $rating !== '') {
-		@file_put_contents($cache, json_encode(array('rating' => $rating), JSON_UNESCAPED_UNICODE));
-	}
-
-	return $rating;
-}
-
 function details_external_ratings(array $design)
 {
-	$imdb_manual = details_parse_rating_number($design['imdb']['rating'] ?? '');
-	$kp_manual = details_parse_rating_number($design['kinopoisk']['rating'] ?? '');
-	$kp_remote = details_kinopoisk_ratings($design['kinopoisk']['url'] ?? '');
-	$imdb_remote = $kp_remote['imdb'] !== '' ? $kp_remote['imdb'] : details_imdb_rating($design['imdb']['url'] ?? '');
-
 	return array(
-		'imdb' => $imdb_remote !== '' ? $imdb_remote : $imdb_manual,
-		'kinopoisk' => $kp_remote['kp'] !== '' ? $kp_remote['kp'] : $kp_manual,
+		'imdb' => details_parse_rating_number($design['imdb']['rating'] ?? ''),
+		'kinopoisk' => details_parse_rating_number($design['kinopoisk']['rating'] ?? ''),
 	);
 }
 
@@ -534,19 +325,13 @@ function details_query_terms(array $row, array $video, $mode)
 	return array_slice(array_values($terms), 0, 8);
 }
 
-function details_related_fetch_rows(array $where)
+function details_related_select($mode, array $where)
 {
-	static $loaded = array();
-
-	$key = implode("\n", $where);
-	if (array_key_exists($key, $loaded)) {
-		return $loaded[$key];
-	}
-
-	$res = sql_query("
-		SELECT t.id, t.name, t.comments, t.size, t.seeders, t.leechers, t.ratingsum, t.numratings,
-		       u.id AS owner_id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
-		       ums.manual_status_keys
+	return "
+		(SELECT " . sqlesc($mode) . " AS rel_mode,
+		       t.id, t.name, t.comments, t.size, t.seeders, t.leechers, t.ratingsum, t.numratings,
+		       u.id AS owner_id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled,
+		       u.uploaded, u.downloaded, ums.manual_status_keys
 		FROM torrents AS t
 		LEFT JOIN users AS u ON u.id = t.owner
 		LEFT JOIN (
@@ -556,19 +341,10 @@ function details_related_fetch_rows(array $where)
 		) AS ums ON ums.userid = u.id
 		WHERE " . implode(' AND ', $where) . "
 		ORDER BY (t.seeders + t.times_completed + t.comments) DESC, t.id DESC
-		LIMIT 5
-	") or sqlerr(__FILE__, __LINE__);
-
-	$rows = array();
-	while ($item = mysqli_fetch_assoc($res)) {
-		$rows[] = $item;
-	}
-
-	$loaded[$key] = $rows;
-	return $rows;
+		LIMIT 5)";
 }
 
-function details_related_rows(array $row, array $video, $mode)
+function details_related_where(array $row, array $video, $mode)
 {
 	$id = (int)$row['id'];
 	$where = array("t.id <> $id", "t.visible = 'yes'", "t.banned = 'no'");
@@ -591,18 +367,28 @@ function details_related_rows(array $row, array $video, $mode)
 		}
 	}
 
-	$rows = details_related_fetch_rows($where);
+	return $where;
+}
 
-	if (!$rows && $mode !== 'owner') {
-		$fallback_where = array("t.id <> $id", "t.visible = 'yes'", "t.banned = 'no'");
-		if (!empty($row['category'])) {
-			$fallback_where[] = 't.category = ' . (int)$row['category'];
-		}
+function details_related_groups(array $row, array $video)
+{
+	$groups = array('similar' => array(), 'genre' => array(), 'person' => array(), 'owner' => array());
+	$sql = array();
 
-		$rows = details_related_fetch_rows($fallback_where);
+	foreach (array_keys($groups) as $mode) {
+		$sql[] = details_related_select($mode, details_related_where($row, $video, $mode));
 	}
 
-	return $rows;
+	$res = sql_query(implode("\nUNION ALL\n", $sql)) or sqlerr(__FILE__, __LINE__);
+	while ($item = mysqli_fetch_assoc($res)) {
+		$mode = (string)$item['rel_mode'];
+		unset($item['rel_mode']);
+		if (isset($groups[$mode])) {
+			$groups[$mode][] = $item;
+		}
+	}
+
+	return $groups;
 }
 
 function details_related_table($title, array $rows, $count_url = '')
@@ -649,21 +435,22 @@ function details_related_table($title, array $rows, $count_url = '')
 	return $html;
 }
 
-function details_file_list($id)
+function details_tracker_rows_from_json($json)
 {
-	$id = (int)$id;
-	$res = sql_query("SELECT filename, size FROM files WHERE torrent = $id ORDER BY id ASC") or sqlerr(__FILE__, __LINE__);
 	$rows = array();
+	$data = json_decode((string)$json, true);
 
-	while ($file = mysqli_fetch_assoc($res)) {
-		$rows[] = '<tr><td>' . details_h($file['filename']) . '</td><td class="sbr">' . details_h(mksize($file['size'])) . '</td></tr>';
+	if (!is_array($data)) {
+		return $rows;
 	}
 
-	if (!$rows) {
-		return '';
+	foreach ($data as $row) {
+		if (is_array($row)) {
+			$rows[] = $row;
+		}
 	}
 
-	return '<table class="tables3 w100p"><tr class="mn"><td>Файл</td><td class="sbr">Размер</td></tr>' . implode('', $rows) . '</table>';
+	return $rows;
 }
 
 function details_screens_html(array $row, array $design)
@@ -865,30 +652,52 @@ if (!is_valid_id($id)) {
 	stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
 }
 
-$has_torrent_details = upload_table_exists('torrent_details');
-$details_select = '';
-$details_join = '';
-if ($has_torrent_details) {
-	$details_select = ",
-	       tdet.tid AS tdet_exists, tdet.release_kind AS tdet_release_kind, tdet.poster_url AS tdet_poster_url,
-	       tdet.rgroup AS tdet_rgroup, tdet.rgroup_button AS tdet_rgroup_button,
-	       tdet.torrent_file_updated_at AS tdet_torrent_file_updated_at, tdet.form_mode AS tdet_form_mode,
-	       tdet.section_modes AS tdet_section_modes, tdet.data AS tdet_data";
-	$details_join = "LEFT JOIN torrent_details AS tdet ON tdet.tid = t.id";
-}
+$CURUSER = $CURUSER ?? null;
+$viewer_id = $CURUSER ? (int)$CURUSER['id'] : 0;
 
 $res = sql_query("
 	SELECT t.*, td.descr_hash, td.descr_parsed, c.name AS cat_name, c.image AS cat_pic,
 	       u.username AS owner_username, u.class AS owner_class, u.donor AS owner_donor, u.gender AS owner_gender,
 	       u.birthday AS owner_birthday, u.warned AS owner_warned, u.enabled AS owner_enabled,
 	       u.uploaded AS owner_uploaded, u.downloaded AS owner_downloaded, u.country AS owner_country,
-	       ums.manual_status_keys AS owner_manual_status_keys
-	       $details_select
+	       ums.manual_status_keys AS owner_manual_status_keys,
+	       tdet.tid AS tdet_exists, tdet.release_kind AS tdet_release_kind, tdet.poster_url AS tdet_poster_url,
+	       tdet.rgroup AS tdet_rgroup, tdet.rgroup_button AS tdet_rgroup_button,
+	       tdet.torrent_file_updated_at AS tdet_torrent_file_updated_at, tdet.form_mode AS tdet_form_mode,
+	       tdet.section_modes AS tdet_section_modes, tdet.data AS tdet_data,
+	       (
+	       	SELECT r.rating
+	       	FROM ratings AS r
+	       	WHERE r.torrent = t.id AND r.user = $viewer_id
+	       	ORDER BY r.id DESC
+	       	LIMIT 1
+	       ) AS user_rating,
+	       (
+	       	SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+	       		'id', tt.id,
+	       		'torrentid', tt.torrentid,
+	       		'announce_url', tt.announce_url,
+	       		'external_info_hash', tt.external_info_hash,
+	       		'is_primary', tt.is_primary,
+	       		'seeders', tt.seeders,
+	       		'leechers', tt.leechers,
+	       		'completed', tt.completed,
+	       		'last_checked', tt.last_checked,
+	       		'last_error', tt.last_error,
+	       		'enabled', tt.enabled
+	       	)), JSON_ARRAY())
+	       	FROM (
+	       		SELECT id, torrentid, announce_url, external_info_hash, is_primary, seeders, leechers, completed, last_checked, last_error, enabled
+	       		FROM torrent_trackers
+	       		WHERE torrentid = $id
+	       		ORDER BY (is_primary = 'yes') DESC, id ASC
+	       	) AS tt
+	       ) AS tracker_rows_json
 	FROM torrents AS t
 	LEFT JOIN categories AS c ON c.id = t.category
 	LEFT JOIN users AS u ON u.id = t.owner
 	LEFT JOIN torrents_descr AS td ON td.tid = t.id
-	$details_join
+	LEFT JOIN torrent_details AS tdet ON tdet.tid = t.id
 	LEFT JOIN (
 		SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
 		FROM user_status_assignments
@@ -903,7 +712,6 @@ if (!$row) {
 	stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
 }
 
-multitracker_sync_local_tracker($id, (int)$row['seeders'], (int)$row['leechers'], (int)$row['times_completed']);
 $total_seeders = (int)$row['seeders'] + (int)($row['remote_seeders'] ?? 0);
 $total_leechers = (int)$row['leechers'] + (int)($row['remote_leechers'] ?? 0);
 
@@ -920,10 +728,6 @@ if ($row['banned'] === 'yes' && !$moderator) {
 	stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
 }
 
-if ($CURUSER) {
-	sql_query("INSERT IGNORE INTO readtorrents (userid, torrentid) VALUES (" . (int)$CURUSER['id'] . ", $id)");
-}
-
 if (isset($_GET['hit'])) {
 	sql_query("UPDATE torrents SET views = views + 1 WHERE id = $id");
 	header("Location: details.php?id=$id");
@@ -935,12 +739,7 @@ $torrent_details = details_upload_details_from_row($id, $row);
 list($video, $design) = details_data($torrent_details);
 $owner = details_owner($row);
 $rating = details_rating_value($row);
-$user_rating = 0;
-
-if ($CURUSER) {
-	$rated = mysqli_fetch_assoc(sql_query("SELECT rating FROM ratings WHERE torrent = $id AND user = " . (int)$CURUSER['id'] . " ORDER BY id DESC LIMIT 1"));
-	$user_rating = $rated ? (int)$rated['rating'] : 0;
-}
+$user_rating = (int)($row['user_rating'] ?? 0);
 
 $title = trim((string)($video['title'] ?? ''));
 if ($title === '') {
@@ -966,10 +765,8 @@ if ($download_note === '' && $free === 'yes') {
 	$download_note = '<b class="r2">Серебряная раздача</b> Объем скачанного учитывается только на 50%, а отданное засчитывается полностью. На серебряных раздачах появляется дополнительная возможность поднять свой рейтинг.';
 }
 
-$similar = details_related_rows($row, $video, 'similar');
-$by_genre = details_related_rows($row, $video, 'genre');
-$by_person = details_related_rows($row, $video, 'person');
-$by_owner = details_related_rows($row, $video, 'owner');
+$related = details_related_groups($row, $video);
+$tracker_rows = details_tracker_rows_from_json($row['tracker_rows_json'] ?? '[]');
 $external_ratings = details_external_ratings($design);
 $comment_page = isset($_GET['page']) ? (int)$_GET['page'] : 0;
 $book_hash = $CURUSER ? '&amp;hash4u=' . details_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? '')) : '';
@@ -997,6 +794,7 @@ if ($release_tab === '') {
 $search_title = $original !== '' ? $original : $title;
 $title_class = $free === 'yes' ? 'r1' : ($free === 'silver' ? 'r2' : 'r0');
 $hide_right_blocks = true;
+$use_blocks = 0;
 stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['name']) . '"');
 ?>
 <div class="mn_wrap">
@@ -1057,7 +855,7 @@ stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['
 			<?= details_line('В ролях', $video['cast'] ?? '', 'person') ?>
 		</h2></div>
 		<?php if ($about !== '') { ?><div class="bx1 justify"><p><b>О фильме:</b> <?= nl2br(details_h($about)) ?></p></div><?php } ?>
-		<?= multitracker_render_details_block($id) ?>
+		<?= multitracker_render_details_block_from_rows($id, $tracker_rows) ?>
 		<div class="bx1"><div class="pad0x0x5x0"><ul class="lis"><li id="tbch100" class="mn"><a onclick="showtab(100); return false;" href="#">Техданные</a></li><li id="tbch0"><a onclick="showtab(0); return false;" href="#">Релиз</a></li><li id="tbch1"><a onclick="showtab(1); return false;" href="#">Скриншоты</a></li></ul></div><div class="clr"></div><div class="justify mn2 pad5x5" id="tabs"></div></div>
 		<div class="bx1"><div class="pad0x0x5x0"><ul class="lis"><li id="tbch2100" class="mn"><a onclick="showtab2(100); return false;" href="#">Подобные</a></li><li id="tbch2101"><a onclick="showtab2(101); return false;" href="#">Топ по жанрам</a></li><li id="tbch2102"><a onclick="showtab2(102); return false;" href="#">Топ по персонам</a></li><li id="tbch2103"><a onclick="showtab2(103); return false;" href="#">Топ раздающего</a></li></ul></div><div class="clr"></div><div class="justify mn2" id="tabs2"></div></div>
 		<?= details_comments_html($id, (int)$row['comments'], $comment_page) ?>
@@ -1070,10 +868,10 @@ var tabsData = {
 	1: <?= json_encode(details_screens_html($row, $design), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 };
 var tabs2Data = {
-	100: <?= json_encode(details_related_table('Подобные раздачи', $similar, '/browse.php?s=' . rawurlencode($search_title) . '&c=' . (int)$row['category']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
-	101: <?= json_encode(details_related_table('Топ по жанрам', $by_genre), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
-	102: <?= json_encode(details_related_table('Топ по персонам', $by_person), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
-	103: <?= json_encode(details_related_table('Топ раздающего', $by_owner), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+	100: <?= json_encode(details_related_table('Подобные раздачи', $related['similar'], '/browse.php?s=' . rawurlencode($search_title) . '&c=' . (int)$row['category']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+	101: <?= json_encode(details_related_table('Топ по жанрам', $related['genre']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+	102: <?= json_encode(details_related_table('Топ по персонам', $related['person']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+	103: <?= json_encode(details_related_table('Топ раздающего', $related['owner']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
 };
 function showtab(id) {
 	$('#tabs').html(tabsData[id] || '');

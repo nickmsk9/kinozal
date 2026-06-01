@@ -28,12 +28,10 @@ function site_setting($key, $default = '')
 	$key = (string)$key;
 	if (!isset($site_settings_cache) || !is_array($site_settings_cache)) {
 		$site_settings_cache = array();
-		if (site_settings_table_exists()) {
-			$res = sql_query("SELECT setting_key, setting_value FROM site_settings");
-			if ($res) {
-				while ($row = mysqli_fetch_assoc($res)) {
-					$site_settings_cache[(string)$row['setting_key']] = (string)$row['setting_value'];
-				}
+		$res = sql_query("SELECT setting_key, setting_value FROM site_settings");
+		if ($res) {
+			while ($row = mysqli_fetch_assoc($res)) {
+				$site_settings_cache[(string)$row['setting_key']] = (string)$row['setting_value'];
 			}
 		}
 	}
@@ -77,10 +75,6 @@ function site_settings_apply_runtime_overrides()
 {
 	global $SITE_ONLINE, $SITENAME, $SITEEMAIL, $maxusers, $max_torrent_size;
 	global $deny_signup, $allow_invite_signup, $use_captcha, $use_blocks, $allow_guests_details;
-
-	if (!site_settings_table_exists()) {
-		return;
-	}
 
 	$SITE_ONLINE = site_setting_bool('site_online', !empty($SITE_ONLINE));
 	$deny_signup = site_setting_bool('deny_signup', !empty($deny_signup)) ? 1 : 0;

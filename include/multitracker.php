@@ -344,7 +344,11 @@ function multitracker_rewrite_torrent_file_announces($torrentid, array $urls)
 
 function multitracker_render_details_block($torrentid)
 {
-	$rows = multitracker_get_trackers($torrentid);
+	return multitracker_render_details_block_from_rows($torrentid, multitracker_get_trackers($torrentid));
+}
+
+function multitracker_render_details_block_from_rows($torrentid, array $rows)
+{
 	if (!$rows) {
 		return '';
 	}

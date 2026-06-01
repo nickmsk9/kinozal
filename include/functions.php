@@ -343,7 +343,9 @@ function userlogin($lightmode = false): void
             include_once('languages/lang_' . $default_language . '/lang_main.php');
         }
 
-        user_session();
+        if (!$lightmode) {
+            user_session();
+        }
         return;
     }
 
@@ -354,7 +356,9 @@ function userlogin($lightmode = false): void
             include_once('languages/lang_' . $default_language . '/lang_main.php');
         }
 
-        user_session();
+        if (!$lightmode) {
+            user_session();
+        }
         return;
     }
 
@@ -377,7 +381,9 @@ function userlogin($lightmode = false): void
             include_once('languages/lang_' . $default_language . '/lang_main.php');
         }
 
-        user_session();
+        if (!$lightmode) {
+            user_session();
+        }
         return;
     }
 
@@ -401,19 +407,21 @@ function userlogin($lightmode = false): void
             include_once('languages/lang_' . $default_language . '/lang_main.php');
         }
 
-        user_session();
+        if (!$lightmode) {
+            user_session();
+        }
         return;
     }
 
     $updateset = array();
 
-    if ($ip !== ($row['ip'] ?? '')) {
+    if (!$lightmode && $ip !== ($row['ip'] ?? '')) {
         $updateset[] = 'ip = ' . sqlesc($ip);
         $row['ip'] = $ip;
     }
 
     $last_access_ts = !empty($row['last_access']) ? strtotime((string)$row['last_access']) : 0;
-    if (!$last_access_ts || $last_access_ts < (TIMENOW - 60)) {
+    if (!$lightmode && (!$last_access_ts || $last_access_ts < (TIMENOW - 60))) {
         $updateset[] = 'last_access = ' . sqlesc(get_date_time());
     }
 
