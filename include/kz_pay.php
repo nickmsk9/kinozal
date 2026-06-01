@@ -60,6 +60,20 @@ function kz_pay_ensure_schema()
 		return;
 	}
 
+	$ready = true;
+
+	/*
+	 * Нельзя проверять/создавать структуру БД на каждой странице.
+	 * Для обновления БД временно включи:
+	 *
+	 * define('KZ_AUTO_MIGRATIONS', true);
+	 *
+	 * После одного запуска верни false.
+	 */
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+		return;
+	}
+
 	kz_pay_add_column('users', 'pay_votes', "pay_votes int(10) unsigned NOT NULL DEFAULT '0' AFTER bonus");
 	kz_pay_add_column('users', 'pay_donor_until', 'pay_donor_until datetime NULL DEFAULT NULL AFTER donor');
 	kz_pay_add_column('users', 'pay_vip_until', 'pay_vip_until datetime NULL DEFAULT NULL AFTER pay_donor_until');
@@ -145,8 +159,6 @@ function kz_pay_ensure_schema()
 	}
 
 	kz_pay_install_home_block();
-
-	$ready = true;
 }
 
 function kz_pay_install_home_block()
@@ -187,15 +199,22 @@ function kz_pay_prune_home_block_duplicates()
 
 function kz_pay_setting($key, $default = '')
 {
+	static $settings = null;
+
 	$key = (string)$key;
-	if (!kz_pay_table_exists('pay_settings')) {
-		return $default;
+
+	if ($settings === null) {
+		$settings = array();
+
+		$res = sql_query("SELECT setting_key, setting_value FROM pay_settings");
+		if ($res) {
+			while ($row = mysqli_fetch_assoc($res)) {
+				$settings[(string)$row['setting_key']] = (string)$row['setting_value'];
+			}
+		}
 	}
 
-	$res = sql_query("SELECT setting_value FROM pay_settings WHERE setting_key = " . sqlesc($key, true) . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
-	$row = mysqli_fetch_assoc($res);
-
-	return $row ? (string)$row['setting_value'] : $default;
+	return array_key_exists($key, $settings) ? $settings[$key] : $default;
 }
 
 function kz_pay_set_setting($key, $value)
@@ -702,7 +721,6 @@ function kz_pay_wishes_count()
 
 function kz_pay_home_block_html()
 {
-	kz_pay_ensure_schema();
 	if (kz_pay_setting('home_block_enabled', '1') !== '1') {
 		return '<div class="bx1"><ul class="men"><li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Раздел меценатов временно скрыт</a></li></ul></div>';
 	}

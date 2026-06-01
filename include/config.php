@@ -66,6 +66,8 @@ if (!defined('COOKIE_SALT')) {
     define('COOKIE_SALT', $_COOKIE_SALT);
 }
 
+define('KZ_AUTO_MIGRATIONS', false);
+
 /*
  * Если наш юзер сделал просто выход (ссылка "Выход" aka logout.php) то у него в куксах останется uid
  * При регистрации будет проверятся наличие этой куки.

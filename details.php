@@ -41,6 +41,43 @@ function details_data(array $details)
 	return array($video, $design);
 }
 
+function details_upload_details_from_row($tid, array $row)
+{
+	$details = array(
+		'exists' => false,
+		'tid' => (int)$tid,
+		'release_kind' => 'video',
+		'poster_url' => '',
+		'rgroup' => 0,
+		'rgroup_button' => '',
+		'torrent_file_updated_at' => '',
+		'form_mode' => 0,
+		'section_modes' => '0,0,0,0',
+		'data' => kz_upload_default_data(),
+	);
+
+	if (empty($row['tdet_exists'])) {
+		return $details;
+	}
+
+	$data = json_decode((string)($row['tdet_data'] ?? ''), true);
+	if (!is_array($data)) {
+		$data = array();
+	}
+
+	$details['exists'] = true;
+	$details['release_kind'] = (string)($row['tdet_release_kind'] ?? 'video');
+	$details['poster_url'] = (string)($row['tdet_poster_url'] ?? '');
+	$details['rgroup'] = (int)($row['tdet_rgroup'] ?? 0);
+	$details['rgroup_button'] = (string)($row['tdet_rgroup_button'] ?? '');
+	$details['torrent_file_updated_at'] = (string)($row['tdet_torrent_file_updated_at'] ?? '');
+	$details['form_mode'] = (int)($row['tdet_form_mode'] ?? 0);
+	$details['section_modes'] = (string)($row['tdet_section_modes'] ?? '0,0,0,0');
+	$details['data'] = array_replace_recursive(kz_upload_default_data(), $data);
+
+	return $details;
+}
+
 function details_guess_title($name)
 {
 	$name = preg_replace('#\s*/\s*[0-9]{4}\s*/.*$#u', '', (string)$name);
@@ -74,13 +111,10 @@ function details_term_links($value, $kind)
 	}
 
 	$links = array();
-	static $person_ids = array();
+	$person_ids = $kind === 'person' ? details_person_ids_by_names($items) : array();
 	foreach ($items as $item) {
 		if ($kind === 'person') {
-			if (!array_key_exists($item, $person_ids)) {
-				$person_ids[$item] = kz_persons_find_id_by_name($item);
-			}
-			$url = kz_persons_url($item, $person_ids[$item]);
+			$url = kz_persons_url($item, $person_ids[$item] ?? 0);
 		} else {
 			$url = '/top.php?j=' . rawurlencode($item);
 		}
@@ -88,6 +122,76 @@ function details_term_links($value, $kind)
 	}
 
 	return implode(', ', $links);
+}
+
+function details_person_ids_by_names(array $names)
+{
+	static $known = array();
+	static $schema_checked = false;
+
+	$lookup = array();
+	foreach ($names as $name) {
+		$name = trim((string)$name);
+		if ($name === '') {
+			continue;
+		}
+		if (!array_key_exists($name, $known)) {
+			$lookup[$name] = true;
+		}
+	}
+
+	if ($lookup) {
+		if (!$schema_checked) {
+			kz_persons_ensure_schema();
+			$schema_checked = true;
+		}
+
+		$values = array();
+		foreach (array_keys($lookup) as $name) {
+			$values[] = sqlesc($name);
+			$known[$name] = 0;
+		}
+
+		$res = sql_query("
+			SELECT id, name, original_name
+			FROM persons
+			WHERE name IN (" . implode(',', $values) . ")
+			   OR original_name IN (" . implode(',', $values) . ")
+			ORDER BY id ASC
+		") or sqlerr(__FILE__, __LINE__);
+
+		while ($row = mysqli_fetch_assoc($res)) {
+			foreach (array_keys($lookup) as $name) {
+				if ($known[$name] <= 0 && ($row['name'] === $name || $row['original_name'] === $name)) {
+					$known[$name] = (int)$row['id'];
+				}
+			}
+		}
+
+		foreach (array_keys($lookup) as $name) {
+			if ($known[$name] > 0) {
+				continue;
+			}
+
+			$q = sqlesc('%' . $name . '%', true);
+			$res = sql_query("
+				SELECT id
+				FROM persons
+				WHERE name LIKE $q OR original_name LIKE $q
+				ORDER BY id ASC
+				LIMIT 1
+			") or sqlerr(__FILE__, __LINE__);
+			$row = mysqli_fetch_assoc($res);
+			$known[$name] = $row ? (int)$row['id'] : 0;
+		}
+	}
+
+	$result = array();
+	foreach ($names as $name) {
+		$result[$name] = $known[$name] ?? 0;
+	}
+
+	return $result;
 }
 
 function details_line($title, $value, $kind = '')
@@ -190,15 +294,24 @@ function details_user_link($userid, $username, $class = 0, $user = array())
 function details_owner(array $row)
 {
 	$owner = (int)$row['owner'];
-	$res = sql_query("
-		SELECT id, username, class, donor, gender, birthday, warned, enabled, uploaded, downloaded, country
-		FROM users
-		WHERE id = $owner
-		LIMIT 1
-	") or sqlerr(__FILE__, __LINE__);
-	$user = mysqli_fetch_assoc($res);
+	if (!empty($row['owner_username'])) {
+		return array(
+			'id' => $owner,
+			'username' => (string)$row['owner_username'],
+			'class' => (int)($row['owner_class'] ?? 0),
+			'donor' => $row['owner_donor'] ?? 'no',
+			'gender' => $row['owner_gender'] ?? '1',
+			'birthday' => $row['owner_birthday'] ?? '',
+			'warned' => $row['owner_warned'] ?? 'no',
+			'enabled' => $row['owner_enabled'] ?? 'yes',
+			'uploaded' => $row['owner_uploaded'] ?? 0,
+			'downloaded' => $row['owner_downloaded'] ?? 0,
+			'country' => $row['owner_country'] ?? 0,
+			'manual_status_keys' => $row['owner_manual_status_keys'] ?? '',
+		);
+	}
 
-	return $user ?: array(
+	return array(
 		'id' => $owner,
 		'username' => (string)($row['username'] ?? ''),
 		'class' => (int)($row['owner_class'] ?? 0),
@@ -420,6 +533,40 @@ function details_query_terms(array $row, array $video, $mode)
 	return array_slice(array_values($terms), 0, 8);
 }
 
+function details_related_fetch_rows(array $where)
+{
+	static $loaded = array();
+
+	$key = implode("\n", $where);
+	if (array_key_exists($key, $loaded)) {
+		return $loaded[$key];
+	}
+
+	$res = sql_query("
+		SELECT t.id, t.name, t.comments, t.size, t.seeders, t.leechers, t.ratingsum, t.numratings,
+		       u.id AS owner_id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+		       ums.manual_status_keys
+		FROM torrents AS t
+		LEFT JOIN users AS u ON u.id = t.owner
+		LEFT JOIN (
+			SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
+			FROM user_status_assignments
+			GROUP BY userid
+		) AS ums ON ums.userid = u.id
+		WHERE " . implode(' AND ', $where) . "
+		ORDER BY (t.seeders + t.times_completed + t.comments) DESC, t.id DESC
+		LIMIT 5
+	") or sqlerr(__FILE__, __LINE__);
+
+	$rows = array();
+	while ($item = mysqli_fetch_assoc($res)) {
+		$rows[] = $item;
+	}
+
+	$loaded[$key] = $rows;
+	return $rows;
+}
+
 function details_related_rows(array $row, array $video, $mode)
 {
 	$id = (int)$row['id'];
@@ -443,20 +590,7 @@ function details_related_rows(array $row, array $video, $mode)
 		}
 	}
 
-	$res = sql_query("
-		SELECT t.id, t.name, t.comments, t.size, t.seeders, t.leechers, t.ratingsum, t.numratings,
-		       u.id AS owner_id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded
-		FROM torrents AS t
-		LEFT JOIN users AS u ON u.id = t.owner
-		WHERE " . implode(' AND ', $where) . "
-		ORDER BY (t.seeders + t.times_completed + t.comments) DESC, t.id DESC
-		LIMIT 5
-	") or sqlerr(__FILE__, __LINE__);
-
-	$rows = array();
-	while ($item = mysqli_fetch_assoc($res)) {
-		$rows[] = $item;
-	}
+	$rows = details_related_fetch_rows($where);
 
 	if (!$rows && $mode !== 'owner') {
 		$fallback_where = array("t.id <> $id", "t.visible = 'yes'", "t.banned = 'no'");
@@ -464,19 +598,7 @@ function details_related_rows(array $row, array $video, $mode)
 			$fallback_where[] = 't.category = ' . (int)$row['category'];
 		}
 
-		$res = sql_query("
-			SELECT t.id, t.name, t.comments, t.size, t.seeders, t.leechers, t.ratingsum, t.numratings,
-			       u.id AS owner_id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded
-			FROM torrents AS t
-			LEFT JOIN users AS u ON u.id = t.owner
-			WHERE " . implode(' AND ', $fallback_where) . "
-			ORDER BY (t.seeders + t.times_completed + t.comments) DESC, t.id DESC
-			LIMIT 5
-		") or sqlerr(__FILE__, __LINE__);
-
-		while ($item = mysqli_fetch_assoc($res)) {
-			$rows[] = $item;
-		}
+		$rows = details_related_fetch_rows($fallback_where);
 	}
 
 	return $rows;
@@ -508,6 +630,7 @@ function details_related_table($title, array $rows, $count_url = '')
 				'enabled' => $item['enabled'] ?? 'yes',
 				'uploaded' => $item['uploaded'] ?? 0,
 				'downloaded' => $item['downloaded'] ?? 0,
+				'manual_status_keys' => $item['manual_status_keys'] ?? '',
 			);
 
 			$html .= "<tr class='first'>";
@@ -633,10 +756,16 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 	$res = sql_query("
 		SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
 		       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+		       ums.manual_status_keys,
 		       e.username AS editedbyname
 		FROM comments AS c
 		LEFT JOIN users AS u ON u.id = c.user
 		LEFT JOIN users AS e ON e.id = c.editedby
+		LEFT JOIN (
+			SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
+			FROM user_status_assignments
+			GROUP BY userid
+		) AS ums ON ums.userid = u.id
 		WHERE c.torrent = " . (int)$torrentid . "
 		ORDER BY c.id DESC
 		LIMIT $offset, $perpage
@@ -735,12 +864,35 @@ if (!is_valid_id($id)) {
 	stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
 }
 
+$has_torrent_details = kz_upload_table_exists('torrent_details');
+$details_select = '';
+$details_join = '';
+if ($has_torrent_details) {
+	$details_select = ",
+	       tdet.tid AS tdet_exists, tdet.release_kind AS tdet_release_kind, tdet.poster_url AS tdet_poster_url,
+	       tdet.rgroup AS tdet_rgroup, tdet.rgroup_button AS tdet_rgroup_button,
+	       tdet.torrent_file_updated_at AS tdet_torrent_file_updated_at, tdet.form_mode AS tdet_form_mode,
+	       tdet.section_modes AS tdet_section_modes, tdet.data AS tdet_data";
+	$details_join = "LEFT JOIN torrent_details AS tdet ON tdet.tid = t.id";
+}
+
 $res = sql_query("
-	SELECT t.*, td.descr_hash, td.descr_parsed, c.name AS cat_name, c.image AS cat_pic, u.username, u.class AS owner_class
+	SELECT t.*, td.descr_hash, td.descr_parsed, c.name AS cat_name, c.image AS cat_pic,
+	       u.username AS owner_username, u.class AS owner_class, u.donor AS owner_donor, u.gender AS owner_gender,
+	       u.birthday AS owner_birthday, u.warned AS owner_warned, u.enabled AS owner_enabled,
+	       u.uploaded AS owner_uploaded, u.downloaded AS owner_downloaded, u.country AS owner_country,
+	       ums.manual_status_keys AS owner_manual_status_keys
+	       $details_select
 	FROM torrents AS t
 	LEFT JOIN categories AS c ON c.id = t.category
 	LEFT JOIN users AS u ON u.id = t.owner
 	LEFT JOIN torrents_descr AS td ON td.tid = t.id
+	$details_join
+	LEFT JOIN (
+		SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
+		FROM user_status_assignments
+		GROUP BY userid
+	) AS ums ON ums.userid = u.id
 	WHERE t.id = $id
 	LIMIT 1
 ") or sqlerr(__FILE__, __LINE__);
@@ -778,7 +930,7 @@ if (isset($_GET['hit'])) {
 }
 
 $owned = $moderator || ($CURUSER && (int)$CURUSER['id'] === (int)$row['owner']);
-$torrent_details = kz_upload_load_details($id);
+$torrent_details = details_upload_details_from_row($id, $row);
 list($video, $design) = details_data($torrent_details);
 $owner = details_owner($row);
 $rating = details_rating_value($row);

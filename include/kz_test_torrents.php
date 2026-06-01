@@ -4,6 +4,22 @@ if (!defined('IN_TRACKER')) {
 	die('Прямой вызов запрещён.');
 }
 
+/**
+ * ВАЖНО:
+ * Проверку/создание колонок нельзя гонять на каждой странице.
+ *
+ * Если нужно один раз обновить структуру БД, временно добавь в config.php:
+ *
+ * define('KZ_AUTO_MIGRATIONS', true);
+ *
+ * После обновления верни обратно:
+ *
+ * define('KZ_AUTO_MIGRATIONS', false);
+ */
+if (!defined('KZ_AUTO_MIGRATIONS')) {
+	define('KZ_AUTO_MIGRATIONS', false);
+}
+
 function kz_test_torrents_column_exists($column)
 {
 	$res = sql_query("SHOW COLUMNS FROM torrents LIKE " . sqlesc($column));
@@ -21,6 +37,16 @@ function kz_test_torrents_ensure_schema()
 	static $done = false;
 
 	if ($done) {
+		return;
+	}
+
+	$done = true;
+
+	/*
+	 * Не выполняем SHOW COLUMNS / SHOW INDEX на обычных страницах.
+	 * Это должно запускаться только вручную при обновлении проекта.
+	 */
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
 		return;
 	}
 
@@ -51,8 +77,6 @@ function kz_test_torrents_ensure_schema()
 	if (!kz_test_torrents_index_exists('test_helper_until')) {
 		sql_query("ALTER TABLE torrents ADD KEY test_helper_until (test_helper_until)") or sqlerr(__FILE__, __LINE__);
 	}
-
-	$done = true;
 }
 
 function kz_test_torrents_h($value)
