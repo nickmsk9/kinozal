@@ -1241,12 +1241,12 @@ function kz_upload_option_select($name, array $options, $selected, $class = 'w10
 
 function kz_upload_input($name, $value, $placeholder = '')
 {
-	return '<input type="text" name="' . kz_h($name) . '" value="' . kz_h($value) . '" class="w100p"' . ($placeholder !== '' ? ' placeholder="' . kz_h($placeholder) . '"' : '') . '>';
+	return '<input type="text" name="' . kz_h($name) . '" value="' . kz_h($value) . '" class="w100p up"' . ($placeholder !== '' ? ' placeholder="' . kz_h($placeholder) . '"' : '') . '>';
 }
 
 function kz_upload_textarea($name, $value, $rows = 6, $placeholder = '')
 {
-	return '<textarea name="' . kz_h($name) . '" rows="' . (int)$rows . '" class="w100p"' . ($placeholder !== '' ? ' placeholder="' . kz_h($placeholder) . '"' : '') . '>' . kz_h($value) . '</textarea>';
+	return '<textarea name="' . kz_h($name) . '" rows="' . (int)$rows . '" class="w100p up"' . ($placeholder !== '' ? ' placeholder="' . kz_h($placeholder) . '"' : '') . '>' . kz_h($value) . '</textarea>';
 }
 
 function kz_upload_render_info_sidebar()
@@ -1325,19 +1325,19 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 			<input type="hidden" name="section_mode[<?= $i ?>]" id="section_mode_<?= $i ?>" value="<?= (int)$section_modes[$i] ?>">
 		<?php } ?>
 
-		<div class="bx1">
-			<ul class="men">
-				<li class="tp2 b">Название</li>
+		<div class="bx1 upl">
+			<ul class="men up">
+				<li class="hdr">Название</li>
 				<li>
 					<input type="hidden" name="name" id="name" value="<?= kz_h($name) ?>">
-					<input type="text" id="generated_name" value="<?= kz_h($name) ?>" class="w100p" readonly="readonly">
+					<input type="text" id="generated_name" value="<?= kz_h($name) ?>" class="w100p up" readonly="readonly">
 					<div class="n">Название формируется автоматически из полей описания.</div>
 				</li>
 				<?php if (!$is_edit || $allow_file) { ?>
-					<li class="tp2 b">Торрент-файл</li>
-					<li><input type="file" name="file" size="80" class="w100p" accept=".torrent,application/x-bittorrent"></li>
+					<li class="hdr">Торрент-файл</li>
+					<li><input type="file" name="file" size="80" class="w100p styled" accept=".torrent,application/x-bittorrent"></li>
 				<?php } ?>
-				<li class="tp2 b">Ссылка на постер</li>
+				<li class="hdr">Ссылка на постер</li>
 				<li>
 					<?= kz_upload_input('imgl', $poster_url) ?>
 					<div class="n">Ширина постера - 200 пикселей. Разместите постер на одном из <a href="//forum.kinozal.tv/showthread.php?t=78697" target="_blank" class="sba">хостингов изображений</a></div>
@@ -1345,20 +1345,20 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 			</ul>
 		</div>
 
-		<div class="bx1">
-			<ul class="men">
-				<li class="tp2 b">Тип раздачи</li>
+		<div class="bx1 upl">
+			<ul class="men up">
+				<li class="up_tmplt">Тип раздачи</li>
 				<li><?php kz_upload_render_kind_tabs($kind); ?></li>
 			</ul>
 		</div>
 
-		<div class="bx1">
-			<ul class="men">
-				<li class="tp2 b">Режим оформления</li>
+		<div class="bx1 upl">
+			<ul class="men up">
+				<li class="up_tmplt">Режим оформления</li>
 				<li>
 					<ul class="lis">
-						<li id="mode_tab_0"<?= $mode ? '' : ' class="tp"' ?>><a href="#" onclick="Upl.changeMode(0); return false;">Обычный режим</a></li>
-						<li id="mode_tab_1"<?= $mode ? ' class="tp"' : '' ?>><a href="#" onclick="Upl.changeMode(1); return false;">Расширенный режим</a></li>
+						<li id="mode_tab_0" class="bx1 up_tmpl<?= $mode ? ' sbab' : ' up_tmpls' ?>"><a href="#" onclick="Upl.changeMode(0); return false;">Обычный режим</a></li>
+						<li id="mode_tab_1" class="bx1 up_tmpl<?= $mode ? ' up_tmpls' : ' sbab' ?>"><a href="#" onclick="Upl.changeMode(1); return false;">Расширенный режим</a></li>
 					</ul>
 					<div class="clr"></div>
 				</li>
@@ -1375,38 +1375,38 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 			</div>
 		<?php } ?>
 
-		<div class="bx1">
-			<ul class="men">
-				<li class="tp2 b">Релиз-группа</li>
+		<div class="bx1 upl">
+			<ul class="men up">
+				<li class="hdr">Релиз-группа</li>
 				<li>
-					<select name="rgroup" class="w250" onchange="document.forms['upt'].elements['rbut'].value = this.value == '0' ? '' : ('/pic/groupex/' + this.value + '.gif');">
+					<select name="rgroup" class="w250 styled" onchange="document.forms['upt'].elements['rbut'].value = this.value == '0' ? '' : ('/pic/groupex/' + this.value + '.gif');">
 						<option value="0">Выберите релиз-группу</option>
 						<?php foreach (kz_upload_release_groups() as $id => $label) { ?>
 							<option value="<?= (int)$id ?>"<?= (int)$id === $rgroup ? ' selected="selected"' : '' ?>><?= kz_h($label) ?></option>
 						<?php } ?>
 					</select>
 				</li>
-				<li class="tp2 b">Кнопка релиз-группы</li>
+				<li class="hdr">Кнопка релиз-группы</li>
 				<li>
-					<input type="text" name="rbut" class="w100p" value="<?= kz_h($rgroup_button) ?>">
+					<input type="text" name="rbut" class="w100p up" value="<?= kz_h($rgroup_button) ?>">
 					<div class="n">Кнопка релиз-группы (88x31) или имя релиз-группы, если нет баннера. <a href="//forum.kinozal.tv/showthread.php?t=78697" target="_blank" class="sba">Список хостингов</a></div>
 				</li>
 			</ul>
 		</div>
 
-		<div class="bx1">
-			<ul class="men">
-				<li class="tp2 b">Раздел</li>
+		<div class="bx1 upl">
+			<ul class="men up">
+				<li class="hdr">Раздел</li>
 				<li><?php kz_upload_render_category_selects($kind, $category); ?></li>
-				<li class="tp2 b">Тип раздачи</li>
+				<li class="hdr">Тип раздачи</li>
 				<li><a href="//forum.kinozal.tv/showpost.php?p=2715225" class="sba" target="_blank">Правила включения золотых и серебряных раздач</a></li>
 			</ul>
 		</div>
 
 		<?php if (!empty($state['service_controls'])) { ?>
-			<div class="bx1">
-				<ul class="men">
-					<li class="tp2 b">Служебное</li>
+			<div class="bx1 upl">
+				<ul class="men up">
+					<li class="hdr">Служебное</li>
 					<li><?= $state['service_controls'] ?></li>
 				</ul>
 			</div>
@@ -1428,7 +1428,7 @@ function kz_upload_render_kind_tabs($current)
 {
 	echo '<ul class="lis">';
 	foreach (kz_upload_kinds() as $kind => $label) {
-		echo '<li id="kind_tab_' . kz_h($kind) . '"' . ($kind === $current ? ' class="tp"' : '') . '><a href="#" onclick="Upl.setTemplate(\'' . kz_h($kind) . '\'); return false;">' . kz_h($label) . '</a></li>';
+		echo '<li id="kind_tab_' . kz_h($kind) . '" class="bx1 up_tmpl' . ($kind === $current ? ' up_tmpls' : ' sbab') . '"><a href="#" onclick="Upl.setTemplate(\'' . kz_h($kind) . '\'); return false;">' . kz_h($label) . '</a></li>';
 	}
 	echo '</ul><div class="clr"></div>';
 }
@@ -1436,7 +1436,7 @@ function kz_upload_render_kind_tabs($current)
 function kz_upload_render_category_selects($current_kind, $current_category)
 {
 	foreach (kz_upload_categories() as $kind => $items) {
-		echo '<select class="w250" id="type_' . kz_h($kind) . '"' . ($kind === $current_kind ? '' : ' style="display:none;"') . ' onchange="Upl.syncType();">';
+		echo '<select class="w250' . ($kind === $current_kind ? '' : ' up_hide') . '" id="type_' . kz_h($kind) . '" onchange="Upl.syncType();">';
 		if (count($items) > 1) {
 			echo '<option value="0">Выберите раздел</option>';
 		}
@@ -1503,10 +1503,10 @@ function kz_upload_render_video_template(array $data, array $section_modes)
 function kz_upload_render_section_start($index, $title, $advanced)
 {
 	?>
-	<div class="bx1">
-		<ul class="men">
-			<li class="tp2 b">
-				<span class="floatright"><input type="button" value="Сменить режим" onclick="Upl.switchMode(<?= (int)$index ?>);" class="buttonS"></span>
+	<div class="bx1 upl">
+		<ul class="men up">
+			<li class="fhdr">
+				<div class="sbab up_toggle" onclick="Upl.switchMode(<?= (int)$index ?>);">Сменить режим</div>
 				<?= kz_h($title) ?>
 			</li>
 		</ul>
@@ -1567,10 +1567,7 @@ function kz_upload_render_design_fields(array $design)
 			<li class="tp2">Дополнительные вкладки</li>
 			<li class="n">Вы можете указать дополнительную информацию о раздаваемом материале. Допустимо использовать не больше шести вкладок</li>
 		</ul>
-		<table class="tables1 w100p" id="tab_rows">
-			<tr><td class="w175 b">Название вкладки</td><td class="b">Содержимое</td><td class="w30"></td></tr>
-			<?php kz_upload_render_tab_rows($tabs); ?>
-		</table>
+		<?php kz_upload_render_tab_panel('tab_rows', $tabs); ?>
 		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addTab(); return false;">Добавить вкладку</a></div>
 
 		<ul class="men"><li class="tp2">Скриншоты и примечания</li></ul>
@@ -1600,6 +1597,33 @@ function kz_upload_render_tab_rows(array $rows, $title_name = 'design[tab_title]
 		echo '<td>' . kz_upload_textarea($content_name, $row['content'] ?? '', 5) . '</td>';
 		echo '<td class="center"><a href="#" class="sba" onclick="Upl.removeRow(this); return false;">×</a></td></tr>';
 	}
+}
+
+function kz_upload_render_tab_panel($id, array $rows, $title_name = 'design[tab_title][]', $content_name = 'design[tab_content][]')
+{
+	$count = max(1, count($rows));
+	echo '<div class="up_bbtabs_body" id="' . kz_h($id) . '" data-title-name="' . kz_h($title_name) . '" data-content-name="' . kz_h($content_name) . '">';
+	echo '<ul class="up_bbtabs_tabs">';
+	for ($i = 0; $i < $count; $i++) {
+		$row = $rows[$i] ?? array('title' => '', 'content' => '');
+		$title = trim((string)($row['title'] ?? ''));
+		if ($title === '') {
+			$title = $i === 0 ? 'Новая вкладка' : 'Вкладка ' . ($i + 1);
+		}
+		echo '<li class="up_bbtabs_tab' . ($i === 0 ? ' mn' : '') . '" data-index="' . (int)$i . '">';
+		echo '<div class="up_bbtabs_tabtitle"><input class="up" type="text" name="' . kz_h($title_name) . '" value="' . kz_h($title) . '" maxlength="50" onchange="Upl.syncTabTitle(this);" onkeyup="Upl.syncTabTitle(this);"></div>';
+		echo '<div class="up_bbtabs_del" title="Удалить вкладку" onclick="Upl.removeTab(this);"></div>';
+		echo '</li>';
+	}
+	echo '<li class="up_bbtabs_add"><div class="up_bbtabs_plus" title="Добавить новую вкладку..." onclick="Upl.addTab(\'' . kz_h($id) . '\', \'' . kz_h($title_name) . '\', \'' . kz_h($content_name) . '\');"></div></li>';
+	echo '</ul>';
+	for ($i = 0; $i < $count; $i++) {
+		$row = $rows[$i] ?? array('title' => '', 'content' => '');
+		echo '<div class="bx1 up_bbtabs_c" data-index="' . (int)$i . '"' . ($i === 0 ? '' : ' style="display:none;"') . '><div class="up_bbtabs_ctxt">';
+		echo '<textarea name="' . kz_h($content_name) . '" rows="12" class="up_bbtabs_txt">' . kz_h($row['content'] ?? '') . '</textarea>';
+		echo '</div></div>';
+	}
+	echo '<div class="up_clrl"></div></div>';
 }
 
 function kz_upload_render_generic_template(array $data)
@@ -1719,10 +1743,7 @@ function kz_upload_render_release_design_fields($kind, array $design)
 			<li class="tp2">Дополнительные вкладки</li>
 			<li class="n">Вы можете указать дополнительную информацию о раздаваемом материале. Допустимо использовать не больше шести вкладок</li>
 		</ul>
-		<table class="tables1 w100p" id="<?= kz_h($tab_id) ?>">
-			<tr><td class="w175 b">Название вкладки</td><td class="b">Содержимое</td><td class="w30"></td></tr>
-			<?php kz_upload_render_tab_rows($tabs, $prefix . '[tab_title][]', $prefix . '[tab_content][]'); ?>
-		</table>
+		<?php kz_upload_render_tab_panel($tab_id, $tabs, $prefix . '[tab_title][]', $prefix . '[tab_content][]'); ?>
 		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addTab('<?= kz_h($tab_id) ?>', '<?= kz_h($prefix) ?>[tab_title][]', '<?= kz_h($prefix) ?>[tab_content][]'); return false;">Добавить вкладку</a></div>
 	</div>
 	<?php
@@ -1740,8 +1761,8 @@ function kz_upload_render_js($kind, $mode, array $section_modes)
 				var k = kinds[i];
 				var tab = document.getElementById('kind_tab_' + k);
 				var sel = document.getElementById('type_' + k);
-				if (tab) tab.className = (k === kind ? 'tp' : '');
-				if (sel) sel.style.display = (k === kind ? '' : 'none');
+				if (tab) tab.className = 'bx1 up_tmpl' + (k === kind ? ' up_tmpls' : ' sbab');
+				if (sel) sel.className = (k === kind ? 'w250' : 'w250 up_hide');
 			}
 			for (var j = 0; j < kinds.length; j++) {
 				var tmpl = document.getElementById('template_' + kinds[j]);
@@ -1764,8 +1785,8 @@ function kz_upload_render_js($kind, $mode, array $section_modes)
 		setModeTabs: function(mode) {
 			var tab0 = document.getElementById('mode_tab_0');
 			var tab1 = document.getElementById('mode_tab_1');
-			if (tab0) tab0.className = mode ? '' : 'tp';
-			if (tab1) tab1.className = mode ? 'tp' : '';
+			if (tab0) tab0.className = 'bx1 up_tmpl' + (mode ? ' sbab' : ' up_tmpls');
+			if (tab1) tab1.className = 'bx1 up_tmpl' + (mode ? ' up_tmpls' : ' sbab');
 		},
 		switchMode: function(index) {
 			var field = document.getElementById('section_mode_' + index);
@@ -1790,13 +1811,88 @@ function kz_upload_render_js($kind, $mode, array $section_modes)
 			tableId = tableId || 'tab_rows';
 			titleName = titleName || 'design[tab_title][]';
 			contentName = contentName || 'design[tab_content][]';
-			var table = document.getElementById(tableId);
-			if (!table || table.rows.length > 6) return false;
-			var row = table.insertRow(-1);
+			var holder = document.getElementById(tableId);
+			if (!holder) return false;
+			if ((' ' + holder.className + ' ').indexOf(' up_bbtabs_body ') !== -1) {
+				return this.addVisualTab(holder, titleName, contentName);
+			}
+			if (!holder.rows || holder.rows.length > 6) return false;
+			var row = holder.insertRow(-1);
 			row.innerHTML = '<td><input type="text" name="' + titleName + '" class="w100p"></td><td><textarea name="' + contentName + '" rows="5" class="w100p"></textarea></td><td class="center"><a href="#" class="sba" onclick="Upl.removeRow(this); return false;">X</a></td>';
 			return false;
-			row.innerHTML = '<td><input type="text" name="design[tab_title][]" class="w100p"></td><td><textarea name="design[tab_content][]" rows="5" class="w100p"></textarea></td><td class="center"><a href="#" class="sba" onclick="Upl.removeRow(this); return false;">×</a></td>';
+		},
+		addVisualTab: function(body, titleName, contentName) {
+			var tabs = body.getElementsByClassName('up_bbtabs_tab');
+			if (tabs.length >= 6) return false;
+			var list = body.getElementsByClassName('up_bbtabs_tabs')[0];
+			if (!list) return false;
+			var index = tabs.length;
+			var add = list.getElementsByClassName('up_bbtabs_add')[0];
+			var li = document.createElement('li');
+			li.className = 'up_bbtabs_tab';
+			li.innerHTML = '<div class="up_bbtabs_tabtitle"><input type="text" name="' + titleName + '" value="Вкладка ' + (index + 1) + '" class="up" onchange="Upl.syncTabTitle(this);" onkeyup="Upl.syncTabTitle(this);"></div><div class="up_bbtabs_del" title="Удалить вкладку" onclick="Upl.removeTab(this); return false;"></div>';
+			if (add) list.insertBefore(li, add); else list.appendChild(li);
+			var panel = document.createElement('div');
+			panel.className = 'bx1 up_bbtabs_c';
+			panel.innerHTML = '<div class="up_bbtabs_ctxt"><textarea name="' + contentName + '" rows="12" class="up_bbtabs_txt"></textarea></div>';
+			var clear = body.getElementsByClassName('up_clrl')[0];
+			if (clear) body.insertBefore(panel, clear); else body.appendChild(panel);
+			this.refreshTabs(body);
+			this.showTab(body.id, index);
 			return false;
+		},
+		showTab: function(bodyId, index) {
+			var body = document.getElementById(bodyId);
+			if (!body) return false;
+			var tabs = body.getElementsByClassName('up_bbtabs_tab');
+			var panels = body.getElementsByClassName('up_bbtabs_c');
+			for (var i = 0; i < tabs.length; i++) {
+				tabs[i].className = 'up_bbtabs_tab' + (i === index ? ' mn' : '');
+			}
+			for (var j = 0; j < panels.length; j++) {
+				panels[j].style.display = (j === index ? '' : 'none');
+			}
+			return false;
+		},
+		removeTab: function(link) {
+			var tab = link;
+			while (tab && tab.tagName !== 'LI') tab = tab.parentNode;
+			if (!tab) return false;
+			var body = tab;
+			while (body && (' ' + body.className + ' ').indexOf(' up_bbtabs_body ') === -1) body = body.parentNode;
+			if (!body) return false;
+			var tabs = body.getElementsByClassName('up_bbtabs_tab');
+			if (tabs.length <= 1) return false;
+			var index = 0;
+			for (var i = 0; i < tabs.length; i++) {
+				if (tabs[i] === tab) {
+					index = i;
+					break;
+				}
+			}
+			var panels = body.getElementsByClassName('up_bbtabs_c');
+			if (panels[index]) panels[index].parentNode.removeChild(panels[index]);
+			tab.parentNode.removeChild(tab);
+			this.refreshTabs(body);
+			this.showTab(body.id, Math.max(0, index - 1));
+			return false;
+		},
+		refreshTabs: function(body) {
+			var tabs = body.getElementsByClassName('up_bbtabs_tab');
+			for (var i = 0; i < tabs.length; i++) {
+				tabs[i].onclick = (function(bodyId, index) {
+					return function(e) {
+						e = e || window.event;
+						var target = e.target || e.srcElement;
+						if (target && target.className === 'up_bbtabs_del') return false;
+						Upl.showTab(bodyId, index);
+						return false;
+					};
+				})(body.id, i);
+			}
+		},
+		syncTabTitle: function(input) {
+			return true;
 		},
 		removeRow: function(link) {
 			var row = link;
@@ -1823,6 +1919,13 @@ function kz_upload_render_js($kind, $mode, array $section_modes)
 	<?php } ?>
 	document.getElementById('mode').value = '<?= (int)$mode ?>';
 	Upl.setModeTabs(<?= (int)$mode ?>);
+	(function() {
+		var bodies = document.getElementsByClassName('up_bbtabs_body');
+		for (var i = 0; i < bodies.length; i++) {
+			Upl.refreshTabs(bodies[i]);
+			Upl.showTab(bodies[i].id, 0);
+		}
+	})();
 	</script>
 	<?php
 }

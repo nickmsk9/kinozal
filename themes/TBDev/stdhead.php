@@ -121,6 +121,9 @@ $page_title = $title !== '' ? $title : $site_name;
 
     <link rel="shortcut icon" href="/pic/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="./themes/<?= h($ss_uri) ?>/<?= h($ss_uri) ?>.css" type="text/css">
+    <?php if (in_array(basename($_SERVER['PHP_SELF'] ?? ''), array('upload.php', 'edit.php'), true)) { ?>
+        <link rel="stylesheet" href="/pic/upload/_upload.css" type="text/css">
+    <?php } ?>
 
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/jquery.migrate.js"></script>

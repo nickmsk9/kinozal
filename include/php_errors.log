@@ -120,3 +120,59 @@ Stack trace:
 [31-May-2026 15:50:20 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in /Users/nick/docker/kinozal/include/config.local.php on line 58
 [31-May-2026 16:05:50 UTC] PHP Warning:  Undefined array key "page" in /var/www/html/userhistory.php on line 42
 [31-May-2026 16:05:50 UTC] PHP Warning:  Undefined array key "action" in /var/www/html/userhistory.php on line 44
+[01-Jun-2026 11:48:08 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_tab_panel() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1570
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1496): kz_upload_render_design_fields()
+#1 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1369): kz_upload_render_video_template()
+#2 C:\OSPanel\domains\kinozal.lv\upload.php(45): kz_upload_render_form()
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
+[01-Jun-2026 11:48:14 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_tab_panel() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1570
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1496): kz_upload_render_design_fields()
+#1 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1369): kz_upload_render_video_template()
+#2 C:\OSPanel\domains\kinozal.lv\upload.php(45): kz_upload_render_form()
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
+[01-Jun-2026 11:48:14 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_tab_panel() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1570
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1496): kz_upload_render_design_fields()
+#1 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1369): kz_upload_render_video_template()
+#2 C:\OSPanel\domains\kinozal.lv\upload.php(45): kz_upload_render_form()
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
+[01-Jun-2026 11:48:22 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_tab_panel() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1570
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1496): kz_upload_render_design_fields()
+#1 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1369): kz_upload_render_video_template()
+#2 C:\OSPanel\domains\kinozal.lv\upload.php(45): kz_upload_render_form()
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
+[01-Jun-2026 11:48:36 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_tab_panel() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1570
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1496): kz_upload_render_design_fields()
+#1 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1369): kz_upload_render_video_template()
+#2 C:\OSPanel\domains\kinozal.lv\upload.php(45): kz_upload_render_form()
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
+[01-Jun-2026 11:48:40 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_tab_panel() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1570
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1496): kz_upload_render_design_fields()
+#1 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1369): kz_upload_render_video_template()
+#2 C:\OSPanel\domains\kinozal.lv\upload.php(45): kz_upload_render_form()
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
+[01-Jun-2026 11:48:43 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_tab_panel() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1570
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1496): kz_upload_render_design_fields()
+#1 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1369): kz_upload_render_video_template()
+#2 C:\OSPanel\domains\kinozal.lv\upload.php(45): kz_upload_render_form()
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
+[01-Jun-2026 11:48:54 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function kz_upload_render_tab_panel() in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php:1570
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1496): kz_upload_render_design_fields()
+#1 C:\OSPanel\domains\kinozal.lv\include\kz_upload.php(1369): kz_upload_render_video_template()
+#2 C:\OSPanel\domains\kinozal.lv\upload.php(45): kz_upload_render_form()
+#3 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
