@@ -5,9 +5,9 @@ if (!defined('BLOCK_FILE')) {
 	exit;
 }
 
-require_once ROOT_PATH . 'include/kz_pay.php';
+require_once ROOT_PATH . 'include/pay.php';
 
 $blocktitle = 'Меценаты';
-$content = kz_pay_home_block_html();
+$content = pay_home_block_html();
 
 ?>

@@ -1,9 +1,9 @@
 <?
 
 require_once("include/bittorrent.php");
-require_once("include/kz_upload.php");
-require_once("include/kz_test_torrents.php");
-require_once("include/kz_multitracker.php");
+require_once("include/upload.php");
+require_once("include/test_torrents.php");
+require_once("include/multitracker.php");
 
 dbconn(false);
 
@@ -15,9 +15,9 @@ if (strlen($CURUSER['passkey']) != 32) {
 	sql_query("UPDATE users SET passkey = " . sqlesc($CURUSER['passkey']) . " WHERE id = " . (int)$CURUSER['id']);
 }
 
-kz_upload_ensure_schema();
-kz_test_torrents_ensure_schema();
-kz_mt_ensure_schema();
+upload_ensure_schema();
+test_torrents_ensure_schema();
+multitracker_ensure_schema();
 
 $is_test_upload = get_user_class() < UC_VIP || !empty($_GET['test']);
 
@@ -34,18 +34,18 @@ $state = array(
 		'poster_url' => '',
 		'rgroup' => 0,
 		'rgroup_button' => '',
-		'data' => kz_upload_default_data(),
+		'data' => upload_default_data(),
 	),
 );
 
 ?>
 <div class="bx2">
-	<? kz_upload_render_info_sidebar(); ?>
+	<? upload_render_info_sidebar(); ?>
 	<div class="mn3_content">
-		<? kz_upload_render_form('/takeupload.php' . ($is_test_upload ? '?test=1' : ''), $is_test_upload ? 'Залить тестовую раздачу' : 'Залить раздачу', $state, false); ?>
+		<? upload_render_form('/takeupload.php' . ($is_test_upload ? '?test=1' : ''), $is_test_upload ? 'Залить тестовую раздачу' : 'Залить раздачу', $state, false); ?>
 	</div>
 </div>
-<? kz_upload_render_online_block(); ?>
+<? upload_render_online_block(); ?>
 <?
 
 stdfoot();

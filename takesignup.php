@@ -299,7 +299,7 @@ $values = array(
     $theme,
     $ip,
     $passkey,
-    function_exists('kz_reputation_signup_value') ? kz_reputation_signup_value() : 1
+    function_exists('reputation_signup_value') ? reputation_signup_value() : 1
 );
 
 if (!$users) {

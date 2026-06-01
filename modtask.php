@@ -97,11 +97,11 @@ if ($action == "edituser") {
 
 	if (get_user_class() >= UC_ADMINISTRATOR) {
 		$manual_cups = isset($_POST["manual_cups"]) && is_array($_POST["manual_cups"]) ? $_POST["manual_cups"] : array();
-		$cup_changes = kz_cups_save_profile_manual($userid, $manual_cups, (int)$CURUSER["id"]);
+		$cup_changes = cups_save_profile_manual($userid, $manual_cups, (int)$CURUSER["id"]);
 
 		if (!empty($cup_changes['added']) || !empty($cup_changes['removed'])) {
 			$cup_titles = array();
-			foreach (kz_cups_catalog() as $cup) {
+			foreach (cups_catalog() as $cup) {
 				$cup_titles[(int)$cup['id']] = $cup['title'];
 			}
 

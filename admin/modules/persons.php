@@ -179,7 +179,7 @@ if (!function_exists('PersonsAdmin')) {
 					continue;
 				}
 				$seen[$key] = true;
-				if (kz_persons_find(0, $name)) {
+				if (persons_find(0, $name)) {
 					$existing++;
 					continue;
 				}
@@ -187,9 +187,9 @@ if (!function_exists('PersonsAdmin')) {
 				$person = persons_admin_default_row($name);
 				$person['career'] = $role === 'director' ? 'режиссер' : 'актер';
 				if ($fill_wikipedia) {
-					$import = kz_persons_import_from_wikipedia($name, 'ru');
+					$import = persons_import_from_wikipedia($name, 'ru');
 					if ($import) {
-						$person = kz_persons_merge_import($person, $import, false);
+						$person = persons_merge_import($person, $import, false);
 						$person['name'] = $name;
 					}
 				}
@@ -206,10 +206,10 @@ if (!function_exists('PersonsAdmin')) {
 	{
 		global $admin_file;
 
-		kz_persons_ensure_schema();
+		persons_ensure_schema();
 
 		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_person'])) {
-			$name = kz_persons_request_text($_POST['person_name'] ?? '');
+			$name = persons_request_text($_POST['person_name'] ?? '');
 			$lang = preg_match('/^[a-z]{2,3}$/i', (string)($_POST['lang'] ?? 'ru')) ? strtolower((string)$_POST['lang']) : 'ru';
 			$pid = (int)($_POST['person_id'] ?? 0);
 			$overwrite = !empty($_POST['overwrite']);
@@ -217,20 +217,20 @@ if (!function_exists('PersonsAdmin')) {
 			if ($name === '') {
 				stdmsg('Персоны', 'Укажите имя персоны для импорта.');
 			} else {
-				$import = kz_persons_import_from_wikipedia($name, $lang);
+				$import = persons_import_from_wikipedia($name, $lang);
 				if (!$import) {
 					stdmsg('Персоны', 'Wikipedia не вернула данные по этому запросу.');
 				} else {
-					$existing = $pid > 0 ? kz_persons_find($pid, '') : kz_persons_find(0, $name);
+					$existing = $pid > 0 ? persons_find($pid, '') : persons_find(0, $name);
 					$base = $existing ?: persons_admin_default_row($name);
-					$merged = kz_persons_merge_import($base, $import, $overwrite);
+					$merged = persons_merge_import($base, $import, $overwrite);
 					if (empty($merged['name'])) {
 						$merged['name'] = $name;
 					}
 					$merged['id'] = (int)($base['id'] ?? 0);
 					$saved_id = persons_admin_save($merged);
 					if ($saved_id > 0) {
-						stdmsg('Персоны', 'Информация загружена и сохранена: <a href="' . kz_persons_url($merged['name'], $saved_id) . '" class="sbab">открыть персону</a>.');
+						stdmsg('Персоны', 'Информация загружена и сохранена: <a href="' . persons_url($merged['name'], $saved_id) . '" class="sbab">открыть персону</a>.');
 					}
 				}
 			}
@@ -270,7 +270,7 @@ if (!function_exists('PersonsAdmin')) {
 		echo '<table class="tables2 w100p"><tr><td class="colhead">Персона</td><td class="colhead w150">Дата</td><td class="colhead w150">Действия</td></tr>';
 		while ($row = mysqli_fetch_assoc($res)) {
 			$date = $row['updated_at'] ?: $row['created_at'];
-			echo '<tr><td><a href="' . kz_persons_url($row['name'], (int)$row['id']) . '" class="sbab">' . htmlspecialchars_uni($row['name']) . '</a>';
+			echo '<tr><td><a href="' . persons_url($row['name'], (int)$row['id']) . '" class="sbab">' . htmlspecialchars_uni($row['name']) . '</a>';
 			if ($row['original_name'] !== '') {
 				echo ' / ' . htmlspecialchars_uni($row['original_name']);
 			}

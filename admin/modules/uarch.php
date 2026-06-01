@@ -4,26 +4,26 @@ if (!defined('ADMIN_FILE')) {
 	die('Illegal File Access');
 }
 
-require_once 'include/kz_uarch.php';
+require_once 'include/uarch.php';
 
 function UarchAdmin()
 {
 	global $admin_file;
 
-	kz_uarch_ensure_schema();
+	uarch_ensure_schema();
 
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if (isset($_POST['delete_id'])) {
-			kz_uarch_delete((int)$_POST['delete_id']);
+			uarch_delete((int)$_POST['delete_id']);
 		} elseif (isset($_POST['toggle_id'])) {
-			kz_uarch_set_active((int)$_POST['toggle_id'], (string)($_POST['active'] ?? 'no'));
+			uarch_set_active((int)$_POST['toggle_id'], (string)($_POST['active'] ?? 'no'));
 		}
 
 		header('Location: ' . $admin_file . '.php?op=UarchAdmin');
 		exit;
 	}
 
-	$rows = kz_uarch_smiles(false, 200);
+	$rows = uarch_smiles(false, 200);
 
 	echo '<div class="mn_wrap">';
 	echo '<table class="tables2 w100p">';
@@ -50,17 +50,17 @@ function UarchAdmin()
 
 		echo '<tr>';
 		echo '<td class="center">' . $id . '</td>';
-		echo '<td><a href="/userdetails.php?id=' . $userid . '" class="u' . $userclass . '">' . kz_uarch_h($username) . '</a></td>';
-		echo '<td class="center"><a href="' . kz_uarch_h($row['image_url']) . '" target="_blank"><img src="' . kz_uarch_h($row['image_url']) . '" alt="" style="max-width:120px; max-height:90px;"></a></td>';
+		echo '<td><a href="/userdetails.php?id=' . $userid . '" class="u' . $userclass . '">' . uarch_h($username) . '</a></td>';
+		echo '<td class="center"><a href="' . uarch_h($row['image_url']) . '" target="_blank"><img src="' . uarch_h($row['image_url']) . '" alt="" style="max-width:120px; max-height:90px;"></a></td>';
 		echo '<td class="center">' . ($active === 'yes' ? '<span class="green">Показана</span>' : '<span class="red">Скрыта</span>') . '</td>';
-		echo '<td class="center">' . kz_uarch_h($row['added']) . '</td>';
+		echo '<td class="center">' . uarch_h($row['added']) . '</td>';
 		echo '<td class="center">';
-		echo '<form method="post" action="' . kz_uarch_h($admin_file) . '.php?op=UarchAdmin" style="display:inline;">';
+		echo '<form method="post" action="' . uarch_h($admin_file) . '.php?op=UarchAdmin" style="display:inline;">';
 		echo '<input type="hidden" name="toggle_id" value="' . $id . '">';
 		echo '<input type="hidden" name="active" value="' . ($active === 'yes' ? 'no' : 'yes') . '">';
 		echo '<input type="submit" class="btn" value="' . ($active === 'yes' ? 'Скрыть' : 'Показать') . '">';
 		echo '</form> ';
-		echo '<form method="post" action="' . kz_uarch_h($admin_file) . '.php?op=UarchAdmin" style="display:inline;" onsubmit="return confirm(\'Удалить улыбку?\');">';
+		echo '<form method="post" action="' . uarch_h($admin_file) . '.php?op=UarchAdmin" style="display:inline;" onsubmit="return confirm(\'Удалить улыбку?\');">';
 		echo '<input type="hidden" name="delete_id" value="' . $id . '">';
 		echo '<input type="submit" class="btn" value="Удалить">';
 		echo '</form>';

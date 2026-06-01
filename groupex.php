@@ -4,19 +4,19 @@ require_once __DIR__ . '/include/bittorrent.php';
 require_once __DIR__ . '/include/groupex.php';
 
 dbconn(false);
-kz_groups_ensure_schema();
+groups_ensure_schema();
 
 $id = (int)($_GET['id'] ?? 0);
-$group = kz_groups_fetch($id);
+$group = groups_fetch($id);
 if (!$group) {
 	stderr('Группа', 'Группа не найдена.');
 }
 
-$member = !empty($CURUSER) ? kz_groups_member($id, (int)$CURUSER['id']) : null;
+$member = !empty($CURUSER) ? groups_member($id, (int)$CURUSER['id']) : null;
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_GET['zaboraction'] ?? '') === 'addcomment') {
 	loggedinorreturn();
-	$member = kz_groups_member($id, (int)$CURUSER['id']);
+	$member = groups_member($id, (int)$CURUSER['id']);
 	if (!$member || $member['status'] !== 'member') {
 		stderr('Забор группы', 'Писать на заборе могут только участники группы.');
 	}
@@ -33,8 +33,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_GET['zaboraction'] ?? ''
 		INSERT INTO groupex_zabor (group_id, userid, text, ori_text, added_at)
 		VALUES ($id, " . (int)$CURUSER['id'] . ', ' . sqlesc($text) . ', ' . sqlesc($text) . ", NOW())
 	") or sqlerr(__FILE__, __LINE__);
-	kz_groups_log($id, (int)$CURUSER['id'], 'zabor', 'Добавлена надпись на заборе');
-	kz_groups_refresh_counts($id);
+	groups_log($id, (int)$CURUSER['id'], 'zabor', 'Добавлена надпись на заборе');
+	groups_refresh_counts($id);
 
 	header('Location: /groupex.php?id=' . $id . '#zabor');
 	exit;
@@ -42,9 +42,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_GET['zaboraction'] ?? ''
 
 $hide_right_blocks = true;
 stdhead('Группа :: ' . $group['name']);
-kz_groups_subcat_script();
+groups_subcat_script();
 
-$torrent_rows = kz_groups_torrent_rows($id, 0, 5);
+$torrent_rows = groups_torrent_rows($id, 0, 5);
 
 $members_res = sql_query("
 	SELECT u.id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded, gm.role
@@ -72,40 +72,40 @@ $zabor_res = sql_query("
 		::
 		<a href="/mygroups.php" class="sbab">Мои группы</a>
 		::
-		<a href="/groupex.php?id=<?= $id ?>" class="sbab"><?= kz_groups_h($group['name']) ?></a>
+		<a href="/groupex.php?id=<?= $id ?>" class="sbab"><?= groups_h($group['name']) ?></a>
 	</div>
-	<?php kz_groups_group_sidebar($group, $member); ?>
+	<?php groups_group_sidebar($group, $member); ?>
 	<div class="mn3_content">
 		<div class="bx1">
 			<table class="tables1">
 				<tr>
 					<td class="w150">Название:</td>
-					<td><a href="/groupex.php?id=<?= $id ?>"><?= kz_groups_h($group['name']) ?></a></td>
+					<td><a href="/groupex.php?id=<?= $id ?>"><?= groups_h($group['name']) ?></a></td>
 				</tr>
 				<tr>
 					<td>Тип:</td>
-					<td><a class="sba" href="<?= kz_groups_search_href('type', (int)$group['type']) ?>"><?= kz_groups_h(kz_groups_type_name((int)$group['type'])) ?></a></td>
+					<td><a class="sba" href="<?= groups_search_href('type', (int)$group['type']) ?>"><?= groups_h(groups_type_name((int)$group['type'])) ?></a></td>
 				</tr>
 				<tr>
 					<td>Категория:</td>
-					<td><a class="sba" href="<?= kz_groups_search_href('cat', (int)$group['cat']) ?>"><?= kz_groups_h(kz_groups_category_name((int)$group['cat'])) ?></a></td>
+					<td><a class="sba" href="<?= groups_search_href('cat', (int)$group['cat']) ?>"><?= groups_h(groups_category_name((int)$group['cat'])) ?></a></td>
 				</tr>
 				<tr>
 					<td>Подкатегория:</td>
-					<td><a class="sba" href="<?= kz_groups_search_href('subcatsel', (int)$group['subcat']) ?>"><?= kz_groups_h(kz_groups_subcategory_name((int)$group['subcat'])) ?></a></td>
+					<td><a class="sba" href="<?= groups_search_href('subcatsel', (int)$group['subcat']) ?>"><?= groups_h(groups_subcategory_name((int)$group['subcat'])) ?></a></td>
 				</tr>
 				<tr>
 					<td>Время создания:</td>
-					<td><?= kz_groups_h(kz_groups_date($group['created_at'])) ?></td>
+					<td><?= groups_h(groups_date($group['created_at'])) ?></td>
 				</tr>
 				<tr>
 					<td>Создатель:</td>
-					<td><?= kz_groups_user_link((int)$group['owner_id'], $group['owner_username'] ?? '', (int)($group['owner_class'] ?? 0), $group) ?></td>
+					<td><?= groups_user_link((int)$group['owner_id'], $group['owner_username'] ?? '', (int)($group['owner_class'] ?? 0), $group) ?></td>
 				</tr>
 			</table>
 		</div>
 		<div class="bx1">
-			<?= kz_groups_text($group['description']) ?>
+			<?= groups_text($group['description']) ?>
 		</div>
 		<div class="bx1">
 			<table class="tables1 w100p">
@@ -115,7 +115,7 @@ $zabor_res = sql_query("
 				</tr>
 			</table>
 		</div>
-		<?php kz_groups_torrent_table($torrent_rows); ?>
+		<?php groups_torrent_table($torrent_rows); ?>
 		<div class="bx2_0">
 			<div class="pad5x5 b">
 				<span class="bulet"></span>
@@ -127,7 +127,7 @@ $zabor_res = sql_query("
 				<?php
 				$members = array();
 				while ($user = mysqli_fetch_assoc($members_res)) {
-					$members[] = kz_groups_user_link((int)$user['id'], $user['username'], (int)$user['class'], $user);
+					$members[] = groups_user_link((int)$user['id'], $user['username'], (int)$user['class'], $user);
 				}
 				echo $members ? implode(', ', $members) : 'Участников пока нет.';
 				?>
@@ -171,12 +171,12 @@ $zabor_res = sql_query("
 				$zabor_found = true;
 				$avatar = trim((string)($comment['avatar'] ?? ''));
 				if ($avatar !== '') {
-					echo '<div class="mn2 cmet_bx"><img class="cmet_ava" src="' . kz_groups_h($avatar) . '" alt=""><div class="cmet_sbx">';
+					echo '<div class="mn2 cmet_bx"><img class="cmet_ava" src="' . groups_h($avatar) . '" alt=""><div class="cmet_sbx">';
 				} else {
 					echo '<div class="mn2 cmet_bx"><div class="cmet_sbx">';
 				}
-				echo '<dl class="mn"><dt>' . kz_groups_user_link((int)$comment['userid'], $comment['username'] ?? '', (int)($comment['class'] ?? 0), $comment) . ' | ' . kz_groups_h(kz_groups_date($comment['added_at'])) . '</dt><dd></dd></dl>';
-				echo '<div class="tx">' . kz_groups_text($comment['text']) . '</div></div><div class="clr"></div></div>';
+				echo '<dl class="mn"><dt>' . groups_user_link((int)$comment['userid'], $comment['username'] ?? '', (int)($comment['class'] ?? 0), $comment) . ' | ' . groups_h(groups_date($comment['added_at'])) . '</dt><dd></dd></dl>';
+				echo '<div class="tx">' . groups_text($comment['text']) . '</div></div><div class="clr"></div></div>';
 			}
 			if (!$zabor_found) {
 				echo '<div class="mn2 pad10x10 center">На заборе пока нет надписей.</div>';
@@ -186,7 +186,7 @@ $zabor_res = sql_query("
 	</div>
 	<div class="clr"></div>
 </div>
-<?= kz_page_online_box(array('/groupex.php?id=' . $id . '%'), 'никого нет на странице') ?>
+<?= page_online_box(array('/groupex.php?id=' . $id . '%'), 'никого нет на странице') ?>
 <?php
 stdfoot();
 

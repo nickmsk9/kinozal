@@ -104,8 +104,8 @@ function send(){
 <div class="success">
 	<b>Голоса и рейтинг</b><br />
 	Бонусы можно обменять на голоса в разделе <a href="/pay.php" class="sbab">Голоса и рейтинг</a>.
-	<?php if (function_exists('kz_pay_user_votes_from_array')) { ?>
-		Сейчас у Вас <b><?= kz_pay_user_votes_from_array($CURUSER) ?></b> голосов.
+	<?php if (function_exists('pay_user_votes_from_array')) { ?>
+		Сейчас у Вас <b><?= pay_user_votes_from_array($CURUSER) ?></b> голосов.
 	<?php } ?>
 </div>
 	<table class="embedded" width="550" border="1" cellspacing="0" cellpadding="5">

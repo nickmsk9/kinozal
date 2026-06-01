@@ -9,14 +9,14 @@ if (!function_exists('ReputationAdmin')) {
 	{
 		global $admin_file;
 
-		kz_reputation_install_schema();
+		reputation_install_schema();
 
 		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_reputation_settings'])) {
 			$daily = max(0, (int)($_POST['reputation_daily_limit'] ?? 1));
 			$signup = max(0, (int)($_POST['reputation_signup_value'] ?? 1));
 
-			kz_reputation_set_setting('reputation_daily_limit', $daily);
-			kz_reputation_set_setting('reputation_signup_value', $signup);
+			reputation_set_setting('reputation_daily_limit', $daily);
+			reputation_set_setting('reputation_signup_value', $signup);
 
 			stdmsg(
 				'&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103;',
@@ -24,8 +24,8 @@ if (!function_exists('ReputationAdmin')) {
 			);
 		}
 
-		$daily = kz_reputation_daily_limit();
-		$signup = kz_reputation_signup_value();
+		$daily = reputation_daily_limit();
+		$signup = reputation_signup_value();
 
 		echo '<div class="mn_wrap">';
 		echo '<div class="tp1_title"><b>&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103;</b></div>';

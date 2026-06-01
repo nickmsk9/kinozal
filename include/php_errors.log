@@ -180,3 +180,52 @@ Stack trace:
 [01-Jun-2026 12:38:30 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\userhistory.php on line 44
 [01-Jun-2026 15:38:59 Europe/Moscow] PHP Warning:  Undefined variable $pagemenu in C:\OSPanel\domains\kinozal.lv\warned.php on line 69
 [01-Jun-2026 15:38:59 Europe/Moscow] PHP Warning:  Undefined variable $browsemenu in C:\OSPanel\domains\kinozal.lv\warned.php on line 69
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "h" in /var/www/html/usersearch.php on line 66
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "n" in /var/www/html/usersearch.php on line 105
+[01-Jun-2026 15:48:44 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "r" in /var/www/html/usersearch.php on line 108
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "rt" in /var/www/html/usersearch.php on line 112
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "r" in /var/www/html/usersearch.php on line 116
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "r2" in /var/www/html/usersearch.php on line 117
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "st" in /var/www/html/usersearch.php on line 120
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "st" in /var/www/html/usersearch.php on line 124
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "em" in /var/www/html/usersearch.php on line 129
+[01-Jun-2026 15:48:44 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ip" in /var/www/html/usersearch.php on line 131
+[01-Jun-2026 15:48:44 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "as" in /var/www/html/usersearch.php on line 134
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "as" in /var/www/html/usersearch.php on line 138
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "co" in /var/www/html/usersearch.php on line 144
+[01-Jun-2026 15:48:44 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ma" in /var/www/html/usersearch.php on line 146
+[01-Jun-2026 15:48:44 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "c" in /var/www/html/usersearch.php on line 148
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "c" in /var/www/html/usersearch.php on line 150
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "d" in /var/www/html/usersearch.php on line 165
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "dt" in /var/www/html/usersearch.php on line 169
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "d" in /var/www/html/usersearch.php on line 174
+[01-Jun-2026 15:48:44 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "d2" in /var/www/html/usersearch.php on line 176
+[01-Jun-2026 15:48:44 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ul" in /var/www/html/usersearch.php on line 181
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ult" in /var/www/html/usersearch.php on line 185
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ul" in /var/www/html/usersearch.php on line 190
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ul2" in /var/www/html/usersearch.php on line 192
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "do" in /var/www/html/usersearch.php on line 195
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "do" in /var/www/html/usersearch.php on line 199
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ls" in /var/www/html/usersearch.php on line 207
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "lst" in /var/www/html/usersearch.php on line 211
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ls" in /var/www/html/usersearch.php on line 216
+[01-Jun-2026 15:48:44 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ls2" in /var/www/html/usersearch.php on line 218
+[01-Jun-2026 15:48:44 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /var/www/html/include/init.php on line 16
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "dl" in /var/www/html/usersearch.php on line 221
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "dlt" in /var/www/html/usersearch.php on line 225
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "dl" in /var/www/html/usersearch.php on line 230
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "dl2" in /var/www/html/usersearch.php on line 232
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "w" in /var/www/html/usersearch.php on line 236
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "w" in /var/www/html/usersearch.php on line 240
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "ac" in /var/www/html/usersearch.php on line 247
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "dip" in /var/www/html/usersearch.php on line 249
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined variable $pagemenu in /var/www/html/usersearch.php on line 901
+[01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined variable $browsemenu in /var/www/html/usersearch.php on line 901

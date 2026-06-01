@@ -4,9 +4,9 @@ require_once __DIR__ . '/include/bittorrent.php';
 require_once __DIR__ . '/include/groupex.php';
 
 dbconn(false);
-kz_groups_ensure_schema();
+groups_ensure_schema();
 
-$name = kz_groups_request_text($_GET['name'] ?? '');
+$name = groups_request_text($_GET['name'] ?? '');
 $userid = (int)($_GET['userid'] ?? 0);
 $type = (int)($_GET['type'] ?? 0);
 $cat = (int)($_GET['cat'] ?? 0);
@@ -20,10 +20,10 @@ if ($name !== '') {
 if ($userid > 0) {
     $where[] = 'owner_id = ' . $userid;
 }
-if (isset(kz_groups_types()[$type])) {
+if (isset(groups_types()[$type])) {
     $where[] = 'type = ' . $type;
 }
-if (isset(kz_groups_categories()[$cat])) {
+if (isset(groups_categories()[$cat])) {
     $where[] = 'cat = ' . $cat;
 }
 if ($subcat > 0) {
@@ -64,7 +64,7 @@ $groups_res = sql_query("
 
 $hide_right_blocks = true;
 stdhead('Список групп');
-kz_groups_subcat_script(array('gsearch_subcatsel' => $subcat));
+groups_subcat_script(array('gsearch_subcatsel' => $subcat));
 
 ?>
 <div class="bx2">
@@ -73,7 +73,7 @@ kz_groups_subcat_script(array('gsearch_subcatsel' => $subcat));
         ::
         <a href="/mygroups.php" class="sbab">Мои группы</a>
     </div>
-    <?php kz_groups_search_sidebar(); ?>
+    <?php groups_search_sidebar(); ?>
     <div class="mn3_content">
         <div class="bx1">
             <span class="bulet"></span>
@@ -89,7 +89,7 @@ kz_groups_subcat_script(array('gsearch_subcatsel' => $subcat));
                 <div class="pad10x10 center">По заданным параметрам группы не найдены.</div>
             <?php } else { ?>
                 <?php while ($group = mysqli_fetch_assoc($groups_res)) { ?>
-                    <?php kz_groups_group_card($group); ?>
+                    <?php groups_group_card($group); ?>
                 <?php } ?>
             <?php } ?>
         </div>
@@ -100,7 +100,7 @@ kz_groups_subcat_script(array('gsearch_subcatsel' => $subcat));
     <div class="clr"></div>
 </div>
 
-<?= kz_page_online_box(array('/groupexlist.php%'), 'никого нет на странице'); ?>
+<?= page_online_box(array('/groupexlist.php%'), 'никого нет на странице'); ?>
 <?php
 stdfoot();
 

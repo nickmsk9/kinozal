@@ -57,7 +57,7 @@ function copyright_menu($contact_email)
 
 function copyright_online_box($patterns)
 {
-	echo kz_page_online_box($patterns, 'никого нет на странице');
+	echo page_online_box($patterns, 'никого нет на странице');
 }
 
 ?>

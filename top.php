@@ -401,7 +401,7 @@ stdhead("Топ раздач");
     <div class="clr"></div>
 </div>
 
-<?= kz_page_online_box(array('/top.php%', 'top.php%'), 'никого нет на этой странице'); ?>
+<?= page_online_box(array('/top.php%', 'top.php%'), 'никого нет на этой странице'); ?>
 
 <div id="movie_video"></div>
 <div class="clr"></div>

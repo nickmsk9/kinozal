@@ -505,8 +505,8 @@ function docleanup()
     /*
      * 16. Автообновление cups, если модуль есть.
      */
-    if (function_exists('kz_cups_update_auto')) {
-        kz_cups_update_auto(false);
+    if (function_exists('cups_update_auto')) {
+        cups_update_auto(false);
     }
 }
 

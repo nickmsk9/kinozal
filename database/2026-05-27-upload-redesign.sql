@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `torrent_details` (
 
 ALTER TABLE `categories` MODIFY `name` varchar(80) NOT NULL DEFAULT '';
 
-CREATE TEMPORARY TABLE `_kz_category_map` AS
+CREATE TEMPORARY TABLE `_category_map` AS
 SELECT
   `id` AS `old_id`,
   CAST(SUBSTRING_INDEX(`image`, '.', 1) AS UNSIGNED) AS `new_id`
@@ -27,7 +27,7 @@ FROM `categories`
 WHERE `image` REGEXP '^[0-9]+\\.gif$';
 
 UPDATE `torrents` AS `t`
-INNER JOIN `_kz_category_map` AS `m` ON `m`.`old_id` = `t`.`category`
+INNER JOIN `_category_map` AS `m` ON `m`.`old_id` = `t`.`category`
 SET `t`.`category` = `m`.`new_id`;
 
 DELETE FROM `categories`;

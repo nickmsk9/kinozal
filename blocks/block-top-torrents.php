@@ -5,8 +5,8 @@ if (!defined('BLOCK_FILE')) {
     exit;
 }
 
-require_once(dirname(__DIR__) . '/include/kz_test_torrents.php');
-kz_test_torrents_ensure_schema();
+require_once(dirname(__DIR__) . '/include/test_torrents.php');
+test_torrents_ensure_schema();
 
 global $content;
 

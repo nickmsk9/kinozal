@@ -4,11 +4,11 @@ require_once("include/bittorrent.php");
 require_once("include/persons.php");
 
 dbconn(false);
-kz_persons_ensure_schema();
+persons_ensure_schema();
 
 function ps_get($key, $default = '')
 {
-	return kz_persons_request_text($_GET[$key] ?? $default);
+	return persons_request_text($_GET[$key] ?? $default);
 }
 
 function ps_selected($a, $b)
@@ -20,7 +20,7 @@ function ps_letters($param)
 {
 	$letters = preg_split('//u', 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЭЮЯ', -1, PREG_SPLIT_NO_EMPTY);
 	foreach ($letters as $letter) {
-		echo '<span><a href="/personsearch.php?' . $param . '=' . rawurlencode($letter) . '">' . kz_persons_h($letter) . '</a></span>';
+		echo '<span><a href="/personsearch.php?' . $param . '=' . rawurlencode($letter) . '">' . persons_h($letter) . '</a></span>';
 	}
 	echo '<a href="/personsearch.php">...</a><div class="clr"></div>';
 }
@@ -33,7 +33,7 @@ function ps_menu($s, $type, $gender, $day, $month, $year)
 	<ul class="men w200">
 		<li class="img"><a href="/personsearch.php"><img src="/pic/bn/p_personsearch.jpg" height="75" class="block w200" alt=""></a></li>
 		<li class="tp">Поиск персон</li>
-		<li class="img"><dl><dt>Имя</dt><dd><input type="text" class="p_srch" name="s" value="<?= kz_persons_h($s) ?>" placeholder="Имя Фамилия"></dd></dl></li>
+		<li class="img"><dl><dt>Имя</dt><dd><input type="text" class="p_srch" name="s" value="<?= persons_h($s) ?>" placeholder="Имя Фамилия"></dd></dl></li>
 		<li class="img"><dl><dt>Категория</dt><dd><span class="sw120"><select class="p_srch styled" name="t">
 			<option value="0"<?= ps_selected($type, 0) ?>>Все</option>
 			<option value="11"<?= ps_selected($type, 11) ?>>Персоны</option>
@@ -48,7 +48,7 @@ function ps_menu($s, $type, $gender, $day, $month, $year)
 			<option value="1"<?= ps_selected($gender, 1) ?>>Мужской</option>
 			<option value="2"<?= ps_selected($gender, 2) ?>>Женский</option>
 		</select></span></dd></dl></li>
-		<li class="img">Дата рождения<table id="bday"><tr><td id="d"><select name="d" class="w100p styled"><option value="0">День</option><?php for ($i = 1; $i <= 31; $i++) { ?><option value="<?= $i ?>"<?= ps_selected($day, $i) ?>><?= $i ?></option><?php } ?></select></td><td id="m"><select name="m" class="w100p styled"><option value="0">Месяц</option><?php $months = array(1=>'января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'); foreach ($months as $i => $month_name) { ?><option value="<?= $i ?>"<?= ps_selected($month, $i) ?>><?= $month_name ?></option><?php } ?></select></td><td><input type="text" class="w100p" name="g" value="<?= kz_persons_h($year) ?>" placeholder="Год"></td></tr></table></li>
+		<li class="img">Дата рождения<table id="bday"><tr><td id="d"><select name="d" class="w100p styled"><option value="0">День</option><?php for ($i = 1; $i <= 31; $i++) { ?><option value="<?= $i ?>"<?= ps_selected($day, $i) ?>><?= $i ?></option><?php } ?></select></td><td id="m"><select name="m" class="w100p styled"><option value="0">Месяц</option><?php $months = array(1=>'января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'); foreach ($months as $i => $month_name) { ?><option value="<?= $i ?>"<?= ps_selected($month, $i) ?>><?= $month_name ?></option><?php } ?></select></td><td><input type="text" class="w100p" name="g" value="<?= persons_h($year) ?>" placeholder="Год"></td></tr></table></li>
 		<li class="img"><input type="submit" value="Поиск персон" class="w100p buttonS"></li>
 		<?php if ($CURUSER) { ?><li><span class="bulet"></span><a href="/personedit.php">Создать персону</a></li><?php } ?>
 		<li class="tp"><h2>Выбор персон</h2></li>
@@ -67,7 +67,7 @@ function ps_menu($s, $type, $gender, $day, $month, $year)
 
 function ps_person_grid(array $persons, $title)
 {
-	echo '<div class="bx2_0"><div class="pad5x5 b"><span class="bulet"></span>' . kz_persons_h($title) . '</div>';
+	echo '<div class="bx2_0"><div class="pad5x5 b"><span class="bulet"></span>' . persons_h($title) . '</div>';
 	if (!$persons) {
 		echo '<div class="pad10x10">Персоны не найдены.</div></div>';
 		return;
@@ -82,7 +82,7 @@ function ps_person_grid(array $persons, $title)
 		if ($poster === '') {
 			$poster = '/pic/default_avatar.gif';
 		}
-		echo '<td class="center top" width="12%"><a href="' . kz_persons_url($person['name'], (int)$person['id']) . '" title="' . kz_persons_h($person['name']) . '"><img src="' . kz_persons_h($poster) . '" width="120" alt=""><br><b>' . kz_persons_h($person['name']) . '</b></a></td>';
+		echo '<td class="center top" width="12%"><a href="' . persons_url($person['name'], (int)$person['id']) . '" title="' . persons_h($person['name']) . '"><img src="' . persons_h($poster) . '" width="120" alt=""><br><b>' . persons_h($person['name']) . '</b></a></td>';
 		$col++;
 		if ($col >= 8) {
 			echo '</tr>';

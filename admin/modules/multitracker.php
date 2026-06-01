@@ -4,23 +4,23 @@ if (!defined('ADMIN_FILE')) {
 	die('Illegal File Access');
 }
 
-require_once('include/kz_multitracker.php');
+require_once('include/multitracker.php');
 
 if (!function_exists('MultitrackerAdmin')) {
 	function MultitrackerAdmin()
 	{
 		global $admin_file;
 
-		kz_mt_ensure_schema();
+		multitracker_ensure_schema();
 
 		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$action = (string)($_POST['mt_action'] ?? '');
 			if ($action === 'run_due') {
-				kz_mt_update_due_trackers((int)($_POST['limit'] ?? 25));
+				multitracker_update_due_trackers((int)($_POST['limit'] ?? 25));
 				stdmsg('Мультитрекер', 'Плановое обновление внешних трекеров выполнено.');
 			} elseif ($action === 'run_torrent') {
 				$torrentid = (int)($_POST['torrentid'] ?? 0);
-				$result = kz_mt_update_torrent_trackers($torrentid);
+				$result = multitracker_update_torrent_trackers($torrentid);
 				stdmsg('Мультитрекер', 'Раздача #' . $torrentid . ': успешно ' . (int)$result['success'] . ', ошибок ' . (int)$result['errors'] . '.');
 			} elseif ($action === 'toggle_tracker') {
 				$tracker_id = (int)($_POST['tracker_id'] ?? 0);
@@ -28,7 +28,7 @@ if (!function_exists('MultitrackerAdmin')) {
 				sql_query("UPDATE torrent_trackers SET enabled = " . sqlesc($enabled) . " WHERE id = $tracker_id AND is_primary = 'no'") or sqlerr(__FILE__, __LINE__);
 				$row = mysqli_fetch_assoc(sql_query("SELECT torrentid FROM torrent_trackers WHERE id = $tracker_id LIMIT 1"));
 				if ($row) {
-					kz_mt_sync_torrent_totals((int)$row['torrentid']);
+					multitracker_sync_torrent_totals((int)$row['torrentid']);
 				}
 				stdmsg('Мультитрекер', 'Статус трекера обновлен.');
 			}
@@ -51,13 +51,13 @@ if (!function_exists('MultitrackerAdmin')) {
 		echo '<tr><td>Ожидают проверки</td><td>' . (int)($stats['due_external'] ?? 0) . '</td></tr>';
 		echo '</table>';
 
-		echo '<form method="post" action="' . kz_mt_h($admin_file) . '.php?op=MultitrackerAdmin" class="pad5x5">';
+		echo '<form method="post" action="' . multitracker_h($admin_file) . '.php?op=MultitrackerAdmin" class="pad5x5">';
 		echo '<input type="hidden" name="mt_action" value="run_due">';
 		echo 'Лимит: <input type="text" name="limit" value="25" size="4"> ';
 		echo '<input type="submit" class="buttonS" value="Обновить ожидающие проверки">';
 		echo '</form>';
 
-		echo '<form method="post" action="' . kz_mt_h($admin_file) . '.php?op=MultitrackerAdmin" class="pad5x5">';
+		echo '<form method="post" action="' . multitracker_h($admin_file) . '.php?op=MultitrackerAdmin" class="pad5x5">';
 		echo '<input type="hidden" name="mt_action" value="run_torrent">';
 		echo 'ID раздачи: <input type="text" name="torrentid" size="8"> ';
 		echo '<input type="submit" class="buttonS" value="Обновить раздачу">';
@@ -77,13 +77,13 @@ if (!function_exists('MultitrackerAdmin')) {
 		while ($row = mysqli_fetch_assoc($res)) {
 			$error = trim((string)$row['last_error']);
 			echo '<tr>';
-			echo '<td><a href="/details.php?id=' . (int)$row['torrentid'] . '" class="sba">#' . (int)$row['torrentid'] . '</a><br>' . kz_mt_h($row['name']) . '</td>';
-			echo '<td>' . kz_mt_h($row['announce_url']) . ($error !== '' ? '<div class="small red">' . kz_mt_h($error) . '</div>' : '') . '</td>';
+			echo '<td><a href="/details.php?id=' . (int)$row['torrentid'] . '" class="sba">#' . (int)$row['torrentid'] . '</a><br>' . multitracker_h($row['name']) . '</td>';
+			echo '<td>' . multitracker_h($row['announce_url']) . ($error !== '' ? '<div class="small red">' . multitracker_h($error) . '</div>' : '') . '</td>';
 			echo '<td class="center green b">' . ($row['seeders'] === null ? 'н/д' : (int)$row['seeders']) . '</td>';
 			echo '<td class="center red b">' . ($row['leechers'] === null ? 'н/д' : (int)$row['leechers']) . '</td>';
-			echo '<td class="center">' . (!empty($row['last_checked']) ? kz_mt_h($row['last_checked']) : 'н/д') . '</td>';
+			echo '<td class="center">' . (!empty($row['last_checked']) ? multitracker_h($row['last_checked']) : 'н/д') . '</td>';
 			echo '<td class="center">' . ($error === '' ? 'ok' : 'ошибка') . '</td>';
-			echo '<td class="center"><form method="post" action="' . kz_mt_h($admin_file) . '.php?op=MultitrackerAdmin">';
+			echo '<td class="center"><form method="post" action="' . multitracker_h($admin_file) . '.php?op=MultitrackerAdmin">';
 			echo '<input type="hidden" name="mt_action" value="toggle_tracker"><input type="hidden" name="tracker_id" value="' . (int)$row['id'] . '">';
 			echo '<input type="checkbox" name="enabled" value="1"' . ($row['enabled'] === 'yes' ? ' checked' : '') . ' onchange="this.form.submit();">';
 			echo '</form></td></tr>';

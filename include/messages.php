@@ -5,31 +5,31 @@ if (!defined('KZ_PM_INBOX')) {
 	define('KZ_PM_INBOX', 1);
 }
 
-function kz_msg_h($value)
+function msg_h($value)
 {
 	return function_exists('htmlspecialchars_uni') ? htmlspecialchars_uni((string)$value) : htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
-function kz_msg_avatar(array $user)
+function msg_avatar(array $user)
 {
 	$avatar = trim((string)($user['avatar'] ?? ''));
 	return $avatar !== '' ? $avatar : '/pic/ava_m.jpg';
 }
 
-function kz_msg_user_link($id, $username, $class = 0)
+function msg_user_link($id, $username, $class = 0)
 {
 	$id = (int)$id;
 	if ($id <= 0 || (string)$username === '') {
 		return '<i>system</i>';
 	}
-	return '<a href="/userdetails.php?id=' . $id . '" class="u' . (int)$class . '">' . kz_msg_h($username) . '</a>';
+	return '<a href="/userdetails.php?id=' . $id . '" class="u' . (int)$class . '">' . msg_h($username) . '</a>';
 }
 
-function kz_msg_date($value)
+function msg_date($value)
 {
 	$ts = strtotime((string)$value);
 	if (!$ts) {
-		return kz_msg_h($value);
+		return msg_h($value);
 	}
 	if (date('Y-m-d', $ts) === date('Y-m-d')) {
 		return 'сегодня в ' . date('H:i', $ts);
@@ -40,12 +40,12 @@ function kz_msg_date($value)
 	return date('d.m.Y в H:i', $ts);
 }
 
-function kz_msg_format($text)
+function msg_format($text)
 {
-	return function_exists('format_comment') ? format_comment((string)$text) : nl2br(kz_msg_h($text));
+	return function_exists('format_comment') ? format_comment((string)$text) : nl2br(msg_h($text));
 }
 
-function kz_msg_tabs($box)
+function msg_tabs($box)
 {
 	$items = array(
 		'in' => array('/inbox.php', 'Принятые сообщения'),
@@ -59,13 +59,13 @@ function kz_msg_tabs($box)
 	return $html . '</ul></div>';
 }
 
-function kz_msg_profile_menu(array $user, $self = true)
+function msg_profile_menu(array $user, $self = true)
 {
 	$id = (int)$user['id'];
-	$avatar = kz_msg_h(kz_msg_avatar($user));
+	$avatar = msg_h(msg_avatar($user));
 	$rep = (int)($user['simpaty'] ?? 0);
-	$bonus = function_exists('kz_pay_user_votes_from_array') ? number_format(kz_pay_user_votes_from_array($user), 0, '.', ' ') : number_format((float)($user['bonus'] ?? 0), 0, '.', ' ');
-	$hash = kz_msg_h($user['hash4u'] ?? ($user['logout_hash'] ?? ''));
+	$bonus = function_exists('pay_user_votes_from_array') ? number_format(pay_user_votes_from_array($user), 0, '.', ' ') : number_format((float)($user['bonus'] ?? 0), 0, '.', ' ');
+	$hash = msg_h($user['hash4u'] ?? ($user['logout_hash'] ?? ''));
 
 	if (!$self) {
 		return '<div class="mn1_menu"><ul class="men u2 w200">'
@@ -117,7 +117,7 @@ function kz_msg_profile_menu(array $user, $self = true)
 		. '</ul></div>';
 }
 
-function kz_msg_box_type()
+function msg_box_type()
 {
 	if (!empty($_GET['out'])) {
 		return 'out';
@@ -128,7 +128,7 @@ function kz_msg_box_type()
 	return 'in';
 }
 
-function kz_msg_fetch_box($box, $userid)
+function msg_fetch_box($box, $userid)
 {
 	$userid = (int)$userid;
 	if ($box === 'out') {
@@ -168,16 +168,16 @@ function kz_msg_fetch_box($box, $userid)
 	return $rows;
 }
 
-function kz_msg_render_empty($box)
+function msg_render_empty($box)
 {
 	$text = $box === 'arch' ? 'Нет в Архив сообщений!' : 'Ваш личный ящик пуст!';
 	return '<div class="bx1"><ul class="men"><li class="b"><span class="bulet"></span>Информация</li><li><div class="pad5x5">' . $text . '</div></li></ul></div>';
 }
 
-function kz_msg_render_box(array $rows, $box)
+function msg_render_box(array $rows, $box)
 {
 	if (!$rows) {
-		return kz_msg_render_empty($box);
+		return msg_render_empty($box);
 	}
 
 	$type = $box === 'out' ? 'out' : ($box === 'arch' ? 'arch' : 'in');
@@ -194,7 +194,7 @@ function kz_msg_render_box(array $rows, $box)
 		$user_id = (int)($row['user_id'] ?? 0);
 		$class = (int)($row['class'] ?? 0);
 		$name = (string)($row['username'] ?? '');
-		$avatar = kz_msg_h(kz_msg_avatar($row));
+		$avatar = msg_h(msg_avatar($row));
 		$unread = ($row['unread'] === 'yes' && (int)$row['receiver'] !== (int)$row['sender']) ? " <span class='red b'>не прочитано</span>" : '';
 		$open_id = 'sb_' . $id;
 		$msg_id = 'sw_' . $id;
@@ -208,21 +208,21 @@ function kz_msg_render_box(array $rows, $box)
 		}
 
 		$html .= '<div class="bx2_0 inb_bx"><img src="' . $avatar . '" class="inb_ava rot180" alt="" onclick="$(\'#' . $open_id . '\').toggle();">';
-		$html .= '<div class="inb_sbx">' . kz_msg_user_link($user_id, $name, $class);
-		$html .= '<br>' . kz_msg_date($row['added']) . $unread . ', <span onclick="$(\'#' . $open_id . '\').toggle();" class="sba pointer">открыть</span>';
+		$html .= '<div class="inb_sbx">' . msg_user_link($user_id, $name, $class);
+		$html .= '<br>' . msg_date($row['added']) . $unread . ', <span onclick="$(\'#' . $open_id . '\').toggle();" class="sba pointer">открыть</span>';
 		$html .= '<div id="' . $open_id . '" class="inb_sbx_ms displaynone">';
-		$html .= '<div class="mn2 inb_sbx_ms"><dl><dt onclick="$(\'#' . $msg_id . '\').toggle();"><i class="i1 s_msgs"></i> ' . $direction . ' ' . kz_msg_date($row['added']) . ', <span class="b">' . kz_msg_h($subject) . '</span>' . $unread . '</dt>';
+		$html .= '<div class="mn2 inb_sbx_ms"><dl><dt onclick="$(\'#' . $msg_id . '\').toggle();"><i class="i1 s_msgs"></i> ' . $direction . ' ' . msg_date($row['added']) . ', <span class="b">' . msg_h($subject) . '</span>' . $unread . '</dt>';
 		$html .= '<dd><input class="styled" name="cbox[]" type="checkbox" value="' . $id . '"></dd><dd class="sba pointer" onclick="$(\'#' . $msg_id . '\').toggle();">смотреть</dd>';
 		if ($box !== 'out' && $user_id > 0) {
 			$html .= '<dd><a class="sba" href="/sendmessage.php?receiver=' . $user_id . '&amp;replyto=' . $id . '">ответить</a></dd>';
 		}
-		$html .= '</dl><div id="' . $msg_id . '" class="hrs2 inb_sbx_ms_tx"><div>' . kz_msg_format($row['msg']) . '</div></div></div></div></div></div>';
+		$html .= '</dl><div id="' . $msg_id . '" class="hrs2 inb_sbx_ms_tx"><div>' . msg_format($row['msg']) . '</div></div></div></div></div></div>';
 	}
 
 	return $html . '</form>';
 }
 
-function kz_msg_scripts_and_style()
+function msg_scripts_and_style()
 {
 	return "<style type='text/css'>
 .inb_bx {padding: 3px; display: block;}
@@ -284,7 +284,7 @@ function Prev() {
 </script>";
 }
 
-function kz_msg_can_send_to(array $receiver)
+function msg_can_send_to(array $receiver)
 {
 	global $CURUSER;
 	if (($receiver['parked'] ?? 'no') === 'yes') {

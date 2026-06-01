@@ -64,9 +64,9 @@ if (!$row || !is_file($fn) || !is_readable($fn))
 if ($row['banned'] == 'yes' && $row['owner'] != $CURUSER['id'] && get_user_class() < UC_MODERATOR)
 	stderr($tracker_lang['error'], 'Упс, а торрентик-то забанен!');
 
-$download_limit = kz_user_effective_torrent_limit($CURUSER);
-$downloaded_today = kz_torrent_downloads_today((int)$CURUSER['id']);
-$already_downloaded_today = kz_torrent_download_seen_today((int)$CURUSER['id'], $id);
+$download_limit = user_effective_torrent_limit($CURUSER);
+$downloaded_today = torrent_downloads_today((int)$CURUSER['id']);
+$already_downloaded_today = torrent_download_seen_today((int)$CURUSER['id'], $id);
 
 if (!$already_downloaded_today && $downloaded_today >= $download_limit) {
 	stderr($tracker_lang['error'], "Ваш суточный лимит раздач исчерпан. Доступно в сутки: $download_limit.");
@@ -93,7 +93,7 @@ if (!empty($dict['announce-list'])) {
 } else
 	$dict['announce'] = $announce_urls[0]."?passkey=$CURUSER[passkey]";//"$DEFAULTBASEURL/announce.php?passkey=$CURUSER[passkey]";
 
-kz_torrent_download_register((int)$CURUSER['id'], $id);
+torrent_download_register((int)$CURUSER['id'], $id);
 
 header ("Expires: Tue, 1 Jan 1980 00:00:00 GMT");
 header ("Last-Modified: ".gmdate("D, d M Y H:i:s")." GMT");

@@ -1,7 +1,7 @@
 <?
 
 require_once("include/bittorrent.php");
-require_once("include/kz_messages.php");
+require_once("include/messages.php");
 
 dbconn(false);
 loggedinorreturn();

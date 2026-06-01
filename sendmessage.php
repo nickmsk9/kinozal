@@ -1,7 +1,7 @@
 <?
 
 require_once("include/bittorrent.php");
-require_once("include/kz_messages.php");
+require_once("include/messages.php");
 
 dbconn(false);
 loggedinorreturn();
@@ -35,19 +35,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['prev'])) {
 	$body = trim((string)($_POST['msg'] ?? ''));
 }
 
-$hash = kz_msg_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? ''));
-$returnto = kz_msg_h($_GET['returnto'] ?? ($_POST['returnto'] ?? ('/userdetails.php?id=' . $receiver_id)));
+$hash = msg_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? ''));
+$returnto = msg_h($_GET['returnto'] ?? ($_POST['returnto'] ?? ('/userdetails.php?id=' . $receiver_id)));
 $hide_right_blocks = true;
 stdhead('Отправить сообщение');
-echo kz_msg_scripts_and_style();
+echo msg_scripts_and_style();
 ?>
 <div class="mn_wrap">
-	<?= kz_msg_profile_menu($receiver, false) ?>
+	<?= msg_profile_menu($receiver, false) ?>
 	<div class="mn1_content">
-		<div class="bx1 u<?= (int)$receiver['class'] ?>"><a href="/userdetails.php?id=<?= $receiver_id ?>" class="u<?= (int)$receiver['class'] ?>"><?= kz_msg_h($receiver['username']) ?></a></div>
+		<div class="bx1 u<?= (int)$receiver['class'] ?>"><a href="/userdetails.php?id=<?= $receiver_id ?>" class="u<?= (int)$receiver['class'] ?>"><?= msg_h($receiver['username']) ?></a></div>
 		<div class="bx1 justify"><b class="u<?= (int)$receiver['class'] ?>">Отправить сообщение</b> - Пожалуйста, будьте предельно вежливы и учтивы. Запрещено рассылать рекламу!</div>
 		<?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['prev']) && $body !== '') { ?>
-			<div class="bx1"><ul class="men"><li class="tp2 b">Предварительный просмотр</li><li class="pad5x5"><?= kz_msg_format($body) ?></li></ul></div>
+			<div class="bx1"><ul class="men"><li class="tp2 b">Предварительный просмотр</li><li class="pad5x5"><?= msg_format($body) ?></li></ul></div>
 		<?php } ?>
 		<form method="post" action="/takemessage.php" name="message">
 			<input type="hidden" name="hash4u" value="<?= $hash ?>">
@@ -57,8 +57,8 @@ echo kz_msg_scripts_and_style();
 			<input type="hidden" name="prev" value="prev">
 			<div class="bx1_0">
 				<table class="tables1 w100p">
-					<tr><td>Сообщение для: <?= kz_msg_user_link($receiver_id, $receiver['username'], (int)$receiver['class']) ?></td><td class="right"><label><input class="styled" type="checkbox" id="save" name="save" value="yes" checked> Сохранить в отправленных</label></td></tr>
-					<tr><td colspan="2">Тема: <input type="text" name="subject" class="w98p" value="<?= kz_msg_h($subject) ?>"></td></tr>
+					<tr><td>Сообщение для: <?= msg_user_link($receiver_id, $receiver['username'], (int)$receiver['class']) ?></td><td class="right"><label><input class="styled" type="checkbox" id="save" name="save" value="yes" checked> Сохранить в отправленных</label></td></tr>
+					<tr><td colspan="2">Тема: <input type="text" name="subject" class="w98p" value="<?= msg_h($subject) ?>"></td></tr>
 					<tr><td colspan="2">
 						<div class="cmet_e_but"><ul>
 							<li><input class="buttonS" type="button" value="b" style="font-weight:bold;" onclick="InsertCode('msg','b')"></li>
@@ -68,7 +68,7 @@ echo kz_msg_scripts_and_style();
 							<li><input class="buttonS" type="button" value="url" onclick="InsertCode('msg','url')"></li>
 							<li><input class="buttonS" type="button" value="img" onclick="InsertCode('msg','img')"></li>
 						</ul><div class="clr"></div></div>
-						<div class="cmet_e_inp"><textarea id="msg" name="msg" cols="70" rows="10" class="w98p"><?= kz_msg_h($body) ?></textarea></div>
+						<div class="cmet_e_inp"><textarea id="msg" name="msg" cols="70" rows="10" class="w98p"><?= msg_h($body) ?></textarea></div>
 						<div class="clr"></div>
 						<div class="cmet_e_inp"><input class="buttonS" type="submit" value="Отправить"> <input class="buttonS" type="button" value="Предв. просмотр" onclick="Prev();"></div>
 					</td></tr>

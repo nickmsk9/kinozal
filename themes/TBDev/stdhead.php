@@ -26,7 +26,7 @@ $user_class     = $is_logged ? (int)$CURUSER['class'] : 0;
 $user_class_css = 'u' . $user_class;
 $user_uploaded  = $is_logged ? (float)$CURUSER['uploaded'] : 0;
 $user_download  = $is_logged ? (float)$CURUSER['downloaded'] : 0;
-$user_bonus     = $is_logged && function_exists('kz_pay_user_votes_from_array') ? kz_pay_user_votes_from_array($CURUSER) : ($is_logged && isset($CURUSER['bonus']) ? $CURUSER['bonus'] : 0);
+$user_bonus     = $is_logged && function_exists('pay_user_votes_from_array') ? pay_user_votes_from_array($CURUSER) : ($is_logged && isset($CURUSER['bonus']) ? $CURUSER['bonus'] : 0);
 
 $uped   = ($is_logged && function_exists('mksize')) ? mksize($user_uploaded) : '0 Б';
 $downed = ($is_logged && function_exists('mksize')) ? mksize($user_download) : '0 Б';
@@ -377,8 +377,8 @@ $page_title = $title !== '' ? $title : $site_name;
                         <?php
                         $current_module = str_replace('.php', '', basename($_SERVER['PHP_SELF'] ?? ''));
 
-                        require_once ROOT_PATH . 'include/kz_uarch.php';
-                        echo kz_uarch_block_html();
+                        require_once ROOT_PATH . 'include/uarch.php';
+                        echo uarch_block_html();
                         echo '<div class="pad0x0x5x0 center">';
                         echo '<a href="/radio.php" title="Радио Кинозал.ТВ">';
                         echo '<img src="/pic/radio_ban.jpg" height="57" class="w190 block" alt="Радио Кинозал.ТВ">';

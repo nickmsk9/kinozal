@@ -4,12 +4,12 @@ if (!defined('IN_TRACKER')) {
 	die('Прямой вызов запрещён.');
 }
 
-function kz_radio_h($value)
+function radio_h($value)
 {
 	return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function kz_radio_defaults()
+function radio_defaults()
 {
 	return array(
 		'current_song' => 'Нажмите play для начала воспроизведения',
@@ -33,11 +33,11 @@ function kz_radio_defaults()
 		'recruit_contact' => 'admin',
 		'offline_mode' => '0',
 		'chat_enabled' => '1',
-		'rules_text' => kz_radio_default_rules_text(),
+		'rules_text' => radio_default_rules_text(),
 	);
 }
 
-function kz_radio_default_rules_text()
+function radio_default_rules_text()
 {
 	return <<<TEXT
 Определим понятие, кто такой ДиДжей.
@@ -82,7 +82,7 @@ function kz_radio_default_rules_text()
 TEXT;
 }
 
-function kz_radio_ensure_schema()
+function radio_ensure_schema()
 {
 	sql_query("
 		CREATE TABLE IF NOT EXISTS radio_settings (
@@ -109,7 +109,7 @@ function kz_radio_ensure_schema()
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
 
-	foreach (kz_radio_defaults() as $key => $value) {
+	foreach (radio_defaults() as $key => $value) {
 		sql_query("
 			INSERT IGNORE INTO radio_settings (setting_key, setting_value, updated_at)
 			VALUES (" . sqlesc($key, true) . ", " . sqlesc($value, true) . ", NOW())
@@ -117,11 +117,11 @@ function kz_radio_ensure_schema()
 	}
 }
 
-function kz_radio_settings()
+function radio_settings()
 {
-	kz_radio_ensure_schema();
+	radio_ensure_schema();
 
-	$settings = kz_radio_defaults();
+	$settings = radio_defaults();
 	$res = sql_query("SELECT setting_key, setting_value FROM radio_settings") or sqlerr(__FILE__, __LINE__);
 
 	while ($row = mysqli_fetch_assoc($res)) {
@@ -131,13 +131,13 @@ function kz_radio_settings()
 	return $settings;
 }
 
-function kz_radio_save_settings(array $values)
+function radio_save_settings(array $values)
 {
-	kz_radio_ensure_schema();
+	radio_ensure_schema();
 
 	foreach ($values as $key => $value) {
 		$key = (string)$key;
-		if (!array_key_exists($key, kz_radio_defaults())) {
+		if (!array_key_exists($key, radio_defaults())) {
 			continue;
 		}
 
@@ -149,7 +149,7 @@ function kz_radio_save_settings(array $values)
 	}
 }
 
-function kz_radio_url($url, $fallback = '#')
+function radio_url($url, $fallback = '#')
 {
 	$url = trim((string)$url);
 
@@ -164,7 +164,7 @@ function kz_radio_url($url, $fallback = '#')
 	return $fallback;
 }
 
-function kz_radio_find_user($userid)
+function radio_find_user($userid)
 {
 	$userid = (int)$userid;
 
@@ -181,11 +181,11 @@ function kz_radio_find_user($userid)
 	return null;
 }
 
-function kz_radio_add_chat_message($tab, $text)
+function radio_add_chat_message($tab, $text)
 {
 	global $CURUSER;
 
-	kz_radio_ensure_schema();
+	radio_ensure_schema();
 
 	if (empty($CURUSER) || !is_array($CURUSER)) {
 		return 'Писать в чат могут только авторизованные пользователи.';
@@ -215,9 +215,9 @@ function kz_radio_add_chat_message($tab, $text)
 	return '';
 }
 
-function kz_radio_chat_messages($tab, $limit = 80)
+function radio_chat_messages($tab, $limit = 80)
 {
-	kz_radio_ensure_schema();
+	radio_ensure_schema();
 
 	$tab = (int)$tab === 12 ? 12 : 11;
 	$limit = max(1, min(200, (int)$limit));
@@ -238,7 +238,7 @@ function kz_radio_chat_messages($tab, $limit = 80)
 	return array_reverse($rows);
 }
 
-function kz_radio_delete_chat_message($id)
+function radio_delete_chat_message($id)
 {
 	$id = (int)$id;
 
@@ -247,7 +247,7 @@ function kz_radio_delete_chat_message($id)
 	}
 }
 
-function kz_radio_clear_chat()
+function radio_clear_chat()
 {
 	sql_query("TRUNCATE TABLE radio_chat") or sqlerr(__FILE__, __LINE__);
 }

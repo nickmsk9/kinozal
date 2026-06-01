@@ -4,12 +4,12 @@ if (!defined('IN_TRACKER')) {
 	die('Direct access denied.');
 }
 
-function kz_rep_h($value)
+function reputation_h($value)
 {
 	return htmlspecialchars_uni((string)$value);
 }
 
-function kz_rep_table_exists($table)
+function reputation_table_exists($table)
 {
 	$table = trim((string)$table);
 	if ($table === '' || !preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
@@ -20,7 +20,7 @@ function kz_rep_table_exists($table)
 	return mysqli_num_rows($res) > 0;
 }
 
-function kz_reputation_install_schema()
+function reputation_install_schema()
 {
 	sql_query("
 		CREATE TABLE IF NOT EXISTS site_settings (
@@ -56,10 +56,10 @@ function kz_reputation_install_schema()
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_reputation_setting($key, $default)
+function reputation_setting($key, $default)
 {
 	$key = (string)$key;
-	if (!kz_rep_table_exists('site_settings')) {
+	if (!reputation_table_exists('site_settings')) {
 		return $default;
 	}
 
@@ -69,9 +69,9 @@ function kz_reputation_setting($key, $default)
 	return $row ? $row['setting_value'] : $default;
 }
 
-function kz_reputation_set_setting($key, $value)
+function reputation_set_setting($key, $value)
 {
-	kz_reputation_install_schema();
+	reputation_install_schema();
 	sql_query("
 		INSERT INTO site_settings (setting_key, setting_value)
 		VALUES (" . sqlesc($key, true) . ", " . sqlesc((string)$value, true) . ")
@@ -79,20 +79,20 @@ function kz_reputation_set_setting($key, $value)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_reputation_daily_limit()
+function reputation_daily_limit()
 {
-	return max(0, (int)kz_reputation_setting('reputation_daily_limit', 1));
+	return max(0, (int)reputation_setting('reputation_daily_limit', 1));
 }
 
-function kz_reputation_signup_value()
+function reputation_signup_value()
 {
-	return max(0, (int)kz_reputation_setting('reputation_signup_value', 1));
+	return max(0, (int)reputation_setting('reputation_signup_value', 1));
 }
 
-function kz_reputation_given_today($userid)
+function reputation_given_today($userid)
 {
 	$userid = (int)$userid;
-	if (!is_valid_id($userid) || !kz_rep_table_exists('simpaty')) {
+	if (!is_valid_id($userid) || !reputation_table_exists('simpaty')) {
 		return 0;
 	}
 
@@ -108,12 +108,12 @@ function kz_reputation_given_today($userid)
 	return (int)($row[0] ?? 0);
 }
 
-function kz_reputation_left_today($userid)
+function reputation_left_today($userid)
 {
-	return max(0, kz_reputation_daily_limit() - kz_reputation_given_today((int)$userid));
+	return max(0, reputation_daily_limit() - reputation_given_today((int)$userid));
 }
 
-function kz_reputation_date($value)
+function reputation_date($value)
 {
 	if (empty($value) || $value === '0000-00-00 00:00:00') {
 		return '';
@@ -121,13 +121,13 @@ function kz_reputation_date($value)
 
 	$ts = strtotime((string)$value);
 	if (!$ts) {
-		return kz_rep_h($value);
+		return reputation_h($value);
 	}
 
 	return date('d.m.Y', $ts) . ' &#1074; ' . date('H:i', $ts);
 }
 
-function kz_reputation_topic($type)
+function reputation_topic($type)
 {
 	$type = (string)$type;
 
@@ -139,19 +139,19 @@ function kz_reputation_topic($type)
 		return '<a href="/details.php?id=' . (int)$m[1] . '" class="sba">&#1056;&#1072;&#1079;&#1076;&#1072;&#1095;&#1072;</a>';
 	}
 
-	return kz_rep_h($type);
+	return reputation_h($type);
 }
 
-function kz_reputation_description($value)
+function reputation_description($value)
 {
 	$text = html_entity_decode((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-	return nl2br(kz_rep_h($text));
+	return nl2br(reputation_h($text));
 }
 
-function kz_reputation_user_link($user)
+function reputation_user_link($user)
 {
 	$userid = (int)($user['user_id'] ?? $user['id'] ?? 0);
-	$username = kz_rep_h($user['username'] ?? '');
+	$username = reputation_h($user['username'] ?? '');
 	$class = (int)($user['class'] ?? UC_USER);
 	$icons = function_exists('get_user_icons') ? get_user_icons(array_merge($user, array('id' => $userid))) : '';
 
@@ -162,13 +162,13 @@ function kz_reputation_user_link($user)
 	return '<a href="/userdetails.php?id=' . $userid . '" class="u' . $class . '">' . $username . '</a>' . $icons;
 }
 
-function kz_reputation_rows($userid, $type = 1, $limit = 0)
+function reputation_rows($userid, $type = 1, $limit = 0)
 {
 	$userid = (int)$userid;
 	$type = (int)$type;
 	$limit = (int)$limit;
 
-	if (!is_valid_id($userid) || !kz_rep_table_exists('simpaty')) {
+	if (!is_valid_id($userid) || !reputation_table_exists('simpaty')) {
 		return array();
 	}
 
@@ -212,11 +212,11 @@ function kz_reputation_rows($userid, $type = 1, $limit = 0)
 	return $rows;
 }
 
-function kz_reputation_count($userid, $type = 1)
+function reputation_count($userid, $type = 1)
 {
 	$userid = (int)$userid;
 	$type = (int)$type;
-	if (!is_valid_id($userid) || !kz_rep_table_exists('simpaty')) {
+	if (!is_valid_id($userid) || !reputation_table_exists('simpaty')) {
 		return 0;
 	}
 
@@ -227,7 +227,7 @@ function kz_reputation_count($userid, $type = 1)
 	return (int)($row[0] ?? 0);
 }
 
-function kz_reputation_table_html($rows, $profile_class, $type = 1, $latest = false)
+function reputation_table_html($rows, $profile_class, $type = 1, $latest = false)
 {
 	if (!$rows) {
 		return '';
@@ -242,14 +242,14 @@ function kz_reputation_table_html($rows, $profile_class, $type = 1, $latest = fa
 		: '&#1054;&#1090;&#1079;&#1099;&#1074; &#1082; &#1088;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1080;';
 
 	$html = "<div class='bx2_0'><table class='w100p brd'>\n";
-	$html .= "<tr><th class='w150 " . kz_rep_h($profile_class) . "'>$fromTitle</th><th class='" . kz_rep_h($profile_class) . "'>$reviewTitle</th><th class='w150 " . kz_rep_h($profile_class) . "'>&#1058;&#1077;&#1084;&#1072;</th></tr>";
+	$html .= "<tr><th class='w150 " . reputation_h($profile_class) . "'>$fromTitle</th><th class='" . reputation_h($profile_class) . "'>$reviewTitle</th><th class='w150 " . reputation_h($profile_class) . "'>&#1058;&#1077;&#1084;&#1072;</th></tr>";
 
 	foreach ($rows as $row) {
 		$mark = ((int)$row['bad'] === 1) ? '<b class="red">-</b> ' : '<b class="green">+</b> ';
 		$html .= '<tr>';
-		$html .= '<td>' . kz_reputation_user_link($row) . '<br>' . kz_reputation_date($row['respect_time']) . '</td>';
-		$html .= "<td class=''>" . $mark . kz_reputation_description($row['description']) . '</td>';
-		$html .= '<td>' . kz_reputation_topic($row['type']) . '</td>';
+		$html .= '<td>' . reputation_user_link($row) . '<br>' . reputation_date($row['respect_time']) . '</td>';
+		$html .= "<td class=''>" . $mark . reputation_description($row['description']) . '</td>';
+		$html .= '<td>' . reputation_topic($row['type']) . '</td>';
 		$html .= '</tr>';
 	}
 
@@ -257,17 +257,17 @@ function kz_reputation_table_html($rows, $profile_class, $type = 1, $latest = fa
 	return $html;
 }
 
-function kz_profile_menu_html($user, $viewer)
+function profile_menu_html($user, $viewer)
 {
 	$id = (int)$user['id'];
 	$class = 'u' . (int)$user['class'];
-	$avatar = !empty($user['avatar']) ? kz_rep_h($user['avatar']) : '/pic/default_avatar.gif';
+	$avatar = !empty($user['avatar']) ? reputation_h($user['avatar']) : '/pic/default_avatar.gif';
 	$reputation = (int)($user['simpaty'] ?? 0);
-	$bonus = function_exists('kz_pay_user_votes_from_array')
-		? number_format(kz_pay_user_votes_from_array($viewer), 0, '.', ' ')
+	$bonus = function_exists('pay_user_votes_from_array')
+		? number_format(pay_user_votes_from_array($viewer), 0, '.', ' ')
 		: (isset($viewer['bonus']) ? number_format((float)$viewer['bonus'], 0, '.', ' ') : 0);
 	$isOwn = !empty($viewer['id']) && (int)$viewer['id'] === $id;
-	$hash = kz_rep_h($viewer['hash4u'] ?? ($viewer['logout_hash'] ?? ''));
+	$hash = reputation_h($viewer['hash4u'] ?? ($viewer['logout_hash'] ?? ''));
 
 	$html = '<ul class="men ' . $class . ' w200">';
 	$html .= '<li class="img"><a href="/userdetails.php?id=' . $id . '"><img src="' . $avatar . '" class="p200" alt=""></a></li>';
@@ -331,11 +331,11 @@ function kz_profile_menu_html($user, $viewer)
 	return $html;
 }
 
-function kz_reputation_add($targetid, $direction, $description)
+function reputation_add($targetid, $direction, $description)
 {
 	global $CURUSER;
 
-	kz_reputation_install_schema();
+	reputation_install_schema();
 
 	$targetid = (int)$targetid;
 	$direction = $direction === 'minus' ? 'minus' : 'plus';
@@ -366,14 +366,14 @@ function kz_reputation_add($targetid, $direction, $description)
 		stderr('&#1054;&#1096;&#1080;&#1073;&#1082;&#1072;', '&#1055;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1100; &#1085;&#1077; &#1085;&#1072;&#1081;&#1076;&#1077;&#1085;.');
 	}
 
-	$left = kz_reputation_left_today((int)$CURUSER['id']);
+	$left = reputation_left_today((int)$CURUSER['id']);
 	if ($left <= 0 && get_user_class() < UC_ADMINISTRATOR) {
 		stderr('&#1054;&#1096;&#1080;&#1073;&#1082;&#1072;', '&#1057;&#1091;&#1090;&#1086;&#1095;&#1085;&#1099;&#1081; &#1083;&#1080;&#1084;&#1080;&#1090; &#1086;&#1090;&#1079;&#1099;&#1074;&#1086;&#1074; &#1080;&#1089;&#1095;&#1077;&#1088;&#1087;&#1072;&#1085;.');
 	}
 
-	if (function_exists('kz_pay_charge_votes') && get_user_class() < UC_ADMINISTRATOR) {
-		$vote_cost = function_exists('kz_pay_int_setting') ? kz_pay_int_setting('reputation_vote_cost', 1) : 1;
-		if ($vote_cost > 0 && !kz_pay_charge_votes((int)$CURUSER['id'], $vote_cost, 'reputation', 'Отзыв к репутации пользователя #' . $targetid)) {
+	if (function_exists('pay_charge_votes') && get_user_class() < UC_ADMINISTRATOR) {
+		$vote_cost = function_exists('pay_int_setting') ? pay_int_setting('reputation_vote_cost', 1) : 1;
+		if ($vote_cost > 0 && !pay_charge_votes((int)$CURUSER['id'], $vote_cost, 'reputation', 'Отзыв к репутации пользователя #' . $targetid)) {
 			stderr('&#1054;&#1096;&#1080;&#1073;&#1082;&#1072;', '&#1053;&#1077;&#1076;&#1086;&#1089;&#1090;&#1072;&#1090;&#1086;&#1095;&#1085;&#1086; &#1075;&#1086;&#1083;&#1086;&#1089;&#1086;&#1074; &#1076;&#1083;&#1103; &#1086;&#1090;&#1079;&#1099;&#1074;&#1072;.');
 		}
 	}

@@ -7,21 +7,21 @@ if (!defined('BLOCK_FILE')) {
 
 global $content;
 
-require_once(dirname(__DIR__) . '/include/kz_test_torrents.php');
-kz_test_torrents_ensure_schema();
+require_once(dirname(__DIR__) . '/include/test_torrents.php');
+test_torrents_ensure_schema();
 
 $blocktitle = '';
 $content = '';
 
-if (!function_exists('kz_rel_h')) {
-    function kz_rel_h($value)
+if (!function_exists('rel_h')) {
+    function rel_h($value)
     {
         return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 }
 
-if (!function_exists('kz_rel_cut')) {
-    function kz_rel_cut($text, $limit)
+if (!function_exists('rel_cut')) {
+    function rel_cut($text, $limit)
     {
         $text = trim(strip_tags((string)$text));
         $text = preg_replace('/\s+/u', ' ', $text);
@@ -40,8 +40,8 @@ if (!function_exists('kz_rel_cut')) {
     }
 }
 
-if (!function_exists('kz_rel_image_url')) {
-    function kz_rel_image_url($image)
+if (!function_exists('rel_image_url')) {
+    function rel_image_url($image)
     {
         $image = trim(html_entity_decode((string)$image, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
@@ -61,8 +61,8 @@ if (!function_exists('kz_rel_image_url')) {
     }
 }
 
-if (!function_exists('kz_rel_poster_src')) {
-    function kz_rel_poster_src(array $row)
+if (!function_exists('rel_poster_src')) {
+    function rel_poster_src(array $row)
     {
         $poster = trim((string)($row['poster_url'] ?? ''));
         if ($poster !== '') {
@@ -77,8 +77,8 @@ if (!function_exists('kz_rel_poster_src')) {
     }
 }
 
-if (!function_exists('kz_rel_clean_label')) {
-    function kz_rel_clean_label($label)
+if (!function_exists('rel_clean_label')) {
+    function rel_clean_label($label)
     {
         $label = trim((string)$label);
         $label = rtrim($label, " \t\n\r\0\x0B:");
@@ -95,8 +95,8 @@ if (!function_exists('kz_rel_clean_label')) {
     }
 }
 
-if (!function_exists('kz_rel_fields')) {
-    function kz_rel_fields($torrentName, $descr)
+if (!function_exists('rel_fields')) {
+    function rel_fields($torrentName, $descr)
     {
         $fields = array();
         $summary = array();
@@ -136,7 +136,7 @@ if (!function_exists('kz_rel_fields')) {
             $line = trim(strip_tags($line));
 
             if (preg_match('/^([^:]{1,45}):\s*(.*)$/u', $line, $m)) {
-                $label = kz_rel_clean_label($m[1]);
+                $label = rel_clean_label($m[1]);
                 $value = trim($m[2]);
                 $value = preg_replace('/^\s*:\s*/u', '', $value);
 
@@ -186,8 +186,8 @@ if (!function_exists('kz_rel_fields')) {
     }
 }
 
-if (!function_exists('kz_rel_link_items')) {
-    function kz_rel_link_items($value, $type)
+if (!function_exists('rel_link_items')) {
+    function rel_link_items($value, $type)
     {
         $items = explode(',', (string)$value);
         $links = array();
@@ -206,7 +206,7 @@ if (!function_exists('kz_rel_link_items')) {
             }
 
             if (strpos($item, '...') !== false) {
-                $links[] = kz_rel_h($item);
+                $links[] = rel_h($item);
                 continue;
             }
 
@@ -214,15 +214,15 @@ if (!function_exists('kz_rel_link_items')) {
                 ? 'persons.php?s=' . urlencode($item)
                 : 'top.php?j=' . urlencode($item);
 
-            $links[] = '<a href="' . kz_rel_h($url) . '" class="sba" target="_blank">' . kz_rel_h($item) . '</a>';
+            $links[] = '<a href="' . rel_h($url) . '" class="sba" target="_blank">' . rel_h($item) . '</a>';
         }
 
         return implode(', ', $links);
     }
 }
 
-if (!function_exists('kz_rel_field')) {
-    function kz_rel_field($label, $value)
+if (!function_exists('rel_field')) {
+    function rel_field($label, $value)
     {
         $value = trim((string)$value);
 
@@ -231,29 +231,29 @@ if (!function_exists('kz_rel_field')) {
         }
 
         if ($label === 'Жанр' || $label === 'Выпущено') {
-            $value = kz_rel_link_items($value, 'tag');
+            $value = rel_link_items($value, 'tag');
         } elseif ($label === 'Режиссер' || $label === 'В ролях') {
-            $value = kz_rel_link_items($value, 'person');
+            $value = rel_link_items($value, 'person');
         } else {
-            $value = kz_rel_h($value);
+            $value = rel_h($value);
         }
 
-        return '<b>' . kz_rel_h($label) . ':</b> ' . $value . '<br />';
+        return '<b>' . rel_h($label) . ':</b> ' . $value . '<br />';
     }
 }
 
-if (!function_exists('kz_rel_page_url')) {
-    function kz_rel_page_url($page)
+if (!function_exists('rel_page_url')) {
+    function rel_page_url($page)
     {
         $params = $_GET;
         $params['relpage'] = max(0, (int)$page);
 
-        return kz_rel_h($_SERVER['PHP_SELF'] . '?' . http_build_query($params));
+        return rel_h($_SERVER['PHP_SELF'] . '?' . http_build_query($params));
     }
 }
 
-if (!function_exists('kz_rel_pager')) {
-    function kz_rel_pager($page, $hasNext)
+if (!function_exists('rel_pager')) {
+    function rel_pager($page, $hasNext)
     {
         $page = (int)$page;
 
@@ -264,7 +264,7 @@ if (!function_exists('kz_rel_pager')) {
         $html = '<div class="paginator"><ul>';
 
         if ($page > 0) {
-            $html .= '<li><a href="' . kz_rel_page_url($page - 1) . '">Назад</a></li>';
+            $html .= '<li><a href="' . rel_page_url($page - 1) . '">Назад</a></li>';
         }
 
         $start = max(0, $page - 2);
@@ -272,11 +272,11 @@ if (!function_exists('kz_rel_pager')) {
 
         for ($i = $start; $i <= $end; $i++) {
             $class = $i === $page ? ' class="current"' : '';
-            $html .= '<li' . $class . '><a href="' . kz_rel_page_url($i) . '">' . ($i + 1) . '</a></li>';
+            $html .= '<li' . $class . '><a href="' . rel_page_url($i) . '">' . ($i + 1) . '</a></li>';
         }
 
         if ($hasNext) {
-            $html .= '<li><a rel="next" href="' . kz_rel_page_url($page + 1) . '">Вперед</a></li>';
+            $html .= '<li><a rel="next" href="' . rel_page_url($page + 1) . '">Вперед</a></li>';
         }
 
         return $html . '</ul></div>';
@@ -335,9 +335,9 @@ $content .= '<div class="tp1_border">';
 
 foreach ($rows as $row) {
     $id = (int)$row['id'];
-    $title = kz_rel_h($row['name']);
+    $title = rel_h($row['name']);
     $detailsUrl = 'details.php?id=' . $id . '&amp;hit=1';
-    $fields = kz_rel_fields($row['name'], $row['descr']);
+    $fields = rel_fields($row['name'], $row['descr']);
 
     if (empty($fields['Размер']) && !empty($row['size'])) {
         $fields['Размер'] = function_exists('mksize')
@@ -348,9 +348,9 @@ foreach ($rows as $row) {
     $catImage = '';
 
     if (!empty($row['catimage'])) {
-        $catTitle = kz_rel_h($row['catname']);
+        $catTitle = rel_h($row['catname']);
         $catImage = '<a href="browse.php?cat=' . (int)$row['catid'] . '" title="' . $catTitle . '">'
-            . '<img class="tp1_icat" src="pic/cat/' . kz_rel_h($row['catimage']) . '" alt="' . $catTitle . '" />'
+            . '<img class="tp1_icat" src="pic/cat/' . rel_h($row['catimage']) . '" alt="' . $catTitle . '" />'
             . '</a>';
     }
 
@@ -358,12 +358,12 @@ foreach ($rows as $row) {
 
     foreach (array('Название', 'Оригинальное название', 'Год выпуска', 'Жанр', 'Выпущено', 'Режиссер', 'В ролях') as $label) {
         if (!empty($fields[$label])) {
-            $desc1 .= kz_rel_field($label, kz_rel_cut($fields[$label], $label === 'В ролях' ? 230 : 170));
+            $desc1 .= rel_field($label, rel_cut($fields[$label], $label === 'В ролях' ? 230 : 170));
         }
     }
 
     $desc2 = !empty($fields['О фильме'])
-        ? '<b>О фильме:</b> ' . kz_rel_h(kz_rel_cut($fields['О фильме'], 430))
+        ? '<b>О фильме:</b> ' . rel_h(rel_cut($fields['О фильме'], 430))
         : '';
 
     $desc3 = '';
@@ -371,7 +371,7 @@ foreach ($rows as $row) {
     foreach (array('Качество', 'Видео', 'Аудио', 'Размер', 'Продолжительность', 'Перевод', 'Язык', 'Субтитры') as $label) {
         if (!empty($fields[$label])) {
             $limit = ($label === 'Аудио' || $label === 'Субтитры') ? 260 : 170;
-            $desc3 .= kz_rel_field($label, kz_rel_cut($fields[$label], $limit));
+            $desc3 .= rel_field($label, rel_cut($fields[$label], $limit));
         }
     }
 
@@ -382,7 +382,7 @@ foreach ($rows as $row) {
 
         <div class="tp1_body">
             <a href="' . $detailsUrl . '" title="' . $title . '">
-                <img class="tp1_img" src="' . kz_rel_h(kz_rel_poster_src($row)) . '" alt="' . $title . '" />
+                <img class="tp1_img" src="' . rel_h(rel_poster_src($row)) . '" alt="' . $title . '" />
             </a>
 
             <div class="tp1_desc">
@@ -400,4 +400,4 @@ foreach ($rows as $row) {
 }
 
 $content .= '</div>';
-$content .= kz_rel_pager($page, $hasNext);
+$content .= rel_pager($page, $hasNext);

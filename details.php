@@ -9,13 +9,13 @@
 */
 
 require_once("include/bittorrent.php");
-require_once("include/kz_upload.php");
+require_once("include/upload.php");
 require_once("include/persons.php");
-require_once("include/kz_multitracker.php");
+require_once("include/multitracker.php");
 
 dbconn(false);
-kz_upload_ensure_schema();
-kz_mt_ensure_schema();
+upload_ensure_schema();
+multitracker_ensure_schema();
 
 if (!$allow_guests_details) {
 	loggedinorreturn();
@@ -54,7 +54,7 @@ function details_upload_details_from_row($tid, array $row)
 		'torrent_file_updated_at' => '',
 		'form_mode' => 0,
 		'section_modes' => '0,0,0,0',
-		'data' => kz_upload_default_data(),
+		'data' => upload_default_data(),
 	);
 
 	if (empty($row['tdet_exists'])) {
@@ -74,7 +74,7 @@ function details_upload_details_from_row($tid, array $row)
 	$details['torrent_file_updated_at'] = (string)($row['tdet_torrent_file_updated_at'] ?? '');
 	$details['form_mode'] = (int)($row['tdet_form_mode'] ?? 0);
 	$details['section_modes'] = (string)($row['tdet_section_modes'] ?? '0,0,0,0');
-	$details['data'] = array_replace_recursive(kz_upload_default_data(), $data);
+	$details['data'] = array_replace_recursive(upload_default_data(), $data);
 
 	return $details;
 }
@@ -115,7 +115,7 @@ function details_term_links($value, $kind)
 	$person_ids = $kind === 'person' ? details_person_ids_by_names($items) : array();
 	foreach ($items as $item) {
 		if ($kind === 'person') {
-			$url = kz_persons_url($item, $person_ids[$item] ?? 0);
+			$url = persons_url($item, $person_ids[$item] ?? 0);
 		} else {
 			$url = '/top.php?j=' . rawurlencode($item);
 		}
@@ -143,7 +143,7 @@ function details_person_ids_by_names(array $names)
 
 	if ($lookup) {
 		if (!$schema_checked) {
-			kz_persons_ensure_schema();
+			persons_ensure_schema();
 			$schema_checked = true;
 		}
 
@@ -240,7 +240,7 @@ function details_torrent_updated_notice(array $details)
 
 function details_release_group_block(array $details)
 {
-	$groups = function_exists('kz_upload_release_groups') ? kz_upload_release_groups() : array();
+	$groups = function_exists('upload_release_groups') ? upload_release_groups() : array();
 	$rgroup_id = (int)($details['rgroup'] ?? 0);
 	$rgroup_title = $groups[$rgroup_id] ?? '';
 	$rbutton = trim((string)($details['rgroup_button'] ?? ''));
@@ -865,7 +865,7 @@ if (!is_valid_id($id)) {
 	stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
 }
 
-$has_torrent_details = kz_upload_table_exists('torrent_details');
+$has_torrent_details = upload_table_exists('torrent_details');
 $details_select = '';
 $details_join = '';
 if ($has_torrent_details) {
@@ -903,7 +903,7 @@ if (!$row) {
 	stderr($tracker_lang['error'], $tracker_lang['no_torrent_with_such_id']);
 }
 
-kz_mt_sync_local_tracker($id, (int)$row['seeders'], (int)$row['leechers'], (int)$row['times_completed']);
+multitracker_sync_local_tracker($id, (int)$row['seeders'], (int)$row['leechers'], (int)$row['times_completed']);
 $total_seeders = (int)$row['seeders'] + (int)($row['remote_seeders'] ?? 0);
 $total_leechers = (int)$row['leechers'] + (int)($row['remote_leechers'] ?? 0);
 
@@ -912,7 +912,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['mt_force_update'])) 
 	if (!$moderator) {
 		stderr($tracker_lang['error'], $tracker_lang['access_denied'] ?? 'Доступ запрещен');
 	}
-	$mt_result = kz_mt_update_torrent_trackers($id);
+	$mt_result = multitracker_update_torrent_trackers($id);
 	header('Location: details.php?id=' . $id . '&mtupdated=1&mts=' . (int)$mt_result['success'] . '&mte=' . (int)$mt_result['errors']);
 	exit;
 }
@@ -1057,7 +1057,7 @@ stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['
 			<?= details_line('В ролях', $video['cast'] ?? '', 'person') ?>
 		</h2></div>
 		<?php if ($about !== '') { ?><div class="bx1 justify"><p><b>О фильме:</b> <?= nl2br(details_h($about)) ?></p></div><?php } ?>
-		<?= kz_mt_render_details_block($id) ?>
+		<?= multitracker_render_details_block($id) ?>
 		<div class="bx1"><div class="pad0x0x5x0"><ul class="lis"><li id="tbch100" class="mn"><a onclick="showtab(100); return false;" href="#">Техданные</a></li><li id="tbch0"><a onclick="showtab(0); return false;" href="#">Релиз</a></li><li id="tbch1"><a onclick="showtab(1); return false;" href="#">Скриншоты</a></li></ul></div><div class="clr"></div><div class="justify mn2 pad5x5" id="tabs"></div></div>
 		<div class="bx1"><div class="pad0x0x5x0"><ul class="lis"><li id="tbch2100" class="mn"><a onclick="showtab2(100); return false;" href="#">Подобные</a></li><li id="tbch2101"><a onclick="showtab2(101); return false;" href="#">Топ по жанрам</a></li><li id="tbch2102"><a onclick="showtab2(102); return false;" href="#">Топ по персонам</a></li><li id="tbch2103"><a onclick="showtab2(103); return false;" href="#">Топ раздающего</a></li></ul></div><div class="clr"></div><div class="justify mn2" id="tabs2"></div></div>
 		<?= details_comments_html($id, (int)$row['comments'], $comment_page) ?>

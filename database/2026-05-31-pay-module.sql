@@ -1,29 +1,29 @@
-SET @kz_pay_sql = (
+SET @pay_sql = (
   SELECT IF(COUNT(*) = 0, 'ALTER TABLE `users` ADD COLUMN `pay_votes` int(10) unsigned NOT NULL DEFAULT ''0'' AFTER `bonus`', 'DO 0')
   FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'pay_votes'
 );
-PREPARE kz_pay_stmt FROM @kz_pay_sql;
-EXECUTE kz_pay_stmt;
-DEALLOCATE PREPARE kz_pay_stmt;
+PREPARE pay_stmt FROM @pay_sql;
+EXECUTE pay_stmt;
+DEALLOCATE PREPARE pay_stmt;
 
-SET @kz_pay_sql = (
+SET @pay_sql = (
   SELECT IF(COUNT(*) = 0, 'ALTER TABLE `users` ADD COLUMN `pay_donor_until` datetime NULL DEFAULT NULL AFTER `donor`', 'DO 0')
   FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'pay_donor_until'
 );
-PREPARE kz_pay_stmt FROM @kz_pay_sql;
-EXECUTE kz_pay_stmt;
-DEALLOCATE PREPARE kz_pay_stmt;
+PREPARE pay_stmt FROM @pay_sql;
+EXECUTE pay_stmt;
+DEALLOCATE PREPARE pay_stmt;
 
-SET @kz_pay_sql = (
+SET @pay_sql = (
   SELECT IF(COUNT(*) = 0, 'ALTER TABLE `users` ADD COLUMN `pay_vip_until` datetime NULL DEFAULT NULL AFTER `pay_donor_until`', 'DO 0')
   FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'pay_vip_until'
 );
-PREPARE kz_pay_stmt FROM @kz_pay_sql;
-EXECUTE kz_pay_stmt;
-DEALLOCATE PREPARE kz_pay_stmt;
+PREPARE pay_stmt FROM @pay_sql;
+EXECUTE pay_stmt;
+DEALLOCATE PREPARE pay_stmt;
 
 CREATE TABLE IF NOT EXISTS `pay_settings` (
   `setting_key` varchar(80) NOT NULL,

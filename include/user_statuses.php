@@ -4,12 +4,12 @@ if (!defined('IN_TRACKER')) {
 	die('Прямой вызов запрещён.');
 }
 
-function kz_statuses_h($value)
+function statuses_h($value)
 {
 	return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function kz_statuses_catalog()
+function statuses_catalog()
 {
 	return array(
 		'patron' => array('status_key' => 'patron', 'title' => 'Меценат', 'icon_class' => 's1', 'sort' => 1, 'auto' => 1),
@@ -29,7 +29,7 @@ function kz_statuses_catalog()
  * Оставлена для совместимости со старым кодом.
  * В обычной загрузке страницы таблицы НЕ создаём.
  */
-function kz_statuses_ensure_schema()
+function statuses_ensure_schema()
 {
 	return;
 }
@@ -38,7 +38,7 @@ function kz_statuses_ensure_schema()
  * Запускать только вручную из установщика/админки.
  * Не вызывать на каждой странице.
  */
-function kz_statuses_install_schema()
+function statuses_install_schema()
 {
 	sql_query("
 		CREATE TABLE IF NOT EXISTS user_statuses (
@@ -66,14 +66,14 @@ function kz_statuses_install_schema()
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
 
-	kz_statuses_seed_catalog();
+	statuses_seed_catalog();
 }
 
-function kz_statuses_seed_catalog()
+function statuses_seed_catalog()
 {
 	$values = array();
 
-	foreach (kz_statuses_catalog() as $status) {
+	foreach (statuses_catalog() as $status) {
 		$values[] = '('
 			. sqlesc($status['status_key'], true) . ', '
 			. sqlesc($status['title'], true) . ', '
@@ -98,7 +98,7 @@ function kz_statuses_seed_catalog()
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_statuses_all()
+function statuses_all()
 {
 	static $cached_rows = null;
 
@@ -107,7 +107,7 @@ function kz_statuses_all()
 	}
 
 	$rows = array();
-	$catalog = kz_statuses_catalog();
+	$catalog = statuses_catalog();
 	uasort($catalog, function ($left, $right) {
 		$left_sort = (int)($left['sort'] ?? 0);
 		$right_sort = (int)($right['sort'] ?? 0);
@@ -135,7 +135,7 @@ function kz_statuses_all()
 	return $cached_rows;
 }
 
-function kz_statuses_auto_keys($user)
+function statuses_auto_keys($user)
 {
 	$keys = array();
 
@@ -180,7 +180,7 @@ function kz_statuses_auto_keys($user)
 	return $keys;
 }
 
-function kz_statuses_load_user($userid)
+function statuses_load_user($userid)
 {
 	static $cached_users = array();
 
@@ -208,7 +208,7 @@ function kz_statuses_load_user($userid)
 	return $cached_users[$userid];
 }
 
-function kz_statuses_manual_keys($userid)
+function statuses_manual_keys($userid)
 {
 	static $cached_keys = array();
 
@@ -238,7 +238,7 @@ function kz_statuses_manual_keys($userid)
 	return $cached_keys[$userid];
 }
 
-function kz_statuses_for_user($user)
+function statuses_for_user($user)
 {
 	static $cached_statuses = array();
 
@@ -270,7 +270,7 @@ function kz_statuses_for_user($user)
 
 	foreach ($needed as $field) {
 		if (!array_key_exists($field, $user)) {
-			$loaded_user = kz_statuses_load_user($userid);
+			$loaded_user = statuses_load_user($userid);
 
 			if (!is_array($loaded_user)) {
 				$cached_statuses[$userid] = array();
@@ -282,14 +282,14 @@ function kz_statuses_for_user($user)
 		}
 	}
 
-	$statuses = kz_statuses_all();
+	$statuses = statuses_all();
 
 	if (!$statuses) {
 		$cached_statuses[$userid] = array();
 		return array();
 	}
 
-	$keys = kz_statuses_auto_keys($user);
+	$keys = statuses_auto_keys($user);
 	$manual_keys = array();
 	if (array_key_exists('manual_status_keys', $user)) {
 		foreach (explode(',', (string)$user['manual_status_keys']) as $manual_key) {
@@ -299,7 +299,7 @@ function kz_statuses_for_user($user)
 			}
 		}
 	} else {
-		$manual_keys = kz_statuses_manual_keys($userid);
+		$manual_keys = statuses_manual_keys($userid);
 	}
 
 	foreach ($manual_keys as $key => $value) {
@@ -319,19 +319,19 @@ function kz_statuses_for_user($user)
 	return $cached_statuses[$userid];
 }
 
-function kz_statuses_user_icons_html($user)
+function statuses_user_icons_html($user)
 {
-	$statuses = kz_statuses_for_user($user);
+	$statuses = statuses_for_user($user);
 	$html = '';
 
 	foreach ($statuses as $status) {
-		$html .= '<i class="i1 ' . kz_statuses_h($status['icon_class']) . '" title="' . kz_statuses_h($status['title']) . '"></i>';
+		$html .= '<i class="i1 ' . statuses_h($status['icon_class']) . '" title="' . statuses_h($status['title']) . '"></i>';
 	}
 
 	return $html;
 }
 
-function kz_statuses_save_manual($userid, $selected_keys, $admin_id)
+function statuses_save_manual($userid, $selected_keys, $admin_id)
 {
 	$userid = (int)$userid;
 	$admin_id = (int)$admin_id;
@@ -340,7 +340,7 @@ function kz_statuses_save_manual($userid, $selected_keys, $admin_id)
 		return;
 	}
 
-	$catalog = kz_statuses_catalog();
+	$catalog = statuses_catalog();
 	$selected = array();
 
 	foreach ((array)$selected_keys as $key) {
@@ -364,7 +364,7 @@ function kz_statuses_save_manual($userid, $selected_keys, $admin_id)
 	}
 }
 
-function kz_statuses_find_user_by_username($username)
+function statuses_find_user_by_username($username)
 {
 	$username = trim((string)$username);
 

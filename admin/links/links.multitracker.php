@@ -2,6 +2,6 @@
 
 if (!defined("ADMIN_FILE")) die("Illegal File Access");
 
-BuildMenu("" . $admin_file . ".php?op=MultitrackerAdmin", "Мультитрекер", "");
+BuildMenu("" . $admin_file . ".php?op=MultitrackerAdmin", "Мультитрекер", "multitracker.svg");
 
 ?>

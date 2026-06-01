@@ -1,13 +1,13 @@
 <?php
 
-if (!function_exists('kz_uarch_h')) {
-	function kz_uarch_h($value)
+if (!function_exists('uarch_h')) {
+	function uarch_h($value)
 	{
 		return htmlspecialchars_uni((string)$value);
 	}
 }
 
-function kz_uarch_ensure_schema()
+function uarch_ensure_schema()
 {
 	sql_query("
 		CREATE TABLE IF NOT EXISTS uarch_smiles (
@@ -26,7 +26,7 @@ function kz_uarch_ensure_schema()
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_uarch_valid_image_url($url)
+function uarch_valid_image_url($url)
 {
 	$url = trim((string)$url);
 
@@ -37,14 +37,14 @@ function kz_uarch_valid_image_url($url)
 	return (bool)preg_match('#^(https?://|/).+\.(jpe?g|png|gif|webp)(\?.*)?$#i', $url);
 }
 
-function kz_uarch_add_smile($url)
+function uarch_add_smile($url)
 {
 	global $CURUSER;
 
-	kz_uarch_ensure_schema();
+	uarch_ensure_schema();
 
 	$url = trim((string)$url);
-	if (!kz_uarch_valid_image_url($url)) {
+	if (!uarch_valid_image_url($url)) {
 		return 'Укажите прямую ссылку на картинку JPG, PNG, GIF или WEBP.';
 	}
 
@@ -65,9 +65,9 @@ function kz_uarch_add_smile($url)
 	return '';
 }
 
-function kz_uarch_smiles($active_only = true, $limit = 60)
+function uarch_smiles($active_only = true, $limit = 60)
 {
-	kz_uarch_ensure_schema();
+	uarch_ensure_schema();
 
 	$limit = max(1, min(200, (int)$limit));
 	$where = $active_only ? "WHERE s.active = 'yes'" : '';
@@ -91,9 +91,9 @@ function kz_uarch_smiles($active_only = true, $limit = 60)
 	return $rows;
 }
 
-function kz_uarch_block_smile()
+function uarch_block_smile()
 {
-	$rows = kz_uarch_smiles(true, 1);
+	$rows = uarch_smiles(true, 1);
 
 	if (!empty($rows)) {
 		return $rows[0];
@@ -102,7 +102,7 @@ function kz_uarch_block_smile()
 	return null;
 }
 
-function kz_uarch_user_line(array $smile)
+function uarch_user_line(array $smile)
 {
 	$userid = (int)($smile['userid'] ?? 0);
 	$username = (string)($smile['display_username'] ?? $smile['username'] ?? 'Пользователь');
@@ -115,9 +115,9 @@ function kz_uarch_user_line(array $smile)
 	}
 
 	if ($userid > 0) {
-		$html .= '<a href="/userdetails.php?id=' . $userid . '" class="u' . $userclass . '">' . kz_uarch_h($username) . '</a>';
+		$html .= '<a href="/userdetails.php?id=' . $userid . '" class="u' . $userclass . '">' . uarch_h($username) . '</a>';
 	} else {
-		$html .= '<span class="u' . $userclass . '">' . kz_uarch_h($username) . '</span>';
+		$html .= '<span class="u' . $userclass . '">' . uarch_h($username) . '</span>';
 	}
 
 	if (function_exists('get_user_icons')) {
@@ -129,9 +129,9 @@ function kz_uarch_user_line(array $smile)
 	return $html;
 }
 
-function kz_uarch_block_html()
+function uarch_block_html()
 {
-	$smile = kz_uarch_block_smile();
+	$smile = uarch_block_smile();
 
 	if (!$smile) {
 		return '<div class="bx2_0">'
@@ -146,14 +146,14 @@ function kz_uarch_block_html()
 
 	return '<div class="bx2_0">'
 		. '<ul class="men">'
-		. '<li class="tp2 center"><a href="/uarch.php" class="sbab">Улыбка</a> от ' . kz_uarch_user_line($smile) . '</li>'
-		. '<li class="center"><a href="/uarch.php"><img src="' . kz_uarch_h($image) . '" width="175" alt=""></a></li>'
+		. '<li class="tp2 center"><a href="/uarch.php" class="sbab">Улыбка</a> от ' . uarch_user_line($smile) . '</li>'
+		. '<li class="center"><a href="/uarch.php"><img src="' . uarch_h($image) . '" width="175" alt=""></a></li>'
 		. '</ul>'
 		. '</div>';
 }
-function kz_uarch_set_active($id, $active)
+function uarch_set_active($id, $active)
 {
-	kz_uarch_ensure_schema();
+	uarch_ensure_schema();
 	$id = (int)$id;
 	$active = $active === 'yes' ? 'yes' : 'no';
 
@@ -162,9 +162,9 @@ function kz_uarch_set_active($id, $active)
 	}
 }
 
-function kz_uarch_delete($id)
+function uarch_delete($id)
 {
-	kz_uarch_ensure_schema();
+	uarch_ensure_schema();
 	$id = (int)$id;
 
 	if ($id > 0) {

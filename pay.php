@@ -1,31 +1,31 @@
 <?php
 
 require_once __DIR__ . '/include/bittorrent.php';
-require_once __DIR__ . '/include/kz_pay.php';
+require_once __DIR__ . '/include/pay.php';
 
 dbconn(false);
 loggedinorreturn();
-kz_pay_ensure_schema();
+pay_ensure_schema();
 
 if ((string)($_GET['action'] ?? '') === 'getch') {
 	$tab = max(1, min(2, (int)($_GET['tabch'] ?? 1)));
-	if ($_SERVER['REQUEST_METHOD'] === 'POST' && kz_pay_setting('chat_enabled', '1') === '1') {
-		kz_pay_add_chat_message($tab, $_POST['t'] ?? '');
+	if ($_SERVER['REQUEST_METHOD'] === 'POST' && pay_setting('chat_enabled', '1') === '1') {
+		pay_add_chat_message($tab, $_POST['t'] ?? '');
 	}
 	header('Content-Type: text/html; charset=' . ($tracker_lang['language_charset'] ?? 'UTF-8'));
 	echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="./themes/TBDev/TBDev.css" type="text/css"></head><body style="background:#fff;">';
-	echo kz_pay_chat_html($tab, (int)($_GET['imes'] ?? 50));
+	echo pay_chat_html($tab, (int)($_GET['imes'] ?? 50));
 	echo '</body></html>';
 	exit;
 }
 
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['exchange'])) {
-	$options = kz_pay_exchange_options();
+	$options = pay_exchange_options();
 	$idx = (int)($_POST['exchange'] ?? -1);
 	if (isset($options[$idx])) {
 		$opt = $options[$idx];
-		$error = kz_pay_exchange_bonus((int)$CURUSER['id'], (float)$opt['bonus'], (int)$opt['votes'], $opt['title']);
+		$error = pay_exchange_bonus((int)$CURUSER['id'], (float)$opt['bonus'], (int)$opt['votes'], $opt['title']);
 		header('Location: /pay.php?' . ($error === '' ? 'ok=1' : 'error=' . urlencode($error)));
 		exit;
 	}
@@ -36,13 +36,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['exchange'])) {
 if (isset($_GET['ok'])) {
 	$message = '<div class="success"><b>Голоса начислены.</b><br>Спасибо за поддержку проекта.</div>';
 } elseif (isset($_GET['error'])) {
-	$message = '<div class="error"><b>Ошибка</b><br>' . kz_pay_h($_GET['error']) . '</div>';
+	$message = '<div class="error"><b>Ошибка</b><br>' . pay_h($_GET['error']) . '</div>';
 }
 
-$user = kz_pay_user((int)$CURUSER['id']);
-$votes = kz_pay_user_votes_from_array($user);
+$user = pay_user((int)$CURUSER['id']);
+$votes = pay_user_votes_from_array($user);
 $bonus = (float)($user['bonus'] ?? 0);
-$options = kz_pay_exchange_options();
+$options = pay_exchange_options();
 
 $hide_right_blocks = true;
 stdhead('Голоса и рейтинг');
@@ -69,7 +69,7 @@ table.smstable td {
 	background-color: #efede6;
 }
 </style>
-<?php kz_pay_layout_start('pay', $user); ?>
+<?php pay_layout_start('pay', $user); ?>
 <?= $message ?>
 
 <div class="bx1 justify">
@@ -94,7 +94,7 @@ table.smstable td {
 			<?php foreach ($options as $idx => $opt) { ?>
 				<tr>
 					<td class="center"><input type="radio" name="exchange" value="<?= (int)$idx ?>"<?= $idx === 0 ? ' checked' : '' ?><?= $bonus < (float)$opt['bonus'] ? ' disabled' : '' ?>></td>
-					<td><?= kz_pay_h($opt['title']) ?></td>
+					<td><?= pay_h($opt['title']) ?></td>
 					<td class="center"><?= number_format((float)$opt['bonus'], 2, '.', ' ') ?> бонусов</td>
 					<td class="center"><?= (int)$opt['votes'] ?></td>
 				</tr>
@@ -109,29 +109,29 @@ table.smstable td {
 
 <div class="bx1">
 	<div>Сейчас помогли проекту - Благодарим за помощь!</div>
-	<div class="bx5x5"><?= kz_pay_user_list_html(kz_pay_recent_helpers(20), 'пока нет операций') ?></div>
+	<div class="bx5x5"><?= pay_user_list_html(pay_recent_helpers(20), 'пока нет операций') ?></div>
 </div>
 
 <div class="bx1">
 	<div>Ваша помощь проекту за последнее время.</div>
-	<div class="pad5x5"><?= kz_pay_format_transaction_rows(kz_pay_user_transactions((int)$CURUSER['id'], 20)) ?></div>
+	<div class="pad5x5"><?= pay_format_transaction_rows(pay_user_transactions((int)$CURUSER['id'], 20)) ?></div>
 </div>
 
 <div class="bx1">
 	<div>Претенденты на Кубок Активный Меценат<i class="i1 cb6"></i></div>
-	<div class="bx5x5"><?= kz_pay_user_list_html(kz_pay_top_helpers('active', 20), 'пока нет претендентов') ?></div>
+	<div class="bx5x5"><?= pay_user_list_html(pay_top_helpers('active', 20), 'пока нет претендентов') ?></div>
 </div>
 
 <div class="bx1">
 	<div>Претенденты на Кубок Лучший Меценат<i class="i1 cb7"></i></div>
-	<div class="bx5x5"><?= kz_pay_user_list_html(kz_pay_top_helpers('votes', 20), 'пока нет претендентов') ?></div>
+	<div class="bx5x5"><?= pay_user_list_html(pay_top_helpers('votes', 20), 'пока нет претендентов') ?></div>
 </div>
 
-<?php if (kz_pay_setting('chat_enabled', '1') === '1') { ?>
-	<?php kz_pay_chat_frame('/pay.php', 1); ?>
+<?php if (pay_setting('chat_enabled', '1') === '1') { ?>
+	<?php pay_chat_frame('/pay.php', 1); ?>
 <?php } ?>
 
-<?php kz_pay_layout_end(array('/pay.php%', '%/pay.php%')); ?>
+<?php pay_layout_end(array('/pay.php%', '%/pay.php%')); ?>
 <?php
 
 stdfoot();

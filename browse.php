@@ -2,13 +2,13 @@
 
 
 require_once("include/bittorrent.php");
-require_once("include/kz_test_torrents.php");
-require_once("include/kz_multitracker.php");
+require_once("include/test_torrents.php");
+require_once("include/multitracker.php");
 
 dbconn(false);
 parked();
-kz_test_torrents_ensure_schema();
-kz_mt_ensure_schema();
+test_torrents_ensure_schema();
+multitracker_ensure_schema();
 
 function browse_fmt_added($datetime) {
     if (empty($datetime) || $datetime === '0000-00-00 00:00:00') {

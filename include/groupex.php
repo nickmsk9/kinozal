@@ -4,12 +4,12 @@ if (!defined('IN_TRACKER')) {
     die('Direct access denied.');
 }
 
-function kz_groups_h($value)
+function groups_h($value)
 {
     return htmlspecialchars_uni((string)$value);
 }
 
-function kz_groups_types()
+function groups_types()
 {
     return array(
         1 => 'Клуб',
@@ -19,7 +19,7 @@ function kz_groups_types()
     );
 }
 
-function kz_groups_categories()
+function groups_categories()
 {
     return array(
         1 => 'Общие интересы',
@@ -35,7 +35,7 @@ function kz_groups_categories()
     );
 }
 
-function kz_groups_subcategories()
+function groups_subcategories()
 {
     return array(
         10001 => array(1, 'Общение'),
@@ -73,7 +73,7 @@ function kz_groups_subcategories()
     );
 }
 
-function kz_groups_ensure_schema()
+function groups_ensure_schema()
 {
     sql_query("
 		CREATE TABLE IF NOT EXISTS groupex_categories (
@@ -200,7 +200,7 @@ function kz_groups_ensure_schema()
 	") or sqlerr(__FILE__, __LINE__);
 
     $category_values = array();
-    foreach (kz_groups_categories() as $id => $name) {
+    foreach (groups_categories() as $id => $name) {
         $category_values[] = '(' . (int)$id . ', ' . sqlesc($name) . ', ' . ((int)$id * 10) . ')';
     }
     if ($category_values) {
@@ -209,7 +209,7 @@ function kz_groups_ensure_schema()
 
     $sub_values = array();
     $sort = array();
-    foreach (kz_groups_subcategories() as $id => $subcat) {
+    foreach (groups_subcategories() as $id => $subcat) {
         $cat_id = (int)$subcat[0];
         $sort[$cat_id] = isset($sort[$cat_id]) ? $sort[$cat_id] + 10 : 10;
         $sub_values[] = '(' . (int)$id . ', ' . $cat_id . ', ' . sqlesc($subcat[1]) . ', ' . (int)$sort[$cat_id] . ')';
@@ -219,30 +219,30 @@ function kz_groups_ensure_schema()
     }
 }
 
-function kz_groups_type_name($id)
+function groups_type_name($id)
 {
-    $items = kz_groups_types();
+    $items = groups_types();
     return $items[(int)$id] ?? 'Клуб';
 }
 
-function kz_groups_category_name($id)
+function groups_category_name($id)
 {
-    $items = kz_groups_categories();
+    $items = groups_categories();
     return $items[(int)$id] ?? 'Не выбрана категория';
 }
 
-function kz_groups_subcategory_name($id)
+function groups_subcategory_name($id)
 {
-    $items = kz_groups_subcategories();
+    $items = groups_subcategories();
     $id = (int)$id;
     return isset($items[$id]) ? $items[$id][1] : 'Не выбрана категория';
 }
 
-function kz_groups_subcategories_for($category_id)
+function groups_subcategories_for($category_id)
 {
     $category_id = (int)$category_id;
     $rows = array();
-    foreach (kz_groups_subcategories() as $id => $row) {
+    foreach (groups_subcategories() as $id => $row) {
         if ((int)$row[0] === $category_id) {
             $rows[$id] = $row[1];
         }
@@ -250,24 +250,24 @@ function kz_groups_subcategories_for($category_id)
     return $rows;
 }
 
-function kz_groups_selected($current, $value)
+function groups_selected($current, $value)
 {
     return (string)$current === (string)$value ? ' selected' : '';
 }
 
-function kz_groups_options(array $items, $selected, $placeholder = '')
+function groups_options(array $items, $selected, $placeholder = '')
 {
     $html = '';
     if ($placeholder !== '') {
-        $html .= '<option value="0"' . kz_groups_selected($selected, 0) . '>' . kz_groups_h($placeholder) . '</option>';
+        $html .= '<option value="0"' . groups_selected($selected, 0) . '>' . groups_h($placeholder) . '</option>';
     }
     foreach ($items as $id => $name) {
-        $html .= '<option value="' . (int)$id . '"' . kz_groups_selected($selected, $id) . '>' . kz_groups_h($name) . '</option>';
+        $html .= '<option value="' . (int)$id . '"' . groups_selected($selected, $id) . '>' . groups_h($name) . '</option>';
     }
     return $html;
 }
 
-function kz_groups_cp1251_urlencode($value)
+function groups_cp1251_urlencode($value)
 {
     $value = (string)$value;
     if (function_exists('iconv')) {
@@ -279,7 +279,7 @@ function kz_groups_cp1251_urlencode($value)
     return str_replace('%20', '+', rawurlencode($value));
 }
 
-function kz_groups_request_text($value)
+function groups_request_text($value)
 {
     $value = trim((string)$value);
     if ($value === '') {
@@ -296,22 +296,22 @@ function kz_groups_request_text($value)
     return $value;
 }
 
-function kz_groups_hash()
+function groups_hash()
 {
     global $CURUSER;
     if (!$CURUSER || !is_array($CURUSER)) {
         return '';
     }
-    return kz_groups_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? ''));
+    return groups_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? ''));
 }
 
-function kz_groups_avatar(array $group)
+function groups_avatar(array $group)
 {
     $avatar = trim((string)($group['avatar'] ?? ''));
-    return $avatar !== '' ? kz_groups_h($avatar) : '/pic/default_avatar.gif';
+    return $avatar !== '' ? groups_h($avatar) : '/pic/default_avatar.gif';
 }
 
-function kz_groups_date($value, $with_time = true)
+function groups_date($value, $with_time = true)
 {
     $value = (string)$value;
     if ($value === '' || $value === '0000-00-00 00:00:00') {
@@ -319,7 +319,7 @@ function kz_groups_date($value, $with_time = true)
     }
     $ts = strtotime($value);
     if (!$ts) {
-        return kz_groups_h($value);
+        return groups_h($value);
     }
     $months = array(
         1 => 'января',
@@ -342,7 +342,7 @@ function kz_groups_date($value, $with_time = true)
     return $text;
 }
 
-function kz_groups_text($text)
+function groups_text($text)
 {
     $text = trim((string)$text);
     if ($text === '') {
@@ -351,10 +351,10 @@ function kz_groups_text($text)
     if (function_exists('format_comment')) {
         return format_comment($text);
     }
-    return nl2br(kz_groups_h($text));
+    return nl2br(groups_h($text));
 }
 
-function kz_groups_cut($text, $width = 40)
+function groups_cut($text, $width = 40)
 {
     $text = trim((string)$text);
     $width = max(1, (int)$width);
@@ -367,7 +367,7 @@ function kz_groups_cut($text, $width = 40)
     return substr($text, 0, max(0, $width - 3)) . '...';
 }
 
-function kz_groups_user_link($userid, $username, $class = 0, array $user = array())
+function groups_user_link($userid, $username, $class = 0, array $user = array())
 {
     $userid = (int)$userid;
     $username = (string)$username;
@@ -375,12 +375,12 @@ function kz_groups_user_link($userid, $username, $class = 0, array $user = array
         return '<i>unknown</i>';
     }
     $icons = function_exists('get_user_icons') ? get_user_icons(array_merge($user, array('id' => $userid, 'class' => $class, 'username' => $username))) : '';
-    return '<a href="/userdetails.php?id=' . $userid . '" class="u' . (int)$class . '">' . kz_groups_h($username) . '</a>' . $icons;
+    return '<a href="/userdetails.php?id=' . $userid . '" class="u' . (int)$class . '">' . groups_h($username) . '</a>' . $icons;
 }
 
-function kz_groups_fetch($group_id)
+function groups_fetch($group_id)
 {
-    kz_groups_ensure_schema();
+    groups_ensure_schema();
 
     $group_id = (int)$group_id;
     if ($group_id <= 0) {
@@ -400,9 +400,9 @@ function kz_groups_fetch($group_id)
     return $row ?: null;
 }
 
-function kz_groups_member($group_id, $userid)
+function groups_member($group_id, $userid)
 {
-    kz_groups_ensure_schema();
+    groups_ensure_schema();
 
     $group_id = (int)$group_id;
     $userid = (int)$userid;
@@ -415,17 +415,17 @@ function kz_groups_member($group_id, $userid)
     return $row ?: null;
 }
 
-function kz_groups_is_member($group_id, $userid = 0)
+function groups_is_member($group_id, $userid = 0)
 {
     global $CURUSER;
     if ($userid <= 0 && $CURUSER) {
         $userid = (int)$CURUSER['id'];
     }
-    $member = kz_groups_member($group_id, $userid);
+    $member = groups_member($group_id, $userid);
     return $member && $member['status'] === 'member';
 }
 
-function kz_groups_can_manage(array $group, $userid = 0)
+function groups_can_manage(array $group, $userid = 0)
 {
     global $CURUSER;
     if (!$CURUSER) {
@@ -440,11 +440,11 @@ function kz_groups_can_manage(array $group, $userid = 0)
     if ((int)$group['owner_id'] === $userid) {
         return true;
     }
-    $member = kz_groups_member((int)$group['id'], $userid);
+    $member = groups_member((int)$group['id'], $userid);
     return $member && $member['status'] === 'member' && in_array($member['role'], array('owner', 'moderator'), true);
 }
 
-function kz_groups_log($group_id, $userid, $action, $text)
+function groups_log($group_id, $userid, $action, $text)
 {
     $group_id = (int)$group_id;
     $userid = (int)$userid;
@@ -459,7 +459,7 @@ function kz_groups_log($group_id, $userid, $action, $text)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_groups_refresh_counts($group_id)
+function groups_refresh_counts($group_id)
 {
     $group_id = (int)$group_id;
     if ($group_id <= 0) {
@@ -475,9 +475,9 @@ function kz_groups_refresh_counts($group_id)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_groups_add_bookmark($group_id, $userid)
+function groups_add_bookmark($group_id, $userid)
 {
-    kz_groups_ensure_schema();
+    groups_ensure_schema();
 
     $group_id = (int)$group_id;
     $userid = (int)$userid;
@@ -492,9 +492,9 @@ function kz_groups_add_bookmark($group_id, $userid)
     return true;
 }
 
-function kz_groups_remove_bookmark($group_id, $userid)
+function groups_remove_bookmark($group_id, $userid)
 {
-    kz_groups_ensure_schema();
+    groups_ensure_schema();
 
     $group_id = (int)$group_id;
     $userid = (int)$userid;
@@ -506,9 +506,9 @@ function kz_groups_remove_bookmark($group_id, $userid)
     return true;
 }
 
-function kz_groups_is_bookmarked($group_id, $userid)
+function groups_is_bookmarked($group_id, $userid)
 {
-    kz_groups_ensure_schema();
+    groups_ensure_schema();
 
     $group_id = (int)$group_id;
     $userid = (int)$userid;
@@ -520,21 +520,21 @@ function kz_groups_is_bookmarked($group_id, $userid)
     return (bool)mysqli_fetch_assoc($res);
 }
 
-function kz_groups_search_href($field, $value)
+function groups_search_href($field, $value)
 {
     return '/groupexlist.php?action=search&amp;' . rawurlencode((string)$field) . '=' . rawurlencode((string)$value);
 }
 
-function kz_groups_group_card(array $group, $mode = 'list')
+function groups_group_card(array $group, $mode = 'list')
 {
     global $CURUSER;
 
     $id = (int)$group['id'];
-    $hash = kz_groups_hash();
+    $hash = groups_hash();
     $members = (int)($group['members_count'] ?? 0);
     $torrents = (int)($group['torrents_count'] ?? 0);
     $zabor = (int)($group['zabor_count'] ?? 0);
-    $avatar = kz_groups_avatar($group);
+    $avatar = groups_avatar($group);
 
     echo '<div class="bx5x5">';
     echo '<img class="imgg" src="' . $avatar . '" alt="">';
@@ -547,7 +547,7 @@ function kz_groups_group_card(array $group, $mode = 'list')
     }
     echo '<a href="/groupex.php?id=' . $id . '" class="sba">Просмотреть группу</a><br>';
     if ($CURUSER) {
-        if (kz_groups_is_bookmarked($id, (int)$CURUSER['id'])) {
+        if (groups_is_bookmarked($id, (int)$CURUSER['id'])) {
             echo '<a href="/bookmarks.php?type=2&amp;delete=' . $id . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '" class="sba">Убрать из закладок</a>';
         } else {
             echo '<a href="/bookmarks.php?type=2&amp;add=' . $id . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '" class="sba">Добавить в закладки</a>';
@@ -559,18 +559,18 @@ function kz_groups_group_card(array $group, $mode = 'list')
     if (!empty($group['private']) && $group['private'] === 'yes') {
         echo '<span class="s_park i1" title="Закрытая группа"></span> ';
     }
-    echo '<a href="/groupex.php?id=' . $id . '">' . kz_groups_h($group['name']) . '</a></li>';
+    echo '<a href="/groupex.php?id=' . $id . '">' . groups_h($group['name']) . '</a></li>';
     echo '<li>';
-    echo '<a href="' . kz_groups_search_href('type', (int)$group['type']) . '" class="sba">' . kz_groups_h(kz_groups_type_name((int)$group['type'])) . '</a>, ';
-    echo '<a href="' . kz_groups_search_href('cat', (int)$group['cat']) . '" class="sba">' . kz_groups_h(kz_groups_category_name((int)$group['cat'])) . '</a>, ';
-    echo '<a href="' . kz_groups_search_href('subcatsel', (int)$group['subcat']) . '" class="sba">' . kz_groups_h(kz_groups_subcategory_name((int)$group['subcat'])) . '</a>';
+    echo '<a href="' . groups_search_href('type', (int)$group['type']) . '" class="sba">' . groups_h(groups_type_name((int)$group['type'])) . '</a>, ';
+    echo '<a href="' . groups_search_href('cat', (int)$group['cat']) . '" class="sba">' . groups_h(groups_category_name((int)$group['cat'])) . '</a>, ';
+    echo '<a href="' . groups_search_href('subcatsel', (int)$group['subcat']) . '" class="sba">' . groups_h(groups_subcategory_name((int)$group['subcat'])) . '</a>';
     echo '</li>';
     echo '<li>Участников ' . $members . ', раздач ' . $torrents . ', обсуждений ' . $zabor . '</li>';
     echo '</ul></div>';
     echo '</div>';
 }
 
-function kz_groups_subcat_script($selected_map = array())
+function groups_subcat_script($selected_map = array())
 {
     $selected_json = json_encode($selected_map, JSON_UNESCAPED_UNICODE);
     if ($selected_json === false) {
@@ -604,15 +604,15 @@ function kz_groups_subcat_script($selected_map = array())
     echo '</script>';
 }
 
-function kz_groups_search_sidebar($info_text = 'Здесь отображены все группы, которые существуют. Для поиска определенных групп можете воспользоваться формой поиска, размещенной выше.', $show_banner = true)
+function groups_search_sidebar($info_text = 'Здесь отображены все группы, которые существуют. Для поиска определенных групп можете воспользоваться формой поиска, размещенной выше.', $show_banner = true)
 {
-    $name    = kz_groups_request_text($_GET['name'] ?? '');
+    $name    = groups_request_text($_GET['name'] ?? '');
     $userid  = (int)($_GET['userid'] ?? 0);
     $type    = (int)($_GET['type'] ?? 0);
     $cat     = (int)($_GET['cat'] ?? 0);
     $subcat  = (int)($_GET['subcatsel'] ?? 0);
     $sort    = (int)($_GET['sort'] ?? 0);
-    $subcats = $cat > 0 ? kz_groups_subcategories_for($cat) : array();
+    $subcats = $cat > 0 ? groups_subcategories_for($cat) : array();
 
     echo '<div class="mn3_menu">';
     echo '<form method="get" action="/groupexlist.php">';
@@ -623,21 +623,21 @@ function kz_groups_search_sidebar($info_text = 'Здесь отображены 
     }
 
     echo '<li class="tp">Поиск группы<input type="hidden" name="action" value="search"></li>';
-    echo '<li class="img"><dl><dt>Название</dt><dd><input type="text" name="name" value="' . kz_groups_h($name) . '" class="w100"></dd></dl></li>';
+    echo '<li class="img"><dl><dt>Название</dt><dd><input type="text" name="name" value="' . groups_h($name) . '" class="w100"></dd></dl></li>';
     echo '<li class="img"><dl><dt>Ид создателя</dt><dd><input type="text" name="userid" value="' . ($userid > 0 ? $userid : '') . '" class="w100"></dd></dl></li>';
 
     echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="type">';
-    echo kz_groups_options(kz_groups_types(), $type, 'Выберите тип группы');
+    echo groups_options(groups_types(), $type, 'Выберите тип группы');
     echo '</select></span></li>';
 
     echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="cat" id="gsearch_cat" onchange="kzGroupsSubcatFor(\'gsearch_cat\', \'gsearch_subcatsel\');">';
-    echo kz_groups_options(kz_groups_categories(), $cat, 'Выберите из списка категорию');
+    echo groups_options(groups_categories(), $cat, 'Выберите из списка категорию');
     echo '</select></span></li>';
 
     echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="subcatsel" id="gsearch_subcatsel">';
 
     if ($subcats) {
-        echo kz_groups_options($subcats, $subcat, 'Выберите подкатегорию');
+        echo groups_options($subcats, $subcat, 'Выберите подкатегорию');
     } else {
         echo '<option value="0">Не выбрана категория</option>';
     }
@@ -645,10 +645,10 @@ function kz_groups_search_sidebar($info_text = 'Здесь отображены 
     echo '</select></span></li>';
 
     echo '<li class="img"><span class="sw100p"><select class="w100p styled" name="sort" id="sort">';
-    echo '<option value="0"' . kz_groups_selected($sort, 0) . '>Сортировать по добавлению</option>';
-    echo '<option value="1"' . kz_groups_selected($sort, 1) . '>Сортировать по участникам</option>';
-    echo '<option value="2"' . kz_groups_selected($sort, 2) . '>Сортировать по раздачам</option>';
-    echo '<option value="3"' . kz_groups_selected($sort, 3) . '>Сортировать по обсуждениям</option>';
+    echo '<option value="0"' . groups_selected($sort, 0) . '>Сортировать по добавлению</option>';
+    echo '<option value="1"' . groups_selected($sort, 1) . '>Сортировать по участникам</option>';
+    echo '<option value="2"' . groups_selected($sort, 2) . '>Сортировать по раздачам</option>';
+    echo '<option value="3"' . groups_selected($sort, 3) . '>Сортировать по обсуждениям</option>';
     echo '</select></span></li>';
 
     echo '<li class="img"><input type="submit" value="Искать" class="w200 buttonS"></li>';
@@ -660,14 +660,14 @@ function kz_groups_search_sidebar($info_text = 'Здесь отображены 
     echo '<li><span class="bulet"></span><a href="/bookmarks.php?type=2">Закладки</a></li>';
 
     echo '<li class="tp">Информация</li>';
-    echo '<li class="justify">' . kz_groups_h($info_text) . '</li>';
+    echo '<li class="justify">' . groups_h($info_text) . '</li>';
 
     echo '</ul>';
     echo '</form>';
     echo '</div>';
 }
 
-function kz_groups_status_text(array $group, $member)
+function groups_status_text(array $group, $member)
 {
     if (!$member) {
         return 'Вы не состоите в этой группе';
@@ -687,17 +687,17 @@ function kz_groups_status_text(array $group, $member)
     return 'Вы участник этой группы';
 }
 
-function kz_groups_group_sidebar(array $group, $member = null)
+function groups_group_sidebar(array $group, $member = null)
 {
     global $CURUSER;
 
     $id = (int)$group['id'];
-    $hash = kz_groups_hash();
-    $can_manage = kz_groups_can_manage($group);
+    $hash = groups_hash();
+    $can_manage = groups_can_manage($group);
     $is_member = $member && $member['status'] === 'member';
 
     echo '<div class="mn3_menu"><ul class="men w200">';
-    echo '<li class="img"><a href="/groupex.php?id=' . $id . '"><img src="' . kz_groups_avatar($group) . '" class="p200" alt=""></a></li>';
+    echo '<li class="img"><a href="/groupex.php?id=' . $id . '"><img src="' . groups_avatar($group) . '" class="p200" alt=""></a></li>';
     echo '<li class="tp">Меню</li>';
     echo '<li><span class="bulet"></span><a href="/groupextorrents.php?id=' . $id . '">Галерея раздач</a></li>';
     echo '<li><span class="bulet"></span><a href="/groupextorrentlist.php?id=' . $id . '">Список раздач</a></li>';
@@ -711,7 +711,7 @@ function kz_groups_group_sidebar(array $group, $member = null)
         } else {
             echo '<li><span class="bulet"></span><a href="/groupexinvite.php?id=' . $id . '&amp;action=join' . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '">Вступить в группу</a></li>';
         }
-        if (kz_groups_is_bookmarked($id, (int)$CURUSER['id'])) {
+        if (groups_is_bookmarked($id, (int)$CURUSER['id'])) {
             echo '<li><span class="bulet"></span><a href="/bookmarks.php?type=2&amp;delete=' . $id . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '">Убрать из закладок</a></li>';
         } else {
             echo '<li><span class="bulet"></span><a href="/bookmarks.php?type=2&amp;add=' . $id . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '">Добавить в закладки</a></li>';
@@ -723,21 +723,21 @@ function kz_groups_group_sidebar(array $group, $member = null)
     echo '<li class="tp">Доступ к группе</li>';
     echo '<li class="justify">' . ($group['private'] === 'yes' ? 'Это закрытая группа. Вступление происходит по разрешению руководства.' : 'Это открытая группа для всех желающих.') . '</li>';
     echo '<li class="tp">Ваш статус в группе</li>';
-    echo '<li class="justify">' . kz_groups_h(kz_groups_status_text($group, $member)) . '</li>';
+    echo '<li class="justify">' . groups_h(groups_status_text($group, $member)) . '</li>';
     echo '<li class="tp">Руководство</li>';
 
-    $leaders = kz_groups_leaders($id);
+    $leaders = groups_leaders($id);
     if ($leaders) {
         foreach ($leaders as $leader) {
-            echo '<li class="justify">' . kz_groups_user_link((int)$leader['id'], $leader['username'], (int)$leader['class'], $leader) . '</li>';
+            echo '<li class="justify">' . groups_user_link((int)$leader['id'], $leader['username'], (int)$leader['class'], $leader) . '</li>';
         }
     } elseif (!empty($group['owner_username'])) {
-        echo '<li class="justify">' . kz_groups_user_link((int)$group['owner_id'], $group['owner_username'], (int)$group['owner_class'], $group) . '</li>';
+        echo '<li class="justify">' . groups_user_link((int)$group['owner_id'], $group['owner_username'], (int)$group['owner_class'], $group) . '</li>';
     }
     echo '</ul></div>';
 }
 
-function kz_groups_leaders($group_id)
+function groups_leaders($group_id)
 {
     $group_id = (int)$group_id;
     $res = sql_query("
@@ -758,7 +758,7 @@ function kz_groups_leaders($group_id)
     return $rows;
 }
 
-function kz_groups_torrent_rows($group_id, $offset = 0, $limit = 0, $sort = 'date')
+function groups_torrent_rows($group_id, $offset = 0, $limit = 0, $sort = 'date')
 {
     $group_id = (int)$group_id;
     $offset = max(0, (int)$offset);
@@ -787,7 +787,7 @@ function kz_groups_torrent_rows($group_id, $offset = 0, $limit = 0, $sort = 'dat
     return $rows;
 }
 
-function kz_groups_torrent_count($group_id)
+function groups_torrent_count($group_id)
 {
     $group_id = (int)$group_id;
     $res = sql_query("
@@ -802,15 +802,15 @@ function kz_groups_torrent_count($group_id)
     return (int)($row[0] ?? 0);
 }
 
-function kz_groups_torrent_table(array $rows, $empty_text = 'Раздачи в группе пока не добавлены.')
+function groups_torrent_table(array $rows, $empty_text = 'Раздачи в группе пока не добавлены.')
 {
     echo '<div class="bx2_0"><table class="t_peer w100p">';
     echo '<tr class="mn"><td class="z w90"></td><td></td><td class="z">Комм.</td><td class="z">Размер</td><td class="z">Скач.</td><td class="z">Сидов</td><td class="z">Пиров</td><td class="z">Залит</td></tr>';
     if (!$rows) {
-        echo '<tr class="first bg"><td colspan="8" class="center" style="padding:12px 5px;">' . kz_groups_h($empty_text) . '</td></tr>';
+        echo '<tr class="first bg"><td colspan="8" class="center" style="padding:12px 5px;">' . groups_h($empty_text) . '</td></tr>';
     }
     foreach ($rows as $i => $row) {
-        $cat = !empty($row['cat_pic']) ? '<img src="/pic/cat/' . kz_groups_h($row['cat_pic']) . '" class="p90x32" alt="' . kz_groups_h($row['cat_name'] ?? '') . '">' : '';
+        $cat = !empty($row['cat_pic']) ? '<img src="/pic/cat/' . groups_h($row['cat_pic']) . '" class="p90x32" alt="' . groups_h($row['cat_name'] ?? '') . '">' : '';
         $link_class = 'r0';
         if (($row['free'] ?? '') === 'yes') {
             $link_class = 'r1';
@@ -819,36 +819,36 @@ function kz_groups_torrent_table(array $rows, $empty_text = 'Раздачи в �
         }
         echo '<tr class="' . ($i === 0 ? 'first bg' : 'bg') . '">';
         echo '<td class="bt">' . $cat . '</td>';
-        echo '<td class="nam"><a href="/details.php?id=' . (int)$row['id'] . '" class="' . $link_class . '">' . kz_groups_h($row['name']) . '</a></td>';
+        echo '<td class="nam"><a href="/details.php?id=' . (int)$row['id'] . '" class="' . $link_class . '">' . groups_h($row['name']) . '</a></td>';
         echo '<td class="s">' . (int)$row['comments'] . '</td>';
-        echo '<td class="s">' . kz_groups_h(mksize((int)$row['size'])) . '</td>';
+        echo '<td class="s">' . groups_h(mksize((int)$row['size'])) . '</td>';
         echo '<td class="s">' . (int)$row['times_completed'] . '</td>';
         echo '<td class="sl_s">' . ((int)$row['seeders'] + (int)($row['remote_seeders'] ?? 0)) . '</td>';
         echo '<td class="sl_p">' . ((int)$row['leechers'] + (int)($row['remote_leechers'] ?? 0)) . '</td>';
-        echo '<td class="s">' . kz_groups_h(date('d.m.Y в H:i', strtotime($row['added']))) . '</td>';
+        echo '<td class="s">' . groups_h(date('d.m.Y в H:i', strtotime($row['added']))) . '</td>';
         echo '</tr>';
     }
     echo '</table></div>';
 }
 
-function kz_groups_torrent_poster(array $torrent)
+function groups_torrent_poster(array $torrent)
 {
     $image = trim((string)($torrent['image1'] ?? ''));
     if ($image !== '') {
-        return '/thumbnail.php?' . kz_groups_h($image);
+        return '/thumbnail.php?' . groups_h($image);
     }
     if (!empty($torrent['cat_pic'])) {
-        return '/pic/cat/' . kz_groups_h($torrent['cat_pic']);
+        return '/pic/cat/' . groups_h($torrent['cat_pic']);
     }
     return '/pic/default_avatar.gif';
 }
 
-function kz_groups_profile_menu_html()
+function groups_profile_menu_html()
 {
     global $CURUSER;
 
     $user_id = (int)$CURUSER['id'];
-    $username = kz_groups_h($CURUSER['username'] ?? '');
+    $username = groups_h($CURUSER['username'] ?? '');
     $class = (int)($CURUSER['class'] ?? 0);
     $avatar = trim((string)($CURUSER['avatar'] ?? ''));
     if ($avatar === '') {
@@ -856,7 +856,7 @@ function kz_groups_profile_menu_html()
     }
 
     echo '<div class="mn1_menu"><ul class="men u2 w200">';
-    echo '<li class="img"><a href="/userdetails.php?id=' . $user_id . '"><img src="' . kz_groups_h($avatar) . '" class="p200" alt=""></a></li>';
+    echo '<li class="img"><a href="/userdetails.php?id=' . $user_id . '"><img src="' . groups_h($avatar) . '" class="p200" alt=""></a></li>';
     echo '<li class="tp">Меню пользователя</li>';
     echo '<li><span class="bulet"></span><a href="/inbox.php">Личные сообщения</a></li>';
     echo '<li><span class="bulet"></span><a href="/userdetails.php?id=' . $user_id . '">Мой профиль</a></li>';

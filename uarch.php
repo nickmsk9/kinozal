@@ -3,13 +3,13 @@
 require_once 'include/bittorrent.php';
 
 dbconn(false);
-require_once 'include/kz_uarch.php';
+require_once 'include/uarch.php';
 
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	loggedinorreturn();
-	$error = kz_uarch_add_smile((string)($_POST['image_url'] ?? ''));
+	$error = uarch_add_smile((string)($_POST['image_url'] ?? ''));
 
 	if ($error === '') {
 		header('Location: /uarch.php?added=1');
@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	}
 }
 
-$smiles = kz_uarch_smiles(true, 96);
+$smiles = uarch_smiles(true, 96);
 
 stdhead('Архив улыбки');
 ?>
@@ -38,7 +38,7 @@ stdhead('Архив улыбки');
 		<div class="green"><b>Улыбка добавлена.</b></div>
 	<?php } ?>
 	<?php if ($error !== '') { ?>
-		<div class="red"><b><?= kz_uarch_h($error) ?></b></div>
+		<div class="red"><b><?= uarch_h($error) ?></b></div>
 	<?php } ?>
 	<?php if (!empty($CURUSER)) { ?>
 		<form method="post" action="/uarch.php">
@@ -63,13 +63,13 @@ stdhead('Архив улыбки');
 					<li class="tp2 lh center">
 						Улыбка от
 						<?php if ($userid > 0 && $username !== '') { ?>
-							<a href="/userdetails.php?id=<?= $userid ?>" class="u<?= $userclass ?>"><?= kz_uarch_h($username) ?></a>
+							<a href="/userdetails.php?id=<?= $userid ?>" class="u<?= $userclass ?>"><?= uarch_h($username) ?></a>
 						<?php } else { ?>
-							<span class="u<?= $userclass ?>"><?= kz_uarch_h($username !== '' ? $username : 'Пользователь') ?></span>
+							<span class="u<?= $userclass ?>"><?= uarch_h($username !== '' ? $username : 'Пользователь') ?></span>
 						<?php } ?>
 					</li>
 					<li class="center">
-						<img src="<?= kz_uarch_h($image) ?>" width="175" class="uarch-img" alt="">
+						<img src="<?= uarch_h($image) ?>" width="175" class="uarch-img" alt="">
 					</li>
 				</ul>
 			</div>

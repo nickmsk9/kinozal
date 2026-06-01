@@ -4,12 +4,12 @@ if (!defined('IN_TRACKER')) {
 	die('Direct access denied.');
 }
 
-function kz_persons_h($value)
+function persons_h($value)
 {
 	return htmlspecialchars_uni((string)$value);
 }
 
-function kz_persons_ensure_schema()
+function persons_ensure_schema()
 {
 	sql_query("
 		CREATE TABLE IF NOT EXISTS persons (
@@ -62,7 +62,7 @@ function kz_persons_ensure_schema()
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_persons_cp1251_urlencode($value)
+function persons_cp1251_urlencode($value)
 {
 	$value = (string)$value;
 	if (function_exists('iconv')) {
@@ -74,7 +74,7 @@ function kz_persons_cp1251_urlencode($value)
 	return str_replace('%20', '+', rawurlencode($value));
 }
 
-function kz_persons_request_text($value)
+function persons_request_text($value)
 {
 	$value = trim((string)$value);
 	if ($value === '') {
@@ -91,9 +91,9 @@ function kz_persons_request_text($value)
 	return $value;
 }
 
-function kz_persons_url($name, $pid = 0, array $extra = array())
+function persons_url($name, $pid = 0, array $extra = array())
 {
-	$url = '/persons.php?s=' . kz_persons_cp1251_urlencode($name);
+	$url = '/persons.php?s=' . persons_cp1251_urlencode($name);
 	if ((int)$pid > 0) {
 		$url .= '&amp;pid=' . (int)$pid;
 	}
@@ -105,9 +105,9 @@ function kz_persons_url($name, $pid = 0, array $extra = array())
 	return $url;
 }
 
-function kz_persons_find($pid = 0, $name = '')
+function persons_find($pid = 0, $name = '')
 {
-	kz_persons_ensure_schema();
+	persons_ensure_schema();
 
 	$pid = (int)$pid;
 	if ($pid > 0) {
@@ -136,15 +136,15 @@ function kz_persons_find($pid = 0, $name = '')
 	return null;
 }
 
-function kz_persons_find_id_by_name($name)
+function persons_find_id_by_name($name)
 {
-	$person = kz_persons_find(0, $name);
+	$person = persons_find(0, $name);
 	return $person ? (int)$person['id'] : 0;
 }
 
-function kz_persons_photos($person_id, $limit = 0)
+function persons_photos($person_id, $limit = 0)
 {
-	kz_persons_ensure_schema();
+	persons_ensure_schema();
 
 	$person_id = (int)$person_id;
 	if ($person_id <= 0) {
@@ -160,7 +160,7 @@ function kz_persons_photos($person_id, $limit = 0)
 	return $rows;
 }
 
-function kz_persons_save_photos($person_id, $photos_text)
+function persons_save_photos($person_id, $photos_text)
 {
 	$person_id = (int)$person_id;
 	sql_query("DELETE FROM person_photos WHERE person_id = $person_id") or sqlerr(__FILE__, __LINE__);
@@ -176,16 +176,16 @@ function kz_persons_save_photos($person_id, $photos_text)
 	}
 }
 
-function kz_persons_photo_text($person_id)
+function persons_photo_text($person_id)
 {
 	$urls = array();
-	foreach (kz_persons_photos($person_id) as $photo) {
+	foreach (persons_photos($person_id) as $photo) {
 		$urls[] = $photo['image_url'];
 	}
 	return implode("\n", $urls);
 }
 
-function kz_persons_can_edit($person = null)
+function persons_can_edit($person = null)
 {
 	global $CURUSER;
 	if (!$CURUSER) {
@@ -200,17 +200,17 @@ function kz_persons_can_edit($person = null)
 	return (int)$person['created_by'] === (int)$CURUSER['id'];
 }
 
-function kz_persons_user_link($userid, $username, $class = 0, array $row = array())
+function persons_user_link($userid, $username, $class = 0, array $row = array())
 {
 	$userid = (int)$userid;
 	if ($userid <= 0 || $username === '') {
 		return '<i>unknown</i>';
 	}
 	$icons = function_exists('get_user_icons') ? get_user_icons(array_merge($row, array('id' => $userid, 'class' => $class))) : '';
-	return '<a href="/userdetails.php?id=' . $userid . '" class="u' . (int)$class . '">' . kz_persons_h($username) . '</a>' . $icons;
+	return '<a href="/userdetails.php?id=' . $userid . '" class="u' . (int)$class . '">' . persons_h($username) . '</a>' . $icons;
 }
 
-function kz_persons_date($value)
+function persons_date($value)
 {
 	$value = (string)$value;
 	if ($value === '' || $value === '0000-00-00') {
@@ -220,7 +220,7 @@ function kz_persons_date($value)
 	return $ts ? date('d.m.Y', $ts) : $value;
 }
 
-function kz_persons_text($text)
+function persons_text($text)
 {
 	$text = trim((string)$text);
 	if ($text === '') {
@@ -231,7 +231,7 @@ function kz_persons_text($text)
 	return nl2br($text);
 }
 
-function kz_persons_links_html($links)
+function persons_links_html($links)
 {
 	$out = array();
 	foreach (preg_split('#\r\n|\r|\n#', (string)$links) as $line) {
@@ -245,13 +245,13 @@ function kz_persons_links_html($links)
 			list($title, $url) = array_map('trim', explode('|', $line, 2));
 		}
 		if (preg_match('#^https?://#i', $url)) {
-			$out[] = '<a href="' . kz_persons_h($url) . '" target="_blank" class="sbab">' . kz_persons_h($title) . '</a>';
+			$out[] = '<a href="' . persons_h($url) . '" target="_blank" class="sbab">' . persons_h($title) . '</a>';
 		}
 	}
 	return implode('<br />', $out);
 }
 
-function kz_persons_torrent_like_conditions(array $person)
+function persons_torrent_like_conditions(array $person)
 {
 	$terms = array(trim((string)($person['name'] ?? '')));
 	if (!empty($person['original_name'])) {
@@ -267,9 +267,9 @@ function kz_persons_torrent_like_conditions(array $person)
 	return $likes ? '(' . implode(' OR ', $likes) . ')' : '1=0';
 }
 
-function kz_persons_torrent_count(array $person)
+function persons_torrent_count(array $person)
 {
-	$where = kz_persons_torrent_like_conditions($person);
+	$where = persons_torrent_like_conditions($person);
 	$res = sql_query("
 		SELECT COUNT(*) AS c
 		FROM torrents AS t
@@ -280,9 +280,9 @@ function kz_persons_torrent_count(array $person)
 	return (int)($row['c'] ?? 0);
 }
 
-function kz_persons_torrents(array $person, $sort = 'date', $offset = 0, $limit = 50)
+function persons_torrents(array $person, $sort = 'date', $offset = 0, $limit = 50)
 {
-	$where = kz_persons_torrent_like_conditions($person);
+	$where = persons_torrent_like_conditions($person);
 	$order = $sort === 'top'
 		? '(t.seeders + t.times_completed + t.comments + t.numratings) DESC, t.id DESC'
 		: 't.added DESC, t.id DESC';
@@ -307,18 +307,18 @@ function kz_persons_torrents(array $person, $sort = 'date', $offset = 0, $limit 
 	return $rows;
 }
 
-function kz_persons_torrent_poster(array $torrent)
+function persons_torrent_poster(array $torrent)
 {
 	if (!empty($torrent['poster_url'])) {
-		return kz_persons_h($torrent['poster_url']);
+		return persons_h($torrent['poster_url']);
 	}
 	if (!empty($torrent['image1'])) {
-		return 'thumbnail.php?' . kz_persons_h($torrent['image1']);
+		return 'thumbnail.php?' . persons_h($torrent['image1']);
 	}
 	return '/pic/default_avatar.gif';
 }
 
-function kz_persons_pager($base_url, $page, $pages)
+function persons_pager($base_url, $page, $pages)
 {
 	$pages = max(1, (int)$pages);
 	$page = max(0, min((int)$page, $pages - 1));
@@ -334,17 +334,17 @@ function kz_persons_pager($base_url, $page, $pages)
 			$html .= '<li class="dots">...</li>';
 		}
 		$class = $p === $page ? ' class="current"' : '';
-		$html .= '<li' . $class . '><a href="' . kz_persons_h($base_url) . '&amp;page=' . $p . '">' . ($p + 1) . '</a></li>';
+		$html .= '<li' . $class . '><a href="' . persons_h($base_url) . '&amp;page=' . $p . '">' . ($p + 1) . '</a></li>';
 		$prev = $p;
 	}
 	if ($page + 1 < $pages) {
-		$html .= '<li><a rel="next" href="' . kz_persons_h($base_url) . '&amp;page=' . ($page + 1) . '">Вперед</a></li>';
+		$html .= '<li><a rel="next" href="' . persons_h($base_url) . '&amp;page=' . ($page + 1) . '">Вперед</a></li>';
 	}
 	$html .= '</ul></div><div class="clr"></div>';
 	return $html;
 }
 
-function kz_persons_http_json($url)
+function persons_http_json($url)
 {
 	$body = '';
 	if (function_exists('curl_init')) {
@@ -371,7 +371,7 @@ function kz_persons_http_json($url)
 	return is_array($data) ? $data : array();
 }
 
-function kz_persons_wd_label(array $entities, $id)
+function persons_wd_label(array $entities, $id)
 {
 	if ($id === '' || empty($entities[$id])) {
 		return '';
@@ -380,19 +380,19 @@ function kz_persons_wd_label(array $entities, $id)
 	return (string)($labels['ru']['value'] ?? $labels['en']['value'] ?? '');
 }
 
-function kz_persons_wd_entity_id($claim)
+function persons_wd_entity_id($claim)
 {
 	return (string)($claim['mainsnak']['datavalue']['value']['id'] ?? '');
 }
 
-function kz_persons_wd_labels(array $ids)
+function persons_wd_labels(array $ids)
 {
 	$ids = array_values(array_unique(array_filter($ids)));
 	if (!$ids) {
 		return array();
 	}
 
-	$data = kz_persons_http_json('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels&languages=ru|en&ids=' . rawurlencode(implode('|', $ids)));
+	$data = persons_http_json('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels&languages=ru|en&ids=' . rawurlencode(implode('|', $ids)));
 	$labels = array();
 	foreach (($data['entities'] ?? array()) as $id => $entity) {
 		$labels[$id] = (string)($entity['labels']['ru']['value'] ?? $entity['labels']['en']['value'] ?? '');
@@ -400,7 +400,7 @@ function kz_persons_wd_labels(array $ids)
 	return $labels;
 }
 
-function kz_persons_wd_date($claim)
+function persons_wd_date($claim)
 {
 	$time = (string)($claim['mainsnak']['datavalue']['value']['time'] ?? '');
 	if ($time === '') {
@@ -415,7 +415,7 @@ function kz_persons_wd_date($claim)
 	return '';
 }
 
-function kz_persons_import_from_wikipedia($name, $lang = 'ru')
+function persons_import_from_wikipedia($name, $lang = 'ru')
 {
 	$name = trim((string)$name);
 	$lang = preg_match('/^[a-z]{2,3}$/i', (string)$lang) ? strtolower($lang) : 'ru';
@@ -424,10 +424,10 @@ function kz_persons_import_from_wikipedia($name, $lang = 'ru')
 	}
 
 	$api = 'https://' . $lang . '.wikipedia.org/w/api.php';
-	$search = kz_persons_http_json($api . '?action=query&format=json&list=search&srlimit=1&utf8=1&srsearch=' . rawurlencode($name));
+	$search = persons_http_json($api . '?action=query&format=json&list=search&srlimit=1&utf8=1&srsearch=' . rawurlencode($name));
 	$title = (string)($search['query']['search'][0]['title'] ?? $name);
 
-	$page_data = kz_persons_http_json($api . '?action=query&format=json&prop=extracts|pageimages|pageprops|info&explaintext=1&exsectionformat=plain&piprop=original&inprop=url&utf8=1&titles=' . rawurlencode($title));
+	$page_data = persons_http_json($api . '?action=query&format=json&prop=extracts|pageimages|pageprops|info&explaintext=1&exsectionformat=plain&piprop=original&inprop=url&utf8=1&titles=' . rawurlencode($title));
 	$pages = $page_data['query']['pages'] ?? array();
 	$page = $pages ? reset($pages) : array();
 
@@ -440,7 +440,7 @@ function kz_persons_import_from_wikipedia($name, $lang = 'ru')
 
 	$qid = (string)($page['pageprops']['wikibase_item'] ?? '');
 	if ($qid !== '') {
-		$wd = kz_persons_http_json('https://www.wikidata.org/wiki/Special:EntityData/' . rawurlencode($qid) . '.json');
+		$wd = persons_http_json('https://www.wikidata.org/wiki/Special:EntityData/' . rawurlencode($qid) . '.json');
 		$entity = $wd['entities'][$qid] ?? array();
 		$claims = $entity['claims'] ?? array();
 		$labels = $entity['labels'] ?? array();
@@ -453,22 +453,22 @@ function kz_persons_import_from_wikipedia($name, $lang = 'ru')
 			$result['original_name'] = $labels['en']['value'];
 		}
 		if (!empty($claims['P569'][0])) {
-			$result['birth_date'] = kz_persons_wd_date($claims['P569'][0]);
+			$result['birth_date'] = persons_wd_date($claims['P569'][0]);
 		}
 		foreach (array('P19', 'P21', 'P106') as $prop) {
 			foreach (($claims[$prop] ?? array()) as $claim) {
-				$id = kz_persons_wd_entity_id($claim);
+				$id = persons_wd_entity_id($claim);
 				if ($id !== '') {
 					$claim_ids[] = $id;
 				}
 			}
 		}
-		$claim_labels = kz_persons_wd_labels($claim_ids);
+		$claim_labels = persons_wd_labels($claim_ids);
 		if (!empty($claims['P19'][0])) {
-			$result['birth_place'] = (string)($claim_labels[kz_persons_wd_entity_id($claims['P19'][0])] ?? '');
+			$result['birth_place'] = (string)($claim_labels[persons_wd_entity_id($claims['P19'][0])] ?? '');
 		}
 		if (!empty($claims['P21'][0])) {
-			$gender = (string)($claim_labels[kz_persons_wd_entity_id($claims['P21'][0])] ?? '');
+			$gender = (string)($claim_labels[persons_wd_entity_id($claims['P21'][0])] ?? '');
 			if (stripos($gender, 'female') !== false || stripos($gender, 'жен') !== false) {
 				$result['gender'] = 2;
 			} elseif (stripos($gender, 'male') !== false || stripos($gender, 'муж') !== false) {
@@ -478,7 +478,7 @@ function kz_persons_import_from_wikipedia($name, $lang = 'ru')
 		if (!empty($claims['P106'])) {
 			$career = array();
 			foreach (array_slice($claims['P106'], 0, 8) as $claim) {
-				$label = (string)($claim_labels[kz_persons_wd_entity_id($claim)] ?? '');
+				$label = (string)($claim_labels[persons_wd_entity_id($claim)] ?? '');
 				if ($label !== '') {
 					$career[] = $label;
 				}
@@ -490,7 +490,7 @@ function kz_persons_import_from_wikipedia($name, $lang = 'ru')
 	return $result;
 }
 
-function kz_persons_merge_import(array $existing, array $import, $overwrite = false)
+function persons_merge_import(array $existing, array $import, $overwrite = false)
 {
 	$fields = array('name', 'original_name', 'gender', 'poster_url', 'birth_date', 'birth_place', 'career', 'biography', 'source_url');
 	$out = $existing;

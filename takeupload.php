@@ -3,9 +3,9 @@
 require_once("include/BDecode.php");
 require_once("include/BEncode.php");
 require_once("include/bittorrent.php");
-require_once("include/kz_upload.php");
-require_once("include/kz_test_torrents.php");
-require_once("include/kz_multitracker.php");
+require_once("include/upload.php");
+require_once("include/test_torrents.php");
+require_once("include/multitracker.php");
 
 ini_set("upload_max_filesize", $max_torrent_size);
 
@@ -14,7 +14,7 @@ function bark($msg) {
 	genbark($msg, $tracker_lang['error']);
 }
 
-function kz_takeupload_file()
+function takeupload_file()
 {
 	if (isset($_FILES['file'])) {
 		return $_FILES['file'];
@@ -27,7 +27,7 @@ function kz_takeupload_file()
 	return null;
 }
 
-function kz_takeupload_parse_torrent($file)
+function takeupload_parse_torrent($file)
 {
 	global $announce_urls, $DEFAULTBASEURL, $SITENAME, $CURUSER;
 
@@ -90,8 +90,8 @@ function kz_takeupload_parse_torrent($file)
 		$type = "multi";
 	}
 
-	$announce_list = kz_mt_extract_announces($dict);
-	$dict = kz_mt_apply_announces_to_dict($dict, $announce_list);
+	$announce_list = multitracker_extract_announces($dict);
+	$dict = multitracker_apply_announces_to_dict($dict, $announce_list);
 	$dict['info']['private'] = 1;
 	$dict['info']['source'] = "[$DEFAULTBASEURL] $SITENAME";
 	unset($dict['info']['crc32'], $dict['info']['ed2k'], $dict['info']['md5sum'], $dict['info']['sha1'], $dict['info']['tiger']);
@@ -124,9 +124,9 @@ dbconn();
 loggedinorreturn();
 parked();
 
-kz_upload_ensure_schema();
-kz_test_torrents_ensure_schema();
-kz_mt_ensure_schema();
+upload_ensure_schema();
+test_torrents_ensure_schema();
+multitracker_ensure_schema();
 
 $is_test_upload = get_user_class() < UC_VIP || !empty($_GET['test']) || !empty($_POST['test']);
 
@@ -141,14 +141,14 @@ if ($name === '') {
 	bark("Вы должны указать название раздачи.");
 }
 
-$kind = kz_upload_normalize_kind($_POST['kind'] ?? 'video');
+$kind = upload_normalize_kind($_POST['kind'] ?? 'video');
 $catid = (int)$_POST['type'];
-if (!$is_preview && !kz_upload_is_valid_category($kind, $catid)) {
+if (!$is_preview && !upload_is_valid_category($kind, $catid)) {
 	bark("Вы должны выбрать раздел, в который поместить торрент.");
 }
 
-[$kind, $details_data] = kz_upload_collect_post();
-$name = kz_upload_generated_name($details_data, $kind);
+[$kind, $details_data] = upload_collect_post();
+$name = upload_generated_name($details_data, $kind);
 if ($name === '') {
 	bark("Заполните поля, из которых формируется название раздачи.");
 }
@@ -161,7 +161,7 @@ $rgroup = (int)($_POST['rgroup'] ?? 0);
 $rgroup_button = trim((string)($_POST['rbut'] ?? ''));
 
 if ($is_preview) {
-	$descr = kz_upload_build_description($details_data, $kind, $name, 0);
+	$descr = upload_build_description($details_data, $kind, $name, 0);
 	if ($descr === '') {
 		bark("Нечего показывать: заполните описание.");
 	}
@@ -174,22 +174,22 @@ if ($is_preview) {
 	exit;
 }
 
-$file = kz_takeupload_file();
+$file = takeupload_file();
 if (!$file) {
 	bark("missing form data");
 }
 
-$torrent_data = kz_takeupload_parse_torrent($file);
-kz_upload_apply_torrent_size($details_data, $kind, $torrent_data['size']);
+$torrent_data = takeupload_parse_torrent($file);
+upload_apply_torrent_size($details_data, $kind, $torrent_data['size']);
 
-$descr = kz_upload_build_description($details_data, $kind, $name, $torrent_data['size']);
+$descr = upload_build_description($details_data, $kind, $name, $torrent_data['size']);
 if ($descr === '') {
 	bark("Вы должны ввести описание!");
 }
 
 $torrent = htmlspecialchars_uni(str_replace("_", " ", $name));
-$keywords = kz_upload_keywords($details_data, $kind, $torrent);
-$meta_description = kz_upload_meta_description($descr);
+$keywords = upload_keywords($details_data, $kind, $torrent);
+$meta_description = upload_meta_description($descr);
 
 $free = 'no';
 $not_sticky = 'yes';
@@ -235,9 +235,9 @@ if (!$ret) {
 }
 
 $id = mysqli_insert_id($link);
-kz_mt_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
+multitracker_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
 
-kz_upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
+upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
 
 sql_query('INSERT INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES (' . implode(', ', array_map('sqlesc', array($id, md5($descr), format_comment($descr)))) . ')') or sqlerr(__FILE__, __LINE__);
 sql_query("INSERT INTO checkcomm (checkid, userid, torrent) VALUES ($id, " . (int)$CURUSER['id'] . ", 1)") or sqlerr(__FILE__, __LINE__);

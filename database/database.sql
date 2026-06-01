@@ -528,6 +528,16 @@ CREATE TABLE `site_settings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES
+  ('site_online', '1'),
+  ('site_name', 'Торрент трекер Кинозал.ТВ'),
+  ('site_email', 'noreply@localhost'),
+  ('deny_signup', '0'),
+  ('allow_invite_signup', '0'),
+  ('use_captcha', '1'),
+  ('use_blocks', '1'),
+  ('allow_guests_details', '0'),
+  ('maxusers', '10000'),
+  ('max_torrent_size', '1048576'),
   ('reputation_daily_limit', '1'),
   ('reputation_signup_value', '1');
 
@@ -1373,7 +1383,7 @@ COMMIT;
 #
 
 INSERT INTO `orbital_blocks` (`bid`, `bkey`, `title`, `content`, `bposition`, `weight`, `active`, `time`, `blockfile`, `view`, `expire`, `action`, `which`) VALUES
-  (1,'','Администрация','<table border=\"0\"><tr>\r\n<td class=\"block\"><a href=\"admincp.php\">Админка</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"users.php\">Список пользователей</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"staffmess.php\">Массовое ЛС</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"ipcheck.php\">Двойники по IP</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"logout.php\">Выйти</a></td>\r\n</tr></table>','r',1,1,'','',2,'0','d','all'),
+  (1,'','Администрация','<table border=\"0\"><tr>\r\n<td class=\"block\"><a href=\"/admincp.php\">Админка</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/users.php\">Список пользователей</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/staffmess.php\">Массовое ЛС</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/usersearch.php\">Поиск по IP</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/logout.php\">Выйти</a></td>\r\n</tr></table>','r',1,1,'','',2,'0','d','all'),
   (13,'','Топ раздач','','r',0,1,'','block-top-torrents.php',0,'0','d','all'),
   (8,'','Статистика трекера','','r',6,1,'','block-stats.php',0,'0','d','ihome,'),
   (12,'','Переходящие кубки','','r',4,1,'','block-cups.php',0,'0','d','ihome,'),

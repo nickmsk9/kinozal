@@ -6,9 +6,9 @@ if (!defined('IN_TRACKER') && !defined('ADMIN_FILE')) {
 
 require_once __DIR__ . '/groupex.php';
 
-function kz_group_page_ensure_schema()
+function group_page_ensure_schema()
 {
-	kz_groups_ensure_schema();
+	groups_ensure_schema();
 
 	sql_query("
 		CREATE TABLE IF NOT EXISTS group_page_items (
@@ -24,14 +24,14 @@ function kz_group_page_ensure_schema()
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_group_page_h($value)
+function group_page_h($value)
 {
 	return htmlspecialchars_uni((string)$value);
 }
 
-function kz_group_page_rows($active_only = true)
+function group_page_rows($active_only = true)
 {
-	kz_group_page_ensure_schema();
+	group_page_ensure_schema();
 
 	$where = $active_only ? "WHERE i.active = 'yes' AND g.visible = 'yes'" : '';
 	$res = sql_query("
@@ -50,9 +50,9 @@ function kz_group_page_rows($active_only = true)
 	return $rows;
 }
 
-function kz_group_page_public_rows($limit_sql = '')
+function group_page_public_rows($limit_sql = '')
 {
-	$rows = kz_group_page_rows(true);
+	$rows = group_page_rows(true);
 	if ($rows) {
 		return $rows;
 	}
@@ -73,12 +73,12 @@ function kz_group_page_public_rows($limit_sql = '')
 	return $rows;
 }
 
-function kz_group_page_avatar(array $group)
+function group_page_avatar(array $group)
 {
 	$id = (int)($group['id'] ?? 0);
 	$avatar = trim((string)($group['avatar'] ?? ''));
 	if ($avatar !== '') {
-		return kz_group_page_h($avatar);
+		return group_page_h($avatar);
 	}
 	if ($id > 0 && file_exists(ROOT_PATH . 'pic/groupex/' . $id . '.gif')) {
 		return '/pic/groupex/' . $id . '.gif';
@@ -86,7 +86,7 @@ function kz_group_page_avatar(array $group)
 	return '/pic/default_avatar.gif';
 }
 
-function kz_group_page_card(array $group)
+function group_page_card(array $group)
 {
 	global $CURUSER;
 
@@ -94,8 +94,8 @@ function kz_group_page_card(array $group)
 	$type = (int)($group['type'] ?? 1);
 	$members = (int)($group['members_count'] ?? 0);
 	$torrents = (int)($group['torrents_count'] ?? 0);
-	$hash = function_exists('kz_groups_hash') ? kz_groups_hash() : '';
-	$bookmarked = $CURUSER ? kz_groups_is_bookmarked($id, (int)$CURUSER['id']) : false;
+	$hash = function_exists('groups_hash') ? groups_hash() : '';
+	$bookmarked = $CURUSER ? groups_is_bookmarked($id, (int)$CURUSER['id']) : false;
 	$bookmark_action = $bookmarked ? 'delete' : 'add';
 	$bookmark_text = $bookmarked ? 'Убрать из закладок' : 'Добавить в закладки';
 	$park = !empty($group['private']) && $group['private'] === 'yes' ? '<img src="/pic/parked.gif" alt=""> ' : '';
@@ -103,10 +103,10 @@ function kz_group_page_card(array $group)
 	echo '<div class="bx2_0">';
 	echo '<table class="tables2 w100p">';
 	echo '<tr>';
-	echo '<td width="90" valign="top"><a href="/groupex.php?id=' . $id . '"><img src="' . kz_group_page_avatar($group) . '" class="p88x31" alt=""></a></td>';
+	echo '<td width="90" valign="top"><a href="/groupex.php?id=' . $id . '"><img src="' . group_page_avatar($group) . '" class="p88x31" alt=""></a></td>';
 	echo '<td valign="top">';
-	echo $park . '<a href="/groupex.php?id=' . $id . '">' . kz_group_page_h($group['name']) . '</a><br>';
-	echo 'Тип группы: <a class="sba" href="/groupexlist.php?action=search&amp;type=' . $type . '">' . kz_group_page_h(kz_groups_type_name($type)) . '</a>';
+	echo $park . '<a href="/groupex.php?id=' . $id . '">' . group_page_h($group['name']) . '</a><br>';
+	echo 'Тип группы: <a class="sba" href="/groupexlist.php?action=search&amp;type=' . $type . '">' . group_page_h(groups_type_name($type)) . '</a>';
 	echo ', участников: ' . $members;
 	if ($torrents > 0) {
 		echo ', раздач: ' . $torrents;

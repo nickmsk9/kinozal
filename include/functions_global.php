@@ -998,7 +998,7 @@ function is_valid_user_class($class) {
 	return is_numeric($class) && floor($class) == $class && $class >= UC_USER && $class <= UC_SYSOP;
 }
 
-function kz_user_daily_torrent_limit($class)
+function user_daily_torrent_limit($class)
 {
 	switch ((int)$class) {
 		case UC_USER:
@@ -1012,9 +1012,9 @@ function kz_user_daily_torrent_limit($class)
 	}
 }
 
-function kz_user_effective_torrent_limit($user)
+function user_effective_torrent_limit($user)
 {
-	$limit = kz_user_daily_torrent_limit((int)($user['class'] ?? UC_USER));
+	$limit = user_daily_torrent_limit((int)($user['class'] ?? UC_USER));
 	$class = (int)($user['class'] ?? UC_USER);
 
 	$vipUntil = (string)($user['pay_vip_until'] ?? '');
@@ -1041,7 +1041,7 @@ function kz_user_effective_torrent_limit($user)
 	return $limit;
 }
 
-function kz_torrent_downloads_ensure_schema()
+function torrent_downloads_ensure_schema()
 {
 	static $ready = false;
 
@@ -1064,9 +1064,9 @@ function kz_torrent_downloads_ensure_schema()
 	$ready = true;
 }
 
-function kz_torrent_downloads_today($userid)
+function torrent_downloads_today($userid)
 {
-	kz_torrent_downloads_ensure_schema();
+	torrent_downloads_ensure_schema();
 
 	$userid = (int)$userid;
 	$res = sql_query("
@@ -1080,9 +1080,9 @@ function kz_torrent_downloads_today($userid)
 	return $row ? (int)$row['cnt'] : 0;
 }
 
-function kz_torrent_download_seen_today($userid, $torrent)
+function torrent_download_seen_today($userid, $torrent)
 {
-	kz_torrent_downloads_ensure_schema();
+	torrent_downloads_ensure_schema();
 
 	$userid = (int)$userid;
 	$torrent = (int)$torrent;
@@ -1098,9 +1098,9 @@ function kz_torrent_download_seen_today($userid, $torrent)
 	return (bool)mysqli_fetch_assoc($res);
 }
 
-function kz_torrent_download_register($userid, $torrent)
+function torrent_download_register($userid, $torrent)
 {
-	kz_torrent_downloads_ensure_schema();
+	torrent_downloads_ensure_schema();
 
 	$userid = (int)$userid;
 	$torrent = (int)$torrent;

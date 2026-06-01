@@ -1,11 +1,11 @@
 <?php
 
 require_once __DIR__ . '/include/bittorrent.php';
-require_once __DIR__ . '/include/kz_group_page.php';
+require_once __DIR__ . '/include/group_page.php';
 
 dbconn(false);
 loggedinorreturn();
-kz_group_page_ensure_schema();
+group_page_ensure_schema();
 
 $res = sql_query("
 	SELECT COUNT(*)
@@ -23,7 +23,7 @@ if ($has_items) {
 
 $perpage = 30;
 list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, '/group.php?');
-$groups = $has_items ? kz_group_page_rows(true) : kz_group_page_public_rows($limit);
+$groups = $has_items ? group_page_rows(true) : group_page_public_rows($limit);
 
 if ($has_items && $limit) {
 	$page = isset($_GET['page']) ? max(0, (int)$_GET['page']) : 0;
@@ -53,7 +53,7 @@ stdhead('Группы');
 		</div>
 	<?php } else { ?>
 		<?php foreach ($groups as $group) { ?>
-			<?php kz_group_page_card($group); ?>
+			<?php group_page_card($group); ?>
 		<?php } ?>
 	<?php } ?>
 

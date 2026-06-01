@@ -9,11 +9,11 @@ if ($type < 0 || $type > 3) {
     $type = 0;
 }
 
-if (function_exists('kz_cups_ensure_schema')) {
-    kz_cups_ensure_schema();
+if (function_exists('cups_ensure_schema')) {
+    cups_ensure_schema();
 }
-if (function_exists('kz_statuses_ensure_schema')) {
-    kz_statuses_ensure_schema();
+if (function_exists('statuses_ensure_schema')) {
+    statuses_ensure_schema();
 }
 
 function doku_tab($type, $current, $title, $url)

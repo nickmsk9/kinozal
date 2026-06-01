@@ -1,13 +1,13 @@
 <?php
 
 require_once("include/bittorrent.php");
-require_once("include/kz_test_torrents.php");
-require_once("include/kz_multitracker.php");
+require_once("include/test_torrents.php");
+require_once("include/multitracker.php");
 
 dbconn(false);
 parked();
-kz_test_torrents_ensure_schema();
-kz_mt_ensure_schema();
+test_torrents_ensure_schema();
+multitracker_ensure_schema();
 
 function browsetest_fmt_added($datetime)
 {
@@ -17,7 +17,7 @@ function browsetest_fmt_added($datetime)
 
 	$ts = strtotime($datetime);
 	if (!$ts) {
-		return kz_test_torrents_h($datetime);
+		return test_torrents_h($datetime);
 	}
 
 	if (date('Y-m-d', $ts) === date('Y-m-d')) {
@@ -37,7 +37,7 @@ function browsetest_redirect()
 	exit;
 }
 
-$can_manage_tests = kz_test_torrents_can_manage();
+$can_manage_tests = test_torrents_can_manage();
 $current_user_id = !empty($CURUSER['id']) ? (int)$CURUSER['id'] : 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -171,9 +171,9 @@ stdhead('Тестовые раздачи');
 			<?php while ($row = mysqli_fetch_assoc($torrents)) { ?>
 				<?php
 				$id = (int)$row['id'];
-				$title = kz_test_torrents_h($row['name']);
-				$catPic = !empty($row['cat_pic']) ? kz_test_torrents_h($row['cat_pic']) : '';
-				$catName = !empty($row['cat_name']) ? kz_test_torrents_h($row['cat_name']) : '';
+				$title = test_torrents_h($row['name']);
+				$catPic = !empty($row['cat_pic']) ? test_torrents_h($row['cat_pic']) : '';
+				$catName = !empty($row['cat_name']) ? test_torrents_h($row['cat_name']) : '';
 				$comments = (int)$row['comments'];
 				$sizeText = mksize((int)$row['size']);
 				$seeders = (int)$row['seeders'];
@@ -205,7 +205,7 @@ stdhead('Тестовые раздачи');
 					</td>
 					<td class="s">
 						<?php if (!empty($row['helper_username'])) { ?>
-							<a href="userdetails.php?id=<?= $helperId ?>" class="u<?= (int)$row['helper_class'] ?>"><?= kz_test_torrents_h($row['helper_username']) ?></a>
+							<a href="userdetails.php?id=<?= $helperId ?>" class="u<?= (int)$row['helper_class'] ?>"><?= test_torrents_h($row['helper_username']) ?></a>
 						<?php } ?>
 						<?php if ($can_manage_tests) { ?>
 							<?php if ($helperId === 0 || $helperId === $current_user_id) { ?>
@@ -231,7 +231,7 @@ stdhead('Тестовые раздачи');
 					<td class="s"><?= $addedText ?></td>
 					<td class="sl">
 						<?php if (!empty($row['username'])) { ?>
-							<a href="userdetails.php?id=<?= (int)$row['owner'] ?>" class="u<?= (int)$row['class'] ?>"><?= kz_test_torrents_h($row['username']) ?></a>
+							<a href="userdetails.php?id=<?= (int)$row['owner'] ?>" class="u<?= (int)$row['class'] ?>"><?= test_torrents_h($row['username']) ?></a>
 						<?php } else { ?>
 							<i>(unknown)</i>
 						<?php } ?>
@@ -251,7 +251,7 @@ stdhead('Тестовые раздачи');
 	<div class="small" style="padding:6px 0 0 0;"><?= $pagerbottom ?></div>
 <?php } ?>
 
-<?= kz_page_online_box(array('/browsetest.php%', '%/browsetest.php%'), 'пока никого') ?>
+<?= page_online_box(array('/browsetest.php%', '%/browsetest.php%'), 'пока никого') ?>
 
 <?php
 stdfoot();

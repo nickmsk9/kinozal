@@ -5,7 +5,7 @@ require_once __DIR__ . '/include/groupex.php';
 
 dbconn(false);
 loggedinorreturn();
-kz_groups_ensure_schema();
+groups_ensure_schema();
 
 function groupex_create_bark($message)
 {
@@ -13,7 +13,7 @@ function groupex_create_bark($message)
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'create') {
-	$name = kz_groups_request_text($_POST['name'] ?? '');
+	$name = groups_request_text($_POST['name'] ?? '');
 	$avatar = trim((string)($_POST['avatar'] ?? ''));
 	$private = ($_POST['private'] ?? 'no') === 'yes' ? 'yes' : 'no';
 	$type = (int)($_POST['type'] ?? 1);
@@ -32,13 +32,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') ==
 	if ($name_len < 5) {
 		groupex_create_bark('Короткое название группы.');
 	}
-	if (!isset(kz_groups_types()[$type])) {
+	if (!isset(groups_types()[$type])) {
 		groupex_create_bark('Не выбран тип группы.');
 	}
-	if (!isset(kz_groups_categories()[$cat])) {
+	if (!isset(groups_categories()[$cat])) {
 		groupex_create_bark('Не выбрана категория.');
 	}
-	if (!isset(kz_groups_subcategories_for($cat)[$subcat])) {
+	if (!isset(groups_subcategories_for($cat)[$subcat])) {
 		groupex_create_bark('Не выбрана подкатегория.');
 	}
 	if ($description_len < 50) {
@@ -59,8 +59,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') ==
 		INSERT INTO groupex_members (group_id, userid, role, status, added_at, updated_at)
 		VALUES ($group_id, $userid, 'owner', 'member', NOW(), NOW())
 	") or sqlerr(__FILE__, __LINE__);
-	kz_groups_log($group_id, $userid, 'create', 'Создана группа');
-	kz_groups_refresh_counts($group_id);
+	groups_log($group_id, $userid, 'create', 'Создана группа');
+	groups_refresh_counts($group_id);
 
 	header('Location: /groupex.php?id=' . $group_id);
 	exit;
@@ -68,7 +68,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') ==
 
 $hide_right_blocks = true;
 stdhead('Создание новой группы');
-kz_groups_subcat_script(array('gsearch_subcatsel' => (int)($_GET['subcatsel'] ?? 0), 'subcatsel' => 0));
+groups_subcat_script(array('gsearch_subcatsel' => (int)($_GET['subcatsel'] ?? 0), 'subcatsel' => 0));
 
 ?>
 <script type="text/javascript">
@@ -106,7 +106,7 @@ function checkform()
 		::
 		<a href="/groupexcreate.php" class="sbab">Создание новой группы</a>
 	</div>
-	<?php kz_groups_search_sidebar('На этой странице Вы можете создать новую группу.', false); ?>
+	<?php groups_search_sidebar('На этой странице Вы можете создать новую группу.', false); ?>
 	<div class="mn3_content">
 		<form name="cmt" id="cmt" method="post" action="/groupexcreate.php" onsubmit="return checkform();">
 			<div class="bx1">
@@ -132,7 +132,7 @@ function checkform()
 						<td>Тип группы:</td>
 						<td>
 							<select name="type" id="type" class="w250">
-								<?= kz_groups_options(kz_groups_types(), 1) ?>
+								<?= groups_options(groups_types(), 1) ?>
 							</select>
 						</td>
 					</tr>
@@ -140,7 +140,7 @@ function checkform()
 						<td>Категория:</td>
 						<td>
 							<select name="cat" id="cat" onchange="kzGroupsSubcatFor('cat', 'subcatsel');" class="w250">
-								<?= kz_groups_options(kz_groups_categories(), 0, 'Выберите из списка категорию') ?>
+								<?= groups_options(groups_categories(), 0, 'Выберите из списка категорию') ?>
 							</select>
 							<select name="subcatsel" id="subcatsel" class="w250">
 								<option value="0">Не выбрана категория</option>

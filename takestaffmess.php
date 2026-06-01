@@ -62,7 +62,7 @@ write_log("Массовое сообщение от пользователя $CU
 sql_query("INSERT INTO messages (sender, receiver, added, msg, subject) SELECT $sender_id, id, NOW(), ".sqlesc($msg).", ".sqlesc($subject)." FROM users WHERE class IN (".implode(", ", array_map("sqlesc", $clases)).")") or sqlerr(__FILE__,__LINE__);
 $counter = mysql_affected_rows();
 
-header("Refresh: 2; url=staffmess.php");
+header("Refresh: 2; url=/staffmess.php");
 
 stderr("Успешно", "Отправлено $counter сообщений.");
 

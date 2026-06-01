@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/include/bittorrent.php';
-require_once __DIR__ . '/include/kz_copyright.php';
+require_once __DIR__ . '/include/copyright.php';
 
 dbconn(false);
 

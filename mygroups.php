@@ -5,7 +5,7 @@ require_once __DIR__ . '/include/groupex.php';
 
 dbconn(false);
 loggedinorreturn();
-kz_groups_ensure_schema();
+groups_ensure_schema();
 
 $userid = (int)$CURUSER['id'];
 
@@ -24,10 +24,10 @@ stdhead('Мои группы');
 
 ?>
 <div class="mn_wrap">
-	<?php kz_groups_profile_menu_html(); ?>
+	<?php groups_profile_menu_html(); ?>
 	<div class="mn1_content">
 		<div class="bx1 u2">
-			<a href="/userdetails.php?id=<?= (int)$CURUSER['id'] ?>" class="u<?= (int)$CURUSER['class'] ?>"><?= kz_groups_h($CURUSER['username']) ?></a>
+			<a href="/userdetails.php?id=<?= (int)$CURUSER['id'] ?>" class="u<?= (int)$CURUSER['class'] ?>"><?= groups_h($CURUSER['username']) ?></a>
 		</div>
 		<div class="bx1 justify">
 			<span class="u2">Мои группы</span>
@@ -43,7 +43,7 @@ stdhead('Мои группы');
 			$found = false;
 			while ($group = mysqli_fetch_assoc($res)) {
 				$found = true;
-				kz_groups_group_card($group, 'mine');
+				groups_group_card($group, 'mine');
 			}
 			if (!$found) {
 				echo '<div class="pad10x10 center">Вы пока не состоите ни в одной группе.</div>';

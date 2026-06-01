@@ -22,20 +22,20 @@ $vote = (string)($_GET["vote"] ?? $_POST["vote"] ?? "plus");
 $vote = $vote === "minus" ? "minus" : "plus";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-	kz_reputation_add($userid, $vote, $_POST["description"] ?? "");
+	reputation_add($userid, $vote, $_POST["description"] ?? "");
 	header("Location: userdetails.php?id=" . $userid);
 	exit;
 }
 
 $profile_class = "u" . (int)$user["class"];
-$profile_name = kz_rep_h($user["username"]);
-$left_today = kz_reputation_left_today((int)$CURUSER["id"]);
-$daily_limit = kz_reputation_daily_limit();
+$profile_name = reputation_h($user["username"]);
+$left_today = reputation_left_today((int)$CURUSER["id"]);
+$daily_limit = reputation_daily_limit();
 $checked_plus = $vote === "plus" ? " checked" : "";
 $checked_minus = $vote === "minus" ? " checked" : "";
-$viewer = function_exists('kz_pay_user') ? kz_pay_user((int)$CURUSER['id']) : $CURUSER;
-$vote_cost = function_exists('kz_pay_int_setting') ? kz_pay_int_setting('reputation_vote_cost', 1) : 1;
-$viewer_votes = function_exists('kz_pay_user_votes_from_array') ? kz_pay_user_votes_from_array($viewer) : 0;
+$viewer = function_exists('pay_user') ? pay_user((int)$CURUSER['id']) : $CURUSER;
+$vote_cost = function_exists('pay_int_setting') ? pay_int_setting('reputation_vote_cost', 1) : 1;
+$viewer_votes = function_exists('pay_user_votes_from_array') ? pay_user_votes_from_array($viewer) : 0;
 
 $hide_right_blocks = true;
 stdhead("&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; :: " . $user["username"]);
@@ -43,7 +43,7 @@ stdhead("&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; :: " . 
 ?>
 <div class="mn_wrap">
 <div class="mn1_menu">
-<?= kz_profile_menu_html($user, $viewer ?: $CURUSER) ?>
+<?= profile_menu_html($user, $viewer ?: $CURUSER) ?>
 </div>
 <div class="mn1_content">
 <div class="bx1 <?= $profile_class ?>"><a href="/userdetails.php?id=<?= $userid ?>" class="<?= $profile_class ?>"><?= $profile_name ?></a><?= function_exists('get_user_icons') ? get_user_icons($user) : '' ?></div>

@@ -4,12 +4,12 @@ if (!defined('IN_TRACKER') && !defined('ADMIN_FILE') && !defined('BLOCK_FILE')) 
 	die('Direct access denied.');
 }
 
-function kz_pay_h($value)
+function pay_h($value)
 {
 	return htmlspecialchars_uni((string)$value);
 }
 
-function kz_pay_table_exists($table)
+function pay_table_exists($table)
 {
 	$table = trim((string)$table);
 	if ($table === '' || !preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
@@ -20,7 +20,7 @@ function kz_pay_table_exists($table)
 	return mysqli_num_rows($res) > 0;
 }
 
-function kz_pay_column_exists($table, $column)
+function pay_column_exists($table, $column)
 {
 	$table = trim((string)$table);
 	$column = trim((string)$column);
@@ -32,14 +32,14 @@ function kz_pay_column_exists($table, $column)
 	return mysqli_num_rows($res) > 0;
 }
 
-function kz_pay_add_column($table, $column, $definition)
+function pay_add_column($table, $column, $definition)
 {
 	$table = trim((string)$table);
 	$column = trim((string)$column);
 	if ($table === '' || $column === '' || !preg_match('/^[a-zA-Z0-9_]+$/', $table . $column)) {
 		return;
 	}
-	if (kz_pay_column_exists($table, $column)) {
+	if (pay_column_exists($table, $column)) {
 		return;
 	}
 
@@ -52,7 +52,7 @@ function kz_pay_add_column($table, $column, $definition)
 	}
 }
 
-function kz_pay_ensure_schema()
+function pay_ensure_schema()
 {
 	static $ready = false;
 
@@ -74,9 +74,9 @@ function kz_pay_ensure_schema()
 		return;
 	}
 
-	kz_pay_add_column('users', 'pay_votes', "pay_votes int(10) unsigned NOT NULL DEFAULT '0' AFTER bonus");
-	kz_pay_add_column('users', 'pay_donor_until', 'pay_donor_until datetime NULL DEFAULT NULL AFTER donor');
-	kz_pay_add_column('users', 'pay_vip_until', 'pay_vip_until datetime NULL DEFAULT NULL AFTER pay_donor_until');
+	pay_add_column('users', 'pay_votes', "pay_votes int(10) unsigned NOT NULL DEFAULT '0' AFTER bonus");
+	pay_add_column('users', 'pay_donor_until', 'pay_donor_until datetime NULL DEFAULT NULL AFTER donor');
+	pay_add_column('users', 'pay_vip_until', 'pay_vip_until datetime NULL DEFAULT NULL AFTER pay_donor_until');
 
 	sql_query("
 		CREATE TABLE IF NOT EXISTS pay_settings (
@@ -158,16 +158,16 @@ function kz_pay_ensure_schema()
 		") or sqlerr(__FILE__, __LINE__);
 	}
 
-	kz_pay_install_home_block();
+	pay_install_home_block();
 }
 
-function kz_pay_install_home_block()
+function pay_install_home_block()
 {
-	if (!kz_pay_table_exists('orbital_blocks')) {
+	if (!pay_table_exists('orbital_blocks')) {
 		return;
 	}
 
-	kz_pay_prune_home_block_duplicates();
+	pay_prune_home_block_duplicates();
 
 	$res = sql_query("SELECT bid FROM orbital_blocks WHERE blockfile = 'block-pay.php' LIMIT 1") or sqlerr(__FILE__, __LINE__);
 	if (mysqli_fetch_assoc($res)) {
@@ -179,10 +179,10 @@ function kz_pay_install_home_block()
 		VALUES ('', 'Меценаты', '', 'c', 100, 1, '0', 'block-pay.php', 1, '0', 'd', 'ihome,', 'yes')
 	") or sqlerr(__FILE__, __LINE__);
 
-	kz_pay_prune_home_block_duplicates();
+	pay_prune_home_block_duplicates();
 }
 
-function kz_pay_prune_home_block_duplicates()
+function pay_prune_home_block_duplicates()
 {
 	sql_query("
 		DELETE FROM orbital_blocks
@@ -197,7 +197,7 @@ function kz_pay_prune_home_block_duplicates()
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_pay_setting($key, $default = '')
+function pay_setting($key, $default = '')
 {
 	static $settings = null;
 
@@ -217,9 +217,9 @@ function kz_pay_setting($key, $default = '')
 	return array_key_exists($key, $settings) ? $settings[$key] : $default;
 }
 
-function kz_pay_set_setting($key, $value)
+function pay_set_setting($key, $value)
 {
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	sql_query("
 		INSERT INTO pay_settings (setting_key, setting_value)
 		VALUES (" . sqlesc((string)$key, true) . ", " . sqlesc((string)$value, true) . ")
@@ -227,14 +227,14 @@ function kz_pay_set_setting($key, $value)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_pay_int_setting($key, $default = 0)
+function pay_int_setting($key, $default = 0)
 {
-	return max(0, (int)kz_pay_setting($key, $default));
+	return max(0, (int)pay_setting($key, $default));
 }
 
-function kz_pay_exchange_options()
+function pay_exchange_options()
 {
-	$raw = kz_pay_setting('exchange_options', '');
+	$raw = pay_setting('exchange_options', '');
 	$options = array();
 	foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
 		$line = trim((string)$line);
@@ -257,24 +257,24 @@ function kz_pay_exchange_options()
 	return $options;
 }
 
-function kz_pay_user_votes_from_array($user)
+function pay_user_votes_from_array($user)
 {
 	return isset($user['pay_votes']) ? (int)$user['pay_votes'] : 0;
 }
 
-function kz_pay_user($userid)
+function pay_user($userid)
 {
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	$userid = (int)$userid;
 	$res = sql_query("SELECT * FROM users WHERE id = $userid LIMIT 1") or sqlerr(__FILE__, __LINE__);
 	$user = mysqli_fetch_assoc($res);
 	if ($user) {
-		kz_pay_refresh_user_perks($user);
+		pay_refresh_user_perks($user);
 	}
 	return $user ?: null;
 }
 
-function kz_pay_refresh_user_perks($user)
+function pay_refresh_user_perks($user)
 {
 	$userid = (int)($user['id'] ?? 0);
 	if ($userid <= 0) {
@@ -293,7 +293,7 @@ function kz_pay_refresh_user_perks($user)
 	}
 }
 
-function kz_pay_log($userid, $operation, $bonus_delta, $votes_delta, $uploaded_delta, $details)
+function pay_log($userid, $operation, $bonus_delta, $votes_delta, $uploaded_delta, $details)
 {
 	$userid = (int)$userid;
 	$username = '';
@@ -320,11 +320,11 @@ function kz_pay_log($userid, $operation, $bonus_delta, $votes_delta, $uploaded_d
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_pay_exchange_bonus($userid, $bonus_cost, $votes, $title)
+function pay_exchange_bonus($userid, $bonus_cost, $votes, $title)
 {
 	global $link;
 
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	$userid = (int)$userid;
 	$bonus_cost = max(0, (float)$bonus_cost);
 	$votes = max(0, (int)$votes);
@@ -344,19 +344,19 @@ function kz_pay_exchange_bonus($userid, $bonus_cost, $votes, $title)
 		return 'Недостаточно бонусов для обмена.';
 	}
 
-	kz_pay_log($userid, 'exchange', -$bonus_cost, $votes, 0, $title);
+	pay_log($userid, 'exchange', -$bonus_cost, $votes, 0, $title);
 	return '';
 }
 
-function kz_pay_charge_votes($userid, $cost, $operation, $details)
+function pay_charge_votes($userid, $cost, $operation, $details)
 {
 	global $link;
 
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	$userid = (int)$userid;
 	$cost = max(0, (int)$cost);
 	if ($cost <= 0) {
-		kz_pay_log($userid, $operation, 0, 0, 0, $details);
+		pay_log($userid, $operation, 0, 0, 0, $details);
 		return true;
 	}
 
@@ -371,11 +371,11 @@ function kz_pay_charge_votes($userid, $cost, $operation, $details)
 		return false;
 	}
 
-	kz_pay_log($userid, $operation, 0, -$cost, 0, $details);
+	pay_log($userid, $operation, 0, -$cost, 0, $details);
 	return true;
 }
 
-function kz_pay_credit_votes($userid, $votes, $details, $operation = 'admin_credit')
+function pay_credit_votes($userid, $votes, $details, $operation = 'admin_credit')
 {
 	$userid = (int)$userid;
 	$votes = (int)$votes;
@@ -388,17 +388,17 @@ function kz_pay_credit_votes($userid, $votes, $details, $operation = 'admin_cred
 	} else {
 		sql_query("UPDATE users SET pay_votes = GREATEST(0, pay_votes - " . abs($votes) . ") WHERE id = $userid") or sqlerr(__FILE__, __LINE__);
 	}
-	kz_pay_log($userid, $operation, 0, $votes, 0, $details);
+	pay_log($userid, $operation, 0, $votes, 0, $details);
 	return true;
 }
 
-function kz_pay_extend_mysql_datetime($column, $months = 1)
+function pay_extend_mysql_datetime($column, $months = 1)
 {
 	$months = max(1, (int)$months);
 	return "$column = IF($column IS NULL OR $column < NOW(), DATE_ADD(NOW(), INTERVAL $months MONTH), DATE_ADD($column, INTERVAL $months MONTH))";
 }
 
-function kz_pay_user_link($row)
+function pay_user_link($row)
 {
 	$userid = (int)($row['userid'] ?? $row['id'] ?? 0);
 	$username = (string)($row['username'] ?? '');
@@ -407,12 +407,12 @@ function kz_pay_user_link($row)
 		return '<i>unknown</i>';
 	}
 	$icons = function_exists('get_user_icons') ? get_user_icons(array_merge($row, array('id' => $userid, 'class' => $class))) : '';
-	return '<a href="/userdetails.php?id=' . $userid . '" class="u' . $class . '">' . kz_pay_h($username) . '</a>' . $icons;
+	return '<a href="/userdetails.php?id=' . $userid . '" class="u' . $class . '">' . pay_h($username) . '</a>' . $icons;
 }
 
-function kz_pay_recent_helpers($limit = 20)
+function pay_recent_helpers($limit = 20)
 {
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	$limit = max(1, (int)$limit);
 	$res = sql_query("
 		SELECT u.id AS userid, u.username, u.class, u.donor, u.warned, u.enabled, MAX(t.created_at) AS last_at, SUM(t.votes_delta) AS votes_sum, COUNT(*) AS ops
@@ -432,9 +432,9 @@ function kz_pay_recent_helpers($limit = 20)
 	return $rows;
 }
 
-function kz_pay_top_helpers($mode = 'active', $limit = 20)
+function pay_top_helpers($mode = 'active', $limit = 20)
 {
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	$limit = max(1, (int)$limit);
 	$order = $mode === 'votes' ? 'votes_sum DESC, ops DESC' : 'ops DESC, votes_sum DESC';
 
@@ -456,21 +456,21 @@ function kz_pay_top_helpers($mode = 'active', $limit = 20)
 	return $rows;
 }
 
-function kz_pay_user_list_html($rows, $empty = 'пока нет операций')
+function pay_user_list_html($rows, $empty = 'пока нет операций')
 {
 	if (!$rows) {
-		return '<span class="small">' . kz_pay_h($empty) . '</span>';
+		return '<span class="small">' . pay_h($empty) . '</span>';
 	}
 	$out = array();
 	foreach ($rows as $row) {
-		$out[] = '<span class="nowrap"><img src="/pic/emty.gif" class="i2 c' . max(1, min(37, (int)(($row['userid'] ?? 1) % 37 + 1))) . '">' . kz_pay_user_link($row) . '</span>';
+		$out[] = '<span class="nowrap"><img src="/pic/emty.gif" class="i2 c' . max(1, min(37, (int)(($row['userid'] ?? 1) % 37 + 1))) . '">' . pay_user_link($row) . '</span>';
 	}
 	return implode(', ', $out);
 }
 
-function kz_pay_user_transactions($userid, $limit = 20)
+function pay_user_transactions($userid, $limit = 20)
 {
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	$userid = (int)$userid;
 	$limit = max(1, (int)$limit);
 	$res = sql_query("
@@ -488,7 +488,7 @@ function kz_pay_user_transactions($userid, $limit = 20)
 	return $rows;
 }
 
-function kz_pay_format_transaction_rows($rows)
+function pay_format_transaction_rows($rows)
 {
 	if (!$rows) {
 		return '<table class="tables1 w100p"><tr><td colspan="4">Нет операций за последнее время.</td></tr></table>';
@@ -497,8 +497,8 @@ function kz_pay_format_transaction_rows($rows)
 	$html = '<table class="tables1 w100p"><tr><td class="colhead">Дата</td><td class="colhead">Операция</td><td class="colhead">Бонусы</td><td class="colhead">Голоса</td></tr>';
 	foreach ($rows as $row) {
 		$html .= '<tr>';
-		$html .= '<td>' . kz_pay_h($row['created_at']) . '</td>';
-		$html .= '<td>' . kz_pay_h($row['details']) . '</td>';
+		$html .= '<td>' . pay_h($row['created_at']) . '</td>';
+		$html .= '<td>' . pay_h($row['details']) . '</td>';
 		$html .= '<td>' . number_format((float)$row['bonus_delta'], 2, '.', ' ') . '</td>';
 		$html .= '<td>' . ((int)$row['votes_delta'] > 0 ? '+' : '') . (int)$row['votes_delta'] . '</td>';
 		$html .= '</tr>';
@@ -506,7 +506,7 @@ function kz_pay_format_transaction_rows($rows)
 	return $html . '</table>';
 }
 
-function kz_pay_tabs($active)
+function pay_tabs($active)
 {
 	$items = array(
 		'pay' => array('/pay.php', 'Голоса и рейтинг'),
@@ -516,17 +516,17 @@ function kz_pay_tabs($active)
 	);
 	echo '<div class="pad0x0x5x0"><ul class="lis">';
 	foreach ($items as $key => $item) {
-		echo '<li' . ($active === $key ? ' class="mn"' : '') . '><a href="' . kz_pay_h($item[0]) . '">' . kz_pay_h($item[1]) . '</a></li>';
+		echo '<li' . ($active === $key ? ' class="mn"' : '') . '><a href="' . pay_h($item[0]) . '">' . pay_h($item[1]) . '</a></li>';
 	}
 	echo '</ul></div>';
 }
 
-function kz_pay_sidebar($user)
+function pay_sidebar($user)
 {
-	$votes = kz_pay_user_votes_from_array($user);
+	$votes = pay_user_votes_from_array($user);
 	$bonus = isset($user['bonus']) ? (float)$user['bonus'] : 0;
-	$active = kz_pay_top_helpers('active', 1);
-	$best = kz_pay_top_helpers('votes', 1);
+	$active = pay_top_helpers('active', 1);
+	$best = pay_top_helpers('votes', 1);
 	?>
 	<div class="mn3_menu">
 		<ul class="men">
@@ -534,8 +534,8 @@ function kz_pay_sidebar($user)
 			<li class="tp">Раздел Меценатов и ВИП</li>
 			<li class="justify">На Вашем счете <b><?= (int)$votes ?> голосов</b> и <b><?= number_format($bonus, 2, '.', ' ') ?> бонусов</b>. Бонусы можно обменивать на голоса, а голоса тратить на возможности проекта.</li>
 			<li class="tp">Кубки меценатов</li>
-			<li class="justify"><i class="i1 cb6"></i> Кубок Активный Меценат: <?= $active ? kz_pay_user_link($active[0]) : 'пока нет претендента' ?>.</li>
-			<li class="justify"><i class="i1 cb7"></i> Кубок Лучший Меценат: <?= $best ? kz_pay_user_link($best[0]) : 'пока нет претендента' ?>.</li>
+			<li class="justify"><i class="i1 cb6"></i> Кубок Активный Меценат: <?= $active ? pay_user_link($active[0]) : 'пока нет претендента' ?>.</li>
+			<li class="justify"><i class="i1 cb7"></i> Кубок Лучший Меценат: <?= $best ? pay_user_link($best[0]) : 'пока нет претендента' ?>.</li>
 			<li class="tp">Сообщить о проблеме</li>
 			<li class="justify">Если возникли вопросы по обмену или голосам, обратитесь в <a href="/pay_help.php" class="sbab">техподдержку</a>.</li>
 		</ul>
@@ -543,23 +543,23 @@ function kz_pay_sidebar($user)
 	<?php
 }
 
-function kz_pay_layout_start($active, $user)
+function pay_layout_start($active, $user)
 {
 	echo '<div class="bx2">';
-	kz_pay_tabs($active);
-	kz_pay_sidebar($user);
+	pay_tabs($active);
+	pay_sidebar($user);
 	echo '<div class="mn3_content">';
 }
 
-function kz_pay_layout_end($patterns)
+function pay_layout_end($patterns)
 {
 	echo '</div><div class="clr"></div></div>';
-	echo kz_page_online_box($patterns, 'никого нет на странице');
+	echo page_online_box($patterns, 'никого нет на странице');
 }
 
-function kz_pay_chat_rows($tab, $limit = 50)
+function pay_chat_rows($tab, $limit = 50)
 {
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	$tab = max(1, min(2, (int)$tab));
 	$limit = max(1, (int)$limit);
 	$res = sql_query("
@@ -576,11 +576,11 @@ function kz_pay_chat_rows($tab, $limit = 50)
 	return array_reverse($rows);
 }
 
-function kz_pay_add_chat_message($tab, $text)
+function pay_add_chat_message($tab, $text)
 {
 	global $CURUSER;
 
-	if (kz_pay_setting('chat_enabled', '1') !== '1') {
+	if (pay_setting('chat_enabled', '1') !== '1') {
 		return;
 	}
 
@@ -610,31 +610,31 @@ function kz_pay_add_chat_message($tab, $text)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_pay_chat_html($tab, $limit = 50)
+function pay_chat_html($tab, $limit = 50)
 {
-	$rows = kz_pay_chat_rows($tab, $limit);
+	$rows = pay_chat_rows($tab, $limit);
 	if (!$rows) {
 		return '<div class="pad10x10 center">Сообщений пока нет.</div>';
 	}
 	$html = '';
 	foreach ($rows as $row) {
 		$html .= '<div class="bx5x5">';
-		$html .= kz_pay_user_link($row) . ' <span class="small">' . kz_pay_h($row['added']) . '</span>';
-		$html .= '<div class="pad5x5">' . nl2br(kz_pay_h($row['text'])) . '</div>';
+		$html .= pay_user_link($row) . ' <span class="small">' . pay_h($row['added']) . '</span>';
+		$html .= '<div class="pad5x5">' . nl2br(pay_h($row['text'])) . '</div>';
 		$html .= '</div>';
 	}
 	return $html;
 }
 
-function kz_pay_chat_frame($endpoint, $default_tab)
+function pay_chat_frame($endpoint, $default_tab)
 {
-	if (kz_pay_setting('chat_enabled', '1') !== '1') {
+	if (pay_setting('chat_enabled', '1') !== '1') {
 		echo '<div class="bx1_0 center">Чат раздела временно закрыт.</div>';
 		return;
 	}
 
 	$default_tab = max(1, min(2, (int)$default_tab));
-	$endpoint = kz_pay_h($endpoint);
+	$endpoint = pay_h($endpoint);
 	?>
 	<script type="text/javascript">
 	var select_tabch = <?= $default_tab ?>;
@@ -692,9 +692,9 @@ function kz_pay_chat_frame($endpoint, $default_tab)
 	<?php
 }
 
-function kz_pay_wishes($limit = 50, $offset = 0)
+function pay_wishes($limit = 50, $offset = 0)
 {
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	$limit = max(1, (int)$limit);
 	$offset = max(0, (int)$offset);
 	$res = sql_query("
@@ -711,26 +711,26 @@ function kz_pay_wishes($limit = 50, $offset = 0)
 	return $rows;
 }
 
-function kz_pay_wishes_count()
+function pay_wishes_count()
 {
-	kz_pay_ensure_schema();
+	pay_ensure_schema();
 	$res = sql_query("SELECT COUNT(*) FROM pay_wishes WHERE active = 'yes'") or sqlerr(__FILE__, __LINE__);
 	$row = mysqli_fetch_row($res);
 	return (int)($row[0] ?? 0);
 }
 
-function kz_pay_home_block_html()
+function pay_home_block_html()
 {
-	if (kz_pay_setting('home_block_enabled', '1') !== '1') {
+	if (pay_setting('home_block_enabled', '1') !== '1') {
 		return '<div class="bx1"><ul class="men"><li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Раздел меценатов временно скрыт</a></li></ul></div>';
 	}
 
-	$recent = kz_pay_recent_helpers(20);
-	$best = kz_pay_top_helpers('votes', 8);
+	$recent = pay_recent_helpers(20);
+	$best = pay_top_helpers('votes', 8);
 
 	return '<div class="bx1"><ul class="men">'
-		. '<li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Спасибо за помощь, поднимите свой рейтинг и помогите проекту</a><div class="pad5x5">' . kz_pay_user_list_html($recent, 'пока никто не обменивал бонусы') . '</div></li>'
-		. '<li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Спасибо Меценатам за их поддержку</a><div class="pad5x5">' . kz_pay_user_list_html($best, 'пока нет меценатов') . '</div></li>'
+		. '<li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Спасибо за помощь, поднимите свой рейтинг и помогите проекту</a><div class="pad5x5">' . pay_user_list_html($recent, 'пока никто не обменивал бонусы') . '</div></li>'
+		. '<li class="mn2"><span class="bulet"></span><a href="/pay.php" class="sbab">Спасибо Меценатам за их поддержку</a><div class="pad5x5">' . pay_user_list_html($best, 'пока нет меценатов') . '</div></li>'
 		. '</ul></div>';
 }
 

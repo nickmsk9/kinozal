@@ -4,23 +4,23 @@ if (!defined('KZ_MT_TTL')) {
 	define('KZ_MT_TTL', 20 * 60);
 }
 
-function kz_mt_h($value)
+function multitracker_h($value)
 {
 	return function_exists('htmlspecialchars_uni') ? htmlspecialchars_uni((string)$value) : htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
-function kz_mt_primary_announce()
+function multitracker_primary_announce()
 {
 	global $announce_urls, $DEFAULTBASEURL;
 
 	if (!empty($announce_urls[0])) {
-		return kz_mt_normalize_url($announce_urls[0]);
+		return multitracker_normalize_url($announce_urls[0]);
 	}
 
-	return kz_mt_normalize_url(rtrim((string)$DEFAULTBASEURL, '/') . '/announce.php');
+	return multitracker_normalize_url(rtrim((string)$DEFAULTBASEURL, '/') . '/announce.php');
 }
 
-function kz_mt_normalize_url($url)
+function multitracker_normalize_url($url)
 {
 	$url = trim((string)$url);
 	if ($url === '') {
@@ -34,7 +34,7 @@ function kz_mt_normalize_url($url)
 	return $url;
 }
 
-function kz_mt_valid_announce_url($url)
+function multitracker_valid_announce_url($url)
 {
 	if ($url === '' || strlen($url) > 500) {
 		return false;
@@ -45,9 +45,9 @@ function kz_mt_valid_announce_url($url)
 	return (bool)filter_var(preg_replace('#^udp://#i', 'http://', $url), FILTER_VALIDATE_URL);
 }
 
-function kz_mt_url_key($url)
+function multitracker_url_key($url)
 {
-	$url = kz_mt_normalize_url($url);
+	$url = multitracker_normalize_url($url);
 	$parts = @parse_url($url);
 	if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
 		return strtolower($url);
@@ -60,18 +60,18 @@ function kz_mt_url_key($url)
 	return $scheme . '://' . $host . $port . $path . $query;
 }
 
-function kz_mt_is_local_url($url)
+function multitracker_is_local_url($url)
 {
-	return kz_mt_url_key($url) === kz_mt_url_key(kz_mt_primary_announce());
+	return multitracker_url_key($url) === multitracker_url_key(multitracker_primary_announce());
 }
 
-function kz_mt_column_exists($table, $column)
+function multitracker_column_exists($table, $column)
 {
 	$res = sql_query("SHOW COLUMNS FROM `$table` LIKE " . sqlesc($column));
 	return $res && mysqli_num_rows($res) > 0;
 }
 
-function kz_mt_ensure_schema()
+function multitracker_ensure_schema()
 {
 	static $done = false;
 	if ($done) {
@@ -101,20 +101,20 @@ function kz_mt_ensure_schema()
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
 
-	if (!kz_mt_column_exists('torrent_trackers', 'external_info_hash')) {
+	if (!multitracker_column_exists('torrent_trackers', 'external_info_hash')) {
 		sql_query("ALTER TABLE torrent_trackers ADD external_info_hash varchar(40) NOT NULL DEFAULT '' AFTER announce_url") or sqlerr(__FILE__, __LINE__);
 	}
 }
 
-function kz_mt_normalize_info_hash($hash)
+function multitracker_normalize_info_hash($hash)
 {
 	$hash = strtolower(trim((string)$hash));
 	return preg_match('/^[a-f0-9]{40}$/', $hash) ? $hash : '';
 }
 
-function kz_mt_extract_announces(array $dict)
+function multitracker_extract_announces(array $dict)
 {
-	$primary = kz_mt_primary_announce();
+	$primary = multitracker_primary_announce();
 	$out = array($primary);
 
 	if (!empty($dict['announce'])) {
@@ -136,11 +136,11 @@ function kz_mt_extract_announces(array $dict)
 	$seen = array();
 	$urls = array();
 	foreach ($out as $url) {
-		$url = kz_mt_normalize_url($url);
-		if (!kz_mt_valid_announce_url($url)) {
+		$url = multitracker_normalize_url($url);
+		if (!multitracker_valid_announce_url($url)) {
 			continue;
 		}
-		$key = kz_mt_url_key($url);
+		$key = multitracker_url_key($url);
 		if (isset($seen[$key])) {
 			continue;
 		}
@@ -151,15 +151,15 @@ function kz_mt_extract_announces(array $dict)
 	return $urls;
 }
 
-function kz_mt_apply_announces_to_dict(array $dict, array $urls)
+function multitracker_apply_announces_to_dict(array $dict, array $urls)
 {
-	$primary = kz_mt_primary_announce();
-	$ordered = kz_mt_extract_announces(array('announce' => $primary, 'announce-list' => array($urls)));
+	$primary = multitracker_primary_announce();
+	$ordered = multitracker_extract_announces(array('announce' => $primary, 'announce-list' => array($urls)));
 	$dict['announce'] = $primary;
 
 	$tiers = array(array($primary));
 	foreach ($ordered as $url) {
-		if (!kz_mt_is_local_url($url)) {
+		if (!multitracker_is_local_url($url)) {
 			$tiers[] = array($url);
 		}
 	}
@@ -169,12 +169,12 @@ function kz_mt_apply_announces_to_dict(array $dict, array $urls)
 	return $dict;
 }
 
-function kz_mt_recover_external_info_hash($torrentid, $local_info_hash = '')
+function multitracker_recover_external_info_hash($torrentid, $local_info_hash = '')
 {
 	global $torrent_dir;
 
 	$torrentid = (int)$torrentid;
-	$local_info_hash = kz_mt_normalize_info_hash($local_info_hash);
+	$local_info_hash = multitracker_normalize_info_hash($local_info_hash);
 	$path = rtrim((string)$torrent_dir, '/\\') . '/' . $torrentid . '.torrent';
 	if (!is_file($path) || !is_readable($path)) {
 		return $local_info_hash;
@@ -194,28 +194,28 @@ function kz_mt_recover_external_info_hash($torrentid, $local_info_hash = '')
 
 	$info = $dict['info'];
 	unset($info['private'], $info['source']);
-	$hash = kz_mt_normalize_info_hash(sha1(BEncode($info)));
+	$hash = multitracker_normalize_info_hash(sha1(BEncode($info)));
 	return $hash !== '' ? $hash : $local_info_hash;
 }
 
-function kz_mt_save_trackers($torrentid, array $urls, $external_info_hash = '')
+function multitracker_save_trackers($torrentid, array $urls, $external_info_hash = '')
 {
-	kz_mt_ensure_schema();
+	multitracker_ensure_schema();
 	$torrentid = (int)$torrentid;
 	if ($torrentid <= 0) {
 		return;
 	}
 
-	$external_info_hash = kz_mt_normalize_info_hash($external_info_hash);
+	$external_info_hash = multitracker_normalize_info_hash($external_info_hash);
 	if ($external_info_hash === '') {
-		$external_info_hash = kz_mt_recover_external_info_hash($torrentid);
+		$external_info_hash = multitracker_recover_external_info_hash($torrentid);
 	}
 
-	$urls = kz_mt_extract_announces(array('announce-list' => array($urls)));
+	$urls = multitracker_extract_announces(array('announce-list' => array($urls)));
 	$active = array();
 	$values = array();
 	foreach ($urls as $url) {
-		$is_primary = kz_mt_is_local_url($url) ? 'yes' : 'no';
+		$is_primary = multitracker_is_local_url($url) ? 'yes' : 'no';
 		$row_external_hash = $is_primary === 'yes' ? '' : $external_info_hash;
 		$active[] = sqlesc($url);
 		$values[] = "($torrentid, " . sqlesc($url) . ", " . sqlesc($row_external_hash) . ", " . sqlesc($is_primary) . ", 'yes')";
@@ -232,16 +232,16 @@ function kz_mt_save_trackers($torrentid, array $urls, $external_info_hash = '')
 	if ($active) {
 		sql_query("UPDATE torrent_trackers SET enabled = 'no' WHERE torrentid = $torrentid AND announce_url NOT IN (" . implode(',', $active) . ")") or sqlerr(__FILE__, __LINE__);
 	}
-	kz_mt_sync_torrent_totals($torrentid);
+	multitracker_sync_torrent_totals($torrentid);
 }
 
-function kz_mt_sync_torrent_totals($torrentid)
+function multitracker_sync_torrent_totals($torrentid)
 {
 	$torrentid = (int)$torrentid;
-	kz_mt_sync_torrent_totals_bulk(array($torrentid));
+	multitracker_sync_torrent_totals_bulk(array($torrentid));
 }
 
-function kz_mt_sync_torrent_totals_bulk(array $torrentids)
+function multitracker_sync_torrent_totals_bulk(array $torrentids)
 {
 	$ids = array();
 	foreach ($torrentids as $torrentid) {
@@ -277,11 +277,11 @@ function kz_mt_sync_torrent_totals_bulk(array $torrentids)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_mt_sync_local_tracker($torrentid, $seeders, $leechers, $completed)
+function multitracker_sync_local_tracker($torrentid, $seeders, $leechers, $completed)
 {
-	kz_mt_ensure_schema();
+	multitracker_ensure_schema();
 	$torrentid = (int)$torrentid;
-	$url = kz_mt_primary_announce();
+	$url = multitracker_primary_announce();
 	sql_query("
 		INSERT INTO torrent_trackers (torrentid, announce_url, is_primary, seeders, leechers, completed, last_checked, last_error, enabled)
 		VALUES ($torrentid, " . sqlesc($url) . ", 'yes', " . (int)$seeders . ", " . (int)$leechers . ", " . (int)$completed . ", NOW(), '', 'yes')
@@ -289,9 +289,9 @@ function kz_mt_sync_local_tracker($torrentid, $seeders, $leechers, $completed)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_mt_get_trackers($torrentid)
+function multitracker_get_trackers($torrentid)
 {
-	kz_mt_ensure_schema();
+	multitracker_ensure_schema();
 	$rows = array();
 	$res = sql_query("SELECT * FROM torrent_trackers WHERE torrentid = " . (int)$torrentid . " ORDER BY (is_primary = 'yes') DESC, id ASC") or sqlerr(__FILE__, __LINE__);
 	while ($row = mysqli_fetch_assoc($res)) {
@@ -300,10 +300,10 @@ function kz_mt_get_trackers($torrentid)
 	return $rows;
 }
 
-function kz_mt_external_textarea_value($torrentid)
+function multitracker_external_textarea_value($torrentid)
 {
 	$urls = array();
-	foreach (kz_mt_get_trackers($torrentid) as $row) {
+	foreach (multitracker_get_trackers($torrentid) as $row) {
 		if ($row['is_primary'] !== 'yes' && $row['enabled'] === 'yes') {
 			$urls[] = $row['announce_url'];
 		}
@@ -311,20 +311,20 @@ function kz_mt_external_textarea_value($torrentid)
 	return implode("\n", $urls);
 }
 
-function kz_mt_parse_posted_urls($text)
+function multitracker_parse_posted_urls($text)
 {
 	$urls = preg_split('/[\r\n]+/', (string)$text, -1, PREG_SPLIT_NO_EMPTY);
-	$out = array(kz_mt_primary_announce());
+	$out = array(multitracker_primary_announce());
 	foreach ($urls as $url) {
-		$url = kz_mt_normalize_url($url);
-		if ($url !== '' && kz_mt_valid_announce_url($url)) {
+		$url = multitracker_normalize_url($url);
+		if ($url !== '' && multitracker_valid_announce_url($url)) {
 			$out[] = $url;
 		}
 	}
-	return kz_mt_extract_announces(array('announce-list' => array($out)));
+	return multitracker_extract_announces(array('announce-list' => array($out)));
 }
 
-function kz_mt_rewrite_torrent_file_announces($torrentid, array $urls)
+function multitracker_rewrite_torrent_file_announces($torrentid, array $urls)
 {
 	global $torrent_dir;
 	require_once ROOT_PATH . 'include/BDecode.php';
@@ -338,13 +338,13 @@ function kz_mt_rewrite_torrent_file_announces($torrentid, array $urls)
 	if (!is_array($dict) || empty($dict['info'])) {
 		return false;
 	}
-	$dict = kz_mt_apply_announces_to_dict($dict, $urls);
+	$dict = multitracker_apply_announces_to_dict($dict, $urls);
 	return file_put_contents($path, BEncode($dict)) !== false;
 }
 
-function kz_mt_render_details_block($torrentid)
+function multitracker_render_details_block($torrentid)
 {
-	$rows = kz_mt_get_trackers($torrentid);
+	$rows = multitracker_get_trackers($torrentid);
 	if (!$rows) {
 		return '';
 	}
@@ -356,10 +356,10 @@ function kz_mt_render_details_block($torrentid)
 		$status = $is_primary ? 'локальный' : ($row['enabled'] === 'yes' ? (trim((string)$row['last_error']) === '' ? 'ok' : 'ошибка') : 'отключен');
 		$seeders = $is_primary || $row['seeders'] !== null ? (int)$row['seeders'] : 'н/д';
 		$leechers = $is_primary || $row['leechers'] !== null ? (int)$row['leechers'] : 'н/д';
-		$checked = !empty($row['last_checked']) ? kz_mt_h($row['last_checked']) : 'н/д';
-		$error = (!$is_primary && trim((string)$row['last_error']) !== '') ? '<div class="small red">' . kz_mt_h($row['last_error']) . '</div>' : '';
-		$html .= '<tr><td>' . ($is_primary ? '<b>наш трекер</b><br>' : '') . '<span title="' . kz_mt_h($row['announce_url']) . '">' . kz_mt_h($row['announce_url']) . '</span>' . $error . '</td>';
-		$html .= '<td class="center">' . kz_mt_h($status) . '</td><td class="center green b">' . $seeders . '</td><td class="center red b">' . $leechers . '</td><td class="center">' . $checked . '</td></tr>';
+		$checked = !empty($row['last_checked']) ? multitracker_h($row['last_checked']) : 'н/д';
+		$error = (!$is_primary && trim((string)$row['last_error']) !== '') ? '<div class="small red">' . multitracker_h($row['last_error']) . '</div>' : '';
+		$html .= '<tr><td>' . ($is_primary ? '<b>наш трекер</b><br>' : '') . '<span title="' . multitracker_h($row['announce_url']) . '">' . multitracker_h($row['announce_url']) . '</span>' . $error . '</td>';
+		$html .= '<td class="center">' . multitracker_h($status) . '</td><td class="center green b">' . $seeders . '</td><td class="center red b">' . $leechers . '</td><td class="center">' . $checked . '</td></tr>';
 	}
 	$html .= '</table></li>';
 	if (function_exists('get_user_class') && get_user_class() >= UC_MODERATOR) {
@@ -371,9 +371,9 @@ function kz_mt_render_details_block($torrentid)
 	return $html . '</ul></div>';
 }
 
-function kz_mt_scrape_tracker($url, $info_hash)
+function multitracker_scrape_tracker($url, $info_hash)
 {
-	$url = kz_mt_normalize_url($url);
+	$url = multitracker_normalize_url($url);
 	if (stripos($url, 'udp://') === 0) {
 		require_once ROOT_PATH . 'include/scraper/udptscraper.php';
 		static $udp_scraper = null;
@@ -393,10 +393,10 @@ function kz_mt_scrape_tracker($url, $info_hash)
 	return !empty($result[$info_hash]) && is_array($result[$info_hash]) ? $result[$info_hash] : false;
 }
 
-function kz_mt_tracker_update_set($info_hash, $stats = null, $error = '')
+function multitracker_tracker_update_set($info_hash, $stats = null, $error = '')
 {
 	$set = array();
-	$info_hash = kz_mt_normalize_info_hash($info_hash);
+	$info_hash = multitracker_normalize_info_hash($info_hash);
 	if ($info_hash !== '') {
 		$set[] = 'external_info_hash = ' . sqlesc($info_hash);
 	}
@@ -415,9 +415,9 @@ function kz_mt_tracker_update_set($info_hash, $stats = null, $error = '')
 	return implode(', ', $set);
 }
 
-function kz_mt_update_due_trackers($limit = 25)
+function multitracker_update_due_trackers($limit = 25)
 {
-	kz_mt_ensure_schema();
+	multitracker_ensure_schema();
 	$limit = max(1, min(100, (int)$limit));
 	$res = sql_query("
 		SELECT tt.id, tt.torrentid, tt.announce_url, tt.external_info_hash, t.info_hash
@@ -434,31 +434,31 @@ function kz_mt_update_due_trackers($limit = 25)
 	while ($row = mysqli_fetch_assoc($res)) {
 		$tracker_id = (int)$row['id'];
 		$torrentid = (int)$row['torrentid'];
-		$info_hash = kz_mt_normalize_info_hash($row['external_info_hash'] ?? '');
+		$info_hash = multitracker_normalize_info_hash($row['external_info_hash'] ?? '');
 		if ($info_hash === '') {
-			$info_hash = kz_mt_recover_external_info_hash($torrentid, $row['info_hash'] ?? '');
+			$info_hash = multitracker_recover_external_info_hash($torrentid, $row['info_hash'] ?? '');
 		}
 		try {
 			if ($info_hash === '') {
 				throw new Exception('invalid info hash');
 			}
-			$stats = kz_mt_scrape_tracker($row['announce_url'], $info_hash);
+			$stats = multitracker_scrape_tracker($row['announce_url'], $info_hash);
 			if (!$stats) {
 				throw new Exception('no scrape data');
 			}
-			sql_query("UPDATE torrent_trackers SET " . kz_mt_tracker_update_set($info_hash, $stats) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			sql_query("UPDATE torrent_trackers SET " . multitracker_tracker_update_set($info_hash, $stats) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
 		} catch (Exception $e) {
-			sql_query("UPDATE torrent_trackers SET " . kz_mt_tracker_update_set($info_hash, null, $e->getMessage()) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			sql_query("UPDATE torrent_trackers SET " . multitracker_tracker_update_set($info_hash, null, $e->getMessage()) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
 		}
 		$seen_torrents[$torrentid] = true;
 	}
 
-	kz_mt_sync_torrent_totals_bulk(array_keys($seen_torrents));
+	multitracker_sync_torrent_totals_bulk(array_keys($seen_torrents));
 }
 
-function kz_mt_update_torrent_trackers($torrentid)
+function multitracker_update_torrent_trackers($torrentid)
 {
-	kz_mt_ensure_schema();
+	multitracker_ensure_schema();
 	$torrentid = (int)$torrentid;
 	if ($torrentid <= 0) {
 		return array('success' => 0, 'errors' => 0, 'total' => 0);
@@ -478,27 +478,27 @@ function kz_mt_update_torrent_trackers($torrentid)
 	while ($row = mysqli_fetch_assoc($res)) {
 		$total++;
 		$tracker_id = (int)$row['id'];
-		$info_hash = kz_mt_normalize_info_hash($row['external_info_hash'] ?? '');
+		$info_hash = multitracker_normalize_info_hash($row['external_info_hash'] ?? '');
 		if ($info_hash === '') {
-			$info_hash = kz_mt_recover_external_info_hash($torrentid, $row['info_hash'] ?? '');
+			$info_hash = multitracker_recover_external_info_hash($torrentid, $row['info_hash'] ?? '');
 		}
 		try {
 			if ($info_hash === '') {
 				throw new Exception('invalid info hash');
 			}
-			$stats = kz_mt_scrape_tracker($row['announce_url'], $info_hash);
+			$stats = multitracker_scrape_tracker($row['announce_url'], $info_hash);
 			if (!$stats) {
 				throw new Exception('no scrape data');
 			}
-			sql_query("UPDATE torrent_trackers SET " . kz_mt_tracker_update_set($info_hash, $stats) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			sql_query("UPDATE torrent_trackers SET " . multitracker_tracker_update_set($info_hash, $stats) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
 			$success++;
 		} catch (Exception $e) {
-			sql_query("UPDATE torrent_trackers SET " . kz_mt_tracker_update_set($info_hash, null, $e->getMessage()) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			sql_query("UPDATE torrent_trackers SET " . multitracker_tracker_update_set($info_hash, null, $e->getMessage()) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
 			$errors++;
 		}
 	}
 
-	kz_mt_sync_torrent_totals($torrentid);
+	multitracker_sync_torrent_totals($torrentid);
 	return array('success' => $success, 'errors' => $errors, 'total' => $total);
 }
 

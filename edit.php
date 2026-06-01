@@ -1,8 +1,8 @@
 <?
 
 require_once("include/bittorrent.php");
-require_once("include/kz_upload.php");
-require_once("include/kz_multitracker.php");
+require_once("include/upload.php");
+require_once("include/multitracker.php");
 
 if (!mkglobal("id")) {
 	die();
@@ -17,8 +17,8 @@ dbconn();
 
 loggedinorreturn();
 
-kz_upload_ensure_schema();
-kz_mt_ensure_schema();
+upload_ensure_schema();
+multitracker_ensure_schema();
 
 $res = sql_query("SELECT * FROM torrents WHERE id = $id");
 $row = mysqli_fetch_array($res);
@@ -33,8 +33,8 @@ if (!isset($CURUSER) || ($CURUSER["id"] != $row["owner"] && get_user_class() < U
 	exit;
 }
 
-$details = kz_upload_load_details($id);
-$kind = !empty($details['exists']) ? kz_upload_normalize_kind($details['release_kind']) : kz_upload_kind_by_category((int)$row['category']);
+$details = upload_load_details($id);
+$kind = !empty($details['exists']) ? upload_normalize_kind($details['release_kind']) : upload_kind_by_category((int)$row['category']);
 if (empty($details['exists']) && !empty($row['ori_descr'])) {
 	$details['data']['mode'] = 1;
 	$details['data']['section_modes'] = array(1, 1, 1, 1);
@@ -58,7 +58,7 @@ if (get_user_class() >= UC_ADMINISTRATOR) {
 }
 if (get_user_class() >= UC_MODERATOR) {
 	$service_controls .= '<br><br><b>Внешние трекеры</b><br>';
-	$service_controls .= '<textarea name="external_trackers" rows="6" class="w100p">' . kz_h(kz_mt_external_textarea_value($id)) . '</textarea>';
+	$service_controls .= '<textarea name="external_trackers" rows="6" class="w100p">' . h(multitracker_external_textarea_value($id)) . '</textarea>';
 	$service_controls .= '<div class="n">По одному announce URL на строку. Наш announce добавляется первым автоматически.</div>';
 }
 
@@ -78,9 +78,9 @@ stdhead("Редактирование торрента \"" . $row["name"] . "\""
 
 ?>
 <div class="bx2">
-	<? kz_upload_render_info_sidebar(); ?>
+	<? upload_render_info_sidebar(); ?>
 	<div class="mn3_content">
-		<? kz_upload_render_form('/takeedit.php', 'Сохранить изменения', $state, true); ?>
+		<? upload_render_form('/takeedit.php', 'Сохранить изменения', $state, true); ?>
 
 		<form method="post" action="delete.php">
 			<div class="bx1">
@@ -93,7 +93,7 @@ stdhead("Редактирование торрента \"" . $row["name"] . "\""
 					<li><label><input name="reasontype" type="radio" value="5" checked="checked"> Другое</label> <input type="text" size="40" name="reason[]"> (обязательно)</li>
 					<li class="center">
 						<input type="hidden" name="id" value="<?= $id ?>">
-						<? if ($returnto !== '') { ?><input type="hidden" name="returnto" value="<?= kz_h($returnto) ?>"><? } ?>
+						<? if ($returnto !== '') { ?><input type="hidden" name="returnto" value="<?= h($returnto) ?>"><? } ?>
 						<input type="submit" class="buttonS" value="Удалить">
 					</li>
 				</ul>

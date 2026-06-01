@@ -279,6 +279,10 @@ function dbconn($autoclean = false, $lightmode = false)
         die("[" . mysqli_errno($link) . "] dbconn: mysqli_set_charset: " . mysqli_error($link));
     }
 
+    if (function_exists('site_settings_apply_runtime_overrides')) {
+        site_settings_apply_runtime_overrides();
+    }
+
     userlogin($lightmode);
 
     if (basename($_SERVER['SCRIPT_FILENAME']) == 'index.php') {
@@ -1361,7 +1365,7 @@ function pager($rpp, $count, $href, $opts = array())
     return array($pagertop, $pagerbottom, "LIMIT $start,$rpp");
 }
 
-function kz_page_online_users_html($url_patterns, $empty_text = 'никого нет на странице')
+function page_online_users_html($url_patterns, $empty_text = 'никого нет на странице')
 {
 	if (!is_array($url_patterns)) {
 		$url_patterns = array($url_patterns);
@@ -1402,14 +1406,14 @@ function kz_page_online_users_html($url_patterns, $empty_text = 'никого н
 	return $content;
 }
 
-function kz_page_online_box($url_patterns, $empty_text = 'никого нет на странице')
+function page_online_box($url_patterns, $empty_text = 'никого нет на странице')
 {
-	$content = kz_page_online_users_html($url_patterns, $empty_text);
+	$content = page_online_users_html($url_patterns, $empty_text);
 
-	return kz_page_online_block_html($content);
+	return page_online_block_html($content);
 }
 
-function kz_page_online_block_html($content)
+function page_online_block_html($content)
 {
 	return "<div class=\"bx2_0\">\n"
 		. "<ul class=\"men\">\n"
@@ -1556,8 +1560,8 @@ function hash_pad($hash) {
 }
 
 function get_user_icons($arr, $big = false) {
-	if (function_exists('kz_statuses_user_icons_html')) {
-		return kz_statuses_user_icons_html($arr);
+	if (function_exists('statuses_user_icons_html')) {
+		return statuses_user_icons_html($arr);
 	}
 
 	return '';

@@ -93,7 +93,7 @@ stdhead($pageTitle);
 
 <div class="mn_wrap">
 	<div class="mn1_menu">
-		<?= function_exists('kz_profile_menu_html') ? kz_profile_menu_html($user, $CURUSER) : '' ?>
+		<?= function_exists('profile_menu_html') ? profile_menu_html($user, $CURUSER) : '' ?>
 	</div>
 	<div class="mn1_content">
 		<div class="bx1 <?= $profileClass ?>">

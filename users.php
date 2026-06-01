@@ -451,7 +451,7 @@ stdhead('Список пользователей - Поиск пользоват
         <?= users_paginator($count, $perpage, $page) ?>
     </div>
 </div>
-<?= kz_page_online_box(array('/users.php%', 'users.php%'), 'никого нет на этой странице') ?>
+<?= page_online_box(array('/users.php%', 'users.php%'), 'никого нет на этой странице') ?>
 <?php
 stdfoot();
 

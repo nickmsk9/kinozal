@@ -95,7 +95,7 @@ function bookmarks_person_card($row)
 	$id = (int)$row['id'];
 	$name = bookmarks_h($row['name'] ?? '');
 	$poster = !empty($row['poster_url']) ? bookmarks_h($row['poster_url']) : '/pic/default_avatar.gif';
-	$url = kz_persons_url((string)$row['name'], $id);
+	$url = persons_url((string)$row['name'], $id);
 
 	return '<div class="pad5x0x0x5 mn2">'
 		. '<table class="tables2 w100p"><tr>'
@@ -132,8 +132,8 @@ function bookmarks_grid($rows, $callback, $emptyText)
 }
 
 bookmarks_ensure_schema();
-kz_groups_ensure_schema();
-kz_persons_ensure_schema();
+groups_ensure_schema();
+persons_ensure_schema();
 
 $userId = (int)$CURUSER['id'];
 $bookmarkType = (int)($_GET['type'] ?? 1);
@@ -144,15 +144,15 @@ if ($bookmarkType < 1 || $bookmarkType > 4) {
 if ($bookmarkType === 2) {
 	if (isset($_GET['add'])) {
 		$groupId = (int)$_GET['add'];
-		if (kz_groups_fetch($groupId)) {
-			kz_groups_add_bookmark($groupId, $userId);
+		if (groups_fetch($groupId)) {
+			groups_add_bookmark($groupId, $userId);
 		}
 		header('Location: /bookmarks.php?type=2');
 		exit;
 	}
 
 	if (isset($_GET['delete'])) {
-		kz_groups_remove_bookmark((int)$_GET['delete'], $userId);
+		groups_remove_bookmark((int)$_GET['delete'], $userId);
 		header('Location: /bookmarks.php?type=2');
 		exit;
 	}
@@ -182,7 +182,7 @@ if ($bookmarkType === 3) {
 if ($bookmarkType === 4) {
 	if (isset($_GET['add'])) {
 		$personId = (int)$_GET['add'];
-		if (kz_persons_find($personId, '')) {
+		if (persons_find($personId, '')) {
 			sql_query("INSERT IGNORE INTO person_bookmarks (userid, person_id, added_at) VALUES ($userId, $personId, NOW())") or sqlerr(__FILE__, __LINE__);
 		}
 		header('Location: /bookmarks.php?type=4');
@@ -205,7 +205,7 @@ stdhead('Закладки');
 ?>
 <div class="mn_wrap">
 	<div class="mn1_menu">
-		<?= kz_profile_menu_html($CURUSER, $CURUSER) ?>
+		<?= profile_menu_html($CURUSER, $CURUSER) ?>
 	</div>
 	<div class="mn1_content">
 		<div class="bx1 <?= $profileClass ?>">
@@ -293,7 +293,7 @@ stdhead('Закладки');
 			} else {
 				echo '<div class="bx2_0">';
 				foreach ($groups as $group) {
-					kz_groups_group_card($group);
+					groups_group_card($group);
 				}
 				echo '</div>';
 			}

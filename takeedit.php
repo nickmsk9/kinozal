@@ -3,14 +3,14 @@
 require_once("include/BDecode.php");
 require_once("include/BEncode.php");
 require_once("include/bittorrent.php");
-require_once("include/kz_upload.php");
-require_once("include/kz_multitracker.php");
+require_once("include/upload.php");
+require_once("include/multitracker.php");
 
 function bark($msg) {
 	stderr("Ошибка", $msg);
 }
 
-function kz_takeedit_file()
+function takeedit_file()
 {
 	if (isset($_FILES['file']) && !empty($_FILES['file']['name'])) {
 		return $_FILES['file'];
@@ -21,7 +21,7 @@ function kz_takeedit_file()
 	return null;
 }
 
-function kz_takeedit_parse_torrent($file)
+function takeedit_parse_torrent($file)
 {
 	global $announce_urls, $DEFAULTBASEURL, $SITENAME, $CURUSER;
 
@@ -83,8 +83,8 @@ function kz_takeedit_parse_torrent($file)
 		$type = "multi";
 	}
 
-	$announce_list = kz_mt_extract_announces($dict);
-	$dict = kz_mt_apply_announces_to_dict($dict, $announce_list);
+	$announce_list = multitracker_extract_announces($dict);
+	$dict = multitracker_apply_announces_to_dict($dict, $announce_list);
 	$dict['info']['private'] = 1;
 	$dict['info']['source'] = "[$DEFAULTBASEURL] $SITENAME";
 	unset($dict['info']['crc32'], $dict['info']['ed2k'], $dict['info']['md5sum'], $dict['info']['sha1'], $dict['info']['tiger']);
@@ -114,8 +114,8 @@ function kz_takeedit_parse_torrent($file)
 dbconn();
 loggedinorreturn();
 
-kz_upload_ensure_schema();
-kz_mt_ensure_schema();
+upload_ensure_schema();
+multitracker_ensure_schema();
 
 if (!isset($_POST['id'], $_POST['type'])) {
 	bark("missing form data");
@@ -141,14 +141,14 @@ if ($name === '') {
 	bark("Вы должны указать название раздачи.");
 }
 
-$kind = kz_upload_normalize_kind($_POST['kind'] ?? 'video');
+$kind = upload_normalize_kind($_POST['kind'] ?? 'video');
 $catid = (int)$_POST['type'];
-if (!kz_upload_is_valid_category($kind, $catid)) {
+if (!upload_is_valid_category($kind, $catid)) {
 	bark("Вы должны выбрать раздел, в который поместить торрент.");
 }
 
-[$kind, $details_data] = kz_upload_collect_post((int)$row['size']);
-$name = kz_upload_generated_name($details_data, $kind);
+[$kind, $details_data] = upload_collect_post((int)$row['size']);
+$name = upload_generated_name($details_data, $kind);
 if ($name === '') {
 	bark("Заполните поля, из которых формируется название раздачи.");
 }
@@ -160,19 +160,19 @@ if ($poster_url !== '' && !preg_match('#^(https?:)?//#i', $poster_url)) {
 $rgroup = (int)($_POST['rgroup'] ?? 0);
 $rgroup_button = trim((string)($_POST['rbut'] ?? ''));
 
-$file = kz_takeedit_file();
+$file = takeedit_file();
 $torrent_data = null;
 if ($file) {
 	if ($row['multitracker'] == 'yes') {
 		bark("Для мультитрекерной раздачи torrent-файл не обновляется.");
 	}
-	$torrent_data = kz_takeedit_parse_torrent($file);
-	kz_upload_apply_torrent_size($details_data, $kind, $torrent_data['size']);
+	$torrent_data = takeedit_parse_torrent($file);
+	upload_apply_torrent_size($details_data, $kind, $torrent_data['size']);
 } else {
-	kz_upload_apply_torrent_size($details_data, $kind, (int)$row['size']);
+	upload_apply_torrent_size($details_data, $kind, (int)$row['size']);
 }
 
-$descr = kz_upload_build_description($details_data, $kind, $name, $torrent_data ? $torrent_data['size'] : (int)$row['size']);
+$descr = upload_build_description($details_data, $kind, $name, $torrent_data ? $torrent_data['size'] : (int)$row['size']);
 if ($descr === '') {
 	bark("Вы должны ввести описание!");
 }
@@ -188,8 +188,8 @@ if (isset($_GET['preview']) || isset($_POST['preview'])) {
 
 $updateset = array();
 $safe_name = html_uni($name);
-$keywords = kz_upload_keywords($details_data, $kind, $safe_name);
-$meta_description = kz_upload_meta_description($descr);
+$keywords = upload_keywords($details_data, $kind, $safe_name);
+$meta_description = upload_meta_description($descr);
 
 $updateset[] = "name = " . sqlesc($safe_name);
 $updateset[] = "keywords = " . sqlesc($keywords);
@@ -217,7 +217,7 @@ if ($torrent_data) {
 		sql_query("INSERT INTO files (torrent, filename, size) VALUES ($id, " . sqlesc($file_row[0]) . ", " . (int)$file_row[1] . ")");
 	}
 
-	kz_mt_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
+	multitracker_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
 }
 
 if (get_user_class() >= UC_ADMINISTRATOR) {
@@ -236,9 +236,9 @@ if (get_user_class() >= UC_ADMINISTRATOR) {
 }
 
 if (get_user_class() >= UC_MODERATOR && !$torrent_data && isset($_POST['external_trackers'])) {
-	$posted_trackers = kz_mt_parse_posted_urls($_POST['external_trackers']);
-	kz_mt_save_trackers($id, $posted_trackers, kz_mt_recover_external_info_hash($id, $row['info_hash'] ?? ''));
-	kz_mt_rewrite_torrent_file_announces($id, $posted_trackers);
+	$posted_trackers = multitracker_parse_posted_urls($_POST['external_trackers']);
+	multitracker_save_trackers($id, $posted_trackers, multitracker_recover_external_info_hash($id, $row['info_hash'] ?? ''));
+	multitracker_rewrite_torrent_file_announces($id, $posted_trackers);
 }
 
 $updateset[] = "visible = " . sqlesc(!empty($_POST["visible"]) ? "yes" : "no");
@@ -248,9 +248,9 @@ $updateset[] = "moderatedby = " . sqlesc($CURUSER["id"]);
 sql_query("UPDATE torrents SET " . join(", ", $updateset) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
 sql_query('REPLACE INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES (' . implode(', ', array_map('sqlesc', array($id, md5($descr), format_comment($descr)))) . ')') or sqlerr(__FILE__, __LINE__);
 
-kz_upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
+upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
 if ($torrent_data) {
-	kz_upload_mark_torrent_file_updated($id);
+	upload_mark_torrent_file_updated($id);
 }
 
 write_log("Торрент '$safe_name' был отредактирован пользователем {$CURUSER['username']}", "F25B61", "torrent");

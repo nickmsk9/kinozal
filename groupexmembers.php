@@ -4,16 +4,16 @@ require_once __DIR__ . '/include/bittorrent.php';
 require_once __DIR__ . '/include/groupex.php';
 
 dbconn(false);
-kz_groups_ensure_schema();
+groups_ensure_schema();
 
 $id = (int)($_GET['id'] ?? 0);
-$group = kz_groups_fetch($id);
+$group = groups_fetch($id);
 if (!$group) {
 	stderr('Группа', 'Группа не найдена.');
 }
 
-$member = !empty($CURUSER) ? kz_groups_member($id, (int)$CURUSER['id']) : null;
-$can_manage = kz_groups_can_manage($group);
+$member = !empty($CURUSER) ? groups_member($id, (int)$CURUSER['id']) : null;
+$can_manage = groups_can_manage($group);
 
 $count_res = sql_query("SELECT COUNT(*) FROM groupex_members WHERE group_id = $id AND status = 'member'") or sqlerr(__FILE__, __LINE__);
 $count_row = mysqli_fetch_row($count_res);
@@ -52,11 +52,11 @@ stdhead('Участники группы :: ' . $group['name']);
 		::
 		<a href="/mygroups.php" class="sbab">Мои группы</a>
 		::
-		<a href="/groupex.php?id=<?= $id ?>" class="sbab"><?= kz_groups_h($group['name']) ?></a>
+		<a href="/groupex.php?id=<?= $id ?>" class="sbab"><?= groups_h($group['name']) ?></a>
 		::
 		<a href="/groupexmembers.php?id=<?= $id ?>" class="sbab">Участники</a>
 	</div>
-	<?php kz_groups_group_sidebar($group, $member); ?>
+	<?php groups_group_sidebar($group, $member); ?>
 	<div class="mn3_content">
 		<?php if ($can_manage) { ?>
 			<div class="bx1">
@@ -66,7 +66,7 @@ stdhead('Участники группы :: ' . $group['name']);
 					$pending_found = false;
 					while ($row = mysqli_fetch_assoc($pending_res)) {
 						$pending_found = true;
-						echo '<tr><td>' . kz_groups_user_link((int)$row['userid'], $row['username'], (int)$row['class'], $row) . '</td>';
+						echo '<tr><td>' . groups_user_link((int)$row['userid'], $row['username'], (int)$row['class'], $row) . '</td>';
 						echo '<td class="right"><a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=approve&amp;userid=' . (int)$row['userid'] . '">Принять</a> :: <a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=decline&amp;userid=' . (int)$row['userid'] . '">Отклонить</a></td></tr>';
 					}
 					if (!$pending_found) {
@@ -96,9 +96,9 @@ stdhead('Участники группы :: ' . $group['name']);
 				while ($row = mysqli_fetch_assoc($members_res)) {
 					$found = true;
 					$role = $row['role'] === 'owner' ? 'Руководитель' : ($row['role'] === 'moderator' ? 'Модератор' : 'Участник');
-					echo '<tr class="bg"><td>' . kz_groups_user_link((int)$row['userid'], $row['username'], (int)$row['class'], $row) . '</td>';
-					echo '<td class="center">' . kz_groups_h($role) . '</td>';
-					echo '<td class="center">' . kz_groups_h(kz_groups_date($row['added_at'])) . '</td>';
+					echo '<tr class="bg"><td>' . groups_user_link((int)$row['userid'], $row['username'], (int)$row['class'], $row) . '</td>';
+					echo '<td class="center">' . groups_h($role) . '</td>';
+					echo '<td class="center">' . groups_h(groups_date($row['added_at'])) . '</td>';
 					if ($can_manage) {
 						echo '<td class="right">';
 						if ($row['role'] !== 'owner') {

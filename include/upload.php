@@ -4,12 +4,12 @@ if (!defined('IN_TRACKER')) {
 	die('Прямой вызов запрещён.');
 }
 
-function kz_h($value)
+function h($value)
 {
 	return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function kz_upload_kinds()
+function upload_kinds()
 {
 	return array(
 		'video' => 'Видео',
@@ -22,7 +22,7 @@ function kz_upload_kinds()
 	);
 }
 
-function kz_upload_categories()
+function upload_categories()
 {
 	return array(
 		'video' => array(
@@ -69,7 +69,7 @@ function kz_upload_categories()
 	);
 }
 
-function kz_upload_release_groups()
+function upload_release_groups()
 {
 	return array(
 		923 => 'Занавес',
@@ -106,7 +106,7 @@ function kz_upload_release_groups()
 	);
 }
 
-function kz_upload_quality_options()
+function upload_quality_options()
 {
 	return array(
 		'' => 'Выберите качество',
@@ -139,7 +139,7 @@ function kz_upload_quality_options()
 	);
 }
 
-function kz_upload_translation_options()
+function upload_translation_options()
 {
 	return array(
 		'' => 'Выберите перевод',
@@ -155,7 +155,7 @@ function kz_upload_translation_options()
 	);
 }
 
-function kz_upload_language_options()
+function upload_language_options()
 {
 	return array(
 		'' => 'Выберите язык',
@@ -167,7 +167,7 @@ function kz_upload_language_options()
 	);
 }
 
-function kz_upload_subtitle_options()
+function upload_subtitle_options()
 {
 	return array(
 		'' => 'Выберите субтитры',
@@ -179,7 +179,7 @@ function kz_upload_subtitle_options()
 	);
 }
 
-function kz_upload_default_data()
+function upload_default_data()
 {
 	return array(
 		'version' => 1,
@@ -229,7 +229,7 @@ function kz_upload_default_data()
 			'screens' => '',
 			'notes' => '',
 		),
-		'templates' => kz_upload_templates_default_data(),
+		'templates' => upload_templates_default_data(),
 		'generic' => array(
 			'desc1' => '',
 			'desc2' => '',
@@ -239,7 +239,7 @@ function kz_upload_default_data()
 	);
 }
 
-function kz_upload_empty_advanced()
+function upload_empty_advanced()
 {
 	return array(
 		'desc1' => '',
@@ -249,7 +249,7 @@ function kz_upload_empty_advanced()
 	);
 }
 
-function kz_upload_empty_design()
+function upload_empty_design()
 {
 	return array(
 		'related' => array(),
@@ -262,21 +262,21 @@ function kz_upload_empty_design()
 	);
 }
 
-function kz_upload_templates_default_data()
+function upload_templates_default_data()
 {
 	$out = array();
 	foreach (array('music', 'game', 'audiobook', 'program', 'book', 'graphic') as $kind) {
 		$out[$kind] = array(
 			'fields' => array(),
-			'advanced' => kz_upload_empty_advanced(),
-			'design' => kz_upload_empty_design(),
+			'advanced' => upload_empty_advanced(),
+			'design' => upload_empty_design(),
 		);
 	}
 
 	return $out;
 }
 
-function kz_upload_release_specs()
+function upload_release_specs()
 {
 	static $specs = null;
 	if ($specs !== null) {
@@ -493,27 +493,27 @@ function kz_upload_release_specs()
 
 	foreach ($specs as $kind => $spec) {
 		for ($i = 0; $i < 3; $i++) {
-			$specs[$kind]['advanced'][$i] = kz_upload_fields_to_advanced($spec['sections'][$i]['fields']);
+			$specs[$kind]['advanced'][$i] = upload_fields_to_advanced($spec['sections'][$i]['fields']);
 		}
-		$specs[$kind]['advanced'][3] = kz_upload_design_to_advanced($spec['design']);
+		$specs[$kind]['advanced'][3] = upload_design_to_advanced($spec['design']);
 	}
 
 	return $specs;
 }
 
-function kz_upload_table_exists($table)
+function upload_table_exists($table)
 {
 	$res = sql_query("SHOW TABLES LIKE " . sqlesc($table));
 	return $res && mysqli_num_rows($res) > 0;
 }
 
-function kz_upload_table_column_exists($table, $column)
+function upload_table_column_exists($table, $column)
 {
 	$res = sql_query("SHOW COLUMNS FROM " . $table . " LIKE " . sqlesc($column));
 	return $res && mysqli_num_rows($res) > 0;
 }
 
-function kz_upload_ensure_schema()
+function upload_ensure_schema()
 {
 	sql_query("
 		CREATE TABLE IF NOT EXISTS torrent_details (
@@ -534,12 +534,12 @@ function kz_upload_ensure_schema()
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
 
-	if (!kz_upload_table_column_exists('torrent_details', 'torrent_file_updated_at')) {
+	if (!upload_table_column_exists('torrent_details', 'torrent_file_updated_at')) {
 		sql_query("ALTER TABLE torrent_details ADD torrent_file_updated_at datetime NULL DEFAULT NULL AFTER rgroup_button") or sqlerr(__FILE__, __LINE__);
 	}
 }
 
-function kz_upload_load_details($tid)
+function upload_load_details($tid)
 {
 	$tid = (int)$tid;
 	$details = array(
@@ -552,10 +552,10 @@ function kz_upload_load_details($tid)
 		'torrent_file_updated_at' => '',
 		'form_mode' => 0,
 		'section_modes' => '0,0,0,0',
-		'data' => kz_upload_default_data(),
+		'data' => upload_default_data(),
 	);
 
-	if ($tid <= 0 || !kz_upload_table_exists('torrent_details')) {
+	if ($tid <= 0 || !upload_table_exists('torrent_details')) {
 		return $details;
 	}
 
@@ -579,22 +579,22 @@ function kz_upload_load_details($tid)
 	$details['torrent_file_updated_at'] = (string)($row['torrent_file_updated_at'] ?? '');
 	$details['form_mode'] = (int)$row['form_mode'];
 	$details['section_modes'] = (string)$row['section_modes'];
-	$details['data'] = array_replace_recursive(kz_upload_default_data(), $data);
+	$details['data'] = array_replace_recursive(upload_default_data(), $data);
 
 	return $details;
 }
 
-function kz_upload_save_details($tid, $kind, $poster_url, $rgroup, $rgroup_button, array $data)
+function upload_save_details($tid, $kind, $poster_url, $rgroup, $rgroup_button, array $data)
 {
-	kz_upload_ensure_schema();
+	upload_ensure_schema();
 
 	$tid = (int)$tid;
-	$kind = kz_upload_normalize_kind($kind);
+	$kind = upload_normalize_kind($kind);
 	$poster_url = trim((string)$poster_url);
 	$rgroup = (int)$rgroup;
 	$rgroup_button = trim((string)$rgroup_button);
 	$form_mode = (int)($data['mode'] ?? 0);
-	$section_modes = kz_upload_normalize_section_modes($data['section_modes'] ?? array());
+	$section_modes = upload_normalize_section_modes($data['section_modes'] ?? array());
 	$data['section_modes'] = $section_modes;
 
 	$json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -627,23 +627,23 @@ function kz_upload_save_details($tid, $kind, $poster_url, $rgroup, $rgroup_butto
 	") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_upload_mark_torrent_file_updated($tid)
+function upload_mark_torrent_file_updated($tid)
 {
-	kz_upload_ensure_schema();
+	upload_ensure_schema();
 	sql_query("UPDATE torrent_details SET torrent_file_updated_at = NOW(), updated_at = NOW() WHERE tid = " . (int)$tid) or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_upload_normalize_kind($kind)
+function upload_normalize_kind($kind)
 {
 	$kind = (string)$kind;
-	$kinds = kz_upload_kinds();
+	$kinds = upload_kinds();
 	return isset($kinds[$kind]) ? $kind : 'video';
 }
 
-function kz_upload_kind_by_category($category)
+function upload_kind_by_category($category)
 {
 	$category = (int)$category;
-	foreach (kz_upload_categories() as $kind => $items) {
+	foreach (upload_categories() as $kind => $items) {
 		if (isset($items[$category])) {
 			return $kind;
 		}
@@ -652,15 +652,15 @@ function kz_upload_kind_by_category($category)
 	return 'video';
 }
 
-function kz_upload_is_valid_category($kind, $category)
+function upload_is_valid_category($kind, $category)
 {
-	$kind = kz_upload_normalize_kind($kind);
+	$kind = upload_normalize_kind($kind);
 	$category = (int)$category;
-	$categories = kz_upload_categories();
+	$categories = upload_categories();
 	return isset($categories[$kind][$category]);
 }
 
-function kz_upload_normalize_section_modes($modes)
+function upload_normalize_section_modes($modes)
 {
 	$out = array(0, 0, 0, 0);
 	if (!is_array($modes)) {
@@ -674,7 +674,7 @@ function kz_upload_normalize_section_modes($modes)
 	return $out;
 }
 
-function kz_upload_post_text($array, $key, $default = '')
+function upload_post_text($array, $key, $default = '')
 {
 	if (!is_array($array) || !array_key_exists($key, $array)) {
 		return $default;
@@ -683,7 +683,7 @@ function kz_upload_post_text($array, $key, $default = '')
 	return trim((string)$array[$key]);
 }
 
-function kz_upload_collect_pairs($titles, $values, $value_key)
+function upload_collect_pairs($titles, $values, $value_key)
 {
 	$pairs = array();
 	$titles = is_array($titles) ? $titles : array();
@@ -704,46 +704,46 @@ function kz_upload_collect_pairs($titles, $values, $value_key)
 	return $pairs;
 }
 
-function kz_upload_collect_design(array $design, array $defaults = array())
+function upload_collect_design(array $design, array $defaults = array())
 {
-	$out = array_replace_recursive(kz_upload_empty_design(), $defaults);
-	$out['related'] = kz_upload_collect_pairs($design['related_title'] ?? array(), $design['related_query'] ?? array(), 'query');
-	$out['watch'] = kz_upload_collect_pairs($design['watch_title'] ?? array(), $design['watch_url'] ?? array(), 'url');
-	$out['tabs'] = kz_upload_collect_pairs($design['tab_title'] ?? array(), $design['tab_content'] ?? array(), 'content');
-	$out['screens'] = kz_upload_post_text($design, 'screens');
-	$out['notes'] = kz_upload_post_text($design, 'notes');
+	$out = array_replace_recursive(upload_empty_design(), $defaults);
+	$out['related'] = upload_collect_pairs($design['related_title'] ?? array(), $design['related_query'] ?? array(), 'query');
+	$out['watch'] = upload_collect_pairs($design['watch_title'] ?? array(), $design['watch_url'] ?? array(), 'url');
+	$out['tabs'] = upload_collect_pairs($design['tab_title'] ?? array(), $design['tab_content'] ?? array(), 'content');
+	$out['screens'] = upload_post_text($design, 'screens');
+	$out['notes'] = upload_post_text($design, 'notes');
 	$out['imdb'] = array(
 		'enabled' => !empty($design['imdb_enabled']) ? 1 : 0,
-		'url' => kz_upload_post_text($design, 'imdb_url'),
-		'rating' => kz_upload_post_text($design, 'imdb_rating'),
+		'url' => upload_post_text($design, 'imdb_url'),
+		'rating' => upload_post_text($design, 'imdb_rating'),
 	);
 	$out['kinopoisk'] = array(
 		'enabled' => !empty($design['kinopoisk_enabled']) ? 1 : 0,
-		'url' => kz_upload_post_text($design, 'kinopoisk_url'),
-		'rating' => kz_upload_post_text($design, 'kinopoisk_rating'),
+		'url' => upload_post_text($design, 'kinopoisk_url'),
+		'rating' => upload_post_text($design, 'kinopoisk_rating'),
 	);
 
 	return $out;
 }
 
-function kz_upload_collect_post($torrent_size = 0)
+function upload_collect_post($torrent_size = 0)
 {
-	$data = kz_upload_default_data();
-	$kind = kz_upload_normalize_kind($_POST['kind'] ?? 'video');
+	$data = upload_default_data();
+	$kind = upload_normalize_kind($_POST['kind'] ?? 'video');
 	$mode = !empty($_POST['mode']) ? 1 : 0;
-	$section_modes = kz_upload_normalize_section_modes($_POST['section_mode'] ?? array());
+	$section_modes = upload_normalize_section_modes($_POST['section_mode'] ?? array());
 
 	$data['mode'] = $mode;
 	$data['section_modes'] = $section_modes;
 
 	$advanced = is_array($_POST['advanced'] ?? null) ? $_POST['advanced'] : array();
 	for ($i = 1; $i <= 4; $i++) {
-		$data['advanced']['desc' . $i] = kz_upload_post_text($advanced, 'desc' . $i);
+		$data['advanced']['desc' . $i] = upload_post_text($advanced, 'desc' . $i);
 	}
 
 	$video = is_array($_POST['video'] ?? null) ? $_POST['video'] : array();
 	foreach ($data['video'] as $key => $value) {
-		$data['video'][$key] = kz_upload_post_text($video, $key);
+		$data['video'][$key] = upload_post_text($video, $key);
 	}
 
 	if ($data['video']['size'] === '' && $torrent_size > 0) {
@@ -751,36 +751,36 @@ function kz_upload_collect_post($torrent_size = 0)
 	}
 
 	$design = is_array($_POST['design'] ?? null) ? $_POST['design'] : array();
-	$data['design'] = kz_upload_collect_design($design, $data['design']);
+	$data['design'] = upload_collect_design($design, $data['design']);
 
 	$generic = is_array($_POST['generic'] ?? null) ? $_POST['generic'] : array();
 	for ($i = 1; $i <= 4; $i++) {
-		$data['generic']['desc' . $i] = kz_upload_post_text($generic, 'desc' . $i);
+		$data['generic']['desc' . $i] = upload_post_text($generic, 'desc' . $i);
 	}
 
 	$posted_templates = is_array($_POST['templates'] ?? null) ? $_POST['templates'] : array();
-	$specs = kz_upload_release_specs();
+	$specs = upload_release_specs();
 	foreach ($specs as $template_kind => $spec) {
 		$template_post = is_array($posted_templates[$template_kind] ?? null) ? $posted_templates[$template_kind] : array();
 		$fields_post = is_array($template_post['fields'] ?? null) ? $template_post['fields'] : array();
 		$advanced_post = is_array($template_post['advanced'] ?? null) ? $template_post['advanced'] : array();
 		$design_post = is_array($template_post['design'] ?? null) ? $template_post['design'] : array();
 
-		foreach (kz_upload_release_field_keys($spec) as $field_key) {
-			$data['templates'][$template_kind]['fields'][$field_key] = kz_upload_post_text($fields_post, $field_key);
+		foreach (upload_release_field_keys($spec) as $field_key) {
+			$data['templates'][$template_kind]['fields'][$field_key] = upload_post_text($fields_post, $field_key);
 		}
 		for ($i = 1; $i <= 4; $i++) {
-			$data['templates'][$template_kind]['advanced']['desc' . $i] = kz_upload_post_text($advanced_post, 'desc' . $i);
+			$data['templates'][$template_kind]['advanced']['desc' . $i] = upload_post_text($advanced_post, 'desc' . $i);
 		}
-		$data['templates'][$template_kind]['design'] = kz_upload_collect_design($design_post, $spec['design']);
+		$data['templates'][$template_kind]['design'] = upload_collect_design($design_post, $spec['design']);
 	}
 
-	kz_upload_apply_torrent_size($data, $kind, $torrent_size);
+	upload_apply_torrent_size($data, $kind, $torrent_size);
 
 	return array($kind, $data);
 }
 
-function kz_upload_release_field_keys(array $spec)
+function upload_release_field_keys(array $spec)
 {
 	$keys = array();
 	foreach (($spec['sections'] ?? array()) as $section) {
@@ -795,7 +795,7 @@ function kz_upload_release_field_keys(array $spec)
 	return $keys;
 }
 
-function kz_upload_apply_torrent_size(array &$data, $kind, $torrent_size)
+function upload_apply_torrent_size(array &$data, $kind, $torrent_size)
 {
 	$torrent_size = (int)$torrent_size;
 	if ($torrent_size <= 0) {
@@ -814,7 +814,7 @@ function kz_upload_apply_torrent_size(array &$data, $kind, $torrent_size)
 	}
 }
 
-function kz_upload_line($label, $value)
+function upload_line($label, $value)
 {
 	$value = trim((string)$value);
 	if ($value === '') {
@@ -824,7 +824,7 @@ function kz_upload_line($label, $value)
 	return '[b]' . $label . ':[/b] ' . $value;
 }
 
-function kz_upload_section_from_lines(array $lines)
+function upload_section_from_lines(array $lines)
 {
 	$out = array();
 	foreach ($lines as $line) {
@@ -837,7 +837,7 @@ function kz_upload_section_from_lines(array $lines)
 	return implode("\n", $out);
 }
 
-function kz_upload_fields_to_advanced(array $fields, array $values = array())
+function upload_fields_to_advanced(array $fields, array $values = array())
 {
 	$lines = array();
 	foreach ($fields as $field) {
@@ -855,7 +855,7 @@ function kz_upload_fields_to_advanced(array $fields, array $values = array())
 	return implode("\n", $lines);
 }
 
-function kz_upload_design_to_advanced(array $design)
+function upload_design_to_advanced(array $design)
 {
 	$parts = array();
 	foreach (($design['related'] ?? array()) as $item) {
@@ -883,30 +883,30 @@ function kz_upload_design_to_advanced(array $design)
 	return trim(implode("\n", $parts));
 }
 
-function kz_upload_build_description(array $data, $kind, $torrent_name = '', $torrent_size = 0)
+function upload_build_description(array $data, $kind, $torrent_name = '', $torrent_size = 0)
 {
-	$kind = kz_upload_normalize_kind($kind);
-	$section_modes = kz_upload_normalize_section_modes($data['section_modes'] ?? array());
+	$kind = upload_normalize_kind($kind);
+	$section_modes = upload_normalize_section_modes($data['section_modes'] ?? array());
 	$advanced = $data['advanced'] ?? array();
 
 	if ($kind !== 'video') {
-		$specs = kz_upload_release_specs();
+		$specs = upload_release_specs();
 		$spec = $specs[$kind] ?? null;
 		if (!$spec) {
 			return '';
 		}
 		$template = array_replace_recursive(array(
 			'fields' => array(),
-			'advanced' => kz_upload_empty_advanced(),
-			'design' => kz_upload_empty_design(),
+			'advanced' => upload_empty_advanced(),
+			'design' => upload_empty_design(),
 		), $data['templates'][$kind] ?? array());
 		$fields = $template['fields'] ?? array();
 		$template_advanced = $template['advanced'] ?? array();
 		$normal = array();
 		for ($i = 0; $i < 3; $i++) {
-			$normal[$i] = kz_upload_fields_to_advanced($spec['sections'][$i]['fields'], $fields);
+			$normal[$i] = upload_fields_to_advanced($spec['sections'][$i]['fields'], $fields);
 		}
-		$normal[3] = kz_upload_build_design_bbcode($template['design'] ?? array());
+		$normal[3] = upload_build_design_bbcode($template['design'] ?? array());
 
 		$parts = array();
 		for ($i = 0; $i < 4; $i++) {
@@ -926,29 +926,29 @@ function kz_upload_build_description(array $data, $kind, $torrent_name = '', $to
 	$design = $data['design'] ?? array();
 
 	$normal = array();
-	$normal[0] = kz_upload_section_from_lines(array(
-		kz_upload_line('Название', $video['title'] ?? ''),
-		kz_upload_line('Оригинальное название', $video['original_title'] ?? ''),
-		kz_upload_line('Год выпуска', $video['year'] ?? ''),
-		kz_upload_line('Жанр', $video['genre'] ?? ''),
-		kz_upload_line('Выпущено', $video['released'] ?? ''),
-		kz_upload_line('Режиссер', $video['director'] ?? ''),
-		kz_upload_line('В ролях', $video['cast'] ?? ''),
+	$normal[0] = upload_section_from_lines(array(
+		upload_line('Название', $video['title'] ?? ''),
+		upload_line('Оригинальное название', $video['original_title'] ?? ''),
+		upload_line('Год выпуска', $video['year'] ?? ''),
+		upload_line('Жанр', $video['genre'] ?? ''),
+		upload_line('Выпущено', $video['released'] ?? ''),
+		upload_line('Режиссер', $video['director'] ?? ''),
+		upload_line('В ролях', $video['cast'] ?? ''),
 	));
-	$normal[1] = kz_upload_section_from_lines(array(
-		kz_upload_line('О фильме', $video['about'] ?? ''),
+	$normal[1] = upload_section_from_lines(array(
+		upload_line('О фильме', $video['about'] ?? ''),
 	));
-	$normal[2] = kz_upload_section_from_lines(array(
-		kz_upload_line('Качество', $video['quality'] ?? ''),
-		kz_upload_line('Видео', $video['video'] ?? ''),
-		kz_upload_line('Аудио', $video['audio'] ?? ''),
-		kz_upload_line('Размер', $video['size'] ?? ''),
-		kz_upload_line('Продолжительность', $video['duration'] ?? ''),
-		kz_upload_line('Перевод', $video['translation'] ?? ''),
-		kz_upload_line('Язык', $video['language'] ?? ''),
-		kz_upload_line('Субтитры', $video['subtitles'] ?? ''),
+	$normal[2] = upload_section_from_lines(array(
+		upload_line('Качество', $video['quality'] ?? ''),
+		upload_line('Видео', $video['video'] ?? ''),
+		upload_line('Аудио', $video['audio'] ?? ''),
+		upload_line('Размер', $video['size'] ?? ''),
+		upload_line('Продолжительность', $video['duration'] ?? ''),
+		upload_line('Перевод', $video['translation'] ?? ''),
+		upload_line('Язык', $video['language'] ?? ''),
+		upload_line('Субтитры', $video['subtitles'] ?? ''),
 	));
-	$normal[3] = kz_upload_build_design_bbcode($design);
+	$normal[3] = upload_build_design_bbcode($design);
 
 	$parts = array();
 	for ($i = 0; $i < 4; $i++) {
@@ -962,13 +962,13 @@ function kz_upload_build_description(array $data, $kind, $torrent_name = '', $to
 	}
 
 	if (!$parts && trim((string)$torrent_name) !== '') {
-		$parts[] = kz_upload_line('Название', $torrent_name);
+		$parts[] = upload_line('Название', $torrent_name);
 	}
 
 	return trim(implode("\n\n", $parts));
 }
 
-function kz_upload_build_design_bbcode(array $design)
+function upload_build_design_bbcode(array $design)
 {
 	$parts = array();
 	$related_lines = array();
@@ -985,12 +985,12 @@ function kz_upload_build_design_bbcode(array $design)
 
 	$imdb = $design['imdb'] ?? array();
 	if (!empty($imdb['enabled']) && trim((string)($imdb['url'] ?? '')) !== '') {
-		$parts[] = kz_upload_rating_line('IMDb', $imdb['url'], $imdb['rating'] ?? '');
+		$parts[] = upload_rating_line('IMDb', $imdb['url'], $imdb['rating'] ?? '');
 	}
 
 	$kinopoisk = $design['kinopoisk'] ?? array();
 	if (!empty($kinopoisk['enabled']) && trim((string)($kinopoisk['url'] ?? '')) !== '') {
-		$parts[] = kz_upload_rating_line('КиноПоиск', $kinopoisk['url'], $kinopoisk['rating'] ?? '');
+		$parts[] = upload_rating_line('КиноПоиск', $kinopoisk['url'], $kinopoisk['rating'] ?? '');
 	}
 
 	$watch_lines = array();
@@ -1013,7 +1013,7 @@ function kz_upload_build_design_bbcode(array $design)
 		}
 	}
 
-	$screens = kz_upload_screens_to_bbcode($design['screens'] ?? '');
+	$screens = upload_screens_to_bbcode($design['screens'] ?? '');
 	if ($screens !== '') {
 		$parts[] = $screens;
 	}
@@ -1026,7 +1026,7 @@ function kz_upload_build_design_bbcode(array $design)
 	return trim(implode("\n\n", $parts));
 }
 
-function kz_upload_build_design_section(array $design)
+function upload_build_design_section(array $design)
 {
 	global $DEFAULTBASEURL;
 
@@ -1046,12 +1046,12 @@ function kz_upload_build_design_section(array $design)
 
 	$imdb = $design['imdb'] ?? array();
 	if (!empty($imdb['enabled']) && trim((string)($imdb['url'] ?? '')) !== '') {
-		$parts[] = kz_upload_rating_line('IMDb', $imdb['url'], $imdb['rating'] ?? '');
+		$parts[] = upload_rating_line('IMDb', $imdb['url'], $imdb['rating'] ?? '');
 	}
 
 	$kinopoisk = $design['kinopoisk'] ?? array();
 	if (!empty($kinopoisk['enabled']) && trim((string)($kinopoisk['url'] ?? '')) !== '') {
-		$parts[] = kz_upload_rating_line('КиноПоиск', $kinopoisk['url'], $kinopoisk['rating'] ?? '');
+		$parts[] = upload_rating_line('КиноПоиск', $kinopoisk['url'], $kinopoisk['rating'] ?? '');
 	}
 
 	$watch_lines = array();
@@ -1076,7 +1076,7 @@ function kz_upload_build_design_section(array $design)
 		$parts[] = '[hide=' . $title . ']' . $content . '[/hide]';
 	}
 
-	$screens = kz_upload_screens_to_bbcode($design['screens'] ?? '');
+	$screens = upload_screens_to_bbcode($design['screens'] ?? '');
 	if ($screens !== '') {
 		$parts[] = $screens;
 	}
@@ -1089,7 +1089,7 @@ function kz_upload_build_design_section(array $design)
 	return trim(implode("\n\n", $parts));
 }
 
-function kz_upload_rating_line($title, $url, $rating)
+function upload_rating_line($title, $url, $rating)
 {
 	$url = trim((string)$url);
 	$rating = trim((string)$rating);
@@ -1101,7 +1101,7 @@ function kz_upload_rating_line($title, $url, $rating)
 	return '[b]' . $title . ':[/b] [url=' . $url . ']' . $url . '[/url]';
 }
 
-function kz_upload_screens_to_bbcode($value)
+function upload_screens_to_bbcode($value)
 {
 	$value = trim((string)$value);
 	if ($value === '') {
@@ -1129,14 +1129,14 @@ function kz_upload_screens_to_bbcode($value)
 	return implode("\n", $out);
 }
 
-function kz_upload_meta_description($descr)
+function upload_meta_description($descr)
 {
 	$text = trim(preg_replace('#\s+#u', ' ', strip_tags((string)$descr)));
 	$text = preg_replace('#\[(?:/?[a-z0-9]+(?:=[^\]]+)?)\]#iu', '', $text);
 	return mb_substr($text, 0, 250, 'UTF-8');
 }
 
-function kz_upload_keywords(array $data, $kind, $name)
+function upload_keywords(array $data, $kind, $name)
 {
 	if ($kind === 'video') {
 		$video = $data['video'] ?? array();
@@ -1158,15 +1158,15 @@ function kz_upload_keywords(array $data, $kind, $name)
 	return trim(implode(', ', array_filter(array_map('trim', $parts))));
 }
 
-function kz_upload_release_name_part($value)
+function upload_release_name_part($value)
 {
 	$value = trim(preg_replace('#\s+#u', ' ', (string)$value));
 	return trim($value, " \t\n\r\0\x0B/");
 }
 
-function kz_upload_translation_short($translation)
+function upload_translation_short($translation)
 {
-	$translation = kz_upload_release_name_part($translation);
+	$translation = upload_release_name_part($translation);
 	if ($translation === '') {
 		return '';
 	}
@@ -1196,16 +1196,16 @@ function kz_upload_translation_short($translation)
 	return $translation;
 }
 
-function kz_upload_generated_name(array $data, $kind)
+function upload_generated_name(array $data, $kind)
 {
-	$kind = kz_upload_normalize_kind($kind);
+	$kind = upload_normalize_kind($kind);
 	if ($kind === 'video') {
 		$video = $data['video'] ?? array();
 		$fields = array(
 			$video['title'] ?? '',
 			$video['original_title'] ?? '',
 			$video['year'] ?? '',
-			kz_upload_translation_short($video['translation'] ?? ''),
+			upload_translation_short($video['translation'] ?? ''),
 			$video['quality'] ?? '',
 		);
 	} else {
@@ -1220,7 +1220,7 @@ function kz_upload_generated_name(array $data, $kind)
 
 	$parts = array();
 	foreach ($fields as $field) {
-		$field = kz_upload_release_name_part($field);
+		$field = upload_release_name_part($field);
 		if ($field !== '') {
 			$parts[] = $field;
 		}
@@ -1229,33 +1229,33 @@ function kz_upload_generated_name(array $data, $kind)
 	return implode(' / ', $parts);
 }
 
-function kz_upload_option_select($name, array $options, $selected, $class = 'w100p', $extra = '')
+function upload_option_select($name, array $options, $selected, $class = 'w100p', $extra = '')
 {
-	$html = '<select name="' . kz_h($name) . '" class="' . kz_h($class) . '"' . ($extra ? ' ' . $extra : '') . '>';
+	$html = '<select name="' . h($name) . '" class="' . h($class) . '"' . ($extra ? ' ' . $extra : '') . '>';
 	foreach ($options as $value => $label) {
-		$html .= '<option value="' . kz_h($value) . '"' . ((string)$value === (string)$selected ? ' selected="selected"' : '') . '>' . kz_h($label) . '</option>';
+		$html .= '<option value="' . h($value) . '"' . ((string)$value === (string)$selected ? ' selected="selected"' : '') . '>' . h($label) . '</option>';
 	}
 	$html .= '</select>';
 	return $html;
 }
 
-function kz_upload_input($name, $value, $placeholder = '')
+function upload_input($name, $value, $placeholder = '')
 {
-	return '<input type="text" name="' . kz_h($name) . '" value="' . kz_h($value) . '" class="w100p up"' . ($placeholder !== '' ? ' placeholder="' . kz_h($placeholder) . '"' : '') . '>';
+	return '<input type="text" name="' . h($name) . '" value="' . h($value) . '" class="w100p up"' . ($placeholder !== '' ? ' placeholder="' . h($placeholder) . '"' : '') . '>';
 }
 
-function kz_upload_textarea($name, $value, $rows = 6, $placeholder = '')
+function upload_textarea($name, $value, $rows = 6, $placeholder = '')
 {
-	return '<textarea name="' . kz_h($name) . '" rows="' . (int)$rows . '" class="w100p up"' . ($placeholder !== '' ? ' placeholder="' . kz_h($placeholder) . '"' : '') . '>' . kz_h($value) . '</textarea>';
+	return '<textarea name="' . h($name) . '" rows="' . (int)$rows . '" class="w100p up"' . ($placeholder !== '' ? ' placeholder="' . h($placeholder) . '"' : '') . '>' . h($value) . '</textarea>';
 }
 
-function kz_upload_render_info_sidebar()
+function upload_render_info_sidebar()
 {
 	global $CURUSER;
 
 	$user = '<span class="u0">Гость</span>';
 	if (!empty($CURUSER)) {
-		$user = '<a href="/userdetails.php?id=' . (int)$CURUSER['id'] . '" class="u' . (int)$CURUSER['class'] . '">' . kz_h($CURUSER['username']) . '</a>';
+		$user = '<a href="/userdetails.php?id=' . (int)$CURUSER['id'] . '" class="u' . (int)$CURUSER['class'] . '">' . h($CURUSER['username']) . '</a>';
 	}
 	?>
 	<div class="mn3_menu">
@@ -1297,28 +1297,28 @@ function kz_upload_render_info_sidebar()
 	<?php
 }
 
-function kz_upload_render_form($action, $submit_label, array $state, $is_edit = false)
+function upload_render_form($action, $submit_label, array $state, $is_edit = false)
 {
 	$name = (string)($state['name'] ?? '');
-	$kind = kz_upload_normalize_kind($state['kind'] ?? 'video');
+	$kind = upload_normalize_kind($state['kind'] ?? 'video');
 	$category = (int)($state['category'] ?? 0);
 	$details = $state['details'] ?? array();
-	$data = array_replace_recursive(kz_upload_default_data(), $details['data'] ?? array());
+	$data = array_replace_recursive(upload_default_data(), $details['data'] ?? array());
 	$poster_url = (string)($details['poster_url'] ?? '');
 	$rgroup = (int)($details['rgroup'] ?? 0);
 	$rgroup_button = (string)($details['rgroup_button'] ?? '');
 	$mode = (int)($data['mode'] ?? 0);
-	$section_modes = kz_upload_normalize_section_modes($data['section_modes'] ?? array());
+	$section_modes = upload_normalize_section_modes($data['section_modes'] ?? array());
 	$allow_file = !empty($state['allow_file']);
 	?>
-	<form enctype="multipart/form-data" action="<?= kz_h($action) ?>" method="post" name="upt" id="upt">
+	<form enctype="multipart/form-data" action="<?= h($action) ?>" method="post" name="upt" id="upt">
 		<?php if ($is_edit) { ?>
 			<input type="hidden" name="id" value="<?= (int)$state['id'] ?>">
 			<?php if (!empty($state['returnto'])) { ?>
-				<input type="hidden" name="returnto" value="<?= kz_h($state['returnto']) ?>">
+				<input type="hidden" name="returnto" value="<?= h($state['returnto']) ?>">
 			<?php } ?>
 		<?php } ?>
-		<input type="hidden" name="kind" id="kind" value="<?= kz_h($kind) ?>">
+		<input type="hidden" name="kind" id="kind" value="<?= h($kind) ?>">
 		<input type="hidden" name="type" id="type" value="<?= (int)$category ?>">
 		<input type="hidden" name="mode" id="mode" value="<?= $mode ?>">
 		<?php for ($i = 0; $i < 4; $i++) { ?>
@@ -1329,8 +1329,8 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 			<ul class="men up">
 				<li class="hdr">Название</li>
 				<li>
-					<input type="hidden" name="name" id="name" value="<?= kz_h($name) ?>">
-					<input type="text" id="generated_name" value="<?= kz_h($name) ?>" class="w100p up" readonly="readonly">
+					<input type="hidden" name="name" id="name" value="<?= h($name) ?>">
+					<input type="text" id="generated_name" value="<?= h($name) ?>" class="w100p up" readonly="readonly">
 					<div class="n">Название формируется автоматически из полей описания.</div>
 				</li>
 				<?php if (!$is_edit || $allow_file) { ?>
@@ -1339,7 +1339,7 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 				<?php } ?>
 				<li class="hdr">Ссылка на постер</li>
 				<li>
-					<?= kz_upload_input('imgl', $poster_url) ?>
+					<?= upload_input('imgl', $poster_url) ?>
 					<div class="n">Ширина постера - 200 пикселей. Разместите постер на одном из <a href="//forum.kinozal.tv/showthread.php?t=78697" target="_blank" class="sba">хостингов изображений</a></div>
 				</li>
 			</ul>
@@ -1348,7 +1348,7 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 		<div class="bx1 upl">
 			<ul class="men up">
 				<li class="up_tmplt">Тип раздачи</li>
-				<li><?php kz_upload_render_kind_tabs($kind); ?></li>
+				<li><?php upload_render_kind_tabs($kind); ?></li>
 			</ul>
 		</div>
 
@@ -1366,12 +1366,12 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 		</div>
 
 		<div id="template_video"<?= $kind === 'video' ? '' : ' style="display:none;"' ?>>
-			<?php kz_upload_render_video_template($data, $section_modes); ?>
+			<?php upload_render_video_template($data, $section_modes); ?>
 		</div>
 
-		<?php foreach (kz_upload_release_specs() as $template_kind => $spec) { ?>
-			<div id="template_<?= kz_h($template_kind) ?>"<?= $kind === $template_kind ? '' : ' style="display:none;"' ?>>
-				<?php kz_upload_render_release_template($template_kind, $data, $section_modes); ?>
+		<?php foreach (upload_release_specs() as $template_kind => $spec) { ?>
+			<div id="template_<?= h($template_kind) ?>"<?= $kind === $template_kind ? '' : ' style="display:none;"' ?>>
+				<?php upload_render_release_template($template_kind, $data, $section_modes); ?>
 			</div>
 		<?php } ?>
 
@@ -1381,14 +1381,14 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 				<li>
 					<select name="rgroup" class="w250 styled" onchange="document.forms['upt'].elements['rbut'].value = this.value == '0' ? '' : ('/pic/groupex/' + this.value + '.gif');">
 						<option value="0">Выберите релиз-группу</option>
-						<?php foreach (kz_upload_release_groups() as $id => $label) { ?>
-							<option value="<?= (int)$id ?>"<?= (int)$id === $rgroup ? ' selected="selected"' : '' ?>><?= kz_h($label) ?></option>
+						<?php foreach (upload_release_groups() as $id => $label) { ?>
+							<option value="<?= (int)$id ?>"<?= (int)$id === $rgroup ? ' selected="selected"' : '' ?>><?= h($label) ?></option>
 						<?php } ?>
 					</select>
 				</li>
 				<li class="hdr">Кнопка релиз-группы</li>
 				<li>
-					<input type="text" name="rbut" class="w100p up" value="<?= kz_h($rgroup_button) ?>">
+					<input type="text" name="rbut" class="w100p up" value="<?= h($rgroup_button) ?>">
 					<div class="n">Кнопка релиз-группы (88x31) или имя релиз-группы, если нет баннера. <a href="//forum.kinozal.tv/showthread.php?t=78697" target="_blank" class="sba">Список хостингов</a></div>
 				</li>
 			</ul>
@@ -1397,7 +1397,7 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 		<div class="bx1 upl">
 			<ul class="men up">
 				<li class="hdr">Раздел</li>
-				<li><?php kz_upload_render_category_selects($kind, $category); ?></li>
+				<li><?php upload_render_category_selects($kind, $category); ?></li>
 				<li class="hdr">Тип раздачи</li>
 				<li><a href="//forum.kinozal.tv/showpost.php?p=2715225" class="sba" target="_blank">Правила включения золотых и серебряных раздач</a></li>
 			</ul>
@@ -1414,112 +1414,112 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 
 		<div class="bx1">
 			<div class="u7">
-				<input type="button" value="<?= kz_h($submit_label) ?>" onclick="Upl.upload();" class="buttonS">
+				<input type="button" value="<?= h($submit_label) ?>" onclick="Upl.upload();" class="buttonS">
 				<input type="button" value="Предварительный просмотр" onclick="Upl.test();" class="buttonS">
 			</div>
 		</div>
 	</form>
 
-	<?php kz_upload_render_js($kind, $mode, $section_modes); ?>
+	<?php upload_render_js($kind, $mode, $section_modes); ?>
 	<?php
 }
 
-function kz_upload_render_kind_tabs($current)
+function upload_render_kind_tabs($current)
 {
 	echo '<ul class="lis">';
-	foreach (kz_upload_kinds() as $kind => $label) {
-		echo '<li id="kind_tab_' . kz_h($kind) . '" class="bx1 up_tmpl' . ($kind === $current ? ' up_tmpls' : ' sbab') . '"><a href="#" onclick="Upl.setTemplate(\'' . kz_h($kind) . '\'); return false;">' . kz_h($label) . '</a></li>';
+	foreach (upload_kinds() as $kind => $label) {
+		echo '<li id="kind_tab_' . h($kind) . '" class="bx1 up_tmpl' . ($kind === $current ? ' up_tmpls' : ' sbab') . '"><a href="#" onclick="Upl.setTemplate(\'' . h($kind) . '\'); return false;">' . h($label) . '</a></li>';
 	}
 	echo '</ul><div class="clr"></div>';
 }
 
-function kz_upload_render_category_selects($current_kind, $current_category)
+function upload_render_category_selects($current_kind, $current_category)
 {
-	foreach (kz_upload_categories() as $kind => $items) {
-		echo '<select class="w250' . ($kind === $current_kind ? '' : ' up_hide') . '" id="type_' . kz_h($kind) . '" onchange="Upl.syncType();">';
+	foreach (upload_categories() as $kind => $items) {
+		echo '<select class="w250' . ($kind === $current_kind ? '' : ' up_hide') . '" id="type_' . h($kind) . '" onchange="Upl.syncType();">';
 		if (count($items) > 1) {
 			echo '<option value="0">Выберите раздел</option>';
 		}
 		foreach ($items as $id => $label) {
-			echo '<option value="' . (int)$id . '"' . ((int)$id === (int)$current_category ? ' selected="selected"' : '') . '>' . kz_h($label) . '</option>';
+			echo '<option value="' . (int)$id . '"' . ((int)$id === (int)$current_category ? ' selected="selected"' : '') . '>' . h($label) . '</option>';
 		}
 		echo '</select>';
 	}
 }
 
-function kz_upload_render_video_template(array $data, array $section_modes)
+function upload_render_video_template(array $data, array $section_modes)
 {
 	$video = $data['video'] ?? array();
 	$advanced = $data['advanced'] ?? array();
 	$design = $data['design'] ?? array();
-	kz_upload_render_section_start(0, 'Предварительное описание', $section_modes[0]);
+	upload_render_section_start(0, 'Предварительное описание', $section_modes[0]);
 	?>
 	<table class="tables1 w100p upl-normal upl-section-0">
-		<tr><td class="w175">Название:</td><td><?= kz_upload_input('video[title]', $video['title'] ?? '', 'Название фильма') ?><div class="n">Для зарубежного видео, на русском языке</div></td></tr>
-		<tr><td>Оригинальное название:</td><td><?= kz_upload_input('video[original_title]', $video['original_title'] ?? '', 'Movie title') ?><div class="n">Название видео на языке оригинала</div></td></tr>
-		<tr><td>Год выпуска:</td><td><?= kz_upload_input('video[year]', $video['year'] ?? '', '2009') ?></td></tr>
-		<tr><td>Жанр:</td><td><?= kz_upload_input('video[genre]', $video['genre'] ?? '', 'Комедия, приключения') ?></td></tr>
-		<tr><td>Выпущено:</td><td><?= kz_upload_input('video[released]', $video['released'] ?? '', 'Страна, киностудия') ?></td></tr>
-		<tr><td>Режиссер:</td><td><?= kz_upload_input('video[director]', $video['director'] ?? '', 'Имя Фамилия') ?></td></tr>
-		<tr><td>В ролях:</td><td><?= kz_upload_textarea('video[cast]', $video['cast'] ?? '', 4, 'Имя Фамилия, Имя Фамилия') ?><div class="n">Список исполняющих роли через запятую</div></td></tr>
+		<tr><td class="w175">Название:</td><td><?= upload_input('video[title]', $video['title'] ?? '', 'Название фильма') ?><div class="n">Для зарубежного видео, на русском языке</div></td></tr>
+		<tr><td>Оригинальное название:</td><td><?= upload_input('video[original_title]', $video['original_title'] ?? '', 'Movie title') ?><div class="n">Название видео на языке оригинала</div></td></tr>
+		<tr><td>Год выпуска:</td><td><?= upload_input('video[year]', $video['year'] ?? '', '2009') ?></td></tr>
+		<tr><td>Жанр:</td><td><?= upload_input('video[genre]', $video['genre'] ?? '', 'Комедия, приключения') ?></td></tr>
+		<tr><td>Выпущено:</td><td><?= upload_input('video[released]', $video['released'] ?? '', 'Страна, киностудия') ?></td></tr>
+		<tr><td>Режиссер:</td><td><?= upload_input('video[director]', $video['director'] ?? '', 'Имя Фамилия') ?></td></tr>
+		<tr><td>В ролях:</td><td><?= upload_textarea('video[cast]', $video['cast'] ?? '', 4, 'Имя Фамилия, Имя Фамилия') ?><div class="n">Список исполняющих роли через запятую</div></td></tr>
 	</table>
-	<div class="upl-advanced upl-section-0" style="display:none;"><?= kz_upload_textarea('advanced[desc1]', $advanced['desc1'] ?? '', 8) ?></div>
+	<div class="upl-advanced upl-section-0" style="display:none;"><?= upload_textarea('advanced[desc1]', $advanced['desc1'] ?? '', 8) ?></div>
 	<?php
-	kz_upload_render_section_end();
+	upload_render_section_end();
 
-	kz_upload_render_section_start(1, 'Описание', $section_modes[1]);
+	upload_render_section_start(1, 'Описание', $section_modes[1]);
 	?>
 	<table class="tables1 w100p upl-normal upl-section-1">
-		<tr><td class="w175">О фильме:</td><td><?= kz_upload_textarea('video[about]', $video['about'] ?? '', 10, 'Краткое описание фильма...') ?><div class="n">Рекомендуем писать собственное описание, а не копировать его из сети - это положительно скажется на количестве сидов и пиров.</div></td></tr>
+		<tr><td class="w175">О фильме:</td><td><?= upload_textarea('video[about]', $video['about'] ?? '', 10, 'Краткое описание фильма...') ?><div class="n">Рекомендуем писать собственное описание, а не копировать его из сети - это положительно скажется на количестве сидов и пиров.</div></td></tr>
 	</table>
-	<div class="upl-advanced upl-section-1" style="display:none;"><?= kz_upload_textarea('advanced[desc2]', $advanced['desc2'] ?? '', 10) ?></div>
+	<div class="upl-advanced upl-section-1" style="display:none;"><?= upload_textarea('advanced[desc2]', $advanced['desc2'] ?? '', 10) ?></div>
 	<?php
-	kz_upload_render_section_end();
+	upload_render_section_end();
 
-	kz_upload_render_section_start(2, 'Технические данные', $section_modes[2]);
+	upload_render_section_start(2, 'Технические данные', $section_modes[2]);
 	?>
 	<table class="tables1 w100p upl-normal upl-section-2">
-		<tr><td class="w175">Качество:</td><td><?= kz_upload_option_select('video[quality]', kz_upload_quality_options(), $video['quality'] ?? '') ?><div class="n">Подробнее о качестве раздаваемого материала здесь</div></td></tr>
-		<tr><td>Видео:</td><td><?= kz_upload_input('video[video]', $video['video'] ?? '', 'MPEG-4 AVC, 9131 Кбит/с, 1920x1080') ?></td></tr>
-		<tr><td>Аудио:</td><td><?= kz_upload_input('video[audio]', $video['audio'] ?? '', 'Русский (AC3, 6 ch, 384 Кбит/с)') ?></td></tr>
-		<tr><td>Размер:</td><td><?= kz_upload_input('video[size]', $video['size'] ?? '', 'Установится автоматически после выбора торрент-файла') ?><div class="n">Если оставить поле пустым, размер будет взят из торрент-файла</div></td></tr>
-		<tr><td>Продолжительность:</td><td><?= kz_upload_input('video[duration]', $video['duration'] ?? '', '01:39:43') ?><div class="n">Точная продолжительность в формате ЧЧ:ММ:СС</div></td></tr>
-		<tr><td>Перевод:</td><td><?= kz_upload_option_select('video[translation]', kz_upload_translation_options(), $video['translation'] ?? '') ?><div class="n">Для зарубежного видео. О видах перевода подробнее здесь</div></td></tr>
-		<tr><td>Язык:</td><td><?= kz_upload_option_select('video[language]', kz_upload_language_options(), $video['language'] ?? '') ?><div class="n">Для отечественного видео</div></td></tr>
-		<tr><td>Субтитры:</td><td><?= kz_upload_option_select('video[subtitles]', kz_upload_subtitle_options(), $video['subtitles'] ?? '') ?><div class="n">Укажите субтитры, если имеются</div></td></tr>
+		<tr><td class="w175">Качество:</td><td><?= upload_option_select('video[quality]', upload_quality_options(), $video['quality'] ?? '') ?><div class="n">Подробнее о качестве раздаваемого материала здесь</div></td></tr>
+		<tr><td>Видео:</td><td><?= upload_input('video[video]', $video['video'] ?? '', 'MPEG-4 AVC, 9131 Кбит/с, 1920x1080') ?></td></tr>
+		<tr><td>Аудио:</td><td><?= upload_input('video[audio]', $video['audio'] ?? '', 'Русский (AC3, 6 ch, 384 Кбит/с)') ?></td></tr>
+		<tr><td>Размер:</td><td><?= upload_input('video[size]', $video['size'] ?? '', 'Установится автоматически после выбора торрент-файла') ?><div class="n">Если оставить поле пустым, размер будет взят из торрент-файла</div></td></tr>
+		<tr><td>Продолжительность:</td><td><?= upload_input('video[duration]', $video['duration'] ?? '', '01:39:43') ?><div class="n">Точная продолжительность в формате ЧЧ:ММ:СС</div></td></tr>
+		<tr><td>Перевод:</td><td><?= upload_option_select('video[translation]', upload_translation_options(), $video['translation'] ?? '') ?><div class="n">Для зарубежного видео. О видах перевода подробнее здесь</div></td></tr>
+		<tr><td>Язык:</td><td><?= upload_option_select('video[language]', upload_language_options(), $video['language'] ?? '') ?><div class="n">Для отечественного видео</div></td></tr>
+		<tr><td>Субтитры:</td><td><?= upload_option_select('video[subtitles]', upload_subtitle_options(), $video['subtitles'] ?? '') ?><div class="n">Укажите субтитры, если имеются</div></td></tr>
 	</table>
-	<div class="upl-advanced upl-section-2" style="display:none;"><?= kz_upload_textarea('advanced[desc3]', $advanced['desc3'] ?? '', 8) ?></div>
+	<div class="upl-advanced upl-section-2" style="display:none;"><?= upload_textarea('advanced[desc3]', $advanced['desc3'] ?? '', 8) ?></div>
 	<?php
-	kz_upload_render_section_end();
+	upload_render_section_end();
 
-	kz_upload_render_section_start(3, 'Оформление, вкладки, примечания, скриншоты', $section_modes[3]);
-	kz_upload_render_design_fields($design);
+	upload_render_section_start(3, 'Оформление, вкладки, примечания, скриншоты', $section_modes[3]);
+	upload_render_design_fields($design);
 	?>
-	<div class="upl-advanced upl-section-3" style="display:none;"><?= kz_upload_textarea('advanced[desc4]', $advanced['desc4'] ?? '', 31) ?></div>
+	<div class="upl-advanced upl-section-3" style="display:none;"><?= upload_textarea('advanced[desc4]', $advanced['desc4'] ?? '', 31) ?></div>
 	<?php
-	kz_upload_render_section_end();
+	upload_render_section_end();
 }
 
-function kz_upload_render_section_start($index, $title, $advanced)
+function upload_render_section_start($index, $title, $advanced)
 {
 	?>
 	<div class="bx1 upl">
 		<ul class="men up">
 			<li class="fhdr">
 				<div class="sbab up_toggle" onclick="Upl.switchMode(<?= (int)$index ?>);">Сменить режим</div>
-				<?= kz_h($title) ?>
+				<?= h($title) ?>
 			</li>
 		</ul>
 		<div id="section_<?= (int)$index ?>" data-advanced="<?= $advanced ? 1 : 0 ?>">
 	<?php
 }
 
-function kz_upload_render_section_end()
+function upload_render_section_end()
 {
 	echo '</div></div>';
 }
 
-function kz_upload_render_design_fields(array $design)
+function upload_render_design_fields(array $design)
 {
 	$related = $design['related'] ?? array();
 	$watch = $design['watch'] ?? array();
@@ -1534,7 +1534,7 @@ function kz_upload_render_design_fields(array $design)
 		</ul>
 		<table class="tables1 w100p" id="related_rows">
 			<tr><td class="w25p b">Заголовок ссылки</td><td class="b">Строка поиска</td><td class="w30"></td></tr>
-			<?php kz_upload_render_pair_rows('design[related_title][]', 'design[related_query][]', $related, 'query', 2); ?>
+			<?php upload_render_pair_rows('design[related_title][]', 'design[related_query][]', $related, 'query', 2); ?>
 		</table>
 		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addPair('related_rows', 'design[related_title][]', 'design[related_query][]'); return false;">Добавить элемент</a></div>
 
@@ -1544,7 +1544,7 @@ function kz_upload_render_design_fields(array $design)
 		</ul>
 		<table class="tables1 w100p">
 			<tr><td class="w50p b">Ссылка на фильм</td><td class="b">Цифры рейтинга</td></tr>
-			<tr><td><input type="text" name="design[imdb_url]" class="w100p" value="<?= kz_h($imdb['url'] ?? '') ?>" placeholder="https://www.imdb.com/title/tt00000/"></td><td><input type="text" name="design[imdb_rating]" class="w100p" value="<?= kz_h($imdb['rating'] ?? '') ?>" placeholder="Цифры рейтинга"></td></tr>
+			<tr><td><input type="text" name="design[imdb_url]" class="w100p" value="<?= h($imdb['url'] ?? '') ?>" placeholder="https://www.imdb.com/title/tt00000/"></td><td><input type="text" name="design[imdb_rating]" class="w100p" value="<?= h($imdb['rating'] ?? '') ?>" placeholder="Цифры рейтинга"></td></tr>
 		</table>
 
 		<ul class="men">
@@ -1553,13 +1553,13 @@ function kz_upload_render_design_fields(array $design)
 		</ul>
 		<table class="tables1 w100p">
 			<tr><td class="w50p b">Ссылка на фильм</td><td class="b">Цифры рейтинга</td></tr>
-			<tr><td><input type="text" name="design[kinopoisk_url]" class="w100p" value="<?= kz_h($kinopoisk['url'] ?? '') ?>" placeholder="https://www.kinopoisk.ru/film/00000/"></td><td><input type="text" name="design[kinopoisk_rating]" class="w100p" value="<?= kz_h($kinopoisk['rating'] ?? '') ?>" placeholder="Цифры рейтинга"></td></tr>
+			<tr><td><input type="text" name="design[kinopoisk_url]" class="w100p" value="<?= h($kinopoisk['url'] ?? '') ?>" placeholder="https://www.kinopoisk.ru/film/00000/"></td><td><input type="text" name="design[kinopoisk_rating]" class="w100p" value="<?= h($kinopoisk['rating'] ?? '') ?>" placeholder="Цифры рейтинга"></td></tr>
 		</table>
 
 		<ul class="men"><li class="tp2">Меню: ознакомление</li></ul>
 		<table class="tables1 w100p" id="watch_rows">
 			<tr><td class="w25p b">Заголовок ссылки</td><td class="b">Адрес ссылки</td><td class="w30"></td></tr>
-			<?php kz_upload_render_pair_rows('design[watch_title][]', 'design[watch_url][]', $watch, 'url', 2); ?>
+			<?php upload_render_pair_rows('design[watch_title][]', 'design[watch_url][]', $watch, 'url', 2); ?>
 		</table>
 		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addPair('watch_rows', 'design[watch_title][]', 'design[watch_url][]'); return false;">Добавить элемент</a></div>
 
@@ -1567,42 +1567,42 @@ function kz_upload_render_design_fields(array $design)
 			<li class="tp2">Дополнительные вкладки</li>
 			<li class="n">Вы можете указать дополнительную информацию о раздаваемом материале. Допустимо использовать не больше шести вкладок</li>
 		</ul>
-		<?php kz_upload_render_tab_panel('tab_rows', $tabs); ?>
+		<?php upload_render_tab_panel('tab_rows', $tabs); ?>
 		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addTab(); return false;">Добавить вкладку</a></div>
 
 		<ul class="men"><li class="tp2">Скриншоты и примечания</li></ul>
 		<table class="tables1 w100p">
-			<tr><td class="w175">Скриншоты:</td><td><?= kz_upload_textarea('design[screens]', $design['screens'] ?? '', 6, "Ссылки на изображения, по одной в строке") ?></td></tr>
-			<tr><td>Примечания:</td><td><?= kz_upload_textarea('design[notes]', $design['notes'] ?? '', 4) ?></td></tr>
+			<tr><td class="w175">Скриншоты:</td><td><?= upload_textarea('design[screens]', $design['screens'] ?? '', 6, "Ссылки на изображения, по одной в строке") ?></td></tr>
+			<tr><td>Примечания:</td><td><?= upload_textarea('design[notes]', $design['notes'] ?? '', 4) ?></td></tr>
 		</table>
 	</div>
 	<?php
 }
 
-function kz_upload_render_pair_rows($name1, $name2, array $rows, $value_key, $minimum)
+function upload_render_pair_rows($name1, $name2, array $rows, $value_key, $minimum)
 {
 	for ($i = 0; $i < max($minimum, count($rows)); $i++) {
 		$row = $rows[$i] ?? array('title' => '', $value_key => '');
-		echo '<tr><td><input type="text" name="' . kz_h($name1) . '" class="w100p" value="' . kz_h($row['title'] ?? '') . '"></td>';
-		echo '<td><input type="text" name="' . kz_h($name2) . '" class="w100p" value="' . kz_h($row[$value_key] ?? '') . '"></td>';
+		echo '<tr><td><input type="text" name="' . h($name1) . '" class="w100p" value="' . h($row['title'] ?? '') . '"></td>';
+		echo '<td><input type="text" name="' . h($name2) . '" class="w100p" value="' . h($row[$value_key] ?? '') . '"></td>';
 		echo '<td class="center"><a href="#" class="sba" onclick="Upl.removeRow(this); return false;">×</a></td></tr>';
 	}
 }
 
-function kz_upload_render_tab_rows(array $rows, $title_name = 'design[tab_title][]', $content_name = 'design[tab_content][]')
+function upload_render_tab_rows(array $rows, $title_name = 'design[tab_title][]', $content_name = 'design[tab_content][]')
 {
 	for ($i = 0; $i < max(1, count($rows)); $i++) {
 		$row = $rows[$i] ?? array('title' => '', 'content' => '');
-		echo '<tr><td><input type="text" name="' . kz_h($title_name) . '" class="w100p" value="' . kz_h($row['title'] ?? '') . '"></td>';
-		echo '<td>' . kz_upload_textarea($content_name, $row['content'] ?? '', 5) . '</td>';
+		echo '<tr><td><input type="text" name="' . h($title_name) . '" class="w100p" value="' . h($row['title'] ?? '') . '"></td>';
+		echo '<td>' . upload_textarea($content_name, $row['content'] ?? '', 5) . '</td>';
 		echo '<td class="center"><a href="#" class="sba" onclick="Upl.removeRow(this); return false;">×</a></td></tr>';
 	}
 }
 
-function kz_upload_render_tab_panel($id, array $rows, $title_name = 'design[tab_title][]', $content_name = 'design[tab_content][]')
+function upload_render_tab_panel($id, array $rows, $title_name = 'design[tab_title][]', $content_name = 'design[tab_content][]')
 {
 	$count = max(1, count($rows));
-	echo '<div class="up_bbtabs_body" id="' . kz_h($id) . '" data-title-name="' . kz_h($title_name) . '" data-content-name="' . kz_h($content_name) . '">';
+	echo '<div class="up_bbtabs_body" id="' . h($id) . '" data-title-name="' . h($title_name) . '" data-content-name="' . h($content_name) . '">';
 	echo '<ul class="up_bbtabs_tabs">';
 	for ($i = 0; $i < $count; $i++) {
 		$row = $rows[$i] ?? array('title' => '', 'content' => '');
@@ -1611,22 +1611,22 @@ function kz_upload_render_tab_panel($id, array $rows, $title_name = 'design[tab_
 			$title = $i === 0 ? 'Новая вкладка' : 'Вкладка ' . ($i + 1);
 		}
 		echo '<li class="up_bbtabs_tab' . ($i === 0 ? ' mn' : '') . '" data-index="' . (int)$i . '">';
-		echo '<div class="up_bbtabs_tabtitle"><input class="up" type="text" name="' . kz_h($title_name) . '" value="' . kz_h($title) . '" maxlength="50" onchange="Upl.syncTabTitle(this);" onkeyup="Upl.syncTabTitle(this);"></div>';
+		echo '<div class="up_bbtabs_tabtitle"><input class="up" type="text" name="' . h($title_name) . '" value="' . h($title) . '" maxlength="50" onchange="Upl.syncTabTitle(this);" onkeyup="Upl.syncTabTitle(this);"></div>';
 		echo '<div class="up_bbtabs_del" title="Удалить вкладку" onclick="Upl.removeTab(this);"></div>';
 		echo '</li>';
 	}
-	echo '<li class="up_bbtabs_add"><div class="up_bbtabs_plus" title="Добавить новую вкладку..." onclick="Upl.addTab(\'' . kz_h($id) . '\', \'' . kz_h($title_name) . '\', \'' . kz_h($content_name) . '\');"></div></li>';
+	echo '<li class="up_bbtabs_add"><div class="up_bbtabs_plus" title="Добавить новую вкладку..." onclick="Upl.addTab(\'' . h($id) . '\', \'' . h($title_name) . '\', \'' . h($content_name) . '\');"></div></li>';
 	echo '</ul>';
 	for ($i = 0; $i < $count; $i++) {
 		$row = $rows[$i] ?? array('title' => '', 'content' => '');
 		echo '<div class="bx1 up_bbtabs_c" data-index="' . (int)$i . '"' . ($i === 0 ? '' : ' style="display:none;"') . '><div class="up_bbtabs_ctxt">';
-		echo '<textarea name="' . kz_h($content_name) . '" rows="12" class="up_bbtabs_txt">' . kz_h($row['content'] ?? '') . '</textarea>';
+		echo '<textarea name="' . h($content_name) . '" rows="12" class="up_bbtabs_txt">' . h($row['content'] ?? '') . '</textarea>';
 		echo '</div></div>';
 	}
 	echo '<div class="up_clrl"></div></div>';
 }
 
-function kz_upload_render_generic_template(array $data)
+function upload_render_generic_template(array $data)
 {
 	$generic = $data['generic'] ?? array();
 	$advanced = $data['advanced'] ?? array();
@@ -1641,27 +1641,27 @@ function kz_upload_render_generic_template(array $data)
 		if ($value === '') {
 			$value = (string)($advanced['desc' . $i] ?? '');
 		}
-		echo '<div class="bx1"><ul class="men"><li class="tp2 b">' . kz_h($labels[$i]) . '</li><li>' . kz_upload_textarea('generic[desc' . $i . ']', $value, $i === 4 ? 14 : 8) . '</li></ul></div>';
+		echo '<div class="bx1"><ul class="men"><li class="tp2 b">' . h($labels[$i]) . '</li><li>' . upload_textarea('generic[desc' . $i . ']', $value, $i === 4 ? 14 : 8) . '</li></ul></div>';
 	}
 }
 
-function kz_upload_render_release_template($kind, array $data, array $section_modes)
+function upload_render_release_template($kind, array $data, array $section_modes)
 {
-	$specs = kz_upload_release_specs();
+	$specs = upload_release_specs();
 	if (empty($specs[$kind])) {
 		return;
 	}
 	$spec = $specs[$kind];
 	$template = array_replace_recursive(array(
 		'fields' => array(),
-		'advanced' => kz_upload_empty_advanced(),
+		'advanced' => upload_empty_advanced(),
 		'design' => $spec['design'],
 	), $data['templates'][$kind] ?? array());
 	$fields = $template['fields'] ?? array();
 	$advanced = $template['advanced'] ?? array();
 
 	for ($i = 0; $i < 3; $i++) {
-		kz_upload_render_section_start($i, kz_upload_section_title($i), $section_modes[$i]);
+		upload_render_section_start($i, upload_section_title($i), $section_modes[$i]);
 		echo '<table class="tables1 w100p upl-normal upl-section-' . (int)$i . '">';
 		foreach (($spec['sections'][$i]['fields'] ?? array()) as $field) {
 			$key = (string)$field['key'];
@@ -1670,36 +1670,36 @@ function kz_upload_render_release_template($kind, array $data, array $section_mo
 			$placeholder = $field['placeholder'] ?? '';
 			$label = $field['label'] ?? '';
 			$control = !empty($field['textarea'])
-				? kz_upload_textarea($name, $value, (int)$field['textarea'], $placeholder)
-				: kz_upload_input($name, $value, $placeholder);
-			echo '<tr><td class="w175">' . kz_h($label) . ':</td><td>' . $control;
+				? upload_textarea($name, $value, (int)$field['textarea'], $placeholder)
+				: upload_input($name, $value, $placeholder);
+			echo '<tr><td class="w175">' . h($label) . ':</td><td>' . $control;
 			if (!empty($field['desc'])) {
 				echo '<div class="n">' . $field['desc'] . '</div>';
 			}
 			echo '</td></tr>';
 		}
 		echo '</table>';
-		$default = kz_upload_fields_to_advanced($spec['sections'][$i]['fields'], $fields);
+		$default = upload_fields_to_advanced($spec['sections'][$i]['fields'], $fields);
 		$value = (string)($advanced['desc' . ($i + 1)] ?? '');
 		if ($value === '') {
 			$value = $default;
 		}
-		echo '<div class="upl-advanced upl-section-' . (int)$i . '" style="display:none;">' . kz_upload_textarea('templates[' . $kind . '][advanced][desc' . ($i + 1) . ']', $value, $i === 1 ? 10 : 8) . '</div>';
-		kz_upload_render_section_end();
+		echo '<div class="upl-advanced upl-section-' . (int)$i . '" style="display:none;">' . upload_textarea('templates[' . $kind . '][advanced][desc' . ($i + 1) . ']', $value, $i === 1 ? 10 : 8) . '</div>';
+		upload_render_section_end();
 	}
 
-	kz_upload_render_section_start(3, kz_upload_section_title(3), $section_modes[3]);
-	kz_upload_render_release_design_fields($kind, array_replace_recursive($spec['design'], $template['design'] ?? array()));
-	$default = kz_upload_design_to_advanced(array_replace_recursive($spec['design'], $template['design'] ?? array()));
+	upload_render_section_start(3, upload_section_title(3), $section_modes[3]);
+	upload_render_release_design_fields($kind, array_replace_recursive($spec['design'], $template['design'] ?? array()));
+	$default = upload_design_to_advanced(array_replace_recursive($spec['design'], $template['design'] ?? array()));
 	$value = (string)($advanced['desc4'] ?? '');
 	if ($value === '') {
 		$value = $default;
 	}
-	echo '<div class="upl-advanced upl-section-3" style="display:none;">' . kz_upload_textarea('templates[' . $kind . '][advanced][desc4]', $value, 20) . '</div>';
-	kz_upload_render_section_end();
+	echo '<div class="upl-advanced upl-section-3" style="display:none;">' . upload_textarea('templates[' . $kind . '][advanced][desc4]', $value, 20) . '</div>';
+	upload_render_section_end();
 }
 
-function kz_upload_section_title($index)
+function upload_section_title($index)
 {
 	$titles = array(
 		'Предварительное описание',
@@ -1711,7 +1711,7 @@ function kz_upload_section_title($index)
 	return $titles[(int)$index] ?? '';
 }
 
-function kz_upload_render_release_design_fields($kind, array $design)
+function upload_render_release_design_fields($kind, array $design)
 {
 	$related = $design['related'] ?? array();
 	$watch = $design['watch'] ?? array();
@@ -1726,30 +1726,30 @@ function kz_upload_render_release_design_fields($kind, array $design)
 			<li class="tp2">Меню: поиск раздач</li>
 			<li class="n">Добавьте ссылки на поиск других раздач, которые могут заинтересовать зрителей</li>
 		</ul>
-		<table class="tables1 w100p" id="<?= kz_h($related_id) ?>">
+		<table class="tables1 w100p" id="<?= h($related_id) ?>">
 			<tr><td class="w25p b">Заголовок ссылки</td><td class="b">Строка поиска</td><td class="w30"></td></tr>
-			<?php kz_upload_render_pair_rows($prefix . '[related_title][]', $prefix . '[related_query][]', $related, 'query', 1); ?>
+			<?php upload_render_pair_rows($prefix . '[related_title][]', $prefix . '[related_query][]', $related, 'query', 1); ?>
 		</table>
-		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addPair('<?= kz_h($related_id) ?>', '<?= kz_h($prefix) ?>[related_title][]', '<?= kz_h($prefix) ?>[related_query][]'); return false;">Добавить элемент</a></div>
+		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addPair('<?= h($related_id) ?>', '<?= h($prefix) ?>[related_title][]', '<?= h($prefix) ?>[related_query][]'); return false;">Добавить элемент</a></div>
 
 		<ul class="men"><li class="tp2">Меню: ознакомление</li></ul>
-		<table class="tables1 w100p" id="<?= kz_h($watch_id) ?>">
+		<table class="tables1 w100p" id="<?= h($watch_id) ?>">
 			<tr><td class="w25p b">Заголовок ссылки</td><td class="b">Адрес ссылки</td><td class="w30"></td></tr>
-			<?php kz_upload_render_pair_rows($prefix . '[watch_title][]', $prefix . '[watch_url][]', $watch, 'url', 1); ?>
+			<?php upload_render_pair_rows($prefix . '[watch_title][]', $prefix . '[watch_url][]', $watch, 'url', 1); ?>
 		</table>
-		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addPair('<?= kz_h($watch_id) ?>', '<?= kz_h($prefix) ?>[watch_title][]', '<?= kz_h($prefix) ?>[watch_url][]'); return false;">Добавить элемент</a></div>
+		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addPair('<?= h($watch_id) ?>', '<?= h($prefix) ?>[watch_title][]', '<?= h($prefix) ?>[watch_url][]'); return false;">Добавить элемент</a></div>
 
 		<ul class="men">
 			<li class="tp2">Дополнительные вкладки</li>
 			<li class="n">Вы можете указать дополнительную информацию о раздаваемом материале. Допустимо использовать не больше шести вкладок</li>
 		</ul>
-		<?php kz_upload_render_tab_panel($tab_id, $tabs, $prefix . '[tab_title][]', $prefix . '[tab_content][]'); ?>
-		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addTab('<?= kz_h($tab_id) ?>', '<?= kz_h($prefix) ?>[tab_title][]', '<?= kz_h($prefix) ?>[tab_content][]'); return false;">Добавить вкладку</a></div>
+		<?php upload_render_tab_panel($tab_id, $tabs, $prefix . '[tab_title][]', $prefix . '[tab_content][]'); ?>
+		<div class="pad0x0x5x0"><a href="#" class="sba" onclick="Upl.addTab('<?= h($tab_id) ?>', '<?= h($prefix) ?>[tab_title][]', '<?= h($prefix) ?>[tab_content][]'); return false;">Добавить вкладку</a></div>
 	</div>
 	<?php
 }
 
-function kz_upload_render_js($kind, $mode, array $section_modes)
+function upload_render_js($kind, $mode, array $section_modes)
 {
 	?>
 	<script type="text/javascript">
@@ -1913,7 +1913,7 @@ function kz_upload_render_js($kind, $mode, array $section_modes)
 			form.submit();
 		}
 	};
-	Upl.setTemplate('<?= kz_h($kind) ?>');
+	Upl.setTemplate('<?= h($kind) ?>');
 	<?php foreach ($section_modes as $index => $section_mode) { ?>
 	Upl.setSectionMode(<?= (int)$index ?>, <?= (int)$section_mode ?>);
 	<?php } ?>
@@ -1930,18 +1930,18 @@ function kz_upload_render_js($kind, $mode, array $section_modes)
 	<?php
 }
 
-function kz_upload_render_online_block()
+function upload_render_online_block()
 {
-	echo kz_page_online_box(array('/upload.php%', 'upload.php%'), 'пока никого');
+	echo page_online_box(array('/upload.php%', 'upload.php%'), 'пока никого');
 }
 
-function kz_upload_render_details_panel(array $row, array $details, $descr_html, $owned, array $announces_urls = array())
+function upload_render_details_panel(array $row, array $details, $descr_html, $owned, array $announces_urls = array())
 {
 	global $pic_base_url, $tracker_lang;
 
 	$poster = trim((string)($details['poster_url'] ?? ''));
 	$rbutton = trim((string)($details['rgroup_button'] ?? ''));
-	$groups = kz_upload_release_groups();
+	$groups = upload_release_groups();
 	$rgroup_id = (int)($details['rgroup'] ?? 0);
 	$rgroup_title = $groups[$rgroup_id] ?? '';
 	$id = (int)$row['id'];
@@ -1951,23 +1951,23 @@ function kz_upload_render_details_panel(array $row, array $details, $descr_html,
 		<div class="mn3_menu">
 			<ul class="men">
 				<?php if ($poster !== '') { ?>
-					<li class="center"><img src="<?= kz_h($poster) ?>" class="p200" alt=""></li>
+					<li class="center"><img src="<?= h($poster) ?>" class="p200" alt=""></li>
 				<?php } elseif (!empty($row['image1'])) { ?>
-					<li class="center"><a href="viewimage.php?pic=<?= kz_h($row['image1']) ?>"><img border="0" src="thumbnail.php?<?= kz_h($row['image1']) ?>" alt=""></a></li>
+					<li class="center"><a href="viewimage.php?pic=<?= h($row['image1']) ?>"><img border="0" src="thumbnail.php?<?= h($row['image1']) ?>" alt=""></a></li>
 				<?php } ?>
 				<li class="tp2 center">Раздача</li>
 				<li><span class="bulet"></span><a href="download.php?id=<?= $id ?>" class="sba">Скачать торрент</a></li>
-				<li><span class="bulet"></span><a href="bookmark.php?torrent=<?= $id ?>" class="sba"><?= kz_h($tracker_lang['bookmark'] ?? 'Закладка') ?></a></li>
-				<?php if ($owned) { ?><li><span class="bulet"></span><a href="<?= kz_h($edit_url) ?>" class="sba"><?= kz_h($tracker_lang['edit'] ?? 'Редактировать') ?></a></li><?php } ?>
+				<li><span class="bulet"></span><a href="bookmark.php?torrent=<?= $id ?>" class="sba"><?= h($tracker_lang['bookmark'] ?? 'Закладка') ?></a></li>
+				<?php if ($owned) { ?><li><span class="bulet"></span><a href="<?= h($edit_url) ?>" class="sba"><?= h($tracker_lang['edit'] ?? 'Редактировать') ?></a></li><?php } ?>
 				<?php if ($rgroup_title !== '' || $rbutton !== '') { ?>
 					<li class="tp2 center">Релиз-группа</li>
 					<?php if ($rbutton !== '') { ?>
-						<li class="center"><?= preg_match('#^(https?:)?//|^/#i', $rbutton) ? '<img src="' . kz_h($rbutton) . '" class="p88x31n" alt="' . kz_h($rgroup_title) . '">' : kz_h($rbutton) ?></li>
+						<li class="center"><?= preg_match('#^(https?:)?//|^/#i', $rbutton) ? '<img src="' . h($rbutton) . '" class="p88x31n" alt="' . h($rgroup_title) . '">' : h($rbutton) ?></li>
 					<?php } ?>
-					<?php if ($rgroup_title !== '') { ?><li class="center b"><?= kz_h($rgroup_title) ?></li><?php } ?>
+					<?php if ($rgroup_title !== '') { ?><li class="center b"><?= h($rgroup_title) ?></li><?php } ?>
 				<?php } ?>
 				<li class="tp2 center">Статистика</li>
-				<li><dl><dt>Размер</dt><dd><?= kz_h(mksize($row['size'])) ?></dd></dl></li>
+				<li><dl><dt>Размер</dt><dd><?= h(mksize($row['size'])) ?></dd></dl></li>
 				<li><dl><dt>Сиды</dt><dd><?= (int)$row['seeders'] ?></dd></dl></li>
 				<li><dl><dt>Пиры</dt><dd><?= (int)$row['leechers'] ?></dd></dl></li>
 				<li><dl><dt>Скачали</dt><dd><?= (int)$row['times_completed'] ?></dd></dl></li>
@@ -1975,8 +1975,8 @@ function kz_upload_render_details_panel(array $row, array $details, $descr_html,
 		</div>
 		<div class="mn3_content">
 			<ul class="men">
-				<li class="tp2 b"><?= kz_h($row['name']) ?></li>
-				<li><b><?= kz_h($row['cat_name'] ?? '') ?></b></li>
+				<li class="tp2 b"><?= h($row['name']) ?></li>
+				<li><b><?= h($row['cat_name'] ?? '') ?></b></li>
 				<li class="pad5x5"><?= $descr_html ?></li>
 			</ul>
 		</div>

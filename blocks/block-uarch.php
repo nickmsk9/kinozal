@@ -5,9 +5,9 @@ if (!defined('BLOCK_FILE')) {
 	exit;
 }
 
-require_once 'include/kz_uarch.php';
+require_once 'include/uarch.php';
 
 $blocktitle = 'Улыбка';
-$content = kz_uarch_block_html();
+$content = uarch_block_html();
 
 ?>

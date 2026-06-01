@@ -21,12 +21,12 @@ if (!$user) {
 }
 
 $profile_class = "u" . (int)$user["class"];
-$profile_name = kz_rep_h($user["username"]);
+$profile_name = reputation_h($user["username"]);
 $title = $type === 2
 	? "&#1054;&#1090;&#1076;&#1072;&#1085;&#1085;&#1099;&#1077; &#1086;&#1090;&#1079;&#1099;&#1074;&#1099;"
 	: "&#1055;&#1086;&#1083;&#1091;&#1095;&#1077;&#1085;&#1085;&#1099;&#1077; &#1086;&#1090;&#1079;&#1099;&#1074;&#1099;";
 
-$count = kz_reputation_count($userid, $type);
+$count = reputation_count($userid, $type);
 $perpage = 30;
 $href = "user_reputation.php?id=" . $userid . ($type === 2 ? "&amp;type=2&amp;" : "&amp;");
 list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, $href, array('lastpagedefault' => 0));
@@ -38,7 +38,7 @@ if (preg_match('/LIMIT\s+([0-9]+),([0-9]+)/i', $limit, $m)) {
 	$limitNumber = (int)$m[2];
 }
 
-$rows = kz_reputation_rows($userid, $type, 0);
+$rows = reputation_rows($userid, $type, 0);
 if ($limitNumber > 0) {
 	$rows = array_slice($rows, $offsetNumber, $limitNumber);
 }
@@ -49,7 +49,7 @@ stdhead("&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; :: " . 
 ?>
 <div class="mn_wrap">
 	<div class="mn1_menu">
-		<?= kz_profile_menu_html($user, $CURUSER) ?>
+		<?= profile_menu_html($user, $CURUSER) ?>
 	</div>
 	<div class="mn1_content">
 		<div class="bx1 <?= $profile_class ?>">
@@ -69,7 +69,7 @@ stdhead("&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; :: " . 
 		</div>
 
 		<? if (!empty($pagertop) && $count > $perpage) { ?><div class="pad5x5"><?= $pagertop ?></div><? } ?>
-		<?= kz_reputation_table_html($rows, $profile_class, $type, false) ?>
+		<?= reputation_table_html($rows, $profile_class, $type, false) ?>
 		<? if (!$rows) { ?><div class="bx1 center">&#1054;&#1090;&#1079;&#1099;&#1074;&#1086;&#1074; &#1087;&#1086;&#1082;&#1072; &#1085;&#1077;&#1090;.</div><? } ?>
 		<? if (!empty($pagerbottom) && $count > $perpage) { ?><div class="pad5x5"><?= $pagerbottom ?></div><? } ?>
 	</div>

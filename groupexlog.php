@@ -4,15 +4,15 @@ require_once __DIR__ . '/include/bittorrent.php';
 require_once __DIR__ . '/include/groupex.php';
 
 dbconn(false);
-kz_groups_ensure_schema();
+groups_ensure_schema();
 
 $id = (int)($_GET['id'] ?? 0);
-$group = kz_groups_fetch($id);
+$group = groups_fetch($id);
 if (!$group) {
 	stderr('Группа', 'Группа не найдена.');
 }
 
-$member = !empty($CURUSER) ? kz_groups_member($id, (int)$CURUSER['id']) : null;
+$member = !empty($CURUSER) ? groups_member($id, (int)$CURUSER['id']) : null;
 
 $count_res = sql_query("SELECT COUNT(*) FROM groupex_log WHERE group_id = $id") or sqlerr(__FILE__, __LINE__);
 $count_row = mysqli_fetch_row($count_res);
@@ -38,11 +38,11 @@ stdhead('Журнал группы :: ' . $group['name']);
 		::
 		<a href="/mygroups.php" class="sbab">Мои группы</a>
 		::
-		<a href="/groupex.php?id=<?= $id ?>" class="sbab"><?= kz_groups_h($group['name']) ?></a>
+		<a href="/groupex.php?id=<?= $id ?>" class="sbab"><?= groups_h($group['name']) ?></a>
 		::
 		<a href="/groupexlog.php?id=<?= $id ?>" class="sbab">Журнал группы</a>
 	</div>
-	<?php kz_groups_group_sidebar($group, $member); ?>
+	<?php groups_group_sidebar($group, $member); ?>
 	<div class="mn3_content">
 		<div class="bx1"><span class="bulet"></span><b>Журнал группы</b></div>
 		<?php if ($pagertop) { ?><div class="pad0x0x5x0"><?= $pagertop ?></div><?php } ?>
@@ -59,10 +59,10 @@ stdhead('Журнал группы :: ' . $group['name']);
 				while ($row = mysqli_fetch_assoc($log_res)) {
 					$found = true;
 					echo '<tr class="bg">';
-					echo '<td>' . kz_groups_h(kz_groups_date($row['added_at'])) . '</td>';
-					echo '<td>' . kz_groups_user_link((int)$row['userid'], $row['username'] ?? '', (int)($row['class'] ?? 0), $row) . '</td>';
-					echo '<td>' . kz_groups_h($row['action']) . '</td>';
-					echo '<td>' . kz_groups_h($row['text']) . '</td>';
+					echo '<td>' . groups_h(groups_date($row['added_at'])) . '</td>';
+					echo '<td>' . groups_user_link((int)$row['userid'], $row['username'] ?? '', (int)($row['class'] ?? 0), $row) . '</td>';
+					echo '<td>' . groups_h($row['action']) . '</td>';
+					echo '<td>' . groups_h($row['text']) . '</td>';
 					echo '</tr>';
 				}
 				if (!$found) {

@@ -4,12 +4,12 @@ if (!defined('IN_TRACKER')) {
     die('Прямой вызов запрещён.');
 }
 
-function kz_cups_h($value)
+function cups_h($value)
 {
     return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function kz_cups_catalog()
+function cups_catalog()
 {
     return array(
         1 => array('id' => 1, 'cup_key' => 'best_release', 'title' => 'Кубок за лучшую раздачу', 'profile_title' => 'За самую лучшую раздачу', 'icon' => 'cb1', 'sort' => 1),
@@ -23,12 +23,12 @@ function kz_cups_catalog()
     );
 }
 
-function kz_cups_ensure_schema()
+function cups_ensure_schema()
 {
     return;
 }
 
-function kz_cups_install_schema()
+function cups_install_schema()
 {
     sql_query("
         CREATE TABLE IF NOT EXISTS cups (
@@ -62,14 +62,14 @@ function kz_cups_install_schema()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ") or sqlerr(__FILE__, __LINE__);
 
-    kz_cups_seed_catalog();
+    cups_seed_catalog();
 }
 
-function kz_cups_seed_catalog()
+function cups_seed_catalog()
 {
     $values = array();
 
-    foreach (kz_cups_catalog() as $cup) {
+    foreach (cups_catalog() as $cup) {
         $values[] = '('
             . (int)$cup['id'] . ', '
             . sqlesc($cup['cup_key'], true) . ', '
@@ -92,7 +92,7 @@ function kz_cups_seed_catalog()
     ") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_cups_fetch_one($query)
+function cups_fetch_one($query)
 {
     $res = sql_query($query) or sqlerr(__FILE__, __LINE__);
     $row = mysqli_fetch_assoc($res);
@@ -107,14 +107,14 @@ function kz_cups_fetch_one($query)
     );
 }
 
-function kz_cups_candidate($cup_key)
+function cups_candidate($cup_key)
 {
     $since = sqlesc(get_date_time(TIMENOW - 7 * 86400), true);
     $active_user_where = "u.status = 'confirmed' AND u.enabled = 'yes'";
 
     switch ($cup_key) {
         case 'best_release':
-            return kz_cups_fetch_one("
+            return cups_fetch_one("
                 SELECT t.owner AS userid,
                        CAST(((CASE WHEN t.numratings > 0 THEN t.ratingsum / t.numratings ELSE 0 END) * 1000000)
                            + (t.numratings * 1000) + t.times_completed AS UNSIGNED) AS metric
@@ -134,7 +134,7 @@ function kz_cups_candidate($cup_key)
             ");
 
         case 'popular_release':
-            return kz_cups_fetch_one("
+            return cups_fetch_one("
                 SELECT t.owner AS userid,
                        CAST(t.times_completed + t.hits + t.views + t.seeders + t.leechers AS UNSIGNED) AS metric
                 FROM torrents AS t
@@ -153,7 +153,7 @@ function kz_cups_candidate($cup_key)
             ");
 
         case 'active_seeder':
-            $candidate = kz_cups_fetch_one("
+            $candidate = cups_fetch_one("
                 SELECT s.userid,
                        CAST(SUM(s.uploaded) AS UNSIGNED) AS metric
                 FROM snatched AS s
@@ -172,7 +172,7 @@ function kz_cups_candidate($cup_key)
                 return $candidate;
             }
 
-            return kz_cups_fetch_one("
+            return cups_fetch_one("
                 SELECT p.userid,
                        CAST(SUM(p.uploaded) AS UNSIGNED) AS metric
                 FROM peers AS p
@@ -188,7 +188,7 @@ function kz_cups_candidate($cup_key)
             ");
 
         case 'discussed_release':
-            return kz_cups_fetch_one("
+            return cups_fetch_one("
                 SELECT t.owner AS userid,
                        COUNT(c.id) AS metric
                 FROM comments AS c
@@ -205,7 +205,7 @@ function kz_cups_candidate($cup_key)
             ");
 
         case 'best_commentator':
-            return kz_cups_fetch_one("
+            return cups_fetch_one("
                 SELECT c.user AS userid,
                        COUNT(c.id) AS metric
                 FROM comments AS c
@@ -219,7 +219,7 @@ function kz_cups_candidate($cup_key)
             ");
 
         case 'active_patron':
-            $candidate = kz_cups_fetch_one("
+            $candidate = cups_fetch_one("
                 SELECT u.id AS userid,
                        UNIX_TIMESTAMP(u.last_access) AS metric
                 FROM users AS u
@@ -234,7 +234,7 @@ function kz_cups_candidate($cup_key)
                 return $candidate;
             }
 
-            return kz_cups_fetch_one("
+            return cups_fetch_one("
                 SELECT u.id AS userid,
                        UNIX_TIMESTAMP(u.last_access) AS metric
                 FROM users AS u
@@ -245,7 +245,7 @@ function kz_cups_candidate($cup_key)
             ");
 
         case 'best_patron':
-            return kz_cups_fetch_one("
+            return cups_fetch_one("
                 SELECT u.id AS userid,
                        u.uploaded AS metric
                 FROM users AS u
@@ -256,7 +256,7 @@ function kz_cups_candidate($cup_key)
             ");
 
         case 'best_dj':
-            return kz_cups_fetch_one("
+            return cups_fetch_one("
                 SELECT t.owner AS userid,
                        COUNT(t.id) AS metric
                 FROM torrents AS t
@@ -277,9 +277,9 @@ function kz_cups_candidate($cup_key)
     return null;
 }
 
-function kz_cups_assign($cup_id, $userid, $source = 'manual', $metric = 0, $assigned_by = 0, $note = '')
+function cups_assign($cup_id, $userid, $source = 'manual', $metric = 0, $assigned_by = 0, $note = '')
 {
-    kz_cups_ensure_schema();
+    cups_ensure_schema();
 
     $cup_id = (int)$cup_id;
     $userid = (int)$userid;
@@ -305,9 +305,9 @@ function kz_cups_assign($cup_id, $userid, $source = 'manual', $metric = 0, $assi
     return true;
 }
 
-function kz_cups_release($cup_id, $source = '')
+function cups_release($cup_id, $source = '')
 {
-    kz_cups_ensure_schema();
+    cups_ensure_schema();
 
     $cup_id = (int)$cup_id;
 
@@ -324,9 +324,9 @@ function kz_cups_release($cup_id, $source = '')
     sql_query("DELETE FROM user_cups WHERE $where") or sqlerr(__FILE__, __LINE__);
 }
 
-function kz_cups_update_auto($force = false)
+function cups_update_auto($force = false)
 {
-    kz_cups_ensure_schema();
+    cups_ensure_schema();
 
     $now = TIMENOW;
     $interval = 2 * 3600;
@@ -351,27 +351,27 @@ function kz_cups_update_auto($force = false)
         $manual[(int)$manual_row['cup_id']] = true;
     }
 
-    foreach (kz_cups_catalog() as $cup) {
+    foreach (cups_catalog() as $cup) {
         $cup_id = (int)$cup['id'];
 
         if (isset($manual[$cup_id])) {
             continue;
         }
 
-        $candidate = kz_cups_candidate($cup['cup_key']);
+        $candidate = cups_candidate($cup['cup_key']);
 
         if ($candidate === null) {
-            kz_cups_release($cup_id, 'auto');
+            cups_release($cup_id, 'auto');
             continue;
         }
 
-        kz_cups_assign($cup_id, (int)$candidate['userid'], 'auto', (int)$candidate['metric'], 0, 'Автовыдача по статистике за последние семь дней');
+        cups_assign($cup_id, (int)$candidate['userid'], 'auto', (int)$candidate['metric'], 0, 'Автовыдача по статистике за последние семь дней');
     }
 }
 
-function kz_cups_current()
+function cups_current()
 {
-    kz_cups_ensure_schema();
+    cups_ensure_schema();
 
     $rows = array();
     $res = sql_query("
@@ -417,9 +417,9 @@ function kz_cups_current()
     return $rows;
 }
 
-function kz_cups_for_user($userid)
+function cups_for_user($userid)
 {
-    kz_cups_ensure_schema();
+    cups_ensure_schema();
 
     $userid = (int)$userid;
     $rows = array();
@@ -451,9 +451,9 @@ function kz_cups_for_user($userid)
     return $rows;
 }
 
-function kz_cups_user_profile_html($userid, $user_class = null)
+function cups_user_profile_html($userid, $user_class = null)
 {
-    $cups = kz_cups_for_user($userid);
+    $cups = cups_for_user($userid);
 
     if (empty($cups)) {
         return '';
@@ -463,15 +463,15 @@ function kz_cups_user_profile_html($userid, $user_class = null)
     $class = $user_class === null ? 'u9' : 'u' . (int)$user_class;
 
     foreach ($cups as $cup) {
-        $parts[] = '<i class="i1 ' . kz_cups_h($cup['icon']) . '"></i> <span class="' . $class . '">' . kz_cups_h($cup['profile_title']) . '</span>';
+        $parts[] = '<i class="i1 ' . cups_h($cup['icon']) . '"></i> <span class="' . $class . '">' . cups_h($cup['profile_title']) . '</span>';
     }
 
     return implode('<br />', $parts);
 }
 
-function kz_cups_user_manual_ids($userid)
+function cups_user_manual_ids($userid)
 {
-    kz_cups_ensure_schema();
+    cups_ensure_schema();
 
     $userid = (int)$userid;
     $ids = array();
@@ -489,9 +489,9 @@ function kz_cups_user_manual_ids($userid)
     return $ids;
 }
 
-function kz_cups_save_profile_manual($userid, $selected_ids, $admin_id)
+function cups_save_profile_manual($userid, $selected_ids, $admin_id)
 {
-    kz_cups_ensure_schema();
+    cups_ensure_schema();
 
     $userid = (int)$userid;
     $admin_id = (int)$admin_id;
@@ -514,7 +514,7 @@ function kz_cups_save_profile_manual($userid, $selected_ids, $admin_id)
         }
     }
 
-    $current = kz_cups_user_manual_ids($userid);
+    $current = cups_user_manual_ids($userid);
 
     foreach ($current as $cup_id) {
         if (!isset($selected[$cup_id])) {
@@ -527,7 +527,7 @@ function kz_cups_save_profile_manual($userid, $selected_ids, $admin_id)
 
     foreach (array_keys($selected) as $cup_id) {
         if (!isset($current_map[$cup_id])) {
-            kz_cups_assign($cup_id, $userid, 'manual', 0, $admin_id, 'Назначено администратором');
+            cups_assign($cup_id, $userid, 'manual', 0, $admin_id, 'Назначено администратором');
             $changes['added'][] = $cup_id;
         }
     }
@@ -535,9 +535,9 @@ function kz_cups_save_profile_manual($userid, $selected_ids, $admin_id)
     return $changes;
 }
 
-function kz_cups_find_user_by_username($username)
+function cups_find_user_by_username($username)
 {
-    kz_cups_ensure_schema();
+    cups_ensure_schema();
 
     $username = trim((string)$username);
 

@@ -203,11 +203,11 @@ function ud_print_moderator_block($user, $id, $enabled) {
 		print("</select></span></td></tr>\n");
 	}
 
-	if (get_user_class() >= UC_ADMINISTRATOR && function_exists('kz_cups_catalog') && function_exists('kz_cups_user_manual_ids')) {
-		$manual_cups = kz_cups_user_manual_ids($id);
+	if (get_user_class() >= UC_ADMINISTRATOR && function_exists('cups_catalog') && function_exists('cups_user_manual_ids')) {
+		$manual_cups = cups_user_manual_ids($id);
 		$manual_cups_map = array_fill_keys($manual_cups, true);
 		$cup_options = "";
-		foreach (kz_cups_catalog() as $cup) {
+		foreach (cups_catalog() as $cup) {
 			$cup_id = (int)$cup["id"];
 			$checked = isset($manual_cups_map[$cup_id]) ? " checked" : "";
 			$cup_options .= "<label><input type=\"checkbox\" name=\"manual_cups[]\" value=\"$cup_id\"$checked> <i class=\"i1 " . ud_h($cup["icon"]) . "\"></i> " . ud_h($cup["title"]) . "</label><br />\n";
@@ -294,13 +294,13 @@ $uploaded_total = ud_size($user["uploaded"]);
 $downloaded_total = ud_size($user["downloaded"]);
 $seed_total = ud_minutes($user["seedtime"] ?? 0);
 $leech_total = ud_minutes($user["leechtime"] ?? 0);
-$bonus = function_exists('kz_pay_user_votes_from_array') ? kz_pay_user_votes_from_array($user) : (isset($user["bonus"]) ? (float)$user["bonus"] : 0);
+$bonus = function_exists('pay_user_votes_from_array') ? pay_user_votes_from_array($user) : (isset($user["bonus"]) ? (float)$user["bonus"] : 0);
 $reputation = isset($user["simpaty"]) ? (int)$user["simpaty"] : 0;
 $rank_name = ud_h(ud_rank_name($user));
 $user_class_css = 'u' . (int)$user["class"];
 $user_icons = function_exists('get_user_icons') ? get_user_icons($user) : '';
-$daily_limit = function_exists('kz_user_effective_torrent_limit') ? kz_user_effective_torrent_limit($user) : 20;
-$daily_downloaded = function_exists('kz_torrent_downloads_today') ? kz_torrent_downloads_today($id) : 0;
+$daily_limit = function_exists('user_effective_torrent_limit') ? user_effective_torrent_limit($user) : 20;
+$daily_downloaded = function_exists('torrent_downloads_today') ? torrent_downloads_today($id) : 0;
 $is_own_profile = !empty($CURUSER["id"]) && (int)$CURUSER["id"] === $id;
 $donor_status = ($user["donor"] ?? "no") === "yes" ? ud_pay_until($user["pay_donor_until"] ?? "") : "";
 $vip_status = (!empty($user["pay_vip_until"]) && ($user["pay_vip_until"] ?? "0000-00-00 00:00:00") !== "0000-00-00 00:00:00") ? ud_pay_until($user["pay_vip_until"]) : "";
@@ -337,7 +337,7 @@ if ($last = mysqli_fetch_assoc($res_last)) {
 $city = ud_search_links($user["city"] ?? '', 's2', 'sba');
 $favorite_movie = ud_search_links($user["favorite_movie"] ?? '', 's3', 'sba');
 $favorite_persons = ud_search_links($user["favorite_persons"] ?? '', 's4', 'sba', true);
-$recent_reputation = function_exists('kz_reputation_rows') ? kz_reputation_rows($id, 1, 10) : array();
+$recent_reputation = function_exists('reputation_rows') ? reputation_rows($id, 1, 10) : array();
 
 $hide_right_blocks = true;
 stdhead("Пользователь :: " . $user["username"]);
@@ -348,7 +348,7 @@ if (!$enabled) {
 ?>
 <div class="mn_wrap">
 	<div class="mn1_menu">
-		<?= function_exists('kz_profile_menu_html') ? kz_profile_menu_html($user, $CURUSER) : '' ?>
+		<?= function_exists('profile_menu_html') ? profile_menu_html($user, $CURUSER) : '' ?>
 		<? if (false) { ?>
 		<ul class="men w200">
 			<li class="img"><a href="/userdetails.php?id=<?= $id ?>"><img src="<?= $avatar_url ?>" class="p200" alt=""></a></li>
@@ -383,7 +383,7 @@ if (!$enabled) {
 		<div class="bx1 <?= $user_class_css ?>"><a href="/userdetails.php?id=<?= $id ?>" class="<?= $user_class_css ?>"><?= $profile_name ?></a> <?= $user_icons ?></div>
 		<div class="bx1_0"><table class="tables1 <?= $user_class_css ?>">
 			<?= ud_table_row("Звание", $rank_name) ?>
-			<? $cups_html = function_exists('kz_cups_user_profile_html') ? kz_cups_user_profile_html($id, (int)$user["class"]) : ''; ?>
+			<? $cups_html = function_exists('cups_user_profile_html') ? cups_user_profile_html($id, (int)$user["class"]) : ''; ?>
 			<? if ($cups_html !== '') { echo ud_table_row("Кубок", $cups_html); } ?>
 		</table></div>
 		<div class="bx1_0"><table class="tables1 <?= $user_class_css ?>">
@@ -422,11 +422,11 @@ if (!$enabled) {
 		<? if (!$is_own_profile && trim((string)($user["info"] ?? "")) !== '') { ?>
 		<div class="bx1"><div class="<?= $user_class_css ?>"><span class="bulet"></span>&#1048;&#1085;&#1092;&#1086;&#1088;&#1084;&#1072;&#1094;&#1080;&#1103; &#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1103;</div><div class="pad5x5"><?= function_exists('format_comment') ? format_comment($user["info"]) : nl2br(ud_h($user["info"])) ?></div></div>
 		<? } ?>
-		<?= function_exists('kz_reputation_table_html') ? kz_reputation_table_html($recent_reputation, $user_class_css, 1, true) : '' ?>
+		<?= function_exists('reputation_table_html') ? reputation_table_html($recent_reputation, $user_class_css, 1, true) : '' ?>
 	</div>
 	<div class="clear"></div>
 </div>
-<?= kz_page_online_block_html('<a href="/userdetails.php?id=' . $id . '" class="' . $user_class_css . '">' . $profile_name . '</a>') ?>
+<?= page_online_block_html('<a href="/userdetails.php?id=' . $id . '" class="' . $user_class_css . '">' . $profile_name . '</a>') ?>
 <?
 ud_print_moderator_block($user, $id, $enabled);
 stdfoot();
