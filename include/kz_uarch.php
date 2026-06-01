@@ -95,18 +95,11 @@ function kz_uarch_block_smile()
 {
 	$rows = kz_uarch_smiles(true, 1);
 
-	if ($rows) {
+	if (!empty($rows)) {
 		return $rows[0];
 	}
 
-	return array(
-		'userid' => 2396813,
-		'display_username' => 'Ananasix',
-		'display_class' => 8,
-		'country' => 8,
-		'gender' => '2',
-		'image_url' => '/pic/uarch_smile.jpg',
-	);
+	return null;
 }
 
 function kz_uarch_user_line(array $smile)
@@ -139,7 +132,17 @@ function kz_uarch_user_line(array $smile)
 function kz_uarch_block_html()
 {
 	$smile = kz_uarch_block_smile();
-	$image = (string)($smile['image_url'] ?? '/pic/uarch_smile.jpg');
+
+	if (!$smile) {
+		return '<div class="bx2_0">'
+			. '<ul class="men">'
+			. '<li class="tp2 center"><a href="/uarch.php" class="sbab">Улыбка</a></li>'
+			. '<li class="center pad5x5">Записей нет</li>'
+			. '</ul>'
+			. '</div>';
+	}
+
+	$image = (string)($smile['image_url'] ?? '');
 
 	return '<div class="bx2_0">'
 		. '<ul class="men">'
@@ -148,7 +151,6 @@ function kz_uarch_block_html()
 		. '</ul>'
 		. '</div>';
 }
-
 function kz_uarch_set_active($id, $active)
 {
 	kz_uarch_ensure_schema();
