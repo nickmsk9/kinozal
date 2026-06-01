@@ -138,43 +138,6 @@ function users_paginator($count, $perpage, $page)
     return '<div class="paginator"><ul>' . implode("\n", $items) . '</ul></div>';
 }
 
-function users_online_html()
-{
-    $dt = time() - 300;
-    $res = sql_query("
-        SELECT s.uid, u.username, u.class, u.gender, u.parked
-        FROM sessions AS s
-        INNER JOIN users AS u ON u.id = s.uid
-        WHERE s.time >= $dt
-          AND s.uid > 0
-          AND (s.url LIKE '/users.php%' OR s.url LIKE 'users.php%')
-        GROUP BY s.uid, u.username, u.class, u.gender, u.parked
-        ORDER BY u.class DESC, u.username ASC
-    ") or sqlerr(__FILE__, __LINE__);
-
-    $items = array();
-    while ($row = mysqli_fetch_assoc($res)) {
-        $username = users_h($row['username']);
-        $html = '<a href="/userdetails.php?id=' . (int)$row['uid'] . '" class="u' . (int)$row['class'] . '">' . $username . '</a>';
-
-        if ((string)$row['gender'] === '2') {
-            $html .= '<i class="i1 s_dv"></i>';
-        }
-
-        if ((string)$row['parked'] === 'yes') {
-            $html .= '<i class="i1 s_park"></i>';
-        }
-
-        $items[] = $html;
-    }
-
-    if (!$items) {
-        return 'никого нет на этой странице';
-    }
-
-    return implode(', ', $items);
-}
-
 $search_name = users_get('s1');
 if ($search_name === '') {
     $search_name = users_get('search');
@@ -488,20 +451,7 @@ stdhead('Список пользователей - Поиск пользоват
         <?= users_paginator($count, $perpage, $page) ?>
     </div>
 </div>
-<div class="bx2_0">
-    <ul class="men">
-        <li class="tp2 center">
-            Кто ОнЛайн здесь, на этой странице [
-            <a class="sba" href="/pay.php">помочь проекту</a>
-            ]
-        </li>
-        <li>
-            <div class="pad5x5">
-                <?= users_online_html() ?>
-            </div>
-        </li>
-    </ul>
-</div>
+<?= kz_page_online_box(array('/users.php%', 'users.php%'), 'никого нет на этой странице') ?>
 <?php
 stdfoot();
 

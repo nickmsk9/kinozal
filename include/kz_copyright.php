@@ -57,14 +57,7 @@ function copyright_menu($contact_email)
 
 function copyright_online_box($patterns)
 {
-	?>
-	<div class="bx2_0">
-		<ul class="men">
-			<li class="tp2 center">Кто ОнЛайн здесь, на этой странице [ <a class="sba" href="/pay.php">помочь проекту</a> ]</li>
-			<li><div class="pad5x5"><?= kz_page_online_box($patterns, 'никого нет на странице') ?></div></li>
-		</ul>
-	</div>
-	<?php
+	echo kz_page_online_box($patterns, 'никого нет на странице');
 }
 
 ?>

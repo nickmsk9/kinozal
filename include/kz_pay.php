@@ -535,7 +535,7 @@ function kz_pay_layout_start($active, $user)
 function kz_pay_layout_end($patterns)
 {
 	echo '</div><div class="clr"></div></div>';
-	echo '<div class="bx2_0"><ul class="men"><li class="tp2 center">Кто ОнЛайн здесь, на этой странице [ <a class="sba" href="/pay.php">помочь проекту</a> ]</li><li><div class="pad5x5">' . kz_page_online_box($patterns, 'никого нет на странице') . '</div></li></ul></div>';
+	echo kz_page_online_box($patterns, 'никого нет на странице');
 }
 
 function kz_pay_chat_rows($tab, $limit = 50)

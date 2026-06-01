@@ -1361,7 +1361,7 @@ function pager($rpp, $count, $href, $opts = array())
     return array($pagertop, $pagerbottom, "LIMIT $start,$rpp");
 }
 
-function kz_page_online_box($url_patterns, $empty_text = 'никого нет на странице')
+function kz_page_online_users_html($url_patterns, $empty_text = 'никого нет на странице')
 {
 	if (!is_array($url_patterns)) {
 		$url_patterns = array($url_patterns);
@@ -1399,10 +1399,24 @@ function kz_page_online_box($url_patterns, $empty_text = 'никого нет н
 
 	$content = $users ? implode(', ', $users) : htmlspecialchars_uni($empty_text);
 
-	return "<table class=\"tables2 w100p\" style=\"background:#EEF7FF;\">\n"
-		. "<tr><td class=\"center\" style=\"padding:6px 8px;\">Кто ОнЛайн здесь, на этой странице [ <a class=\"sba\" href=\"javascript:void(0)\">помочь проекту</a> ]</td></tr>\n"
-		. "<tr><td style=\"padding:6px 8px; color:#E47D00; font-weight:bold;\">$content</td></tr>\n"
-		. "</table>\n";
+	return $content;
+}
+
+function kz_page_online_box($url_patterns, $empty_text = 'никого нет на странице')
+{
+	$content = kz_page_online_users_html($url_patterns, $empty_text);
+
+	return kz_page_online_block_html($content);
+}
+
+function kz_page_online_block_html($content)
+{
+	return "<div class=\"bx2_0\">\n"
+		. "<ul class=\"men\">\n"
+		. "<li class=\"tp2 center\">&#1050;&#1090;&#1086; &#1054;&#1085;&#1051;&#1072;&#1081;&#1085; &#1079;&#1076;&#1077;&#1089;&#1100;, &#1085;&#1072; &#1101;&#1090;&#1086;&#1081; &#1089;&#1090;&#1088;&#1072;&#1085;&#1080;&#1094;&#1077; [ <a class=\"sba\" href=\"/pay.php\">&#1087;&#1086;&#1084;&#1086;&#1095;&#1100; &#1087;&#1088;&#1086;&#1077;&#1082;&#1090;&#1091;</a> ]</li>\n"
+		. "<li><div class=\"pad5x5\">$content</div></li>\n"
+		. "</ul>\n"
+		. "</div>\n";
 }
 
 function downloaderdata($res)

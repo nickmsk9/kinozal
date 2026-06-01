@@ -186,12 +186,7 @@ $zabor_res = sql_query("
 	</div>
 	<div class="clr"></div>
 </div>
-<div class="bx2_0">
-	<ul class="men">
-		<li class="tp2 center">Кто ОнЛайн здесь, на этой странице [ <a class="sba" href="/pay.php">помочь проекту</a> ]</li>
-		<li><div class="pad5x5"><?= kz_page_online_box(array('/groupex.php?id=' . $id . '%'), 'никого нет на странице') ?></div></li>
-	</ul>
-</div>
+<?= kz_page_online_box(array('/groupex.php?id=' . $id . '%'), 'никого нет на странице') ?>
 <?php
 stdfoot();
 

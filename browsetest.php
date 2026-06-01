@@ -251,9 +251,7 @@ stdhead('Тестовые раздачи');
 	<div class="small" style="padding:6px 0 0 0;"><?= $pagerbottom ?></div>
 <?php } ?>
 
-<div class="bx2_0">
-	<?= kz_page_online_box(array('/browsetest.php%', '%/browsetest.php%'), 'пока никого') ?>
-</div>
+<?= kz_page_online_box(array('/browsetest.php%', '%/browsetest.php%'), 'пока никого') ?>
 
 <?php
 stdfoot();

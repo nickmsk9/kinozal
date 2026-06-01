@@ -108,9 +108,7 @@ $page_patterns = array('/novinki.php%', 'novinki.php%');
         </table>
     </div>
 
-    <div class="bx2_0">
-        <?= kz_page_online_box($page_patterns, "никого нет на этой странице"); ?>
-    </div>
+    <?= kz_page_online_box($page_patterns, "никого нет на этой странице"); ?>
 </div>
 <?php
 stdfoot();

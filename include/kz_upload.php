@@ -1932,24 +1932,7 @@ function kz_upload_render_js($kind, $mode, array $section_modes)
 
 function kz_upload_render_online_block()
 {
-	$users = array();
-	$res = sql_query("SELECT id, username, class FROM users WHERE last_access >= DATE_SUB(NOW(), INTERVAL 15 MINUTE) ORDER BY class DESC, username ASC LIMIT 20");
-	if ($res) {
-		while ($row = mysqli_fetch_assoc($res)) {
-			$users[] = '<a href="/userdetails.php?id=' . (int)$row['id'] . '" class="u' . (int)$row['class'] . '">' . kz_h($row['username']) . '</a>';
-		}
-	}
-	if (!$users) {
-		$users[] = 'пока никого';
-	}
-	?>
-	<div class="bx2_0">
-		<ul class="men">
-			<li class="tp2 center">Кто ОнЛайн здесь, на этой странице [ <a class="sba" href="/pay.php">помочь проекту</a> ]</li>
-			<li><div class="pad5x5"><?= implode(', ', $users) ?></div></li>
-		</ul>
-	</div>
-	<?php
+	echo kz_page_online_box(array('/upload.php%', 'upload.php%'), 'пока никого');
 }
 
 function kz_upload_render_details_panel(array $row, array $details, $descr_html, $owned, array $announces_urls = array())

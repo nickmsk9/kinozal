@@ -426,7 +426,7 @@ if (!$enabled) {
 	</div>
 	<div class="clear"></div>
 </div>
-<div class="bx2_0"><ul class="men"><li class="tp2 center">Кто ОнЛайн здесь, на этой странице [ <a class="sba" href="/pay.php">помочь проекту</a> ]</li><li><div class="pad5x5"><a href="/userdetails.php?id=<?= $id ?>" class="<?= $user_class_css ?>"><?= $profile_name ?></a></div></li></ul></div>
+<?= kz_page_online_block_html('<a href="/userdetails.php?id=' . $id . '" class="' . $user_class_css . '">' . $profile_name . '</a>') ?>
 <?
 ud_print_moderator_block($user, $id, $enabled);
 stdfoot();
