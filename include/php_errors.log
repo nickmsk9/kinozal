@@ -178,3 +178,5 @@ Stack trace:
   thrown in C:\OSPanel\domains\kinozal.lv\include\kz_upload.php on line 1570
 [01-Jun-2026 12:38:30 Europe/Moscow] PHP Warning:  Undefined array key "page" in C:\OSPanel\domains\kinozal.lv\userhistory.php on line 42
 [01-Jun-2026 12:38:30 Europe/Moscow] PHP Warning:  Undefined array key "action" in C:\OSPanel\domains\kinozal.lv\userhistory.php on line 44
+[01-Jun-2026 15:38:59 Europe/Moscow] PHP Warning:  Undefined variable $pagemenu in C:\OSPanel\domains\kinozal.lv\warned.php on line 69
+[01-Jun-2026 15:38:59 Europe/Moscow] PHP Warning:  Undefined variable $browsemenu in C:\OSPanel\domains\kinozal.lv\warned.php on line 69
