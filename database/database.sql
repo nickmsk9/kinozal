@@ -803,6 +803,7 @@ CREATE TABLE `torrent_details` (
   `poster_url` text NOT NULL,
   `rgroup` int(10) unsigned NOT NULL DEFAULT '0',
   `rgroup_button` varchar(255) NOT NULL DEFAULT '',
+  `torrent_file_updated_at` datetime NULL DEFAULT NULL,
   `form_mode` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `section_modes` varchar(20) NOT NULL DEFAULT '0,0,0,0',
   `data` mediumtext NOT NULL,
@@ -912,7 +913,9 @@ CREATE TABLE `torrent_trackers` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `torrent_url` (`torrentid`, `announce_url`(191)),
   KEY `torrentid` (`torrentid`),
-  KEY `enabled_checked` (`enabled`, `last_checked`)
+  KEY `enabled_checked` (`enabled`, `last_checked`),
+  KEY `due_trackers` (`enabled`, `is_primary`, `last_checked`),
+  KEY `torrent_active` (`torrentid`, `enabled`, `is_primary`, `last_error`(32))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #

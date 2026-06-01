@@ -12,7 +12,9 @@ if(!defined("IN_ANNOUNCE"))
 @ini_set('ignore_repeated_errors', '1');
 @ignore_user_abort(1);
 @set_time_limit(0);
-@set_magic_quotes_runtime(0);
+if (function_exists('set_magic_quotes_runtime')) {
+  @set_magic_quotes_runtime(0);
+}
 include_once($rootpath . 'include/benc.php');
 include_once($rootpath . 'include/init.php');
 include_once($rootpath . 'include/functions_announce.php');

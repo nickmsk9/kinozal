@@ -14,6 +14,7 @@ require_once("include/persons.php");
 require_once("include/kz_multitracker.php");
 
 dbconn(false);
+kz_upload_ensure_schema();
 kz_mt_ensure_schema();
 
 if (!$allow_guests_details) {

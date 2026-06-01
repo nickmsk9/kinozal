@@ -13,5 +13,7 @@ CREATE TABLE IF NOT EXISTS `torrent_trackers` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `torrent_url` (`torrentid`, `announce_url`(191)),
   KEY `torrentid` (`torrentid`),
-  KEY `enabled_checked` (`enabled`, `last_checked`)
+  KEY `enabled_checked` (`enabled`, `last_checked`),
+  KEY `due_trackers` (`enabled`, `is_primary`, `last_checked`),
+  KEY `torrent_active` (`torrentid`, `enabled`, `is_primary`, `last_error`(32))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

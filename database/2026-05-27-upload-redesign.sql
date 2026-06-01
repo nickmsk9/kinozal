@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `torrent_details` (
   `poster_url` text NOT NULL,
   `rgroup` int(10) unsigned NOT NULL DEFAULT '0',
   `rgroup_button` varchar(255) NOT NULL DEFAULT '',
+  `torrent_file_updated_at` datetime NULL DEFAULT NULL,
   `form_mode` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `section_modes` varchar(20) NOT NULL DEFAULT '0,0,0,0',
   `data` mediumtext NOT NULL,

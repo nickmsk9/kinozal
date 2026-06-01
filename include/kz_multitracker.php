@@ -95,7 +95,9 @@ function kz_mt_ensure_schema()
 			PRIMARY KEY (id),
 			UNIQUE KEY torrent_url (torrentid, announce_url(191)),
 			KEY torrentid (torrentid),
-			KEY enabled_checked (enabled, last_checked)
+			KEY enabled_checked (enabled, last_checked),
+			KEY due_trackers (enabled, is_primary, last_checked),
+			KEY torrent_active (torrentid, enabled, is_primary, last_error(32))
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
 
@@ -211,13 +213,18 @@ function kz_mt_save_trackers($torrentid, array $urls, $external_info_hash = '')
 
 	$urls = kz_mt_extract_announces(array('announce-list' => array($urls)));
 	$active = array();
+	$values = array();
 	foreach ($urls as $url) {
 		$is_primary = kz_mt_is_local_url($url) ? 'yes' : 'no';
 		$row_external_hash = $is_primary === 'yes' ? '' : $external_info_hash;
 		$active[] = sqlesc($url);
+		$values[] = "($torrentid, " . sqlesc($url) . ", " . sqlesc($row_external_hash) . ", " . sqlesc($is_primary) . ", 'yes')";
+	}
+
+	if ($values) {
 		sql_query("
 			INSERT INTO torrent_trackers (torrentid, announce_url, external_info_hash, is_primary, enabled)
-			VALUES ($torrentid, " . sqlesc($url) . ", " . sqlesc($row_external_hash) . ", " . sqlesc($is_primary) . ", 'yes')
+			VALUES " . implode(",\n", $values) . "
 			ON DUPLICATE KEY UPDATE external_info_hash = VALUES(external_info_hash), is_primary = VALUES(is_primary), enabled = 'yes'
 		") or sqlerr(__FILE__, __LINE__);
 	}
@@ -231,21 +238,42 @@ function kz_mt_save_trackers($torrentid, array $urls, $external_info_hash = '')
 function kz_mt_sync_torrent_totals($torrentid)
 {
 	$torrentid = (int)$torrentid;
-	$res = sql_query("
-		SELECT COALESCE(SUM(COALESCE(seeders, 0)), 0) AS seeders,
-		       COALESCE(SUM(COALESCE(leechers, 0)), 0) AS leechers,
-		       MAX(last_checked) AS last_checked
-		FROM torrent_trackers
-		WHERE torrentid = $torrentid AND enabled = 'yes' AND is_primary = 'no' AND last_error = ''
-	") or sqlerr(__FILE__, __LINE__);
-	$row = mysqli_fetch_assoc($res);
+	kz_mt_sync_torrent_totals_bulk(array($torrentid));
+}
+
+function kz_mt_sync_torrent_totals_bulk(array $torrentids)
+{
+	$ids = array();
+	foreach ($torrentids as $torrentid) {
+		$torrentid = (int)$torrentid;
+		if ($torrentid > 0) {
+			$ids[$torrentid] = true;
+		}
+	}
+
+	if (!$ids) {
+		return;
+	}
+
+	$id_sql = implode(',', array_keys($ids));
 	sql_query("
-		UPDATE torrents
-		SET remote_seeders = " . (int)($row['seeders'] ?? 0) . ",
-		    remote_leechers = " . (int)($row['leechers'] ?? 0) . ",
-		    last_mt_update = " . (!empty($row['last_checked']) ? sqlesc($row['last_checked']) : "NULL") . ",
-		    multitracker = IF((SELECT COUNT(*) FROM torrent_trackers WHERE torrentid = $torrentid AND enabled = 'yes' AND is_primary = 'no') > 0, 'yes', 'no')
-		WHERE id = $torrentid
+		UPDATE torrents AS t
+		LEFT JOIN (
+			SELECT
+				torrentid,
+				COALESCE(SUM(IF(last_error = '', COALESCE(seeders, 0), 0)), 0) AS seeders,
+				COALESCE(SUM(IF(last_error = '', COALESCE(leechers, 0), 0)), 0) AS leechers,
+				MAX(IF(last_error = '', last_checked, NULL)) AS last_checked,
+				COUNT(*) AS tracker_count
+			FROM torrent_trackers
+			WHERE torrentid IN ($id_sql) AND enabled = 'yes' AND is_primary = 'no'
+			GROUP BY torrentid
+		) AS mt ON mt.torrentid = t.id
+		SET t.remote_seeders = COALESCE(mt.seeders, 0),
+		    t.remote_leechers = COALESCE(mt.leechers, 0),
+		    t.last_mt_update = mt.last_checked,
+		    t.multitracker = IF(COALESCE(mt.tracker_count, 0) > 0, 'yes', 'no')
+		WHERE t.id IN ($id_sql)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
@@ -348,13 +376,43 @@ function kz_mt_scrape_tracker($url, $info_hash)
 	$url = kz_mt_normalize_url($url);
 	if (stripos($url, 'udp://') === 0) {
 		require_once ROOT_PATH . 'include/scraper/udptscraper.php';
-		$scraper = new udptscraper(10);
+		static $udp_scraper = null;
+		if ($udp_scraper === null) {
+			$udp_scraper = new udptscraper(10);
+		}
+		$scraper = $udp_scraper;
 	} else {
 		require_once ROOT_PATH . 'include/scraper/httptscraper.php';
-		$scraper = new httptscraper(12, 65536);
+		static $http_scraper = null;
+		if ($http_scraper === null) {
+			$http_scraper = new httptscraper(12, 65536);
+		}
+		$scraper = $http_scraper;
 	}
 	$result = $scraper->scrape($url, $info_hash);
 	return !empty($result[$info_hash]) && is_array($result[$info_hash]) ? $result[$info_hash] : false;
+}
+
+function kz_mt_tracker_update_set($info_hash, $stats = null, $error = '')
+{
+	$set = array();
+	$info_hash = kz_mt_normalize_info_hash($info_hash);
+	if ($info_hash !== '') {
+		$set[] = 'external_info_hash = ' . sqlesc($info_hash);
+	}
+
+	if (is_array($stats)) {
+		$set[] = 'seeders = ' . (int)$stats['seeders'];
+		$set[] = 'leechers = ' . (int)$stats['leechers'];
+		$set[] = 'completed = ' . (int)$stats['completed'];
+		$set[] = 'last_checked = NOW()';
+		$set[] = "last_error = ''";
+	} else {
+		$set[] = 'last_checked = NOW()';
+		$set[] = 'last_error = ' . sqlesc(substr((string)$error, 0, 255));
+	}
+
+	return implode(', ', $set);
 }
 
 function kz_mt_update_due_trackers($limit = 25)
@@ -379,25 +437,23 @@ function kz_mt_update_due_trackers($limit = 25)
 		$info_hash = kz_mt_normalize_info_hash($row['external_info_hash'] ?? '');
 		if ($info_hash === '') {
 			$info_hash = kz_mt_recover_external_info_hash($torrentid, $row['info_hash'] ?? '');
-			if ($info_hash !== '') {
-				sql_query("UPDATE torrent_trackers SET external_info_hash = " . sqlesc($info_hash) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
-			}
 		}
 		try {
+			if ($info_hash === '') {
+				throw new Exception('invalid info hash');
+			}
 			$stats = kz_mt_scrape_tracker($row['announce_url'], $info_hash);
 			if (!$stats) {
 				throw new Exception('no scrape data');
 			}
-			sql_query("UPDATE torrent_trackers SET seeders = " . (int)$stats['seeders'] . ", leechers = " . (int)$stats['leechers'] . ", completed = " . (int)$stats['completed'] . ", last_checked = NOW(), last_error = '' WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			sql_query("UPDATE torrent_trackers SET " . kz_mt_tracker_update_set($info_hash, $stats) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
 		} catch (Exception $e) {
-			sql_query("UPDATE torrent_trackers SET last_checked = NOW(), last_error = " . sqlesc(substr($e->getMessage(), 0, 255)) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			sql_query("UPDATE torrent_trackers SET " . kz_mt_tracker_update_set($info_hash, null, $e->getMessage()) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
 		}
 		$seen_torrents[$torrentid] = true;
 	}
 
-	foreach (array_keys($seen_torrents) as $torrentid) {
-		kz_mt_sync_torrent_totals($torrentid);
-	}
+	kz_mt_sync_torrent_totals_bulk(array_keys($seen_torrents));
 }
 
 function kz_mt_update_torrent_trackers($torrentid)
@@ -425,19 +481,19 @@ function kz_mt_update_torrent_trackers($torrentid)
 		$info_hash = kz_mt_normalize_info_hash($row['external_info_hash'] ?? '');
 		if ($info_hash === '') {
 			$info_hash = kz_mt_recover_external_info_hash($torrentid, $row['info_hash'] ?? '');
-			if ($info_hash !== '') {
-				sql_query("UPDATE torrent_trackers SET external_info_hash = " . sqlesc($info_hash) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
-			}
 		}
 		try {
+			if ($info_hash === '') {
+				throw new Exception('invalid info hash');
+			}
 			$stats = kz_mt_scrape_tracker($row['announce_url'], $info_hash);
 			if (!$stats) {
 				throw new Exception('no scrape data');
 			}
-			sql_query("UPDATE torrent_trackers SET seeders = " . (int)$stats['seeders'] . ", leechers = " . (int)$stats['leechers'] . ", completed = " . (int)$stats['completed'] . ", last_checked = NOW(), last_error = '' WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			sql_query("UPDATE torrent_trackers SET " . kz_mt_tracker_update_set($info_hash, $stats) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
 			$success++;
 		} catch (Exception $e) {
-			sql_query("UPDATE torrent_trackers SET last_checked = NOW(), last_error = " . sqlesc(substr($e->getMessage(), 0, 255)) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
+			sql_query("UPDATE torrent_trackers SET " . kz_mt_tracker_update_set($info_hash, null, $e->getMessage()) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
 			$errors++;
 		}
 	}
