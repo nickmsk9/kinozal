@@ -110,6 +110,7 @@ function kz_upload_quality_options()
 {
 	return array(
 		'' => 'Выберите качество',
+		'WEB-DLRip' => 'WEB-DLRip',
 		'WEB-DL (2160p)' => 'WEB-DL (2160p)',
 		'WEB-DL (1080p)' => 'WEB-DL (1080p)',
 		'WEB-DL (720p)' => 'WEB-DL (720p)',
@@ -506,12 +507,14 @@ function kz_upload_table_exists($table)
 	return $res && mysqli_num_rows($res) > 0;
 }
 
+function kz_upload_table_column_exists($table, $column)
+{
+	$res = sql_query("SHOW COLUMNS FROM " . $table . " LIKE " . sqlesc($column));
+	return $res && mysqli_num_rows($res) > 0;
+}
+
 function kz_upload_ensure_schema()
 {
-	if (kz_upload_table_exists('torrent_details')) {
-		return;
-	}
-
 	sql_query("
 		CREATE TABLE IF NOT EXISTS torrent_details (
 			tid int(10) unsigned NOT NULL,
@@ -519,6 +522,7 @@ function kz_upload_ensure_schema()
 			poster_url text NOT NULL,
 			rgroup int(10) unsigned NOT NULL DEFAULT 0,
 			rgroup_button varchar(255) NOT NULL DEFAULT '',
+			torrent_file_updated_at datetime NULL DEFAULT NULL,
 			form_mode tinyint(1) unsigned NOT NULL DEFAULT 0,
 			section_modes varchar(20) NOT NULL DEFAULT '0,0,0,0',
 			data mediumtext NOT NULL,
@@ -529,6 +533,10 @@ function kz_upload_ensure_schema()
 			KEY rgroup (rgroup)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
+
+	if (!kz_upload_table_column_exists('torrent_details', 'torrent_file_updated_at')) {
+		sql_query("ALTER TABLE torrent_details ADD torrent_file_updated_at datetime NULL DEFAULT NULL AFTER rgroup_button") or sqlerr(__FILE__, __LINE__);
+	}
 }
 
 function kz_upload_load_details($tid)
@@ -541,6 +549,7 @@ function kz_upload_load_details($tid)
 		'poster_url' => '',
 		'rgroup' => 0,
 		'rgroup_button' => '',
+		'torrent_file_updated_at' => '',
 		'form_mode' => 0,
 		'section_modes' => '0,0,0,0',
 		'data' => kz_upload_default_data(),
@@ -567,6 +576,7 @@ function kz_upload_load_details($tid)
 	$details['poster_url'] = (string)$row['poster_url'];
 	$details['rgroup'] = (int)$row['rgroup'];
 	$details['rgroup_button'] = (string)$row['rgroup_button'];
+	$details['torrent_file_updated_at'] = (string)($row['torrent_file_updated_at'] ?? '');
 	$details['form_mode'] = (int)$row['form_mode'];
 	$details['section_modes'] = (string)$row['section_modes'];
 	$details['data'] = array_replace_recursive(kz_upload_default_data(), $data);
@@ -615,6 +625,12 @@ function kz_upload_save_details($tid, $kind, $poster_url, $rgroup, $rgroup_butto
 			data = VALUES(data),
 			updated_at = NOW()
 	") or sqlerr(__FILE__, __LINE__);
+}
+
+function kz_upload_mark_torrent_file_updated($tid)
+{
+	kz_upload_ensure_schema();
+	sql_query("UPDATE torrent_details SET torrent_file_updated_at = NOW(), updated_at = NOW() WHERE tid = " . (int)$tid) or sqlerr(__FILE__, __LINE__);
 }
 
 function kz_upload_normalize_kind($kind)
@@ -1142,6 +1158,77 @@ function kz_upload_keywords(array $data, $kind, $name)
 	return trim(implode(', ', array_filter(array_map('trim', $parts))));
 }
 
+function kz_upload_release_name_part($value)
+{
+	$value = trim(preg_replace('#\s+#u', ' ', (string)$value));
+	return trim($value, " \t\n\r\0\x0B/");
+}
+
+function kz_upload_translation_short($translation)
+{
+	$translation = kz_upload_release_name_part($translation);
+	if ($translation === '') {
+		return '';
+	}
+
+	if (preg_match('/^Дубл|^Р”СѓР±Р»/iu', $translation)) {
+		return 'ДБ';
+	}
+	if (preg_match('/двух|РґРІСѓС…/iu', $translation)) {
+		return 'ПД';
+	}
+	if (preg_match('/мног|РјРЅРѕРі/iu', $translation)) {
+		return 'ПМ';
+	}
+	if (preg_match('/одног|РѕРґРЅРѕРі/iu', $translation)) {
+		return 'ПО';
+	}
+	if (preg_match('/любител|Р›СЋР±РёС‚/iu', $translation)) {
+		return 'ЛМ';
+	}
+	if (preg_match('/автор|РђРІС‚РѕСЂ/iu', $translation)) {
+		return 'АВ';
+	}
+	if (preg_match('/оригинал|РћСЂРёРі/iu', $translation)) {
+		return 'ОР';
+	}
+
+	return $translation;
+}
+
+function kz_upload_generated_name(array $data, $kind)
+{
+	$kind = kz_upload_normalize_kind($kind);
+	if ($kind === 'video') {
+		$video = $data['video'] ?? array();
+		$fields = array(
+			$video['title'] ?? '',
+			$video['original_title'] ?? '',
+			$video['year'] ?? '',
+			kz_upload_translation_short($video['translation'] ?? ''),
+			$video['quality'] ?? '',
+		);
+	} else {
+		$template = $data['templates'][$kind]['fields'] ?? array();
+		$fields = array(
+			$template['title'] ?? ($template['album'] ?? ''),
+			$template['original_title'] ?? ($template['artist'] ?? ''),
+			$template['year'] ?? '',
+			$template['quality'] ?? ($template['audio'] ?? ''),
+		);
+	}
+
+	$parts = array();
+	foreach ($fields as $field) {
+		$field = kz_upload_release_name_part($field);
+		if ($field !== '') {
+			$parts[] = $field;
+		}
+	}
+
+	return implode(' / ', $parts);
+}
+
 function kz_upload_option_select($name, array $options, $selected, $class = 'w100p', $extra = '')
 {
 	$html = '<select name="' . kz_h($name) . '" class="' . kz_h($class) . '"' . ($extra ? ' ' . $extra : '') . '>';
@@ -1241,7 +1328,11 @@ function kz_upload_render_form($action, $submit_label, array $state, $is_edit = 
 		<div class="bx1">
 			<ul class="men">
 				<li class="tp2 b">Название</li>
-				<li><?= kz_upload_input('name', $name) ?></li>
+				<li>
+					<input type="hidden" name="name" id="name" value="<?= kz_h($name) ?>">
+					<input type="text" id="generated_name" value="<?= kz_h($name) ?>" class="w100p" readonly="readonly">
+					<div class="n">Название формируется автоматически из полей описания.</div>
+				</li>
 				<?php if (!$is_edit || $allow_file) { ?>
 					<li class="tp2 b">Торрент-файл</li>
 					<li><input type="file" name="file" size="80" class="w100p" accept=".torrent,application/x-bittorrent"></li>

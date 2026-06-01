@@ -5,6 +5,9 @@ if (!defined('BLOCK_FILE')) {
     exit;
 }
 
+require_once(dirname(__DIR__) . '/include/kz_test_torrents.php');
+kz_test_torrents_ensure_schema();
+
 global $content;
 
 $blocktitle = 'Топ раздач';
@@ -18,6 +21,7 @@ $res = sql_query("
     FROM torrents
     WHERE visible = 'yes'
       AND banned != 'yes'
+      AND (is_test <> 'yes' OR test_approved_at IS NOT NULL)
     ORDER BY seeders DESC, leechers + remote_leechers DESC, added DESC, id DESC
     LIMIT 10
 ") or sqlerr(__FILE__, __LINE__);

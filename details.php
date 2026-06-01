@@ -108,6 +108,60 @@ function details_line($title, $value, $kind = '')
 	return '<b>' . details_h($title) . ':</b> ' . $value . '<br />';
 }
 
+function details_tab_content(array $design, $name)
+{
+	$name = mb_strtolower((string)$name, 'UTF-8');
+	foreach (($design['tabs'] ?? array()) as $tab) {
+		$title = mb_strtolower(trim((string)($tab['title'] ?? '')), 'UTF-8');
+		$content = trim((string)($tab['content'] ?? ''));
+		if ($content !== '' && ($title === $name || mb_strpos($title, $name, 0, 'UTF-8') !== false)) {
+			return nl2br(details_h($content));
+		}
+	}
+
+	return '';
+}
+
+function details_torrent_updated_notice(array $details)
+{
+	$updated = trim((string)($details['torrent_file_updated_at'] ?? ''));
+	if ($updated === '' || substr($updated, 0, 10) !== date('Y-m-d')) {
+		return '';
+	}
+
+	$time = date('H:i', strtotime($updated));
+	return '<div class="bx1 justify"><b>Торрент-файл обновлен сегодня в ' . details_h($time) . '</b> Чтобы переподключиться к раздаче, скачайте заново торрент-файл и перехешируйте задание в клиенте. Возможные причины обновления: добавление серии, альбома, выпуска, обновление версии, улучшение качества раздачи.</div>';
+}
+
+function details_release_group_block(array $details)
+{
+	$groups = function_exists('kz_upload_release_groups') ? kz_upload_release_groups() : array();
+	$rgroup_id = (int)($details['rgroup'] ?? 0);
+	$rgroup_title = $groups[$rgroup_id] ?? '';
+	$rbutton = trim((string)($details['rgroup_button'] ?? ''));
+
+	if ($rgroup_title === '' && $rbutton === '') {
+		return '';
+	}
+
+	if ($rbutton === '' && $rgroup_id > 0) {
+		$rbutton = '/pic/rgroup/rg_serial.gif';
+	}
+
+	$html = '<li class="tp">Релиз-группа</li><li>';
+	if ($rbutton !== '') {
+		if (preg_match('#^(https?:)?//|^/#i', $rbutton)) {
+			$html .= '<img src="' . details_h($rbutton) . '" align="right" alt="' . details_h($rgroup_title) . '">';
+		} else {
+			$html .= '<span class="floatright b">' . details_h($rbutton) . '</span>';
+		}
+	}
+	if ($rgroup_title !== '') {
+		$html .= '<span class="b">' . details_h($rgroup_title) . '</span>';
+	}
+	return $html . '<div class="clear"></div></li>';
+}
+
 function details_poster(array $row, array $details)
 {
 	$poster = trim((string)($details['poster_url'] ?? ''));
@@ -779,18 +833,21 @@ if ($tech_tab === '') {
 	$tech_tab = details_line('Размер', mksize($row['size'])) . details_line('Файлов', $row['numfiles']);
 }
 
-$release_tab = details_line('Категория', $row['cat_name'] ?? '') .
-	details_line('Файл', $row['filename'] ?? '') .
-	details_line('Сохранено как', $row['save_as'] ?? '') .
-	details_line('Добавлена', $row['added'] ?? '') .
-	details_file_list($id);
+$release_tab = details_tab_content($design, 'релиз');
+if ($release_tab === '') {
+	$release_tab = nl2br(details_h(trim((string)($design['notes'] ?? ''))));
+}
+if ($release_tab === '') {
+	$release_tab = 'Описание релиза пока не добавлено.';
+}
 
 $search_title = $original !== '' ? $original : $title;
+$title_class = $free === 'yes' ? 'r1' : ($free === 'silver' ? 'r2' : 'r0');
 $hide_right_blocks = true;
 stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['name']) . '"');
 ?>
 <div class="mn_wrap">
-	<div style="padding:0 5px 7px 0;"><h1><a href="/details.php?id=<?= $id ?>" class="r1"><?= details_h($row['name']) ?></a></h1></div>
+	<div style="padding:0 5px 7px 0;"><h1><a href="/details.php?id=<?= $id ?>" class="<?= $title_class ?>"><?= details_h($row['name']) ?></a></h1></div>
 	<div class="mn1_menu"><ul class="men w200">
 		<li class="img"><a href="/details.php?id=<?= $id ?>" title="<?= details_h($row['name']) ?>"><img src="<?= $poster ?>" class="p200" alt=""></a></li>
 		<li class="tp">Меню раздачи</li>
@@ -820,6 +877,7 @@ stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['
 			echo '<li class="tp">Ознакомление</li>' . implode('', $watch_rows);
 		}
 		?>
+		<?= details_release_group_block($torrent_details) ?>
 		<li class="tp">Голосование</li>
 		<?php if (!empty($design['imdb']['url'])) { ?><li><span class="bulet"></span><a href="<?= details_h($design['imdb']['url']) ?>" target="_blank">IMDb<span class="floatright"><?= details_h($external_ratings['imdb']) ?></span></a></li><?php } ?>
 		<?php if (!empty($design['kinopoisk']['url'])) { ?><li><span class="bulet"></span><a href="<?= details_h($design['kinopoisk']['url']) ?>" target="_blank">Кинопоиск<span class="floatright"><?= details_h($external_ratings['kinopoisk']) ?></span></a></li><?php } ?>
@@ -828,13 +886,14 @@ stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['
 		<li class="b"><span class="bulet"></span>Голосов<span class="floatright" id="votes_count"><?= (int)$row['numratings'] ?></span></li>
 		<li><div class="justify" id="ratio_get">Просим Вас оценивать материал после ознакомления с ним. <?php if ($CURUSER) { ?>Ваши оценки вы можете просмотреть <a href="/uservotes.php?id=<?= (int)$CURUSER['id'] ?>" class="sba">здесь</a><?php } ?></div></li>
 		<li class="tp">Опубликовать ссылку</li>
-		<li><div class="share b"><a class="vkontakte" href="https://vk.com/share.php?url=<?= rawurlencode($DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку во ВКонтакте" onclick="window.open(this.href, 'Опубликовать ссылку во Вконтакте', 'width=800,height=300'); return false"></a><a class="facebook" href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку в Facebook" onclick="window.open(this.href, 'Опубликовать ссылку в Facebook', 'width=640,height=436,toolbar=0,status=0'); return false"></a><a class="twitter" href="https://twitter.com/intent/tweet?text=<?= rawurlencode($row['name'] . ' ' . $DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку в Twitter" onclick="window.open(this.href, 'Опубликовать ссылку в Twitter', 'width=800,height=300'); return false" target="_blank"></a></div><div class="clear"></div></li>
+		<li><div class="share b"><a class="vkontakte" href="https://vk.com/share.php?url=<?= rawurlencode($DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку во ВКонтакте" onclick="window.open(this.href, 'Опубликовать ссылку во Вконтакте', 'width=800,height=300'); return false"></a><a class="facebook" href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку в Facebook" onclick="window.open(this.href, 'Опубликовать ссылку в Facebook', 'width=640,height=436,toolbar=0,status=0'); return false"></a><a class="googleplus" href="https://plus.google.com/share?url=<?= rawurlencode($DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку в Google Plus" onclick="window.open(this.href, 'Опубликовать ссылку в Google Plus', 'width=800,height=300'); return false"></a><a class="twitter" href="https://twitter.com/intent/tweet?text=<?= rawurlencode($row['name'] . ' ' . $DEFAULTBASEURL . '/details.php?id=' . $id) ?>" title="Опубликовать ссылку в Twitter" onclick="window.open(this.href, 'Опубликовать ссылку в Twitter', 'width=800,height=300'); return false" target="_blank"></a></div><div class="clear"></div></li>
 		<li class="tp">Характеристика</li>
 		<li>Вес<span class="floatright green n"><?= details_h(mksize($row['size'])) ?> (<?= number_format((float)$row['size'], 0, '.', ',') ?>)</span></li>
 		<li>Залит<span class="floatright green n"><?= details_h($row['added']) ?></span></li>
 	</ul></div>
 	<div class="mn1_content">
 		<table class="w100p" style="margin: 0 0 5px 0;"><tr><td style="width: 210px" class="nw"><a href="/download.php?id=<?= $id ?>" title="Скачать <?= details_h($row['name']) ?>"><img src="/pic/dwn_torrent.gif" height="25" class="block w200" alt=""></a><td><?= $download_note ?></table>
+		<?= details_torrent_updated_notice($torrent_details) ?>
 		<div class="bx1 justify"><h2><?= $cat_img ?>
 			<?= details_line('Название', $title) ?>
 			<?= details_line('Оригинальное название', $original) ?>

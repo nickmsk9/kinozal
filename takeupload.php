@@ -132,11 +132,11 @@ $is_test_upload = get_user_class() < UC_VIP || !empty($_GET['test']) || !empty($
 
 $is_preview = isset($_GET['preview']) || isset($_POST['preview']);
 
-if (!isset($_POST['name'], $_POST['type'])) {
+if (!isset($_POST['type'])) {
 	bark("missing form data");
 }
 
-$name = trim(unesc((string)$_POST['name']));
+$name = 'generated';
 if ($name === '') {
 	bark("Вы должны указать название раздачи.");
 }
@@ -148,6 +148,10 @@ if (!$is_preview && !kz_upload_is_valid_category($kind, $catid)) {
 }
 
 [$kind, $details_data] = kz_upload_collect_post();
+$name = kz_upload_generated_name($details_data, $kind);
+if ($name === '') {
+	bark("Заполните поля, из которых формируется название раздачи.");
+}
 $poster_url = trim((string)($_POST['imgl'] ?? ''));
 if ($poster_url !== '' && !preg_match('#^(https?:)?//#i', $poster_url)) {
 	bark("Ссылка на постер должна начинаться с http://, https:// или //.");

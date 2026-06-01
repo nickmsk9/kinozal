@@ -7,6 +7,9 @@ if (!defined('BLOCK_FILE')) {
 
 global $content;
 
+require_once(dirname(__DIR__) . '/include/kz_test_torrents.php');
+kz_test_torrents_ensure_schema();
+
 $blocktitle = '';
 $content = '';
 
@@ -306,6 +309,7 @@ $res = sql_query("
     LEFT JOIN torrent_details AS td ON td.tid = t.id
     WHERE t.visible = 'yes'
       AND (t.banned <> 'yes' OR t.banned IS NULL)
+      AND (t.is_test <> 'yes' OR t.test_approved_at IS NOT NULL)
     ORDER BY t.added DESC, t.id DESC
     LIMIT " . (int)$offset . ", " . (int)$limit
 ) or sqlerr(__FILE__, __LINE__);

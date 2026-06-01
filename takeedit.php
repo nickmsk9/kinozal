@@ -117,7 +117,7 @@ loggedinorreturn();
 kz_upload_ensure_schema();
 kz_mt_ensure_schema();
 
-if (!isset($_POST['id'], $_POST['name'], $_POST['type'])) {
+if (!isset($_POST['id'], $_POST['type'])) {
 	bark("missing form data");
 }
 
@@ -136,7 +136,7 @@ if ($CURUSER["id"] != $row["owner"] && get_user_class() < UC_MODERATOR) {
 	bark("Вы не владелец этой раздачи.");
 }
 
-$name = trim(unesc((string)$_POST['name']));
+$name = 'generated';
 if ($name === '') {
 	bark("Вы должны указать название раздачи.");
 }
@@ -148,6 +148,10 @@ if (!kz_upload_is_valid_category($kind, $catid)) {
 }
 
 [$kind, $details_data] = kz_upload_collect_post((int)$row['size']);
+$name = kz_upload_generated_name($details_data, $kind);
+if ($name === '') {
+	bark("Заполните поля, из которых формируется название раздачи.");
+}
 $poster_url = trim((string)($_POST['imgl'] ?? ''));
 if ($poster_url !== '' && !preg_match('#^(https?:)?//#i', $poster_url)) {
 	bark("Ссылка на постер должна начинаться с http://, https:// или //.");
@@ -245,6 +249,9 @@ sql_query("UPDATE torrents SET " . join(", ", $updateset) . " WHERE id = $id") o
 sql_query('REPLACE INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES (' . implode(', ', array_map('sqlesc', array($id, md5($descr), format_comment($descr)))) . ')') or sqlerr(__FILE__, __LINE__);
 
 kz_upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
+if ($torrent_data) {
+	kz_upload_mark_torrent_file_updated($id);
+}
 
 write_log("Торрент '$safe_name' был отредактирован пользователем {$CURUSER['username']}", "F25B61", "torrent");
 

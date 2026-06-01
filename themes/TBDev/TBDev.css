@@ -503,7 +503,7 @@ table.brd td { border-width: 1px; padding: 5px; border-style: solid; border-colo
 .btn_yellow{ background: #ce8802; display: inline-block; height: 9px; width: 10px; margin: 0 2px 1px 2px; border-radius: 5px;}
 
 
-.share a{float: right; display: block; width:20px; height:20px; margin:0 0 0 4px; background: url('images/socb.png') 0 0 transparent no-repeat; }
+.share a{float: right; display: block; width:20px; height:20px; margin:0 0 0 4px; background: url('/pic/socb.png') 0 0 transparent no-repeat; }
 .share .facebook { background-position: 0 0;}
 .share .twitter {background-position: -40px 0;}
 .share .vkontakte {background-position: -80px 0;}
