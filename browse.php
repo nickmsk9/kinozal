@@ -312,7 +312,7 @@ if (isset($cleansearchstr)) {
     <div class="bx1_0" style="padding:3px 38px 3px 5px;">
         <table class="tables1">
             <tr>
-                <td colspan="3">Поиск раздач ( <a href="faq.php" class="sba">Как пользоваться поиском?</a> )</td>
+                <td colspan="3">Поиск раздач</td>
                 <td>Где именно</td>
                 <td></td>
             </tr>

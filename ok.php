@@ -160,9 +160,7 @@ if ($type === 'confirm') {
             и начать использовать ваш аккаунт.
             <br><br>
             Перед началом использования ' . confirm_h($SITENAME ?? 'сайта') . ' рекомендуем прочитать
-            ' . confirm_link('rules.php', 'правила') . '
-            и
-            ' . confirm_link('faq.php', 'ЧаВо') . '.
+            ' . confirm_link('rules.php', 'правила') . '.
         ';
 
         confirm_box('Ваш аккаунт успешно подтвержден!', $message);

@@ -25,7 +25,6 @@ $allowed_modules = array_merge($allowed_modules, array(
 	"viewrequests" => "Запросы",
 	"viewoffers" => "Предложения",
 	"log" => "Журнал",
-	"faq" => "ЧаВо",
 	"rules" => "Правила",
 	"message" => "Личка",
 	"recover" => "Восстан. пароля",

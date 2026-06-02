@@ -273,7 +273,7 @@ function torrenttable($res, $variant = 'index')
 
 			if ($elapsed < $wait) {
 				$left = max(0, $wait - $elapsed);
-				print('<td class="center nowrap"><a href="faq.php#dl8"><span class="red"><b>' . number_format($left) . ' ч.</b></span></a></td>' . "\n");
+				print('<td class="center nowrap"><span class="red"><b>' . number_format($left) . ' ч.</b></span></td>' . "\n");
 			} else {
 				print('<td class="center nowrap">' . $e($lang('no', 'Нет')) . "</td>\n");
 			}

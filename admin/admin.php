@@ -31,7 +31,6 @@ function BuildMenu($url, $title, $image = '')
         'blocksadmin' => array('#5a71b0', '<rect x="7" y="8" width="18" height="6" rx="1.5"/><rect x="7" y="18" width="8" height="6" rx="1.5"/><rect x="18" y="18" width="7" height="6" rx="1.5"/>'),
         'db' => array('#4a7f52', '<ellipse cx="16" cy="9" rx="8" ry="3"/><path d="M8 9v10c0 1.7 3.6 3 8 3s8-1.3 8-3V9"/><path d="M8 14c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'),
         'statusdb' => array('#4a7f52', '<ellipse cx="16" cy="9" rx="8" ry="3"/><path d="M8 9v10c0 1.7 3.6 3 8 3s8-1.3 8-3V9"/><path d="M8 14c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'),
-        'faq' => array('#9a6b2f', '<circle cx="16" cy="16" r="10"/><path d="M13 13a3 3 0 1 1 5 2.2c-1.3.8-2 1.5-2 3"/><circle cx="16" cy="23" r="1"/>'),
         'password' => array('#7a5aa8', '<rect x="8" y="14" width="16" height="10" rx="2"/><path d="M11 14v-3a5 5 0 0 1 10 0v3"/><circle cx="16" cy="19" r="1.5"/>'),
         'show' => array('#b57936', '<path d="M6 17s4-7 10-7 10 7 10 7-4 7-10 7S6 17 6 17z"/><circle cx="16" cy="17" r="3"/>'),
         'stylesheet' => array('#5870ad', '<path d="M10 6h9l5 5v15H10z"/><path d="M19 6v6h5"/><path d="M13 15h8M13 19h8M13 23h5"/>'),

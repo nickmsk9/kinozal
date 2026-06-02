@@ -72,7 +72,7 @@ if(substr($peer_id, 0, 8 ) == "-TR0006-") err("Transmission/0.6 is Banned.");
 if(substr($peer_id, 0, 8 ) == "-XX0025-") err("Transmission/0.6 is Banned.");
 if(substr($peer_id, 0, 1 ) == ",") err ("RAZA is banned.");
 if(substr($peer_id, 0, 3 ) == "-AG") err("This is a banned client. We recommend uTorrent or Azureus.");
-if(substr($peer_id, 0, 3 ) == "R34") err("BTuga/Revolution-3.4 is not an acceptalbe client. Please read the FAQ on recommended clients.");
+if(substr($peer_id, 0, 3 ) == "R34") err("BTuga/Revolution-3.4 is not an acceptalbe client.");
 if(substr($peer_id, 0, 4) == "exbc") err("This version of BitComet is banned! You can thank DHT for this ban!");
 if(substr($peer_id, 0, 3) == '-FG') err("FlashGet is banned!");
 
@@ -147,7 +147,7 @@ if (!isset($self)) {
 			else
 				$wait = 0;
 			if ($elapsed < $wait)
-				err('Not authorized (' . ($wait - $elapsed) . 'h) - READ THE FAQ!');
+				err('Not authorized (' . ($wait - $elapsed) . 'h)');
 		}
 	}
 	$passkey_ip = $az['passkey_ip'];
