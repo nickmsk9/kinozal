@@ -73,7 +73,7 @@ function my_theme_select($selected) {
 	$selectedResolved = theme_resolve_name($selected);
 	foreach (get_themes() as $theme) {
 		$label = theme_display_name($theme);
-		$value = ($theme === 'TBDev') ? 'Основная' : $theme;
+		$value = ($theme === 'TBDev') ? 'Основная' : (($theme === 'Winter') ? 'Зимний' : $theme);
 		$isSelected = (theme_resolve_name($theme) === $selectedResolved);
 		$html .= '<option value="' . my_h($value) . '"' . ($isSelected ? ' selected' : '') . '>' . my_h($label) . '</option>';
 	}

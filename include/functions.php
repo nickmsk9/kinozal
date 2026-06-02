@@ -80,6 +80,9 @@ function theme_resolve_name($theme = "") {
 	if ($lower === 'tbdev' || $lower === 'основная') {
 		return 'TBDev';
 	}
+	if ($lower === 'winter' || $lower === 'зимний') {
+		return 'Winter';
+	}
 
 	return $theme;
 }
@@ -88,6 +91,9 @@ function theme_display_name($theme = "") {
 	$resolved = theme_resolve_name($theme);
 	if ($resolved === 'TBDev') {
 		return 'Основная';
+	}
+	if ($resolved === 'Winter') {
+		return 'Зимний';
 	}
 	return $theme;
 }
@@ -113,7 +119,7 @@ function theme_selector($sel_theme = "", $use_fsw = false) {
 	$selectedResolved = theme_resolve_name($sel_theme);
 	foreach ($themes as $theme) {
 		$label = theme_display_name($theme);
-		$value = ($theme === 'TBDev') ? 'Основная' : $theme;
+		$value = ($theme === 'TBDev') ? 'Основная' : (($theme === 'Winter') ? 'Зимний' : $theme);
 		$content .= "<option value=\"$value\"".(theme_resolve_name($theme) == $selectedResolved ? " selected" : "").">$label</option>\n";
 	}
 	$content .= "</select>";
