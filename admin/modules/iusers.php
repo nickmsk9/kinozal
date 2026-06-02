@@ -67,6 +67,7 @@ function iUsers(): void
 
             $updateset[] = '`secret` = ' . sqlesc($secret);
             $updateset[] = '`passhash` = ' . sqlesc($hash);
+            $updateset[] = '`passkey` = ' . sqlesc(tracker_generate_passkey());
 
             $newPasswordChanged = true;
         }

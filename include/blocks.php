@@ -11,6 +11,41 @@ $orbital_blocks = array();
  * Подставляет переменные в HTML-шаблон блока.
  * Старый код делал это через eval/create_function, что в PHP 8 плохо и небезопасно.
  */
+function tracker_blocks_active_rows()
+{
+	if (!function_exists('tracker_cache_remember')) {
+		$rows = array();
+		$blocks_res = sql_query('
+			SELECT *
+			FROM orbital_blocks
+			WHERE active = 1
+			ORDER BY weight ASC
+		') or sqlerr(__FILE__, __LINE__);
+
+		while ($blocks_row = mysqli_fetch_assoc($blocks_res)) {
+			$rows[] = $blocks_row;
+		}
+
+		return $rows;
+	}
+
+	return tracker_cache_remember('blocks:active', 30, function () {
+		$rows = array();
+		$blocks_res = sql_query('
+			SELECT *
+			FROM orbital_blocks
+			WHERE active = 1
+			ORDER BY weight ASC
+		') or sqlerr(__FILE__, __LINE__);
+
+		while ($blocks_row = mysqli_fetch_assoc($blocks_res)) {
+			$rows[] = $blocks_row;
+		}
+
+		return $rows;
+	});
+}
+
 function render_block_template(string $template, string $title, string $content): string
 {
     global $ss_uri, $tracker_lang;
@@ -209,19 +244,7 @@ function show_blocks($position)
     }
 
     if (empty($already_used)) {
-        $orbital_blocks = array();
-
-        $blocks_res = sql_query('
-            SELECT *
-            FROM orbital_blocks
-            WHERE active = 1
-            ORDER BY weight ASC
-        ') or sqlerr(__FILE__, __LINE__);
-
-        while ($blocks_row = mysqli_fetch_assoc($blocks_res)) {
-            $orbital_blocks[] = $blocks_row;
-        }
-
+        $orbital_blocks = tracker_blocks_active_rows();
         $already_used = true;
     }
 

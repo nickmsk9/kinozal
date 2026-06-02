@@ -6,9 +6,7 @@ if (!defined('IN_ANNOUNCE'))
     die('Прямой вызов запрещён.');
 
 require_once($rootpath . 'include/config.php');
-require_once($rootpath . 'include/config.local.php');
 require_once($rootpath . 'include/secrets.php');
-require_once($rootpath . 'include/secrets.local.php');
 
 if (!function_exists('get_magic_quotes_gpc')) {
     function get_magic_quotes_gpc() {
@@ -213,6 +211,10 @@ function gzip() {
     if (@extension_loaded('zlib') && @ini_get('zlib.output_compression') != '1' && @ini_get('output_handler') != 'ob_gzhandler') {
         @ob_start('ob_gzhandler');
     }
+}
+
+function tracker_valid_passkey($passkey) {
+    return (bool)preg_match('/^[A-Za-z0-9]{10}$/', (string)$passkey);
 }
 
 // Check open port, requires --enable-sockets

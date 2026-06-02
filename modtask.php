@@ -218,7 +218,7 @@ if ($action == "edituser") {
 			$modcomment = date("Y-m-d") . " - Заметка от " . $CURUSER["username"] . ": $modcomm\n" . $modcomment;
 	$updateset[] = "modcomment = " . sqlesc($modcomment);
 	if (!empty($_POST['resetkey'])) {
-		$passkey = md5($CURUSER['username'].get_date_time().$CURUSER['passhash']);
+		$passkey = tracker_generate_passkey($userid);
 		$updateset[] = "passkey = " . sqlesc($passkey);
 	}
 	sql_query("UPDATE users SET	" . implode(", ", $updateset) . " $birthday WHERE id = $userid") or sqlerr(__FILE__, __LINE__);

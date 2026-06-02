@@ -31,6 +31,8 @@ dbconn();
 
 $passkey = (string) $_GET["passkey"];
 if ($passkey) {
+if (!tracker_valid_passkey($passkey))
+exit();
 $user = mysql_fetch_row(sql_query("SELECT COUNT(*) FROM users WHERE passkey = ".sqlesc($passkey)));
 if ($user[0] != 1)
 exit();

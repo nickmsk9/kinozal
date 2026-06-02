@@ -265,6 +265,10 @@ function sql_query($query)
         );
     }
 
+    if (function_exists('tracker_cache_invalidate_for_query')) {
+        tracker_cache_invalidate_for_query($query);
+    }
+
     return $result;
 }
 function dbconn($autoclean = false, $lightmode = false)
@@ -287,6 +291,10 @@ function dbconn($autoclean = false, $lightmode = false)
 
     if (function_exists('site_settings_apply_runtime_overrides')) {
         site_settings_apply_runtime_overrides();
+    }
+
+    if (function_exists('tracker_upgrade_legacy_passkeys')) {
+        tracker_upgrade_legacy_passkeys();
     }
 
     userlogin($lightmode);
@@ -313,7 +321,7 @@ function userlogin($lightmode = false): void
         && ($_SERVER['SERVER_ADDR'] ?? '') !== '127.0.0.1'
         && ($_SERVER['SERVER_ADDR'] ?? '') !== ($_SERVER['REMOTE_ADDR'] ?? '')
     ) {
-        die('Скрипт заблокирован! Измените значение переменной $_COOKIE_SALT в файле include/config.local.php на случайное');
+        die('Скрипт заблокирован! Измените значение переменной $_COOKIE_SALT в файле include/config.php на случайное');
     }
 
     if (empty($_COOKIE_SALT)) {
@@ -1232,6 +1240,130 @@ function mksecret($length = 20) {
     }
 
     return $result;
+}
+
+function tracker_random_base62($length = 10)
+{
+	$length = max(10, (int)$length);
+	$chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	$max = strlen($chars) - 1;
+	$value = '';
+
+	for ($i = 0; $i < $length; $i++) {
+		$value .= $chars[function_exists('random_int') ? random_int(0, $max) : mt_rand(0, $max)];
+	}
+
+	return $value;
+}
+
+function tracker_valid_passkey($passkey)
+{
+	return (bool)preg_match('/^[A-Za-z0-9]{10}$/', (string)$passkey);
+}
+
+function tracker_generate_passkey($user_id = 0, $length = 10)
+{
+	$user_id = (int)$user_id;
+
+	for ($i = 0; $i < 20; $i++) {
+		$passkey = tracker_random_base62($length);
+		$where = 'passkey = ' . sqlesc($passkey);
+		if ($user_id > 0) {
+			$where .= ' AND id <> ' . $user_id;
+		}
+
+		$res = sql_query('SELECT id FROM users WHERE ' . $where . ' LIMIT 1') or sqlerr(__FILE__, __LINE__);
+		if (!mysqli_fetch_assoc($res)) {
+			return $passkey;
+		}
+	}
+
+	return tracker_random_base62(max(16, (int)$length));
+}
+
+function tracker_ensure_user_passkey(&$user)
+{
+	if (!is_array($user) || empty($user['id'])) {
+		return '';
+	}
+
+	if (tracker_valid_passkey($user['passkey'] ?? '')) {
+		return (string)$user['passkey'];
+	}
+
+	$passkey = tracker_generate_passkey((int)$user['id']);
+	sql_query('UPDATE users SET passkey = ' . sqlesc($passkey) . ' WHERE id = ' . (int)$user['id']) or sqlerr(__FILE__, __LINE__);
+	$user['passkey'] = $passkey;
+
+	return $passkey;
+}
+
+function tracker_upgrade_legacy_passkeys($limit = 200)
+{
+	$limit = max(1, min(1000, (int)$limit));
+
+	$marker = sql_query("SELECT value_u FROM avps WHERE arg = 'passkeys_v2_done' LIMIT 1");
+	$row = $marker ? mysqli_fetch_assoc($marker) : null;
+	if ($row && (int)$row['value_u'] === 1) {
+		return;
+	}
+
+	$res = sql_query("
+		SELECT id
+		FROM users
+		WHERE passkey NOT REGEXP '^[A-Za-z0-9]{10}$'
+		ORDER BY id ASC
+		LIMIT $limit
+	") or sqlerr(__FILE__, __LINE__);
+
+	$count = 0;
+	while ($user = mysqli_fetch_assoc($res)) {
+		$userid = (int)$user['id'];
+		if ($userid <= 0) {
+			continue;
+		}
+
+		$passkey = tracker_generate_passkey($userid);
+		sql_query('UPDATE users SET passkey = ' . sqlesc($passkey) . ' WHERE id = ' . $userid) or sqlerr(__FILE__, __LINE__);
+		$count++;
+	}
+
+	if ($count === 0) {
+		tracker_passkey_schema_upgrade();
+		sql_query("
+			INSERT INTO avps (arg, value_u, value_s)
+			VALUES ('passkeys_v2_done', 1, '')
+			ON DUPLICATE KEY UPDATE value_u = 1, value_s = ''
+		") or sqlerr(__FILE__, __LINE__);
+	}
+}
+
+function tracker_passkey_schema_upgrade()
+{
+	$marker = sql_query("SELECT value_u FROM avps WHERE arg = 'passkeys_v2_schema' LIMIT 1");
+	$row = $marker ? mysqli_fetch_assoc($marker) : null;
+	if ($row && (int)$row['value_u'] === 1) {
+		return;
+	}
+
+	$tables = array('users', 'peers');
+	foreach ($tables as $table) {
+		$res = sql_query("SHOW COLUMNS FROM `$table` LIKE 'passkey'") or sqlerr(__FILE__, __LINE__);
+		$column = mysqli_fetch_assoc($res);
+		$type = isset($column['Type']) ? strtolower((string)$column['Type']) : '';
+		if (preg_match('/varchar\((\d+)\)/', $type, $m) && (int)$m[1] !== 10) {
+			if ($table === 'peers') {
+				sql_query("DELETE FROM peers WHERE passkey NOT REGEXP '^[A-Za-z0-9]{10}$'") or sqlerr(__FILE__, __LINE__);
+			}
+			sql_query("ALTER TABLE `$table` MODIFY `passkey` varchar(10) NOT NULL DEFAULT ''") or sqlerr(__FILE__, __LINE__);
+		}
+	}
+
+	sql_query("
+		INSERT INTO avps (arg, value_u, value_s)
+		VALUES ('passkeys_v2_schema', 1, '')
+		ON DUPLICATE KEY UPDATE value_u = 1, value_s = ''
+	") or sqlerr(__FILE__, __LINE__);
 }
 
 function httperr($code = 404) {

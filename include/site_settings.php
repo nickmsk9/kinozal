@@ -27,11 +27,23 @@ function site_setting($key, $default = '')
 
 	$key = (string)$key;
 	if (!isset($site_settings_cache) || !is_array($site_settings_cache)) {
-		$site_settings_cache = array();
-		$res = sql_query("SELECT setting_key, setting_value FROM site_settings");
-		if ($res) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$site_settings_cache[(string)$row['setting_key']] = (string)$row['setting_value'];
+		$cached = function_exists('tracker_cache_get')
+			? tracker_cache_get('site_settings:all')
+			: null;
+
+		if (is_array($cached)) {
+			$site_settings_cache = $cached;
+		} else {
+			$site_settings_cache = array();
+			$res = sql_query("SELECT setting_key, setting_value FROM site_settings");
+			if ($res) {
+				while ($row = mysqli_fetch_assoc($res)) {
+					$site_settings_cache[(string)$row['setting_key']] = (string)$row['setting_value'];
+				}
+			}
+
+			if (function_exists('tracker_cache_set')) {
+				tracker_cache_set('site_settings:all', $site_settings_cache, 300);
 			}
 		}
 	}
@@ -52,6 +64,10 @@ function site_set_setting($key, $value)
 
 	if (isset($site_settings_cache) && is_array($site_settings_cache)) {
 		$site_settings_cache[(string)$key] = (string)$value;
+	}
+
+	if (function_exists('tracker_cache_delete')) {
+		tracker_cache_delete('site_settings:all');
 	}
 }
 

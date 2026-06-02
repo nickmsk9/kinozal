@@ -405,6 +405,9 @@ stdhead('Список пользователей - Поиск пользоват
                     $uid = (int)$user['id'];
                     $avatar = !empty($user['avatar']) ? users_h($user['avatar']) : '/pic/default_avatar.gif';
                     $country_id = (int)($user['country'] ?? 0);
+                    $country_flag = function_exists('tracker_country_flag_html')
+                        ? tracker_country_flag_html($country_id, $user['flagpic'] ?? '', $user['country_name'] ?? '')
+                        : '';
                     $icons = function_exists('get_user_icons') ? get_user_icons($user) : '';
                     $registered = users_date_text($user['added']);
                     $last_access = users_date_text($user['last_access']);
@@ -422,9 +425,7 @@ stdhead('Список пользователей - Поиск пользоват
                         <div class="ptable">
                             <ul>
                                 <li>
-                                    <?php if ($country_id > 0) { ?>
-                                        <img src="/pic/emty.gif" class="i2 c<?= $country_id ?>" alt="<?= users_h($user['country_name'] ?? '') ?>">
-                                    <?php } ?>
+                                    <?= $country_flag ?>
                                     <a href="/userdetails.php?id=<?= $uid ?>" class="u<?= (int)$user['class'] ?>"><?= users_h($user['username']) ?></a>
                                     <?= $icons ?>
                                 </li>

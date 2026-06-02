@@ -39,17 +39,7 @@ function index_preload_blocks()
 {
 	global $already_used, $orbital_blocks;
 
-	$res = sql_query("
-		SELECT *
-		FROM orbital_blocks
-		WHERE active = 1
-		ORDER BY weight ASC
-	") or sqlerr(__FILE__, __LINE__);
-
-	$orbital_blocks = array();
-	while ($row = mysqli_fetch_assoc($res)) {
-		$orbital_blocks[] = $row;
-	}
+	$orbital_blocks = tracker_blocks_active_rows();
 	$already_used = true;
 }
 
@@ -100,6 +90,8 @@ function index_has_block($blockfile, $position = null)
 
 function index_preload_right_blocks()
 {
+	global $CURUSER;
+
 	$today = sqlesc(date('m-d'));
 
 	if (!empty($GLOBALS['hide_right_blocks'])) {
@@ -201,12 +193,26 @@ function index_preload_right_blocks()
 				LIMIT 1
 			 ) AS uarch_rows) AS uarch";
 
-	$res = sql_query("
-		SELECT
-			" . implode(",\n			", $parts) . "
-	") or sqlerr(__FILE__, __LINE__);
+	$cache_key = 'index:right:' . date('Ymd') . ':' . (!empty($CURUSER) ? get_user_class() : 0);
+	$row = function_exists('tracker_cache_remember')
+		? tracker_cache_remember($cache_key, 30, function () use ($parts) {
+			$res = sql_query("
+				SELECT
+					" . implode(",\n					", $parts) . "
+			") or sqlerr(__FILE__, __LINE__);
 
-	$row = mysqli_fetch_assoc($res) ?: array();
+			return mysqli_fetch_assoc($res) ?: array();
+		})
+		: array();
+
+	if (!function_exists('tracker_cache_remember')) {
+		$res = sql_query("
+			SELECT
+				" . implode(",\n				", $parts) . "
+		") or sqlerr(__FILE__, __LINE__);
+
+		$row = mysqli_fetch_assoc($res) ?: array();
+	}
 	if (array_key_exists('top_torrents', $row)) {
 		$GLOBALS['index_top_torrents'] = index_json_rows($row['top_torrents']);
 	}
@@ -230,6 +236,8 @@ function index_preload_right_blocks()
 
 function index_preload_center_blocks()
 {
+	global $CURUSER;
+
 	$per_page = 10;
 	$page = isset($_GET['relpage']) ? max(0, (int)$_GET['relpage']) : 0;
 	$offset = $page * $per_page;
@@ -324,12 +332,26 @@ function index_preload_center_blocks()
 		return;
 	}
 
-	$res = sql_query("
-		SELECT
-			" . implode(",\n			", $parts) . "
-	") or sqlerr(__FILE__, __LINE__);
+	$cache_key = 'index:center:' . $page . ':' . (!empty($CURUSER) ? get_user_class() : 0);
+	$row = function_exists('tracker_cache_remember')
+		? tracker_cache_remember($cache_key, 30, function () use ($parts) {
+			$res = sql_query("
+				SELECT
+					" . implode(",\n					", $parts) . "
+			") or sqlerr(__FILE__, __LINE__);
 
-	$row = mysqli_fetch_assoc($res) ?: array();
+			return mysqli_fetch_assoc($res) ?: array();
+		})
+		: array();
+
+	if (!function_exists('tracker_cache_remember')) {
+		$res = sql_query("
+			SELECT
+				" . implode(",\n				", $parts) . "
+		") or sqlerr(__FILE__, __LINE__);
+
+		$row = mysqli_fetch_assoc($res) ?: array();
+	}
 	if (array_key_exists('news', $row)) {
 		$GLOBALS['index_news'] = index_json_rows($row['news']);
 	}

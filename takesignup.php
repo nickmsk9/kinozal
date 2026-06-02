@@ -227,7 +227,7 @@ if (theme_resolve_name($theme) === 'TBDev') {
     $theme = 'Основная';
 }
 $added = get_date_time();
-$passkey = md5($wantusername . $email . $added . mt_rand());
+$passkey = tracker_generate_passkey();
 
 $fields = array(
     'username',

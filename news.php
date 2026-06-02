@@ -5,10 +5,11 @@ require_once 'include/bittorrent.php';
 dbconn();
 loggedinorreturn();
 
-if (get_user_class() < UC_ADMINISTRATOR) {
+if (get_user_class() < UC_MODERATOR) {
 	stderr($tracker_lang['error'], 'Ошибка доступа.');
 }
 
+$can_manage_news = get_user_class() >= UC_ADMINISTRATOR;
 $action = isset($_GET['action']) ? (string)$_GET['action'] : '';
 $warning = '';
 
@@ -62,6 +63,10 @@ function news_form($action_url, $title, $subject = '', $body = '', $button = 'С
  * Удаление новости
  */
 if ($action === 'delete') {
+	if (!$can_manage_news) {
+		stderr($tracker_lang['error'], 'РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°.');
+	}
+
 	$newsid = isset($_GET['newsid']) ? (int)$_GET['newsid'] : 0;
 
 	if (!is_valid_id($newsid)) {
@@ -116,6 +121,10 @@ if ($action === 'add') {
  * Редактирование новости
  */
 if ($action === 'edit') {
+	if (!$can_manage_news) {
+		stderr($tracker_lang['error'], 'РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°.');
+	}
+
 	$newsid = isset($_GET['newsid']) ? (int)$_GET['newsid'] : (int)($_POST['newsid'] ?? 0);
 	$returnto = isset($_GET['returnto']) ? (string)$_GET['returnto'] : (string)($_POST['returnto'] ?? '');
 
@@ -234,8 +243,10 @@ if (mysqli_num_rows($query) > 0) {
 		echo '<tr>';
 		echo '<td class="small">';
 		echo 'Добавлена ' . $added . ' - ' . $by;
-		echo ' - [<a href="?action=edit&amp;newsid=' . $newsid . '"><b>Редактировать</b></a>]';
-		echo ' - [<a href="?action=delete&amp;newsid=' . $newsid . '"><b>Удалить</b></a>]';
+		if ($can_manage_news) {
+			echo ' - [<a href="?action=edit&amp;newsid=' . $newsid . '"><b>Редактировать</b></a>]';
+			echo ' - [<a href="?action=delete&amp;newsid=' . $newsid . '"><b>Удалить</b></a>]';
+		}
 		echo '</td>';
 		echo '</tr>';
 		echo '</table>';

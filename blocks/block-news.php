@@ -9,6 +9,7 @@ global $tracker_lang;
 
 $content = '';
 
+$can_add_news = get_user_class() >= UC_MODERATOR;
 $is_admin = get_user_class() >= UC_ADMINISTRATOR;
 $returnto = urlencode($_SERVER['REQUEST_URI'] ?? $_SERVER['PHP_SELF'] ?? 'index.php');
 
@@ -18,8 +19,8 @@ $no_news = $tracker_lang['no_news'] ?? 'Новостей нет';
 
 $blocktitle = $news_title;
 
-if ($is_admin) {
-    $blocktitle .= " <span class=\"small\">- [<a class=\"altlink\" href=\"news.php\"><b>" . $create_title . "</b></a>]</span>";
+if ($can_add_news) {
+    $blocktitle .= " <span class=\"small\">- [<a class=\"altlink\" href=\"news.php\"><b>Добавить новость</b></a>]</span>";
 }
 
 $rows = isset($GLOBALS['index_news']) && is_array($GLOBALS['index_news'])
@@ -45,6 +46,10 @@ $content .= "<script type=\"text/javascript\" src=\"js/show_hide.js\"></script>\
 
 $content .= "<div class=\"mn2_content\" style=\"width:100%;\">";
 $content .= "<div class=\"bx1\" style=\"width:100%; box-sizing:border-box;\">";
+
+if ($can_add_news) {
+    $content .= "<ul class=\"men\"><li><span class=\"bulet\"></span><a class=\"sba\" href=\"news.php\"><b>Добавить новость</b></a></li></ul>";
+}
 
 if ($rows) {
     $content .= "<ul class=\"men\">\n";

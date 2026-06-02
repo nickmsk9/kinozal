@@ -87,10 +87,7 @@ $avatar = !empty($CURUSER["avatar"]) ? my_h($CURUSER["avatar"]) : "/pic/default_
 $birthday = (!empty($CURUSER["birthday"]) && $CURUSER["birthday"] !== "0000-00-00") ? $CURUSER["birthday"] : "1990-01-01";
 list($b_year, $b_month, $b_day) = explode('-', date('Y-m-d', strtotime($birthday)));
 
-if (strlen($CURUSER["passkey"]) < 10) {
-	$CURUSER["passkey"] = md5($CURUSER["username"] . get_date_time() . $CURUSER["passhash"]);
-	sql_query("UPDATE users SET passkey = " . sqlesc($CURUSER["passkey"]) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
-}
+tracker_ensure_user_passkey($CURUSER);
 $hide_right_blocks = true;
 stdhead($tracker_lang['my_my'] ?? 'Мой профиль');
 

@@ -92,7 +92,7 @@ if ($act === 1) {
 	$updateset[] = "avatar = " . sqlesc($avatar);
 } elseif ($act === 10) {
 	profile_require_password((string)($_POST["psw"] ?? ""));
-	$passkey = md5($CURUSER["username"] . get_date_time() . $CURUSER["passhash"] . mt_rand());
+	$passkey = tracker_generate_passkey((int)$CURUSER["id"]);
 	$updateset[] = "passkey = " . sqlesc($passkey);
 } elseif ($act === 11) {
 	profile_require_password((string)($_POST["psw"] ?? ""));

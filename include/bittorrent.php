@@ -156,14 +156,6 @@ REF;
         exit('Включите short_open_tag в php.ini/.htaccess (техническое требование)');
     }
 
-    if (!is_file(ROOT_PATH . 'include/secrets.local.php')) {
-        exit('Создайте файл include/secrets.local.php и переместите в него свои локальные настройки из include/secrets.php (техническое требование)');
-    }
-
-    if (!is_file(ROOT_PATH . 'include/config.local.php')) {
-        exit('Создайте файл include/config.local.php и переместите в него свои локальные настройки из include/config.php (техническое требование)');
-    }
-
     /*
      * Start time.
      */

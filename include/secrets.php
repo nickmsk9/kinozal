@@ -20,9 +20,27 @@ if ($is_docker) {
 
 $mysql_charset = "utf8mb4";
 
-/*$redis_host = "redis";
-$redis_port = 6379;
-$redis_timeout = 2.5;
-
-$redis = new Redis();
-$redis->connect($redis_host, $redis_port, $redis_timeout);*/
+if (!isset($cache_enabled)) {
+    $cache_enabled = true;
+}
+if (!isset($cache_backend)) {
+    $cache_backend = 'redis';
+}
+if (!isset($cache_prefix)) {
+    $cache_prefix = 'kinozal';
+}
+if (!isset($redis_host)) {
+    $redis_host = $is_docker ? 'redis' : '127.0.0.1';
+}
+if (!isset($redis_port)) {
+    $redis_port = 6379;
+}
+if (!isset($redis_timeout)) {
+    $redis_timeout = 0.25;
+}
+if (!isset($redis_database)) {
+    $redis_database = 0;
+}
+if (!isset($redis_password)) {
+    $redis_password = '';
+}

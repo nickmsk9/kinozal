@@ -79,10 +79,7 @@ $name = str_replace(array(',', ';'), '', $name);
 require_once "include/BDecode.php";
 require_once "include/BEncode.php";
 
-if (strlen($CURUSER['passkey']) != 32) {
-	$CURUSER['passkey'] = md5($CURUSER['username'].get_date_time().$CURUSER['passhash']);
-	sql_query("UPDATE users SET passkey=".sqlesc($CURUSER['passkey'])." WHERE id=".sqlesc($CURUSER['id']));
-}
+tracker_ensure_user_passkey($CURUSER);
 
 $dict = bdecode(file_get_contents($fn));
 

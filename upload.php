@@ -10,10 +10,7 @@ dbconn(false);
 loggedinorreturn();
 parked();
 
-if (strlen($CURUSER['passkey']) != 32) {
-	$CURUSER['passkey'] = md5($CURUSER['username'] . get_date_time() . $CURUSER['passhash']);
-	sql_query("UPDATE users SET passkey = " . sqlesc($CURUSER['passkey']) . " WHERE id = " . (int)$CURUSER['id']);
-}
+tracker_ensure_user_passkey($CURUSER);
 
 upload_ensure_schema();
 test_torrents_ensure_schema();

@@ -135,8 +135,10 @@ function install_random_string($length)
 
 function install_create_local_files($mysqlHost, $mysqlPort, $mysqlUser, $mysqlPass, $mysqlDb, $overwrite)
 {
-	$secretsPath = __DIR__ . '/include/secrets.local.php';
-	$configPath = __DIR__ . '/include/config.local.php';
+	return true;
+
+	$secretsPath = __DIR__ . '/include/secrets.php';
+	$configPath = __DIR__ . '/include/config.php';
 
 	if (!$overwrite && (is_file($secretsPath) || is_file($configPath))) {
 		throw new RuntimeException('Локальные файлы настроек уже существуют. Включите перезапись, если хотите заменить их.');
@@ -204,7 +206,7 @@ function install_create_admin(mysqli $db, $username, $password, $email)
 
 	$secret = install_random_string(20);
 	$passhash = md5($secret . $password . $secret);
-	$passkey = md5($username . date('Y-m-d H:i:s') . $passhash . install_random_string(12));
+	$passkey = install_random_string(10);
 	$now = date('Y-m-d H:i:s');
 
 	$sql = "
@@ -280,7 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		install_create_local_files($mysqlHost, $mysqlPort, $mysqlUser, $mysqlPass, $mysqlDb, !empty($_POST['overwrite_config']));
-		$messages[] = 'Файлы include/secrets.local.php и include/config.local.php записаны.';
+		$messages[] = 'Настройки берутся из include/secrets.php и include/config.php. Локальные include/*.local.php больше не используются.';
 
 		if ($adminPass !== '') {
 			$created = install_create_admin($db, $adminUser, $adminPass, $adminEmail);
