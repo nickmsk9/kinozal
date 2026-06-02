@@ -372,6 +372,17 @@ function details_related_where(array $row, array $video, $mode)
 
 function details_related_groups(array $row, array $video)
 {
+	$cache_key = 'details:related:' . (int)$row['id'] . ':' . md5((string)$row['name'] . ':' . (int)$row['category'] . ':' . (int)$row['owner'] . ':' . serialize($video));
+
+	return function_exists('tracker_cache_remember')
+		? tracker_cache_remember($cache_key, 300, function () use ($row, $video) {
+			return details_related_groups_query($row, $video);
+		})
+		: details_related_groups_query($row, $video);
+}
+
+function details_related_groups_query(array $row, array $video)
+{
 	$groups = array('similar' => array(), 'genre' => array(), 'person' => array(), 'owner' => array());
 	$sql = array();
 
@@ -541,27 +552,58 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 	$offset = $page * $perpage;
 	$pager = details_paginator('/details.php?id=' . (int)$torrentid . '&amp;', $page, $pages);
 
-	$res = sql_query("
-		SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
-		       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
-		       ums.manual_status_keys,
-		       e.username AS editedbyname
-		FROM comments AS c
-		LEFT JOIN users AS u ON u.id = c.user
-		LEFT JOIN users AS e ON e.id = c.editedby
-		LEFT JOIN (
-			SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
-			FROM user_status_assignments
-			GROUP BY userid
-		) AS ums ON ums.userid = u.id
-		WHERE c.torrent = " . (int)$torrentid . "
-		ORDER BY c.id DESC
-		LIMIT $offset, $perpage
-	") or sqlerr(__FILE__, __LINE__);
+	$rows = function_exists('tracker_cache_remember')
+		? tracker_cache_remember('details:comments:' . (int)$torrentid . ':' . (int)$comment_count . ':' . $page, 60, function () use ($torrentid, $offset, $perpage) {
+			$res = sql_query("
+				SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
+				       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+				       ums.manual_status_keys,
+				       e.username AS editedbyname
+				FROM comments AS c
+				LEFT JOIN users AS u ON u.id = c.user
+				LEFT JOIN users AS e ON e.id = c.editedby
+				LEFT JOIN (
+					SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
+					FROM user_status_assignments
+					GROUP BY userid
+				) AS ums ON ums.userid = u.id
+				WHERE c.torrent = " . (int)$torrentid . "
+				ORDER BY c.id DESC
+				LIMIT $offset, $perpage
+			") or sqlerr(__FILE__, __LINE__);
 
-	$rows = array();
-	while ($row = mysqli_fetch_assoc($res)) {
-		$rows[] = $row;
+			$cached_rows = array();
+			while ($row = mysqli_fetch_assoc($res)) {
+				$cached_rows[] = $row;
+			}
+
+			return $cached_rows;
+		})
+		: null;
+
+	if ($rows === null) {
+		$res = sql_query("
+			SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
+			       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+			       ums.manual_status_keys,
+			       e.username AS editedbyname
+			FROM comments AS c
+			LEFT JOIN users AS u ON u.id = c.user
+			LEFT JOIN users AS e ON e.id = c.editedby
+			LEFT JOIN (
+				SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
+				FROM user_status_assignments
+				GROUP BY userid
+			) AS ums ON ums.userid = u.id
+			WHERE c.torrent = " . (int)$torrentid . "
+			ORDER BY c.id DESC
+			LIMIT $offset, $perpage
+		") or sqlerr(__FILE__, __LINE__);
+
+		$rows = array();
+		while ($row = mysqli_fetch_assoc($res)) {
+			$rows[] = $row;
+		}
 	}
 
 	$html = '<div class="bx2_0" id="startcomments">';

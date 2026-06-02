@@ -219,10 +219,67 @@ function tracker_cache_invalidate_for_query($query)
 
 	if (preg_match('/\borbital_blocks\b/', $sql)) {
 		tracker_cache_delete('blocks:active');
+		tracker_cache_delete_pattern('block:*');
+		tracker_cache_delete_pattern('index:*');
+	}
+
+	if (preg_match('/\bcategories\b/', $sql)) {
+		tracker_cache_delete_pattern('categories:*');
+		tracker_cache_delete_pattern('browse:*');
+		tracker_cache_delete_pattern('details:*');
+		tracker_cache_delete_pattern('block:*');
+		tracker_cache_delete_pattern('index:*');
+	}
+
+	if (preg_match('/\b(torrents|torrent_details|torrents_descr|torrent_trackers|ratings)\b/', $sql)) {
+		tracker_cache_delete_pattern('browse:*');
+		tracker_cache_delete_pattern('details:*');
+		tracker_cache_delete_pattern('userdetails:torrent-count:*');
+		tracker_cache_delete_pattern('block:*');
+		tracker_cache_delete_pattern('index:*');
+	}
+
+	if (preg_match('/\bcomments\b/', $sql)) {
+		tracker_cache_delete_pattern('details:*');
+		tracker_cache_delete_pattern('userdetails:comment-count:*');
+		tracker_cache_delete_pattern('block:*');
+		tracker_cache_delete_pattern('index:*');
+	}
+
+	if (preg_match('/\bsnatched\b/', $sql)) {
+		tracker_cache_delete_pattern('userdetails:last-torrent:*');
+	}
+
+	if (preg_match('/\b(pay_transactions|pay_settings)\b/', $sql)) {
+		tracker_cache_delete_pattern('pay:*');
+		tracker_cache_delete_pattern('block:*');
+		tracker_cache_delete_pattern('index:*');
+	}
+
+	if (preg_match('/\b(cups|user_cups|user_status_assignments|countries)\b/', $sql)) {
+		tracker_cache_delete_pattern('cups:*');
+		tracker_cache_delete_pattern('userdetails:*');
+		tracker_cache_delete_pattern('block:*');
+		tracker_cache_delete_pattern('index:*');
+	}
+
+	if (preg_match('/\buarch_smiles\b/', $sql)) {
+		tracker_cache_delete_pattern('uarch:*');
+		tracker_cache_delete_pattern('block:*');
+		tracker_cache_delete_pattern('index:*');
+	}
+
+	if (preg_match('/\busers\b/', $sql)) {
+		tracker_cache_delete_pattern('userdetails:*');
+		tracker_cache_delete_pattern('pay:*');
+		tracker_cache_delete_pattern('cups:*');
+		tracker_cache_delete_pattern('uarch:*');
+		tracker_cache_delete_pattern('block:*');
 		tracker_cache_delete_pattern('index:*');
 	}
 
 	if (preg_match('/\b(users|torrents|news|uarch_smiles|cups|user_cups|user_status_assignments|countries|pay_transactions|pay_settings)\b/', $sql)) {
+		tracker_cache_delete_pattern('block:*');
 		tracker_cache_delete_pattern('index:*');
 	}
 }

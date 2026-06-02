@@ -239,10 +239,21 @@ if ($where !== "") {
     $where = "WHERE $where";
 }
 $joinSql = $joins ? "\n" . implode("\n", $joins) . "\n" : '';
+$browseFilterHash = md5($joinSql . "\n" . $where);
 
-$res = sql_query("SELECT COUNT(*) FROM torrents AS t $joinSql $where") or die(mysql_error());
-$row = mysqli_fetch_array($res);
-$count = (int)$row[0];
+$count = function_exists('tracker_cache_remember')
+    ? tracker_cache_remember('browse:count:' . $browseFilterHash, 120, function () use ($joinSql, $where) {
+        $res = sql_query("SELECT COUNT(*) FROM torrents AS t $joinSql $where") or die(mysql_error());
+        $row = mysqli_fetch_array($res);
+        return (int)$row[0];
+    })
+    : null;
+
+if ($count === null) {
+    $res = sql_query("SELECT COUNT(*) FROM torrents AS t $joinSql $where") or die(mysql_error());
+    $row = mysqli_fetch_array($res);
+    $count = (int)$row[0];
+}
 $num_torrents = $count;
 
 if (!$count && isset($cleansearchstr)) {
@@ -265,9 +276,20 @@ if (!$count && isset($cleansearchstr)) {
         if ($where !== "") {
             $where = "WHERE $where";
         }
-        $res = sql_query("SELECT COUNT(*) FROM torrents AS t $where");
-        $row = mysqli_fetch_array($res);
-        $count = (int)$row[0];
+        $fallbackHash = md5($where);
+        $count = function_exists('tracker_cache_remember')
+            ? tracker_cache_remember('browse:fallback-count:' . $fallbackHash, 120, function () use ($where) {
+                $res = sql_query("SELECT COUNT(*) FROM torrents AS t $where");
+                $row = mysqli_fetch_array($res);
+                return (int)$row[0];
+            })
+            : null;
+
+        if ($count === null) {
+            $res = sql_query("SELECT COUNT(*) FROM torrents AS t $where");
+            $row = mysqli_fetch_array($res);
+            $count = (int)$row[0];
+        }
     }
 }
 
@@ -295,9 +317,27 @@ if ($count) {
     $addparam = $addparam !== '' ? $addparam . '&amp;' : '';
     list($pagertop, $pagerbottom, $limit) = pager($torrentsperpage, $count, "browse.php?" . $addparam);
     $query = "SELECT t.id, t.moderated, t.moderatedby, t.category, (t.leechers + t.remote_leechers) AS leechers, (t.seeders + t.remote_seeders) AS seeders, t.multitracker, t.last_mt_update, t.free, t.name, t.info_hash, t.times_completed, t.size, t.added, t.comments, t.numfiles, t.filename, t.not_sticky, t.owner, IF(t.numratings < $minvotes, NULL, ROUND(t.ratingsum / t.numratings, 1)) AS rating, c.name AS cat_name, c.image AS cat_pic, u.username, u.class" . ($CURUSER ? ", EXISTS(SELECT * FROM readtorrents WHERE readtorrents.userid = " . sqlesc($CURUSER["id"]) . " AND readtorrents.torrentid = t.id) AS readtorrent" : ", 1 AS readtorrent") . " FROM torrents AS t $joinSql LEFT JOIN categories AS c ON t.category = c.id LEFT JOIN users AS u ON t.owner = u.id $where $orderby $limit";
-    $res = sql_query($query) or die(mysql_error());
+    $browseRowsKey = 'browse:rows:' . md5($query . ':' . (int)($CURUSER['id'] ?? 0));
+    $browse_rows = function_exists('tracker_cache_remember')
+        ? tracker_cache_remember($browseRowsKey, 120, function () use ($query) {
+            $res = sql_query($query) or die(mysql_error());
+            $rows = array();
+            while ($row = mysqli_fetch_assoc($res)) {
+                $rows[] = $row;
+            }
+            return $rows;
+        })
+        : null;
+
+    if ($browse_rows === null) {
+        $res = sql_query($query) or die(mysql_error());
+        $browse_rows = array();
+        while ($row = mysqli_fetch_assoc($res)) {
+            $browse_rows[] = $row;
+        }
+    }
 } else {
-    unset($res);
+    $browse_rows = array();
 }
 
 $hide_right_blocks = true;
@@ -419,9 +459,9 @@ if (isset($cleansearchstr)) {
             <td class="z">Залит</td>
             <td class="zl">Раздает</td>
         </tr>
-        <?php if ($num_torrents && isset($res)) { ?>
+        <?php if ($num_torrents && !empty($browse_rows)) { ?>
             <?php $rowIndex = 0; ?>
-            <?php while ($row = mysqli_fetch_assoc($res)) { ?>
+            <?php foreach ($browse_rows as $row) { ?>
                 <?php
                 $title = htmlspecialchars_uni($row['name']);
                 $catPic = !empty($row['cat_pic']) ? htmlspecialchars_uni($row['cat_pic']) : '';

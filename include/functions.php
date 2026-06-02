@@ -1646,6 +1646,14 @@ function downloaderdata($res)
 }
 
 function genrelist() {
+	if (function_exists('tracker_cache_remember')) {
+		return tracker_cache_remember('categories:genrelist', 600, 'genrelist_query');
+	}
+
+	return genrelist_query();
+}
+
+function genrelist_query() {
 	$ret = array();
 	$res = sql_query('SELECT id, name FROM categories ORDER BY sort ASC');
 	while ($row = mysqli_fetch_array($res))

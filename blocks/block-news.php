@@ -28,17 +28,38 @@ $rows = isset($GLOBALS['index_news']) && is_array($GLOBALS['index_news'])
     : null;
 
 if ($rows === null) {
-    $resource = sql_query("
-        SELECT id, added, subject, body
-        FROM news
-        WHERE added > DATE_SUB(NOW(), INTERVAL 45 DAY)
-        ORDER BY added DESC
-        LIMIT 10
-    ") or sqlerr(__FILE__, __LINE__);
+    $rows = function_exists('tracker_cache_remember')
+        ? tracker_cache_remember('block:news:rows', 300, function () {
+            $resource = sql_query("
+                SELECT id, added, subject, body
+                FROM news
+                WHERE added > DATE_SUB(NOW(), INTERVAL 45 DAY)
+                ORDER BY added DESC
+                LIMIT 10
+            ") or sqlerr(__FILE__, __LINE__);
 
-    $rows = array();
-    while ($array = mysqli_fetch_assoc($resource)) {
-        $rows[] = $array;
+            $cached_rows = array();
+            while ($array = mysqli_fetch_assoc($resource)) {
+                $cached_rows[] = $array;
+            }
+
+            return $cached_rows;
+        })
+        : null;
+
+    if ($rows === null) {
+        $resource = sql_query("
+            SELECT id, added, subject, body
+            FROM news
+            WHERE added > DATE_SUB(NOW(), INTERVAL 45 DAY)
+            ORDER BY added DESC
+            LIMIT 10
+        ") or sqlerr(__FILE__, __LINE__);
+
+        $rows = array();
+        while ($array = mysqli_fetch_assoc($resource)) {
+            $rows[] = $array;
+        }
     }
 }
 

@@ -377,6 +377,13 @@ function cups_current()
 
     cups_ensure_schema();
 
+    return function_exists('tracker_cache_remember')
+        ? tracker_cache_remember('cups:current', 300, 'cups_current_query')
+        : cups_current_query();
+}
+
+function cups_current_query()
+{
     $rows = array();
     $res = sql_query("
         SELECT c.id AS cup_id,
@@ -431,6 +438,20 @@ function cups_for_user($userid)
     if (!is_valid_id($userid)) {
         return $rows;
     }
+
+    if (function_exists('tracker_cache_remember')) {
+        return tracker_cache_remember('cups:user:' . $userid, 300, function () use ($userid) {
+            return cups_for_user_query($userid);
+        });
+    }
+
+    return cups_for_user_query($userid);
+}
+
+function cups_for_user_query($userid)
+{
+    $userid = (int)$userid;
+    $rows = array();
 
     $res = sql_query("
         SELECT c.id AS cup_id,

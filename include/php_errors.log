@@ -389,3 +389,18 @@ Stack trace:
 [02-Jun-2026 14:27:06 Europe/Moscow] PHP Warning:  Undefined array key "dip" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 249
 [02-Jun-2026 14:27:06 Europe/Moscow] PHP Warning:  Undefined variable $pagemenu in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 901
 [02-Jun-2026 14:27:06 Europe/Moscow] PHP Warning:  Undefined variable $browsemenu in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 901
+[02-Jun-2026 14:50:35 Europe/Moscow] PHP Fatal error:  Uncaught TypeError: mysqli_fetch_row(): Argument #1 ($result) must be of type mysqli_result, null given in C:\OSPanel\domains\kinozal.lv\userdetails.php:333
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\userdetails.php(333): mysqli_fetch_row()
+#1 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\userdetails.php on line 333
+[02-Jun-2026 14:51:53 Europe/Moscow] PHP Fatal error:  Uncaught TypeError: mysqli_fetch_assoc(): Argument #1 ($result) must be of type mysqli_result, null given in C:\OSPanel\domains\kinozal.lv\userdetails.php:371
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\userdetails.php(371): mysqli_fetch_assoc()
+#1 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\userdetails.php on line 371
+[02-Jun-2026 14:51:55 Europe/Moscow] PHP Fatal error:  Uncaught TypeError: mysqli_fetch_assoc(): Argument #1 ($result) must be of type mysqli_result, null given in C:\OSPanel\domains\kinozal.lv\userdetails.php:371
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\userdetails.php(371): mysqli_fetch_assoc()
+#1 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\userdetails.php on line 371

@@ -46,6 +46,71 @@ function tracker_blocks_active_rows()
 	});
 }
 
+function tracker_block_cache_ttl($blockfile)
+{
+    $ttl = array(
+        'block-online.php' => 20,
+        'block-top-torrents.php' => 60,
+        'block-stats.php' => 60,
+        'block-releases.php' => 60,
+        'block-pay.php' => 120,
+        'block-uarch.php' => 120,
+        'block-news.php' => 300,
+        'block-cups.php' => 300,
+        'block-birthday.php' => 1800,
+    );
+
+    $blockfile = basename((string) $blockfile);
+    return isset($ttl[$blockfile]) ? (int) $ttl[$blockfile] : 60;
+}
+
+function tracker_block_cache_key($blockfile, $bid, $position)
+{
+    global $CURUSER;
+
+    $blockfile = basename((string) $blockfile);
+    $path = ROOT_PATH . 'blocks' . DIRECTORY_SEPARATOR . $blockfile;
+    $mtime = is_file($path) ? (int) filemtime($path) : 0;
+    $module = str_replace('.php', '', basename((string) ($_SERVER['PHP_SELF'] ?? 'index.php')));
+    $request = substr(md5((string) ($_SERVER['REQUEST_URI'] ?? '')), 0, 12);
+    $class = function_exists('get_user_class') ? (int) get_user_class() : 0;
+    $auth = empty($CURUSER) ? 'guest' : 'user';
+    $page = isset($_GET['relpage']) ? max(0, (int) $_GET['relpage']) : 0;
+
+    return implode(':', array(
+        'block',
+        $blockfile,
+        (int) $bid,
+        (string) $position,
+        $module,
+        $request,
+        $auth,
+        $class,
+        'page' . $page,
+        date('Ymd'),
+        'v' . $mtime,
+    ));
+}
+
+function tracker_block_render_file($blockPath, $fallbackTitle, $fallbackContent)
+{
+    $blocktitle = $fallbackTitle;
+    $content = $fallbackContent;
+
+    ob_start();
+    require $blockPath;
+    $extra = ob_get_clean();
+
+    if ($extra !== '') {
+        $content .= $extra;
+    }
+
+    return array(
+        'title' => (string) $blocktitle,
+        'content' => (string) $content,
+    );
+}
+
 function render_block_template(string $template, string $title, string $content): string
 {
     global $ss_uri, $tracker_lang;
@@ -83,7 +148,21 @@ function render_blocks($blockfile, $blocktitle, $content, $bid, $bposition, $all
                 define('BLOCK_FILE', 1);
             }
 
-            require $blockPath;
+            $cacheKey = tracker_block_cache_key($blockfile, $bid, $bposition);
+            $cached = function_exists('tracker_cache_get') ? tracker_cache_get($cacheKey) : null;
+
+            if (is_array($cached) && isset($cached['title'], $cached['content'])) {
+                $blocktitle = (string) $cached['title'];
+                $content = (string) $cached['content'];
+            } else {
+                $rendered = tracker_block_render_file($blockPath, $blocktitle, $content);
+                $blocktitle = $rendered['title'];
+                $content = $rendered['content'];
+
+                if (function_exists('tracker_cache_set')) {
+                    tracker_cache_set($cacheKey, $rendered, tracker_block_cache_ttl($blockfile));
+                }
+            }
         } else {
             $content = '<center>Существует проблема с этим блоком!</center>';
         }

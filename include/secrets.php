@@ -20,12 +20,8 @@ if ($is_docker) {
 
 $mysql_charset = "utf8mb4";
 
-if (!isset($cache_enabled)) {
-    $cache_enabled = true;
-}
-if (!isset($cache_backend)) {
-    $cache_backend = 'redis';
-}
+$cache_enabled = true;
+$cache_backend = 'redis';
 if (!isset($cache_prefix)) {
     $cache_prefix = 'kinozal';
 }

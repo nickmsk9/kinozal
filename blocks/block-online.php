@@ -33,7 +33,31 @@ $sql_latest = "SELECT 0 AS sort_order, id, username, -1 AS class
                LIMIT 1";
 
 $full_sql = "($sql_latest) UNION ALL ($sql_online) ORDER BY sort_order, class DESC";
-$result   = sql_query($full_sql);
+$online_rows = function_exists('tracker_cache_remember')
+	? tracker_cache_remember('block:online:rows:' . (!empty($use_sessions) ? 'sessions' : 'users'), 20, function () use ($full_sql) {
+		$result = sql_query($full_sql);
+		$cached_rows = array();
+
+		if ($result) {
+			while ($row = mysqli_fetch_assoc($result)) {
+				$cached_rows[] = $row;
+			}
+		}
+
+		return $cached_rows;
+	})
+	: null;
+
+if ($online_rows === null) {
+	$result = sql_query($full_sql);
+	$online_rows = array();
+
+	if ($result) {
+		while ($row = mysqli_fetch_assoc($result)) {
+			$online_rows[] = $row;
+		}
+	}
+}
 
 $users        = 0;
 $guests       = 0;
@@ -44,8 +68,8 @@ $parsed_ids   = [];
 $parsed_names = [];
 $latestuser   = 'Нет пользователей';
 
-if ($result && mysqli_num_rows($result) > 0) {
-	$row = mysqli_fetch_assoc($result);
+if ($online_rows) {
+	$row = array_shift($online_rows);
 
 	// Если первая строка — последний пользователь
 	if ((int)$row['sort_order'] === 0) {
@@ -57,7 +81,7 @@ if ($result && mysqli_num_rows($result) > 0) {
 		} else {
 			$latestuser = $username;
 		}
-		$row = mysqli_fetch_assoc($result);
+		$row = array_shift($online_rows);
 	}
 
 	// Обработка онлайн-пользователей
@@ -75,12 +99,12 @@ if ($result && mysqli_num_rows($result) > 0) {
 		if ($is_guest) {
 			$guests++;
 			$total++;
-			$row = mysqli_fetch_assoc($result);
+			$row = array_shift($online_rows);
 			continue;
 		}
 
 		if (in_array($uid, $parsed_ids, true)) {
-			$row = mysqli_fetch_assoc($result);
+			$row = array_shift($online_rows);
 			continue;
 		}
 
@@ -100,7 +124,7 @@ if ($result && mysqli_num_rows($result) > 0) {
 				. '</a>';
 		}
 
-		$row = mysqli_fetch_assoc($result);
+		$row = array_shift($online_rows);
 	}
 }
 

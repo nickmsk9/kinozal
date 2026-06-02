@@ -317,20 +317,58 @@ if ($country_id > 0) {
 }
 
 $torrent_count = 0;
-$res_torrents = sql_query("SELECT COUNT(*) FROM torrents WHERE owner = $id") or sqlerr(__FILE__, __LINE__);
-if ($row_torrents = mysqli_fetch_row($res_torrents)) {
+$res_torrents = null;
+$cached_torrent_count = function_exists('tracker_cache_remember')
+	? tracker_cache_remember('userdetails:torrent-count:' . $id, 120, function () use ($id) {
+		$res = sql_query("SELECT COUNT(*) FROM torrents WHERE owner = $id") or sqlerr(__FILE__, __LINE__);
+		$row = mysqli_fetch_row($res);
+		return (int)($row[0] ?? 0);
+	})
+	: null;
+if ($cached_torrent_count !== null) {
+	$torrent_count = (int)$cached_torrent_count;
+} else {
+	$res_torrents = sql_query("SELECT COUNT(*) FROM torrents WHERE owner = $id") or sqlerr(__FILE__, __LINE__);
+}
+if ($res_torrents && ($row_torrents = mysqli_fetch_row($res_torrents))) {
 	$torrent_count = (int)$row_torrents[0];
 }
 
 $comment_count = 0;
-$res_comments = sql_query("SELECT COUNT(*) FROM comments WHERE user = $id") or sqlerr(__FILE__, __LINE__);
-if ($row_comments = mysqli_fetch_row($res_comments)) {
+$res_comments = null;
+$cached_comment_count = function_exists('tracker_cache_remember')
+	? tracker_cache_remember('userdetails:comment-count:' . $id, 120, function () use ($id) {
+		$res = sql_query("SELECT COUNT(*) FROM comments WHERE user = $id") or sqlerr(__FILE__, __LINE__);
+		$row = mysqli_fetch_row($res);
+		return (int)($row[0] ?? 0);
+	})
+	: null;
+if ($cached_comment_count !== null) {
+	$comment_count = (int)$cached_comment_count;
+} else {
+	$res_comments = sql_query("SELECT COUNT(*) FROM comments WHERE user = $id") or sqlerr(__FILE__, __LINE__);
+}
+if ($res_comments && ($row_comments = mysqli_fetch_row($res_comments))) {
 	$comment_count = (int)$row_comments[0];
 }
 
 $last_torrent_link = '<a href="/browse.php" class="' . $user_class_css . '">здесь</a>';
-$res_last = sql_query("SELECT torrent FROM snatched WHERE userid = $id ORDER BY completedat DESC, last_action DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
-if ($last = mysqli_fetch_assoc($res_last)) {
+$res_last = null;
+$cached_last_torrent = function_exists('tracker_cache_remember')
+	? tracker_cache_remember('userdetails:last-torrent:' . $id, 120, function () use ($id) {
+		$res = sql_query("SELECT torrent FROM snatched WHERE userid = $id ORDER BY completedat DESC, last_action DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
+		if ($last = mysqli_fetch_assoc($res)) {
+			return (int)$last["torrent"];
+		}
+		return 0;
+	})
+	: null;
+if ($cached_last_torrent !== null && (int)$cached_last_torrent > 0) {
+	$last_torrent_link = '<a href="/details.php?id=' . (int)$cached_last_torrent . '" class="' . $user_class_css . '">&#1079;&#1076;&#1077;&#1089;&#1100;</a>';
+} elseif ($cached_last_torrent === null) {
+	$res_last = sql_query("SELECT torrent FROM snatched WHERE userid = $id ORDER BY completedat DESC, last_action DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
+}
+if ($res_last && ($last = mysqli_fetch_assoc($res_last))) {
 	$last_torrent_link = '<a href="/details.php?id=' . (int)$last["torrent"] . '" class="' . $user_class_css . '">здесь</a>';
 }
 

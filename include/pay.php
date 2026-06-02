@@ -204,12 +204,25 @@ function pay_setting($key, $default = '')
 	$key = (string)$key;
 
 	if ($settings === null) {
-		$settings = array();
+		$settings = function_exists('tracker_cache_remember')
+			? tracker_cache_remember('pay:settings', 300, function () {
+				$cached_settings = array();
+				$res = sql_query("SELECT setting_key, setting_value FROM pay_settings");
+				if ($res) {
+					while ($row = mysqli_fetch_assoc($res)) {
+						$cached_settings[(string)$row['setting_key']] = (string)$row['setting_value'];
+					}
+				}
+				return $cached_settings;
+			})
+			: array();
 
-		$res = sql_query("SELECT setting_key, setting_value FROM pay_settings");
-		if ($res) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$settings[(string)$row['setting_key']] = (string)$row['setting_value'];
+		if (!$settings) {
+			$res = sql_query("SELECT setting_key, setting_value FROM pay_settings");
+			if ($res) {
+				while ($row = mysqli_fetch_assoc($res)) {
+					$settings[(string)$row['setting_key']] = (string)$row['setting_value'];
+				}
 			}
 		}
 	}
@@ -414,6 +427,44 @@ function pay_recent_helpers($limit = 20)
 {
 	pay_ensure_schema();
 	$limit = max(1, (int)$limit);
+
+	return function_exists('tracker_cache_remember')
+		? tracker_cache_remember('pay:recent-helpers:' . $limit, 120, function () use ($limit) {
+			$res = sql_query("
+				SELECT u.id AS userid, u.username, u.class, u.donor, u.warned, u.enabled, MAX(t.created_at) AS last_at, SUM(t.votes_delta) AS votes_sum, COUNT(*) AS ops
+				FROM pay_transactions AS t
+				INNER JOIN users AS u ON u.id = t.userid
+				WHERE t.operation = 'exchange'
+				  AND t.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+				GROUP BY u.id, u.username, u.class, u.donor, u.warned, u.enabled
+				ORDER BY last_at DESC
+				LIMIT $limit
+			") or sqlerr(__FILE__, __LINE__);
+
+			$rows = array();
+			while ($row = mysqli_fetch_assoc($res)) {
+				$rows[] = $row;
+			}
+			return $rows;
+		})
+		: pay_recent_helpers_uncached($limit);
+}
+
+function pay_top_helpers($mode = 'active', $limit = 20)
+{
+	pay_ensure_schema();
+	$limit = max(1, (int)$limit);
+	$order = $mode === 'votes' ? 'votes_sum DESC, ops DESC' : 'ops DESC, votes_sum DESC';
+
+	return function_exists('tracker_cache_remember')
+		? tracker_cache_remember('pay:top-helpers:' . $mode . ':' . $limit, 120, function () use ($limit, $order) {
+			return pay_top_helpers_query($limit, $order);
+		})
+		: pay_top_helpers_query($limit, $order);
+}
+
+function pay_recent_helpers_uncached($limit)
+{
 	$res = sql_query("
 		SELECT u.id AS userid, u.username, u.class, u.donor, u.warned, u.enabled, MAX(t.created_at) AS last_at, SUM(t.votes_delta) AS votes_sum, COUNT(*) AS ops
 		FROM pay_transactions AS t
@@ -432,12 +483,8 @@ function pay_recent_helpers($limit = 20)
 	return $rows;
 }
 
-function pay_top_helpers($mode = 'active', $limit = 20)
+function pay_top_helpers_query($limit, $order)
 {
-	pay_ensure_schema();
-	$limit = max(1, (int)$limit);
-	$order = $mode === 'votes' ? 'votes_sum DESC, ops DESC' : 'ops DESC, votes_sum DESC';
-
 	$res = sql_query("
 		SELECT u.id AS userid, u.username, u.class, u.donor, u.warned, u.enabled, SUM(GREATEST(t.votes_delta, 0)) AS votes_sum, COUNT(*) AS ops
 		FROM pay_transactions AS t

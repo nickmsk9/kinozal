@@ -293,35 +293,74 @@ if ($rows === null) {
     require_once(dirname(__DIR__) . '/include/test_torrents.php');
     test_torrents_ensure_schema();
 
-    $res = sql_query("
-        SELECT
-            t.id,
-            t.name,
-            t.descr,
-            t.image1,
-            t.image2,
-            t.image3,
-            t.image4,
-            t.image5,
-            td.poster_url,
-            t.size,
-            t.added,
-            c.id AS catid,
-            c.name AS catname,
-            c.image AS catimage
-        FROM torrents AS t
-        LEFT JOIN categories AS c ON c.id = t.category
-        LEFT JOIN torrent_details AS td ON td.tid = t.id
-        WHERE t.visible = 'yes'
-          AND (t.banned <> 'yes' OR t.banned IS NULL)
-          AND (t.is_test <> 'yes' OR t.test_approved_at IS NOT NULL)
-        ORDER BY t.added DESC, t.id DESC
-        LIMIT " . (int)$offset . ", " . (int)$limit
-    ) or sqlerr(__FILE__, __LINE__);
+    $rows = function_exists('tracker_cache_remember')
+        ? tracker_cache_remember('block:releases:rows:page:' . $page, 60, function () use ($offset, $limit) {
+            $res = sql_query("
+                SELECT
+                    t.id,
+                    t.name,
+                    t.descr,
+                    t.image1,
+                    t.image2,
+                    t.image3,
+                    t.image4,
+                    t.image5,
+                    td.poster_url,
+                    t.size,
+                    t.added,
+                    c.id AS catid,
+                    c.name AS catname,
+                    c.image AS catimage
+                FROM torrents AS t
+                LEFT JOIN categories AS c ON c.id = t.category
+                LEFT JOIN torrent_details AS td ON td.tid = t.id
+                WHERE t.visible = 'yes'
+                  AND (t.banned <> 'yes' OR t.banned IS NULL)
+                  AND (t.is_test <> 'yes' OR t.test_approved_at IS NOT NULL)
+                ORDER BY t.added DESC, t.id DESC
+                LIMIT " . (int)$offset . ", " . (int)$limit
+            ) or sqlerr(__FILE__, __LINE__);
 
-    $rows = array();
-    while ($row = mysqli_fetch_assoc($res)) {
-        $rows[] = $row;
+            $cached_rows = array();
+            while ($row = mysqli_fetch_assoc($res)) {
+                $cached_rows[] = $row;
+            }
+
+            return $cached_rows;
+        })
+        : null;
+
+    if ($rows === null) {
+        $res = sql_query("
+            SELECT
+                t.id,
+                t.name,
+                t.descr,
+                t.image1,
+                t.image2,
+                t.image3,
+                t.image4,
+                t.image5,
+                td.poster_url,
+                t.size,
+                t.added,
+                c.id AS catid,
+                c.name AS catname,
+                c.image AS catimage
+            FROM torrents AS t
+            LEFT JOIN categories AS c ON c.id = t.category
+            LEFT JOIN torrent_details AS td ON td.tid = t.id
+            WHERE t.visible = 'yes'
+              AND (t.banned <> 'yes' OR t.banned IS NULL)
+              AND (t.is_test <> 'yes' OR t.test_approved_at IS NOT NULL)
+            ORDER BY t.added DESC, t.id DESC
+            LIMIT " . (int)$offset . ", " . (int)$limit
+        ) or sqlerr(__FILE__, __LINE__);
+
+        $rows = array();
+        while ($row = mysqli_fetch_assoc($res)) {
+            $rows[] = $row;
+        }
     }
 }
 

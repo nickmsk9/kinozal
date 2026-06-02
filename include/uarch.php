@@ -82,6 +82,17 @@ function uarch_smiles($active_only = true, $limit = 60)
 	$limit = max(1, min(200, (int)$limit));
 	$where = $active_only ? "WHERE s.active = 'yes'" : '';
 
+	if (function_exists('tracker_cache_remember')) {
+		return tracker_cache_remember('uarch:smiles:' . ($active_only ? 'active' : 'all') . ':' . $limit, 120, function () use ($where, $limit) {
+			return uarch_smiles_query($where, $limit);
+		});
+	}
+
+	return uarch_smiles_query($where, $limit);
+}
+
+function uarch_smiles_query($where, $limit)
+{
 	$res = sql_query("
 		SELECT s.*, u.username AS real_username, u.class AS real_class, u.country, u.gender, u.donor, u.warned, u.enabled, u.birthday
 		FROM uarch_smiles AS s
