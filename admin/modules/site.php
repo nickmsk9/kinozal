@@ -98,7 +98,7 @@ if (!function_exists('SiteSettingsAdmin')) {
 		site_admin_bool_row('Сайт онлайн', 'site_online', $site_online, 'Если выключить, сайт покажет страницу техработ.');
 		site_admin_bool_row('Закрыть регистрацию', 'deny_signup', $signup_closed, 'Обычная регистрация будет отключена.');
 		site_admin_bool_row('Капча', 'use_captcha', $captcha, 'Используется на регистрации и восстановлении доступа.');
-		echo '<tr><td class="colhead" colspan="2">Капча</td></tr>';
+		echo '<tr id="captcha-settings"><td class="colhead" colspan="2">Капча</td></tr>';
 		site_admin_text_row('Длина кода', 'captcha_length', $captcha_length, 8, 'От 4 до 8 символов.');
 		site_admin_text_row('Ширина картинки', 'captcha_width', $captcha_width, 8, 'От 120 до 320 пикселей.');
 		site_admin_text_row('Высота картинки', 'captcha_height', $captcha_height, 8, 'От 36 до 120 пикселей.');

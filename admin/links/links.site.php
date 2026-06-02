@@ -5,5 +5,6 @@ if (!defined('ADMIN_FILE')) {
 }
 
 BuildMenu("" . $admin_file . ".php?op=SiteSettingsAdmin", "Настройки сайта", "site.svg");
+BuildMenu("" . $admin_file . ".php?op=SiteSettingsAdmin#captcha-settings", "Настройки каптчи", "captcha.svg");
 
 ?>

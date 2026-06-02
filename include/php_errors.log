@@ -229,3 +229,6 @@ Stack trace:
 [01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined array key "dip" in /var/www/html/usersearch.php on line 249
 [01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined variable $pagemenu in /var/www/html/usersearch.php on line 901
 [01-Jun-2026 15:48:44 UTC] PHP Warning:  Undefined variable $browsemenu in /var/www/html/usersearch.php on line 901
+[02-Jun-2026 12:28:46 Europe/Moscow] PHP Warning:  Constant KZ_AUTO_MIGRATIONS already defined in C:\OSPanel\domains\kinozal.lv\include\config.local.php on line 10
+[02-Jun-2026 12:28:46 Europe/Moscow] PHP Parse error:  syntax error, unexpected token "\" in C:\OSPanel\domains\kinozal.lv\include\secrets.local.php on line 7
+[02-Jun-2026 12:29:16 Europe/Moscow] PHP Parse error:  syntax error, unexpected token "\" in C:\OSPanel\domains\kinozal.lv\include\secrets.local.php on line 7
