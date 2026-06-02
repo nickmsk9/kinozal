@@ -49,15 +49,29 @@ function tracker_captcha_session_gc()
 {
 	if (empty($_SESSION['tracker_captcha']) || !is_array($_SESSION['tracker_captcha'])) {
 		$_SESSION['tracker_captcha'] = array();
-		return;
+	} else {
+		$expires = time() - 900;
+		foreach ($_SESSION['tracker_captcha'] as $id => $row) {
+			if (empty($row['created']) || (int)$row['created'] < $expires) {
+				unset($_SESSION['tracker_captcha'][$id]);
+			}
+		}
 	}
 
 	$expires = time() - 900;
-	foreach ($_SESSION['tracker_captcha'] as $id => $row) {
-		if (empty($row['created']) || (int)$row['created'] < $expires) {
-			unset($_SESSION['tracker_captcha'][$id]);
+	$dir = tracker_captcha_cache_dir();
+	if (is_dir($dir)) {
+		foreach (glob($dir . '*.php') ?: array() as $file) {
+			if (@filemtime($file) < $expires) {
+				@unlink($file);
+			}
 		}
 	}
+}
+
+function tracker_captcha_cache_dir()
+{
+	return ROOT_PATH . 'cache' . DIRECTORY_SEPARATOR . 'captcha' . DIRECTORY_SEPARATOR;
 }
 
 function tracker_captcha_new_id()
@@ -69,6 +83,71 @@ function tracker_captcha_new_id()
 	return md5(uniqid('', true) . mt_rand());
 }
 
+function tracker_captcha_cache_file($id)
+{
+	$id = preg_replace('/[^a-f0-9]/i', '', (string)$id);
+	return $id === '' ? '' : tracker_captcha_cache_dir() . $id . '.php';
+}
+
+function tracker_captcha_store($id, $phrase)
+{
+	$_SESSION['tracker_captcha'][$id] = array(
+		'phrase' => $phrase,
+		'created' => time(),
+	);
+
+	$dir = tracker_captcha_cache_dir();
+	if (!is_dir($dir)) {
+		@mkdir($dir, 0775, true);
+	}
+
+	$file = tracker_captcha_cache_file($id);
+	if ($file !== '' && is_dir($dir)) {
+		$data = "<?php\nreturn " . var_export(array(
+			'phrase' => (string)$phrase,
+			'created' => time(),
+		), true) . ";\n";
+		@file_put_contents($file, $data, LOCK_EX);
+	}
+}
+
+function tracker_captcha_load($id)
+{
+	$id = trim((string)$id);
+
+	if ($id !== '' && !empty($_SESSION['tracker_captcha'][$id]['phrase'])) {
+		return (string)$_SESSION['tracker_captcha'][$id]['phrase'];
+	}
+
+	$file = tracker_captcha_cache_file($id);
+	if ($file === '' || !is_file($file) || @filemtime($file) < time() - 900) {
+		return '';
+	}
+
+	$row = include $file;
+	if (!is_array($row) || empty($row['phrase']) || empty($row['created']) || (int)$row['created'] < time() - 900) {
+		@unlink($file);
+		return '';
+	}
+
+	$_SESSION['tracker_captcha'][$id] = array(
+		'phrase' => (string)$row['phrase'],
+		'created' => (int)$row['created'],
+	);
+
+	return (string)$row['phrase'];
+}
+
+function tracker_captcha_forget($id)
+{
+	unset($_SESSION['tracker_captcha'][$id]);
+
+	$file = tracker_captcha_cache_file($id);
+	if ($file !== '' && is_file($file)) {
+		@unlink($file);
+	}
+}
+
 function create_captcha()
 {
 	tracker_captcha_session_gc();
@@ -78,10 +157,7 @@ function create_captcha()
 	$phrase = $builder->build();
 	$id = tracker_captcha_new_id();
 
-	$_SESSION['tracker_captcha'][$id] = array(
-		'phrase' => $phrase,
-		'created' => time(),
-	);
+	tracker_captcha_store($id, $phrase);
 
 	return $id;
 }
@@ -93,14 +169,14 @@ function tracker_captcha_validate($id, $answer)
 	$id = trim((string)$id);
 	$answer = trim((string)$answer);
 
-	if ($id === '' || $answer === '' || empty($_SESSION['tracker_captcha'][$id]['phrase'])) {
+	if ($id === '' || $answer === '') {
 		return false;
 	}
 
-	$phrase = (string)$_SESSION['tracker_captcha'][$id]['phrase'];
-	unset($_SESSION['tracker_captcha'][$id]);
+	$phrase = tracker_captcha_load($id);
+	tracker_captcha_forget($id);
 
-	return PhraseBuilder::comparePhrases($phrase, $answer);
+	return $phrase !== '' && PhraseBuilder::comparePhrases($phrase, $answer);
 }
 
 function tracker_captcha_build_image($id)
@@ -108,9 +184,10 @@ function tracker_captcha_build_image($id)
 	tracker_captcha_session_gc();
 
 	$id = trim((string)$id);
-	$phrase = empty($_SESSION['tracker_captcha'][$id]['phrase'])
-		? 'ERROR'
-		: (string)$_SESSION['tracker_captcha'][$id]['phrase'];
+	$phrase = tracker_captcha_load($id);
+	if ($phrase === '') {
+		$phrase = 'ERROR';
+	}
 
 	$settings = tracker_captcha_settings();
 	$builder = new CaptchaBuilder($phrase);
