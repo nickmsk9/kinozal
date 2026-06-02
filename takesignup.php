@@ -177,21 +177,15 @@ if ($email_exists != 0) {
 }
 
 if ($use_captcha && $users) {
-    $imagehash = isset($_POST['imagehash']) ? trim((string)$_POST['imagehash']) : '';
-    $imagestring = isset($_POST['imagestring']) ? trim((string)$_POST['imagestring']) : '';
+    include_once __DIR__ . '/include/captcha.php';
+    $captcha_id = isset($_POST['captcha_id']) ? trim((string)$_POST['captcha_id']) : '';
+    $captcha_answer = isset($_POST['captcha_answer']) ? trim((string)$_POST['captcha_answer']) : '';
 
-    if ($imagestring === '') {
+    if ($captcha_answer === '') {
         bark("Вы должны ввести код подтверждения.");
     }
 
-    $captcha_count = get_row_count(
-        "captcha",
-        "WHERE imagehash = " . sqlesc($imagehash) . " AND imagestring = " . sqlesc($imagestring)
-    );
-
-    sql_query("DELETE FROM captcha WHERE imagehash = " . sqlesc($imagehash)) or sqlerr(__FILE__, __LINE__);
-
-    if ($captcha_count == 0) {
+    if (!tracker_captcha_validate($captcha_id, $captcha_answer)) {
         bark("Вы ввели неправильный код подтверждения.");
     }
 }

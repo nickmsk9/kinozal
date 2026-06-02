@@ -120,8 +120,8 @@ function test_name() {
 <tr><td class="w150 nw b">Дата рождения</td><td class="right"><?= $day ?> <?= $month ?> <?= $year ?></td></tr>
 <tr><td class="w150 nw b">Кто Вы</td><td class="right"><span class="sw200"><select class="styled" name="gender" id="wgender"><option value="1">Мужчина</option><option value="2">Женщина</option></select></span></td></tr>
 <? if ($hash !== '') { ?>
-<tr><td class="w150 nw b">Проверочный вопрос</td><td class="right"><img id="captcha" src="captcha.php?imagehash=<?= signup_h($hash) ?>" alt="Captcha" ondblclick="document.getElementById('captcha').src='captcha.php?imagehash=<?= signup_h($hash) ?>&amp;'+Math.random();"><input type="hidden" name="imagehash" value="<?= signup_h($hash) ?>"></td></tr>
-<tr><td class="w150 nw b">Проверочный ответ</td><td class="right"><input type="text" size="15" name="imagestring" class="w60"></td></tr>
+<tr><td class="w150 nw b">Проверочный вопрос</td><td class="right"><img id="captcha" src="<?= signup_h(tracker_captcha_image_url($hash)) ?>" alt="Captcha" ondblclick="this.src='<?= signup_h(tracker_captcha_image_url($hash)) ?>&amp;'+Math.random();"><input type="hidden" name="captcha_id" value="<?= signup_h($hash) ?>"></td></tr>
+<tr><td class="w150 nw b">Проверочный ответ</td><td class="right"><input type="text" size="15" name="captcha_answer" class="w60"></td></tr>
 <? } ?>
 <tr style="display:none;"><td></td><td>
 <input type="checkbox" name="rulesverify" value="yes" checked>

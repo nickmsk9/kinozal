@@ -33,9 +33,8 @@ dbconn();
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 	if ($use_captcha) {
-		$b = get_row_count("captcha", "WHERE imagehash = ".sqlesc($_POST["imagehash"], true)." AND imagestring = ".sqlesc($_POST["imagestring"], true));
-		sql_query("DELETE FROM captcha WHERE imagehash = ".sqlesc($_POST["imagehash"], true)) or sqlerr(__FILE__,__LINE__);
-		if ($b == 0)
+		include_once("include/captcha.php");
+		if (!tracker_captcha_validate($_POST["captcha_id"] ?? '', $_POST["captcha_answer"] ?? ''))
 			stderr("Ошибка", "Вы ввели неправильный код подтверждения.");
 	}
 
@@ -153,14 +152,14 @@ EOD;
 								<tr>
 									<td class="w150 nw b">Проверочный вопрос</td>
 									<td class="right">
-										<img id="captcha" src="captcha.php?imagehash=<?= $hash ?>" alt="Captcha" ondblclick="document.getElementById('captcha').src='captcha.php?imagehash=<?= $hash ?>&amp;'+Math.random();">
+										<img id="captcha" src="<?= htmlspecialchars_uni(tracker_captcha_image_url($hash)) ?>" alt="Captcha" ondblclick="this.src='<?= htmlspecialchars_uni(tracker_captcha_image_url($hash)) ?>&amp;'+Math.random();">
 									</td>
 								</tr>
 								<tr>
 									<td class="w150 nw b">Проверочный ответ</td>
 									<td class="right">
-										<input type="text" size="15" name="imagestring" class="w60" value="">
-										<input type="hidden" name="imagehash" value="<?= $hash ?>">
+										<input type="text" size="15" name="captcha_answer" class="w60" value="">
+										<input type="hidden" name="captcha_id" value="<?= $hash ?>">
 									</td>
 								</tr>
 								<?php } ?>

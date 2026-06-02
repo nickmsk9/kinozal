@@ -492,12 +492,6 @@ function docleanup()
         }
     }
 
-    /*
-     * 15. Старые captcha-коды и сессии.
-     */
-    $captcha_deadtime = time() - 86400;
-    sql_query("DELETE FROM captcha WHERE dateline < $captcha_deadtime") or sqlerr(__FILE__, __LINE__);
-
     $session_deadtime = time() - 3600;
     sql_query("DELETE FROM sessions WHERE time < $session_deadtime") or sqlerr(__FILE__, __LINE__);
 

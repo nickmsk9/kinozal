@@ -107,20 +107,6 @@ CREATE TABLE `person_bookmarks` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
-# Structure for the `captcha` table :
-#
-
-DROP TABLE IF EXISTS `captcha`;
-
-CREATE TABLE `captcha` (
-  `imagehash` varchar(32) NOT NULL default '',
-  `imagestring` varchar(8) NOT NULL default '',
-  `dateline` bigint(30) NOT NULL default '0',
-  KEY `imagehash` (`imagehash`),
-  KEY `dateline` (`dateline`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-#
 # Structure for the `categories` table :
 #
 
@@ -448,6 +434,14 @@ INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES
   ('site_email', 'noreply@localhost'),
   ('deny_signup', '0'),
   ('use_captcha', '1'),
+  ('captcha_length', '5'),
+  ('captcha_width', '180'),
+  ('captcha_height', '56'),
+  ('captcha_front_lines', '2'),
+  ('captcha_behind_lines', '4'),
+  ('captcha_max_angle', '12'),
+  ('captcha_max_offset', '6'),
+  ('captcha_distortion', '1'),
   ('use_blocks', '1'),
   ('allow_guests_details', '0'),
   ('maxusers', '10000'),
