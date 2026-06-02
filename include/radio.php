@@ -84,6 +84,14 @@ TEXT;
 
 function radio_ensure_schema()
 {
+	static $done = false;
+
+	if ($done) {
+		return;
+	}
+
+	$done = true;
+
 	sql_query("
 		CREATE TABLE IF NOT EXISTS radio_settings (
 			setting_key VARCHAR(64) NOT NULL,
@@ -109,11 +117,21 @@ function radio_ensure_schema()
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
 
-	foreach (radio_defaults() as $key => $value) {
+	$defaults = radio_defaults();
+
+	if (!empty($defaults)) {
+		$values = array();
+
+		foreach ($defaults as $key => $value) {
+			$values[] = '(' . sqlesc($key, true) . ', ' . sqlesc($value, true) . ', NOW())';
+		}
+
 		sql_query("
-			INSERT IGNORE INTO radio_settings (setting_key, setting_value, updated_at)
-			VALUES (" . sqlesc($key, true) . ", " . sqlesc($value, true) . ", NOW())
-		") or sqlerr(__FILE__, __LINE__);
+			INSERT IGNORE INTO radio_settings 
+				(setting_key, setting_value, updated_at)
+			VALUES
+				" . implode(",\n", $values)
+		) or sqlerr(__FILE__, __LINE__);
 	}
 }
 
