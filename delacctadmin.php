@@ -56,7 +56,6 @@ if ($HTTP_SERVER_VARS["REQUEST_METHOD"] == "POST")
     sql_query("DELETE FROM blocks WHERE userid = $id") or sqlerr(__FILE__,__LINE__);
     sql_query("DELETE FROM blocks WHERE blockid = $id") or sqlerr(__FILE__,__LINE__);
     sql_query("DELETE FROM bookmarks WHERE userid = $id") or sqlerr(__FILE__,__LINE__);
-    sql_query("DELETE FROM invites WHERE inviter = $id") or sqlerr(__FILE__,__LINE__);
     sql_query("DELETE FROM peers WHERE userid = $id") or sqlerr(__FILE__,__LINE__);
     sql_query("DELETE FROM readtorrents WHERE userid = $id") or sqlerr(__FILE__,__LINE__);
     sql_query("DELETE FROM simpaty WHERE fromuserid = $id") or sqlerr(__FILE__,__LINE__);

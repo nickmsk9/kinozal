@@ -33,7 +33,7 @@ if (!function_exists('SiteSettingsAdmin')) {
 	function SiteSettingsAdmin()
 	{
 		global $admin_file, $SITE_ONLINE, $SITENAME, $SITEEMAIL, $maxusers, $max_torrent_size;
-		global $deny_signup, $allow_invite_signup, $use_captcha, $use_blocks, $allow_guests_details;
+		global $deny_signup, $use_captcha, $use_blocks, $allow_guests_details;
 
 		site_settings_ensure_schema();
 		$messages = array();
@@ -41,7 +41,6 @@ if (!function_exists('SiteSettingsAdmin')) {
 		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_site_settings'])) {
 			site_set_setting('site_online', !empty($_POST['site_online']) ? '1' : '0');
 			site_set_setting('deny_signup', !empty($_POST['deny_signup']) ? '1' : '0');
-			site_set_setting('allow_invite_signup', !empty($_POST['allow_invite_signup']) ? '1' : '0');
 			site_set_setting('use_captcha', !empty($_POST['use_captcha']) ? '1' : '0');
 			site_set_setting('use_blocks', !empty($_POST['use_blocks']) ? '1' : '0');
 			site_set_setting('allow_guests_details', !empty($_POST['allow_guests_details']) ? '1' : '0');
@@ -60,7 +59,6 @@ if (!function_exists('SiteSettingsAdmin')) {
 
 		$site_online = site_setting_bool('site_online', !empty($SITE_ONLINE));
 		$signup_closed = site_setting_bool('deny_signup', !empty($deny_signup));
-		$invite_signup = site_setting_bool('allow_invite_signup', !empty($allow_invite_signup));
 		$captcha = site_setting_bool('use_captcha', !empty($use_captcha));
 		$blocks = site_setting_bool('use_blocks', !empty($use_blocks));
 		$guest_details = site_setting_bool('allow_guests_details', !empty($allow_guests_details));
@@ -83,7 +81,6 @@ if (!function_exists('SiteSettingsAdmin')) {
 		echo '<tr><td class="colhead" colspan="2">Доступ и поведение</td></tr>';
 		site_admin_bool_row('Сайт онлайн', 'site_online', $site_online, 'Если выключить, сайт покажет страницу техработ.');
 		site_admin_bool_row('Закрыть регистрацию', 'deny_signup', $signup_closed, 'Обычная регистрация будет отключена.');
-		site_admin_bool_row('Регистрация по инвайтам', 'allow_invite_signup', $invite_signup, 'Разрешает форму инвайта при закрытой регистрации.');
 		site_admin_bool_row('Капча', 'use_captcha', $captcha, 'Используется на регистрации и восстановлении доступа.');
 		site_admin_bool_row('Система блоков', 'use_blocks', $blocks, 'Управляет выводом блоков сайта.');
 		site_admin_bool_row('Гости на странице деталей', 'allow_guests_details', $guest_details, 'Разрешает открывать details.php без входа.');

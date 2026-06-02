@@ -265,23 +265,6 @@ CREATE TABLE `indexreleases` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
-# Structure for the `invites` table :
-#
-
-DROP TABLE IF EXISTS `invites`;
-
-CREATE TABLE `invites` (
-  `id` int(10) unsigned NOT NULL auto_increment,
-  `inviter` int(10) unsigned NOT NULL default '0',
-  `inviteid` int(10) NOT NULL default '0',
-  `invite` varchar(32) NOT NULL default '',
-  `time_invited` datetime NULL DEFAULT NULL,
-  `confirmed` char(3) NOT NULL default 'no',
-  PRIMARY KEY  (`id`),
-  KEY `inviter` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-#
 # Structure for the `messages` table :
 #
 
@@ -396,57 +379,6 @@ CREATE TABLE `peers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
-# Structure for the `pollanswers` table :
-#
-
-DROP TABLE IF EXISTS `pollanswers`;
-
-CREATE TABLE `pollanswers` (
-  `id` int(10) unsigned NOT NULL auto_increment,
-  `pollid` int(10) unsigned NOT NULL default '0',
-  `userid` int(10) unsigned NOT NULL default '0',
-  `selection` tinyint(3) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`id`),
-  KEY `pollid` (`pollid`),
-  KEY `selection` (`selection`),
-  KEY `userid` (`userid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-#
-# Structure for the `polls` table :
-#
-
-DROP TABLE IF EXISTS `polls`;
-
-CREATE TABLE `polls` (
-  `id` int(10) unsigned NOT NULL auto_increment,
-  `added` datetime NULL DEFAULT NULL,
-  `question` varchar(255) NOT NULL default '',
-  `option0` varchar(40) NOT NULL default '',
-  `option1` varchar(40) NOT NULL default '',
-  `option2` varchar(40) NOT NULL default '',
-  `option3` varchar(40) NOT NULL default '',
-  `option4` varchar(40) NOT NULL default '',
-  `option5` varchar(40) NOT NULL default '',
-  `option6` varchar(40) NOT NULL default '',
-  `option7` varchar(40) NOT NULL default '',
-  `option8` varchar(40) NOT NULL default '',
-  `option9` varchar(40) NOT NULL default '',
-  `option10` varchar(40) NOT NULL default '',
-  `option11` varchar(40) NOT NULL default '',
-  `option12` varchar(40) NOT NULL default '',
-  `option13` varchar(40) NOT NULL default '',
-  `option14` varchar(40) NOT NULL default '',
-  `option15` varchar(40) NOT NULL default '',
-  `option16` varchar(40) NOT NULL default '',
-  `option17` varchar(40) NOT NULL default '',
-  `option18` varchar(40) NOT NULL default '',
-  `option19` varchar(40) NOT NULL default '',
-  `sort` enum('yes','no') NOT NULL default 'yes',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-#
 # Structure for the `ratings` table :
 #
 
@@ -515,7 +447,6 @@ INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES
   ('site_name', 'Торрент трекер Кинозал.ТВ'),
   ('site_email', 'noreply@localhost'),
   ('deny_signup', '0'),
-  ('allow_invite_signup', '0'),
   ('use_captcha', '1'),
   ('use_blocks', '1'),
   ('allow_guests_details', '0'),
@@ -968,9 +899,6 @@ CREATE TABLE `users` (
   `favorite_persons` varchar(255) NOT NULL default '',
   `passkey` varchar(32) NOT NULL default '',
   `language` varchar(255) NOT NULL default 'russian',
-  `invites` int(10) NOT NULL default '0',
-  `invitedby` int(10) NOT NULL default '0',
-  `invitedroot` int(10) NOT NULL default '0',
   `passkey_ip` varchar(15) NOT NULL default '',
   PRIMARY KEY  (`id`),
   UNIQUE KEY `username` (`username`),
@@ -1097,8 +1025,7 @@ CREATE TABLE `users_ban` (
 INSERT INTO `bonus` (`id`, `name`, `points`, `description`, `type`, `quanity`) VALUES
   (1,'1.0GB Uploaded',75,'With enough bonus points acquired, you are able to exchange them for an Upload Credit. The points are then removed from your Bonus Bank and the credit is added to your total uploaded amount.','traffic','1073741824'),
   (2,'2.5GB Uploaded',150,'With enough bonus points acquired, you are able to exchange them for an Upload Credit. The points are then removed from your Bonus Bank and the credit is added to your total uploaded amount.','traffic','2684354560'),
-  (3,'5GB Uploaded',250,'With enough bonus points acquired, you are able to exchange them for an Upload Credit. The points are then removed from your Bonus Bank and the credit is added to your total uploaded amount.','traffic','5368709120'),
-  (4,'3 Invites',20,'With enough bonus points acquired, you are able to exchange them for a few invites. The points are then removed from your Bonus Bank and the invitations are added to your invites amount.','invite','3');
+  (3,'5GB Uploaded',250,'With enough bonus points acquired, you are able to exchange them for an Upload Credit. The points are then removed from your Bonus Bank and the credit is added to your total uploaded amount.','traffic','5368709120');
 
 COMMIT;
 
@@ -1293,7 +1220,7 @@ COMMIT;
 #
 
 INSERT INTO `orbital_blocks` (`bid`, `bkey`, `title`, `content`, `bposition`, `weight`, `active`, `time`, `blockfile`, `view`, `expire`, `action`, `which`) VALUES
-  (1,'','Администрация','<table border=\"0\"><tr>\r\n<td class=\"block\"><a href=\"/admincp.php\">Админка</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/users.php\">Список пользователей</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/staffmess.php\">Массовое ЛС</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/usersearch.php\">Поиск по IP</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/logout.php\">Выйти</a></td>\r\n</tr></table>','r',1,1,'','',2,'0','d','all'),
+  (1,'','Администрация','<table border=\"0\"><tr>\r\n<td class=\"block\"><a href=\"/admincp.php\">Админка</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/users.php\">Список пользователей</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/usersearch.php\">Поиск по IP</a></td>\r\n</tr><tr>\r\n<td class=\"block\"><a href=\"/logout.php\">Выйти</a></td>\r\n</tr></table>','r',1,1,'','',2,'0','d','all'),
   (13,'','Топ раздач','','r',0,1,'','block-top-torrents.php',0,'0','d','all'),
   (8,'','Статистика трекера','','r',6,1,'','block-stats.php',0,'0','d','ihome,'),
   (12,'','Переходящие кубки','','r',4,1,'','block-cups.php',0,'0','d','ihome,'),

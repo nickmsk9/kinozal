@@ -17,7 +17,6 @@ $allowed_modules = array_merge($allowed_modules, array(
 	"admincp" => "Админка",
 	"browse" => "Обзор",
 	"forums" => "Форум",
-	"staff" => "Персонал",
 	"upload" => "Загрузить",
 	"details" => "Детали",
 	"my" => "Панель управ.",
@@ -35,7 +34,6 @@ $allowed_modules = array_merge($allowed_modules, array(
 		"pay_mode" => "Управление голосами",
 		"pay_wishes" => "Пожелания",
 		"pay_help" => "Техподдержка",
-		"invite" => "Приглашения",
 	"bookmarks" => "Закладки",
 ));
 

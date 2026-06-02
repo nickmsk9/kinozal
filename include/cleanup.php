@@ -56,7 +56,6 @@ if (!function_exists('cleanup_delete_users')) {
             sql_query("DELETE FROM friends WHERE userid IN ($in) OR friendid IN ($in)") or sqlerr(__FILE__, __LINE__);
             sql_query("DELETE FROM blocks WHERE userid IN ($in) OR blockid IN ($in)") or sqlerr(__FILE__, __LINE__);
             sql_query("DELETE FROM bookmarks WHERE userid IN ($in)") or sqlerr(__FILE__, __LINE__);
-            sql_query("DELETE FROM invites WHERE inviter IN ($in)") or sqlerr(__FILE__, __LINE__);
             sql_query("DELETE FROM peers WHERE userid IN ($in)") or sqlerr(__FILE__, __LINE__);
             sql_query("DELETE FROM readtorrents WHERE userid IN ($in)") or sqlerr(__FILE__, __LINE__);
             sql_query("DELETE FROM simpaty WHERE fromuserid IN ($in) OR touserid IN ($in)") or sqlerr(__FILE__, __LINE__);

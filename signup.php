@@ -10,11 +10,10 @@ function signup_h($value): string
 }
 
 $deny_signup         = !empty($deny_signup);
-$allow_invite_signup = !empty($allow_invite_signup);
 $use_captcha         = !empty($use_captcha);
 $maxusers            = isset($maxusers) ? (int)$maxusers : 0;
 
-if ($deny_signup && !$allow_invite_signup) {
+if ($deny_signup) {
     stderr($tracker_lang['error'], 'Извините, но регистрация отключена администрацией.');
 }
 
@@ -123,9 +122,6 @@ function test_name() {
 <? if ($hash !== '') { ?>
 <tr><td class="w150 nw b">Проверочный вопрос</td><td class="right"><img id="captcha" src="captcha.php?imagehash=<?= signup_h($hash) ?>" alt="Captcha" ondblclick="document.getElementById('captcha').src='captcha.php?imagehash=<?= signup_h($hash) ?>&amp;'+Math.random();"><input type="hidden" name="imagehash" value="<?= signup_h($hash) ?>"></td></tr>
 <tr><td class="w150 nw b">Проверочный ответ</td><td class="right"><input type="text" size="15" name="imagestring" class="w60"></td></tr>
-<? } ?>
-<? if ($allow_invite_signup) { ?>
-<tr><td class="w150 nw b">Код приглашения</td><td class="right"><input type="text" name="invite" maxlength="32" size="32"></td></tr>
 <? } ?>
 <tr style="display:none;"><td></td><td>
 <input type="checkbox" name="rulesverify" value="yes" checked>

@@ -74,11 +74,10 @@ function site_setting_int($key, $default, $min = 0, $max = null)
 function site_settings_apply_runtime_overrides()
 {
 	global $SITE_ONLINE, $SITENAME, $SITEEMAIL, $maxusers, $max_torrent_size;
-	global $deny_signup, $allow_invite_signup, $use_captcha, $use_blocks, $allow_guests_details;
+	global $deny_signup, $use_captcha, $use_blocks, $allow_guests_details;
 
 	$SITE_ONLINE = site_setting_bool('site_online', !empty($SITE_ONLINE));
 	$deny_signup = site_setting_bool('deny_signup', !empty($deny_signup)) ? 1 : 0;
-	$allow_invite_signup = site_setting_bool('allow_invite_signup', !empty($allow_invite_signup)) ? 1 : 0;
 	$use_captcha = site_setting_bool('use_captcha', !empty($use_captcha)) ? 1 : 0;
 	$use_blocks = site_setting_bool('use_blocks', !empty($use_blocks)) ? 1 : 0;
 	$allow_guests_details = site_setting_bool('allow_guests_details', !empty($allow_guests_details));

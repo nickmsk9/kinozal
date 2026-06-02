@@ -51,13 +51,12 @@ if (isset($_POST['bday_day']) && !isset($_POST['day'])) {
 }
 
 $deny_signup = !empty($deny_signup);
-$allow_invite_signup = !empty($allow_invite_signup);
 $use_email_act = !empty($use_email_act);
 $use_captcha = !empty($use_captcha);
 $enable_adv_antidreg = !empty($enable_adv_antidreg);
 $check_for_working_mta = !empty($check_for_working_mta);
 
-if ($deny_signup && !$allow_invite_signup) {
+if ($deny_signup) {
     stderr($tracker_lang['error'], $tracker_lang['signup_disabled']);
 }
 
@@ -177,34 +176,6 @@ if ($email_exists != 0) {
     bark("E-mail адрес " . htmlspecialchars_uni($email) . " уже зарегистрирован в системе.");
 }
 
-$inviter = 0;
-$invitedroot = 0;
-$invite = isset($_POST['invite']) ? trim((string)$_POST['invite']) : '';
-
-if ($deny_signup && $allow_invite_signup) {
-    if ($invite === '') {
-        stderr($tracker_lang['error'], "Для регистрации вам нужно ввести код приглашения.");
-    }
-
-    if (strlen($invite) !== 32) {
-        stderr($tracker_lang['error'], "Вы ввели неправильный код приглашения.");
-    }
-
-    $res = sql_query("SELECT inviter FROM invites WHERE invite = " . sqlesc($invite) . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
-    $row = mysqli_fetch_row($res);
-
-    if (!$row || empty($row[0])) {
-        stderr($tracker_lang['error'], "Код приглашения, введенный вами, не рабочий.");
-    }
-
-    $inviter = (int)$row[0];
-
-    $res = sql_query("SELECT invitedroot FROM users WHERE id = " . sqlesc($inviter) . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
-    $row = mysqli_fetch_row($res);
-
-    $invitedroot = $row ? (int)$row[0] : 0;
-}
-
 if ($use_captcha && $users) {
     $imagehash = isset($_POST['imagehash']) ? trim((string)$_POST['imagehash']) : '';
     $imagestring = isset($_POST['imagestring']) ? trim((string)$_POST['imagestring']) : '';
@@ -275,8 +246,6 @@ $fields = array(
     'status',
     'added',
     'birthday',
-    'invitedby',
-    'invitedroot',
     'theme',
     'ip',
     'passkey',
@@ -294,8 +263,6 @@ $values = array(
     $status,
     $added,
     $birthday,
-    $inviter,
-    $invitedroot,
     $theme,
     $ip,
     $passkey,
@@ -331,10 +298,6 @@ if (!$ret) {
 }
 
 $id = mysqli_insert_id($link);
-
-if ($invite !== '') {
-    sql_query("DELETE FROM invites WHERE invite = " . sqlesc($invite)) or sqlerr(__FILE__, __LINE__);
-}
 
 write_log("Зарегистрирован новый пользователь " . $wantusername, "FFFFFF", "tracker");
 

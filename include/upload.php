@@ -1953,7 +1953,7 @@ function upload_render_details_panel(array $row, array $details, $descr_html, $o
 				<?php if ($poster !== '') { ?>
 					<li class="center"><img src="<?= h($poster) ?>" class="p200" alt=""></li>
 				<?php } elseif (!empty($row['image1'])) { ?>
-					<li class="center"><a href="viewimage.php?pic=<?= h($row['image1']) ?>"><img border="0" src="thumbnail.php?<?= h($row['image1']) ?>" alt=""></a></li>
+					<li class="center"><a href="torrents/images/<?= h($row['image1']) ?>"><img border="0" src="thumbnail.php?<?= h($row['image1']) ?>" alt=""></a></li>
 				<?php } ?>
 				<li class="tp2 center">Раздача</li>
 				<li><span class="bulet"></span><a href="download.php?id=<?= $id ?>" class="sba">Скачать торрент</a></li>

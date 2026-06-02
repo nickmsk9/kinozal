@@ -58,14 +58,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			}
 			stdmsg($tracker_lang['success'], "Бонус обменян на траффик!");
 			break;
-		case "invite":
-			$invites = $arr["quanity"];
-			if (!sql_query("UPDATE users SET bonus = bonus - $points, invites = invites + $invites WHERE id = ".sqlesc($CURUSER["id"]))) {
-				stdmsg($tracker_lang['error'], "Не могу обновить бонус!");
-				die();
-			}
-			stdmsg($tracker_lang['success'], "Бонус обменян на приглашения!");
-			break;
 		default:
 			stdmsg($tracker_lang['error'], "Unknown bonus type!");
 	}

@@ -234,7 +234,6 @@ if ($action == "edituser") {
 		sql_query("DELETE FROM blocks WHERE userid = $userid") or sqlerr(__FILE__,__LINE__);
 		sql_query("DELETE FROM blocks WHERE blockid = $userid") or sqlerr(__FILE__,__LINE__);
 		sql_query("DELETE FROM bookmarks WHERE userid = $userid") or sqlerr(__FILE__,__LINE__);
-		sql_query("DELETE FROM invites WHERE inviter = $userid") or sqlerr(__FILE__,__LINE__);
 		sql_query("DELETE FROM peers WHERE userid = $userid") or sqlerr(__FILE__,__LINE__);
 		sql_query("DELETE FROM readtorrents WHERE userid = $userid") or sqlerr(__FILE__,__LINE__);
 		sql_query("DELETE FROM simpaty WHERE fromuserid = $userid") or sqlerr(__FILE__,__LINE__);
