@@ -1064,10 +1064,14 @@ INSERT INTO `user_statuses` (`status_key`, `title`, `icon_class`, `sort`, `activ
   ('loyal_seed','Верный сид','s4',4,1,0),
   ('rhetoric','Риторик','s5',5,1,0),
   ('keeper','Хранитель раздач','s6',6,1,0),
-  ('birthday','День рождения','s_bday',7,1,1),
-  ('warned','Предупрежден','s2',8,1,1),
-  ('low_ratio','Предупрежден 1 Торрент','s7',9,1,1),
-  ('disabled','Отключен','s_dis',10,1,1);
+  ('reviewer','Рецензент','s3',7,1,0),
+  ('person_editor','Оформитель персон','s3',8,1,0),
+  ('translator','Переводчик','s8',9,1,0),
+  ('other','Другие...','s3',10,1,0),
+  ('birthday','День рождения','s_bday',11,1,1),
+  ('warned','Предупрежден','s2',12,1,1),
+  ('low_ratio','Предупрежден 1 Торрент','s7',13,1,1),
+  ('disabled','Отключен','s_dis',14,1,1);
 
 #
 # Structure for the `user_cups` table :

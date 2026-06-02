@@ -18,10 +18,14 @@ function statuses_catalog()
 		'loyal_seed' => array('status_key' => 'loyal_seed', 'title' => 'Верный сид', 'icon_class' => 's4', 'sort' => 4, 'auto' => 0),
 		'rhetoric' => array('status_key' => 'rhetoric', 'title' => 'Риторик', 'icon_class' => 's5', 'sort' => 5, 'auto' => 0),
 		'keeper' => array('status_key' => 'keeper', 'title' => 'Хранитель раздач', 'icon_class' => 's6', 'sort' => 6, 'auto' => 0),
-		'birthday' => array('status_key' => 'birthday', 'title' => 'День рождения', 'icon_class' => 's_bday', 'sort' => 7, 'auto' => 1),
-		'warned' => array('status_key' => 'warned', 'title' => 'Предупрежден', 'icon_class' => 's2', 'sort' => 8, 'auto' => 1),
-		'low_ratio' => array('status_key' => 'low_ratio', 'title' => 'Предупрежден 1 Торрент', 'icon_class' => 's7', 'sort' => 9, 'auto' => 1),
-		'disabled' => array('status_key' => 'disabled', 'title' => 'Отключен', 'icon_class' => 's_dis', 'sort' => 10, 'auto' => 1),
+		'reviewer' => array('status_key' => 'reviewer', 'title' => 'Рецензент', 'icon_class' => 's3', 'sort' => 7, 'auto' => 0),
+		'person_editor' => array('status_key' => 'person_editor', 'title' => 'Оформитель персон', 'icon_class' => 's3', 'sort' => 8, 'auto' => 0),
+		'translator' => array('status_key' => 'translator', 'title' => 'Переводчик', 'icon_class' => 's8', 'sort' => 9, 'auto' => 0),
+		'other' => array('status_key' => 'other', 'title' => 'Другие...', 'icon_class' => 's3', 'sort' => 10, 'auto' => 0),
+		'birthday' => array('status_key' => 'birthday', 'title' => 'День рождения', 'icon_class' => 's_bday', 'sort' => 11, 'auto' => 1),
+		'warned' => array('status_key' => 'warned', 'title' => 'Предупрежден', 'icon_class' => 's2', 'sort' => 12, 'auto' => 1),
+		'low_ratio' => array('status_key' => 'low_ratio', 'title' => 'Предупрежден 1 Торрент', 'icon_class' => 's7', 'sort' => 13, 'auto' => 1),
+		'disabled' => array('status_key' => 'disabled', 'title' => 'Отключен', 'icon_class' => 's_dis', 'sort' => 14, 'auto' => 1),
 	);
 }
 

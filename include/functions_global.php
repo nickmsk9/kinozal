@@ -1002,13 +1002,19 @@ function user_daily_torrent_limit($class)
 {
 	switch ((int)$class) {
 		case UC_USER:
-			return 3;
+			return 5;
 		case UC_POWER_USER:
-			return 8;
+			return 10;
 		case UC_HONOR_USER:
-			return 16;
-		default:
 			return 20;
+		case UC_VIP:
+			return 80;
+		case UC_UPLOADER:
+			return 32;
+		case UC_SENIOR_UPLOADER:
+			return 80;
+		default:
+			return 80;
 	}
 }
 
@@ -1020,25 +1026,43 @@ function user_effective_torrent_limit($user)
 	$vipUntil = (string)($user['pay_vip_until'] ?? '');
 	$hasTemporaryVip = $vipUntil !== '' && $vipUntil !== '0000-00-00 00:00:00';
 	$temporaryVipActive = $hasTemporaryVip && strtotime($vipUntil) >= time();
-	if (($class >= UC_VIP && !$hasTemporaryVip) || $temporaryVipActive) {
-		$limit = max($limit, 80);
+	if ($temporaryVipActive) {
+		$limit = max($limit, user_daily_torrent_limit(UC_VIP));
 	}
 
-	$donorUntil = (string)($user['pay_donor_until'] ?? '');
-	$hasTemporaryDonor = $donorUntil !== '' && $donorUntil !== '0000-00-00 00:00:00';
-	$donorActive = ($user['donor'] ?? 'no') === 'yes' && (!$hasTemporaryDonor || strtotime($donorUntil) >= time());
-	if ($donorActive) {
-		$limit = max($limit, 32);
+	$statusBonuses = array(
+		'patron' => 32,
+		'keeper' => 10,
+		'king' => 8,
+		'rhetoric' => 6,
+		'loyal_seed' => 4,
+		'reviewer' => 9,
+		'person_editor' => 9,
+		'translator' => 9,
+		'other' => 9,
+	);
+
+	if (function_exists('statuses_for_user')) {
+		$hasWarningPenalty = false;
+
+		foreach (statuses_for_user($user) as $status) {
+			$key = (string)($status['status_key'] ?? '');
+
+			if (isset($statusBonuses[$key])) {
+				$limit += $statusBonuses[$key];
+			}
+
+			if ($key === 'warned' || $key === 'low_ratio') {
+				$hasWarningPenalty = true;
+			}
+		}
+
+		if ($hasWarningPenalty) {
+			$limit -= 4;
+		}
 	}
 
-	$downloaded = (float)($user['downloaded'] ?? 0);
-	$uploaded = (float)($user['uploaded'] ?? 0);
-
-	if ($downloaded >= 1073741824 && ($downloaded > 0 ? $uploaded / $downloaded : 1) < 0.7) {
-		return 1;
-	}
-
-	return $limit;
+	return max(1, $limit);
 }
 
 function torrent_downloads_ensure_schema()
