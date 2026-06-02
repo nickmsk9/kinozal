@@ -5,6 +5,32 @@ require_once 'include/bittorrent.php';
 dbconn(true);
 require_once 'include/radio.php';
 
+function radio_pretty_text($value)
+{
+	$value = (string)$value;
+
+	if ($value === '' || !preg_match('/[РС][\x80-\xBF]/u', $value)) {
+		return $value;
+	}
+
+	$bytes = @iconv('UTF-8', 'Windows-1251//IGNORE', $value);
+	if ($bytes === false || $bytes === '') {
+		return $value;
+	}
+
+	$fixed = @iconv('UTF-8', 'UTF-8//IGNORE', $bytes);
+	if ($fixed === false || $fixed === '' || !preg_match('/[А-Яа-яЁё]/u', $fixed)) {
+		return $value;
+	}
+
+	return $fixed;
+}
+
+function radio_ph($value)
+{
+	return radio_h(radio_pretty_text($value));
+}
+
 $action = (string)($_GET['action'] ?? '');
 
 if ($action === 'getch') {
@@ -28,22 +54,22 @@ if ($action === 'getch') {
 		<meta charset="UTF-8">
 		<meta http-equiv="refresh" content="90">
 		<style>
-			body { margin:0; padding:0; background:#fffff5; color:#000; font:13px/1.45 Tahoma, Arial, Verdana, sans-serif; }
+			body { margin:0; padding:0; background:#fffff5; color:#000; font:11px/1.35 Tahoma, Arial, Verdana, sans-serif; }
 			a { color:#5A71B0; text-decoration:none; font-weight:bold; }
 			a:hover { color:#BC2A4D; text-decoration:underline; }
-			.chat-error { margin:0 0 4px; padding:6px 8px; background:#fff; border:3px solid #f1d29c; color:#b00000; font-weight:bold; }
-			.chat-row { margin:0 0 3px; }
-			.chat-head { min-height:22px; padding:4px 8px; background:#f1d29c; font-weight:bold; overflow:hidden; }
+			.chat-error { margin:0 0 2px; padding:4px 6px; background:#fff; border:3px solid #f1d29c; color:#b00000; font-weight:bold; }
+			.chat-row { margin:0; }
+			.chat-head { min-height:15px; padding:2px 7px; background:#f1d29c; font-weight:bold; overflow:hidden; }
 			.chat-head .time { float:right; color:#000; font-weight:normal; }
-			.chat-text { min-height:34px; padding:8px 12px; background:#f4fbff url('/themes/TBDev/images/sbg.gif') repeat-x top; border-left:1px solid #e7d8bd; border-right:1px solid #e7d8bd; word-wrap:break-word; }
-			.empty { padding:12px; background:#f4fbff url('/themes/TBDev/images/sbg.gif') repeat-x top; border:3px solid #f1d29c; }
+			.chat-text { min-height:17px; padding:4px 10px; background:#f4fbff url('/themes/TBDev/images/sbg.gif') repeat-x top; border-left:1px solid #e7d8bd; border-right:1px solid #e7d8bd; word-wrap:break-word; }
+			.empty { padding:8px; background:#f4fbff url('/themes/TBDev/images/sbg.gif') repeat-x top; border:3px solid #f1d29c; }
 			.u0,.u1,.u2,.u3,.u4,.u5,.u6,.u7,.u8,.u9 { font-weight:bold; }
 			.u3 { color:#fb4a01; } .u8 { color:#5870ad; }
 		</style>
 	</head>
 	<body>
 	<?php if ($error !== '') { ?>
-		<div class="chat-error"><?= radio_h($error) ?></div>
+		<div class="chat-error"><?= radio_ph($error) ?></div>
 	<?php } ?>
 	<?php if (!$rows) { ?>
 		<div class="empty">Сообщений пока нет.</div>
@@ -84,7 +110,7 @@ if ($action === 'getch') {
 
 $settings = radio_settings();
 $dj = radio_find_user($settings['dj_user_id']);
-$djName = $dj ? (string)$dj['username'] : (string)$settings['dj_name'];
+$djName = $dj ? (string)$dj['username'] : radio_pretty_text($settings['dj_name']);
 if (!$dj && (int)$settings['dj_user_id'] > 0) {
 	$djName = 'ДиДжей не найден';
 }
@@ -99,47 +125,50 @@ stdhead('Радио Кинозал.ТВ');
 .radio-page table,
 .radio-page input,
 .radio-page textarea,
-.radio-page button { font-family: Tahoma, Arial, Verdana, sans-serif; letter-spacing:0; }
-.radio-page { background:#fffff5; min-height:650px; font-size:12px; line-height:1.45; }
-.radio-layout { display:grid; grid-template-columns:170px minmax(0, 1fr); gap:10px; align-items:start; }
-.radio-side { min-height:520px; background:url('/pic/rado_pro.jpg') left bottom / 150px auto no-repeat; }
+.radio-page button { font-family:tahoma, arial, verdana, sans-serif; letter-spacing:0; }
+.radio-page { background:#fffff5 url('/pic/rado_pro.jpg') 8px 235px / 150px auto no-repeat; min-height:650px; font-size:11px; line-height:1.35; }
+.radio-layout { display:grid; grid-template-columns:170px minmax(0, 1fr); gap:0; align-items:start; }
+.radio-side { min-height:520px; }
 .radio-main { min-width:0; }
-.radio-nav { min-height:22px; }
+.radio-nav { min-height:17px; padding:3px 5px 2px; }
 .radio-admin { float:right; font-weight:bold; }
-.radio-hero { display:flex; align-items:flex-start; gap:16px; padding:12px; }
-.radio-player { width:100%; max-width:520px; box-sizing:border-box; padding:12px; background:#fff; border:1px solid #d9d9d9; border-radius:5px; overflow:hidden; }
-.radio-logo { flex:0 0 96px; width:96px; height:96px; border:1px solid #d9d9d9; border-radius:5px; background:#fff url('/pic/rado_pro.jpg') center center / cover no-repeat; }
-.radio-elements { flex:1 1 auto; min-width:0; padding-top:4px; }
-.radio-song { display:block; width:100%; overflow:hidden; white-space:nowrap; color:#111; font:bold 22px/1.25 Tahoma, Arial, Verdana, sans-serif; }
-.radio-mini { width:100%; overflow:hidden; color:#222; font:12px/1.45 Tahoma, Arial, Verdana, sans-serif; text-overflow:ellipsis; white-space:nowrap; }
-.radio-control { display:grid; grid-template-columns:38px 92px minmax(70px, 1fr) 38px; align-items:center; gap:8px; margin:8px 0 7px; height:31px; padding-right:8px; background:linear-gradient(#f8f8f8,#dedede); border-top:1px solid #eee; border-bottom:1px solid #c7c7c7; box-shadow:inset 0 1px 2px rgba(0,0,0,.08); overflow:hidden; }
-.radio-btn { width:38px; height:31px; border:0; cursor:pointer; background:transparent url('/pic/play.png') center center / 21px 21px no-repeat; opacity:.65; }
-.radio-btn.is-playing { background-image:url('/pic/pause.png'); opacity:.85; }
-.radio-time { display:block; text-align:center; font:bold 15px/31px Arial, Tahoma, sans-serif; color:#222; white-space:nowrap; }
-.radio-progress { display:block; width:100%; height:7px; background:#cfcfcf; border-radius:2px; box-shadow:inset 0 1px 1px rgba(0,0,0,.25); }
-.radio-progress span { display:block; width:0; height:7px; background:#8aa1d3; border-radius:2px; }
-.radio-volume { display:block; width:38px; height:31px; background:repeating-linear-gradient(90deg,#333 0,#333 2px,transparent 2px,transparent 5px); opacity:.65; clip-path:polygon(0 70%,100% 20%,100% 90%,0 90%); }
-.radio-info-grid { display:grid; grid-template-columns:96px minmax(0,1fr); gap:5px 8px; align-items:start; }
-.radio-label { padding:8px 6px 0 0; text-align:right; font-weight:bold; white-space:nowrap; color:#333; }
+.radio-hero { padding:10px; min-height:112px; }
+.radio-player { position:relative; width:450px; box-sizing:border-box; padding:10px; background:#fff; border:1px solid #d9d9d9; border-radius:5px; overflow:hidden; }
+.radio-logo { float:left; width:100px; height:100px; margin-right:20px; border:1px solid #d9d9d9; border-radius:5px; background:#fff url('/pic/rado_pro.jpg') center center / cover no-repeat; }
+.radio-elements { float:left; width:295px; min-width:0; padding-top:11px; }
+.radio-song { display:block; width:285px; overflow:hidden; white-space:nowrap; color:#000; font:300 24px/1.2 'Arial Narrow', Tahoma, Arial, Verdana, sans-serif; }
+.radio-mini { width:285px; overflow:hidden; color:#000; font:11px/1.35 Tahoma, Arial, Verdana, sans-serif; text-overflow:ellipsis; white-space:nowrap; }
+.radio-control { height:28px; margin:8px 0 5px; overflow:hidden; }
+.radio-btn { float:left; width:55px; height:28px; margin-right:10px; border:0; cursor:pointer; background:transparent url('/pic/play.png') 55% 50% / 28px 28px no-repeat; opacity:.35; }
+.radio-btn.is-playing { background-image:url('/pic/pause.png'); opacity:.6; }
+.radio-time { float:left; display:block; width:80px; text-align:left; font:bold 12px/28px Arial, Tahoma, sans-serif; color:#222; white-space:nowrap; }
+.radio-progress { float:left; display:block; width:100px; height:6px; margin:12px 0 0; background:#d7d7d7; border-radius:2px; box-shadow:inset 0 1px 1px rgba(0,0,0,.2); }
+.radio-progress span { display:block; width:0; height:6px; background:#8aa1d3; border-radius:2px; }
+.radio-volume { float:left; display:block; width:22px; height:20px; margin:5px 0 0 12px; background:repeating-linear-gradient(90deg,#333 0,#333 2px,transparent 2px,transparent 5px); opacity:.45; clip-path:polygon(0 70%,100% 20%,100% 90%,0 90%); }
+.radio-info-grid { display:grid; grid-template-columns:90px minmax(0,1fr); gap:0; align-items:start; }
+.radio-label { padding:8px 10px 0 0; text-align:right; font-weight:normal; white-space:nowrap; color:#000; }
 .radio-cell { min-width:0; }
 .radio-cell .bx1 { box-sizing:border-box; }
 .radio-link-list a { overflow-wrap:anywhere; }
 .radio-order-image { max-width:100%; height:auto; display:block; }
-.radio-rules { padding:10px; line-height:1.45; }
+.radio-rules { padding:8px; line-height:1.35; }
 .radio-rules h3 { margin:0 0 8px; color:#5A71B0; font-size:14px; }
-.radio-rules pre { margin:0; white-space:pre-wrap; font:12px/1.45 Tahoma, Arial, Verdana, sans-serif; }
+.radio-rules pre { margin:0; white-space:pre-wrap; font:11px/1.35 Tahoma, Arial, Verdana, sans-serif; }
 .radio-chat { margin-top:6px; }
 .radio-chat-frame { height:400px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .radio-message-actions { min-height:22px; }
 @media (max-width: 760px) {
+	.radio-page { background:#fffff5; }
 	.radio-layout { display:block; }
 	.radio-side { display:none; }
 	.radio-hero { display:block; padding:10px; }
-	.radio-player { max-width:none; }
-	.radio-logo { float:left; width:82px; height:82px; margin:0 12px 8px 0; }
-	.radio-elements { padding-top:0; }
+	.radio-player { width:auto; max-width:450px; }
+	.radio-logo { width:82px; height:82px; margin:0 12px 8px 0; }
+	.radio-elements { float:none; width:auto; padding-top:0; }
 	.radio-song { font-size:18px; }
-	.radio-control { clear:both; grid-template-columns:38px 86px minmax(48px, 1fr) 32px; gap:5px; }
+	.radio-song,
+	.radio-mini { width:auto; }
+	.radio-control { clear:both; }
 	.radio-info-grid { display:block; }
 	.radio-label { padding:3px 0; text-align:left; }
 	.radio-admin { float:none; display:block; margin-top:4px; }
@@ -151,30 +180,30 @@ stdhead('Радио Кинозал.ТВ');
 		<div class="radio-side"></div>
 		<div class="radio-main">
 			<div class="bx1 radio-nav">
-					<a href="https://forum.kinozal.tv/showthread.php?t=63859" target="_blank" class="sbab">Правила</a> |
-					<a href="#radio-dj-rules" class="sbab">Набор в диджеи</a> |
-					<a href="#radio-announce" class="sbab">Анонс</a>
-					<?php if (function_exists('get_user_class') && get_user_class() >= UC_ADMINISTRATOR) { ?>
-						<span class="radio-admin"><a href="/admincp.php?op=RadioAdmin" class="sbab">Админка радио</a></span>
-					<?php } ?>
+				<a href="https://forum.kinozal.tv/showthread.php?t=63859" target="_blank" class="sbab">Правила</a> |
+				<a href="#radio-dj-rules" class="sbab">Набор в диджеи</a> |
+				<a href="#radio-announce" class="sbab">Анонс</a>
+				<?php if (function_exists('get_user_class') && get_user_class() >= UC_ADMINISTRATOR) { ?>
+					<span class="radio-admin"><a href="/admincp.php?op=RadioAdmin" class="sbab">Админка радио</a></span>
+				<?php } ?>
 			</div>
 
 			<div class="bx2_0 radio-hero">
-						<div id="radioheart-player" class="radio-player">
-							<div class="radio-logo"></div>
-							<div class="radio-elements">
-								<marquee class="radio-song" id="radio-current-song"><?= radio_h($settings['current_song']) ?></marquee>
-								<div class="radio-control">
-									<button type="button" id="radio-play" class="radio-btn" title="Слушать"></button>
-									<span id="radio-time" class="radio-time">00:00:00</span>
-									<span class="radio-progress"><span id="radio-progress"></span></span>
-									<span class="radio-volume"></span>
-								</div>
-								<div class="radio-mini">Следует: <span id="radio-next-song"><?= radio_h($settings['next_song']) ?></span></div>
-								<div class="radio-mini">Слушают: <b><?= radio_h($settings['listeners']) ?></b> - <?= radio_h($settings['kbps']) ?> кбит/c</div>
-								<audio id="radio-audio" preload="none" src="<?= radio_h($streamUrl) ?>"></audio>
-							</div>
+				<div id="radioheart-player" class="radio-player">
+					<div class="radio-logo"></div>
+					<div class="radio-elements">
+						<marquee class="radio-song" id="radio-current-song"><?= radio_ph($settings['current_song']) ?></marquee>
+						<div class="radio-control">
+							<button type="button" id="radio-play" class="radio-btn" title="Слушать"></button>
+							<span id="radio-time" class="radio-time">00:00:00</span>
+							<span class="radio-progress"><span id="radio-progress"></span></span>
+							<span class="radio-volume"></span>
 						</div>
+						<div class="radio-mini">Следует: <span id="radio-next-song"><?= radio_ph($settings['next_song']) ?></span></div>
+						<div class="radio-mini">Слушают: <b><?= radio_h($settings['listeners']) ?></b> - <?= radio_h($settings['kbps']) ?> кбит/c</div>
+						<audio id="radio-audio" preload="none" src="<?= radio_h($streamUrl) ?>"></audio>
+					</div>
+				</div>
 			</div>
 
 			<div class="radio-info-grid">
@@ -210,10 +239,10 @@ stdhead('Радио Кинозал.ТВ');
 				</div>
 
 				<div class="radio-label" id="radio-announce">Анонс</div>
-				<div class="radio-cell"><div class="bx1"><a href="<?= radio_h(radio_url($settings['group_url'], '#')) ?>" class="sbab"><?= radio_h($settings['group_title']) ?></a><br><?= nl2br(radio_h($settings['announce_text'])) ?></div></div>
+				<div class="radio-cell"><div class="bx1"><a href="<?= radio_h(radio_url($settings['group_url'], '#')) ?>" class="sbab"><?= radio_ph($settings['group_title']) ?></a><br><?= nl2br(radio_ph($settings['announce_text'])) ?></div></div>
 
 				<div class="radio-label" id="radio-dj-rules">Набор</div>
-				<div class="radio-cell"><div class="bx1 radio-rules"><h3>Набор в ДиДжеи</h3><pre><?= radio_h($settings['rules_text']) ?></pre></div></div>
+				<div class="radio-cell"><div class="bx1 radio-rules"><h3>Набор в ДиДжеи</h3><pre><?= radio_ph($settings['rules_text']) ?></pre></div></div>
 			</div>
 		</div>
 	</div>
