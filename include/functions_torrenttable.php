@@ -1,435 +1,405 @@
 <?php
 
 if (!defined('IN_TRACKER')) {
-	die('Прямой вызов запрещён.');
+    die('Прямой вызов запрещён.');
 }
 
 function torrenttable($res, $variant = 'index')
 {
-	global $pic_base_url, $CURUSER, $use_wait, $use_ttl, $ttl_days, $tracker_lang;
-
-	$rows = array();
-
-	if (!$res) {
-		return $rows;
-	}
-
-	$is_logged = !empty($CURUSER) && is_array($CURUSER);
-	$user_class = $is_logged && isset($CURUSER['class']) ? (int)$CURUSER['class'] : 0;
-	$user_id = $is_logged && isset($CURUSER['id']) ? (int)$CURUSER['id'] : 0;
-	$is_moderator = (function_exists('get_user_class') && get_user_class() >= UC_MODERATOR);
-
-	$wait = 0;
-
-	if (!empty($use_wait) && $is_logged && $user_class < UC_VIP) {
-		$uploaded = isset($CURUSER['uploaded']) ? (float)$CURUSER['uploaded'] : 0;
-		$downloaded = isset($CURUSER['downloaded']) ? (float)$CURUSER['downloaded'] : 0;
-
-		$gigs = $uploaded / (1024 * 1024 * 1024);
-		$ratio = ($downloaded > 0) ? ($uploaded / $downloaded) : 0;
-
-		if ($ratio < 0.5 || $gigs < 5) {
-			$wait = 48;
-		} elseif ($ratio < 0.65 || $gigs < 6.5) {
-			$wait = 24;
-		} elseif ($ratio < 0.8 || $gigs < 8) {
-			$wait = 12;
-		} elseif ($ratio < 0.95 || $gigs < 9.5) {
-			$wait = 6;
-		}
-	}
-
-	$script = 'browse.php';
-
-	if ($variant === 'mytorrents') {
-		$script = 'mytorrents.php';
-	} elseif ($variant === 'bookmarks') {
-		$script = 'bookmarks.php';
-	}
-
-	$get = $_GET;
-	unset($get['sort'], $get['type']);
-
-	$oldlink = http_build_query($get, '', '&amp;');
-	if ($oldlink !== '') {
-		$oldlink .= '&amp;';
-	}
-
-	$current_sort = isset($_GET['sort']) ? (int)$_GET['sort'] : 0;
-	$current_type = isset($_GET['type']) && $_GET['type'] === 'desc' ? 'desc' : 'asc';
-
-	$sort_types = array(
-		1 => 'asc',
-		2 => 'desc',
-		3 => 'desc',
-		4 => 'desc',
-		5 => 'desc',
-		7 => 'desc',
-		8 => 'desc',
-		9 => 'desc',
-		10 => 'desc'
-	);
-
-	foreach ($sort_types as $sort_id => $default_type) {
-		if ($current_sort === $sort_id) {
-			$sort_types[$sort_id] = ($current_type === 'desc') ? 'asc' : 'desc';
-		}
-	}
-
-	$e = function ($value) {
-		return htmlspecialchars_uni((string)$value);
-	};
-
-	$lang = function ($key, $default = '') use ($tracker_lang) {
-		return isset($tracker_lang[$key]) ? $tracker_lang[$key] : $default;
-	};
-
-	$sort_link = function ($sort, $title) use ($script, $oldlink, $sort_types, $e) {
-		$type = isset($sort_types[$sort]) ? $sort_types[$sort] : 'desc';
-
-		return '<a href="' . $e($script . '?' . $oldlink . 'sort=' . $sort . '&type=' . $type) . '" class="altlink_white">' . $e($title) . '</a>';
-	};
-
-	$cols = 7;
-
-	if ($wait > 0) {
-		$cols++;
-	}
-
-	if ($variant === 'mytorrents') {
-		$cols++;
-	}
-
-	if (!empty($use_ttl)) {
-		$cols++;
-	}
-
-	if ($variant === 'index' || $variant === 'bookmarks') {
-		$cols++;
-	}
+    global $pic_base_url, $CURUSER, $use_wait, $use_ttl, $ttl_days, $tracker_lang;
+
+    $rows = array();
+
+    if (!$res) {
+        return $rows;
+    }
+
+    $is_logged = !empty($CURUSER) && is_array($CURUSER);
+    $user_class = $is_logged && isset($CURUSER['class']) ? (int)$CURUSER['class'] : 0;
+    $user_id = $is_logged && isset($CURUSER['id']) ? (int)$CURUSER['id'] : 0;
+    $is_moderator = function_exists('get_user_class') && get_user_class() >= UC_MODERATOR;
+
+    $is_index = ($variant === 'index');
+    $is_mytorrents = ($variant === 'mytorrents');
+    $is_bookmarks = ($variant === 'bookmarks');
+    $has_ttl = !empty($use_ttl);
+
+    $e = function ($value) {
+        return htmlspecialchars_uni((string)$value);
+    };
+
+    $lang = function ($key, $default = '') use ($tracker_lang) {
+        return isset($tracker_lang[$key]) ? $tracker_lang[$key] : $default;
+    };
+
+    $img = function ($file, $title = '', $attrs = '') use ($pic_base_url, $e) {
+        $title = (string)$title;
+        $title_attr = $title !== ''
+            ? ' alt="' . $e($title) . '" title="' . $e($title) . '"'
+            : ' alt=""';
+
+        return '<img src="' . $e($pic_base_url . '/' . $file) . '"' . $title_attr . ($attrs !== '' ? ' ' . $attrs : '') . ' />';
+    };
+
+    $wait = 0;
+
+    if (!empty($use_wait) && $is_logged && $user_class < UC_VIP) {
+        $uploaded = isset($CURUSER['uploaded']) ? (float)$CURUSER['uploaded'] : 0;
+        $downloaded = isset($CURUSER['downloaded']) ? (float)$CURUSER['downloaded'] : 0;
+
+        $gigs = $uploaded / 1073741824;
+        $ratio = $downloaded > 0 ? ($uploaded / $downloaded) : 0;
+
+        if ($ratio < 0.5 || $gigs < 5) {
+            $wait = 48;
+        } elseif ($ratio < 0.65 || $gigs < 6.5) {
+            $wait = 24;
+        } elseif ($ratio < 0.8 || $gigs < 8) {
+            $wait = 12;
+        } elseif ($ratio < 0.95 || $gigs < 9.5) {
+            $wait = 6;
+        }
+    }
+
+    $script = $is_mytorrents ? 'mytorrents.php' : ($is_bookmarks ? 'bookmarks.php' : 'browse.php');
+
+    $get = $_GET;
+    unset($get['sort'], $get['type']);
+
+    $oldlink = http_build_query($get, '', '&amp;');
+    $oldlink = $oldlink !== '' ? $oldlink . '&amp;' : '';
+
+    $current_sort = isset($_GET['sort']) ? (int)$_GET['sort'] : 0;
+    $current_type = isset($_GET['type']) && $_GET['type'] === 'desc' ? 'desc' : 'asc';
+
+    $sort_defaults = array(
+        1 => 'asc',
+        2 => 'desc',
+        3 => 'desc',
+        4 => 'desc',
+        5 => 'desc',
+        7 => 'desc',
+        8 => 'desc',
+        9 => 'desc',
+        10 => 'desc',
+    );
+
+    $sort_link = function ($sort, $title) use ($script, $oldlink, $sort_defaults, $current_sort, $current_type, $e) {
+        $type = isset($sort_defaults[$sort]) ? $sort_defaults[$sort] : 'desc';
 
-	if ($is_moderator && $variant === 'index') {
-		$cols += 2;
-	}
+        if ($current_sort === (int)$sort) {
+            $type = $current_type === 'desc' ? 'asc' : 'desc';
+        }
 
-	if ($variant === 'bookmarks') {
-		$cols++;
-	}
+        return '<a href="' . $e($script . '?' . $oldlink . 'sort=' . (int)$sort . '&type=' . $type) . '" class="altlink_white">' . $e($title) . '</a>';
+    };
 
-	if ($is_moderator && $variant === 'index') {
-		print('<form method="post" action="deltorrent.php?mode=delete">' . "\n");
-	} elseif ($variant === 'bookmarks') {
-		print('<form method="post" action="takedelbookmark.php">' . "\n");
-	}
+    $details_url = function ($id, $extra = '') use ($variant, $is_index, $is_bookmarks, $e) {
+        $url = 'details.php?';
 
-	print("<tr>\n");
-	print('<td class="colhead center">' . $e($lang('type', 'Тип')) . "</td>\n");
-	print('<td class="colhead left">' . $sort_link(1, $lang('name', 'Название')) . ' / ' . $sort_link(4, $lang('added', 'Добавлено')) . "</td>\n");
+        if ($variant === 'mytorrents') {
+            $return_to = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+            $url .= 'returnto=' . urlencode($return_to) . '&amp;';
+        }
 
-	if ($wait > 0) {
-		print('<td class="colhead center">' . $e($lang('wait', 'Ожидание')) . "</td>\n");
-	}
+        $url .= 'id=' . (int)$id;
+
+        if ($is_index || $is_bookmarks) {
+            $url .= '&amp;hit=1';
+        }
 
-	if ($variant === 'mytorrents') {
-		print('<td class="colhead center">' . $e($lang('visible', 'Видим')) . "</td>\n");
-	}
+        return $e($url . $extra);
+    };
 
-	print('<td class="colhead center">' . $sort_link(2, $lang('files', 'Файлы')) . "</td>\n");
-	print('<td class="colhead center">' . $sort_link(3, $lang('comments', 'Комментарии')) . "</td>\n");
+    $cols = 7;
+    $cols += $wait > 0 ? 1 : 0;
+    $cols += $is_mytorrents ? 1 : 0;
+    $cols += $has_ttl ? 1 : 0;
+    $cols += ($is_index || $is_bookmarks) ? 1 : 0;
+    $cols += ($is_moderator && $is_index) ? 2 : 0;
+    $cols += $is_bookmarks ? 1 : 0;
 
-	if (!empty($use_ttl)) {
-		print('<td class="colhead center">' . $e($lang('ttl', 'TTL')) . "</td>\n");
-	}
+    $out = array();
 
-	print('<td class="colhead center">' . $sort_link(5, $lang('size', 'Размер')) . "</td>\n");
-	print('<td class="colhead center">' . $sort_link(7, $lang('seeds', 'Сиды')) . ' | ' . $sort_link(8, $lang('leechers', 'Личи')) . "</td>\n");
+    if ($is_moderator && $is_index) {
+        $out[] = '<form method="post" action="deltorrent.php?mode=delete">';
+    } elseif ($is_bookmarks) {
+        $out[] = '<form method="post" action="takedelbookmark.php">';
+    }
 
-	if ($variant === 'index' || $variant === 'bookmarks') {
-		print('<td class="colhead center">' . $sort_link(9, $lang('uploadeder', 'Залил')) . "</td>\n");
-	}
+    $out[] = '<tr>';
+    $out[] = '<td class="colhead center">' . $e($lang('type', 'Тип')) . '</td>';
+    $out[] = '<td class="colhead left">' . $sort_link(1, $lang('name', 'Название')) . ' / ' . $sort_link(4, $lang('added', 'Добавлено')) . '</td>';
 
-	if ($is_moderator && $variant === 'index') {
-		print('<td class="colhead center">' . $sort_link(10, 'Проверен') . "</td>\n");
-		print('<td class="colhead center">' . $e($lang('delete', 'Удалить')) . "</td>\n");
-	}
+    if ($wait > 0) {
+        $out[] = '<td class="colhead center">' . $e($lang('wait', 'Ожидание')) . '</td>';
+    }
 
-	if ($variant === 'bookmarks') {
-		print('<td class="colhead center">' . $e($lang('delete', 'Удалить')) . "</td>\n");
-	}
+    if ($is_mytorrents) {
+        $out[] = '<td class="colhead center">' . $e($lang('visible', 'Видим')) . '</td>';
+    }
 
-	print("</tr>\n");
-	print("<tbody id=\"highlighted\">\n");
+    $out[] = '<td class="colhead center">' . $sort_link(2, $lang('files', 'Файлы')) . '</td>';
+    $out[] = '<td class="colhead center">' . $sort_link(3, $lang('comments', 'Комментарии')) . '</td>';
 
-	while ($row = mysqli_fetch_assoc($res)) {
-		$rows[] = $row;
+    if ($has_ttl) {
+        $out[] = '<td class="colhead center">' . $e($lang('ttl', 'TTL')) . '</td>';
+    }
 
-		$id = isset($row['id']) ? (int)$row['id'] : 0;
-		if ($id <= 0) {
-			continue;
-		}
+    $out[] = '<td class="colhead center">' . $sort_link(5, $lang('size', 'Размер')) . '</td>';
+    $out[] = '<td class="colhead center">' . $sort_link(7, $lang('seeds', 'Сиды')) . ' | ' . $sort_link(8, $lang('leechers', 'Личи')) . '</td>';
 
-		$is_sticky = isset($row['not_sticky']) && $row['not_sticky'] === 'no';
-		$row_class = $is_sticky ? ' class="highlight"' : '';
+    if ($is_index || $is_bookmarks) {
+        $out[] = '<td class="colhead center">' . $sort_link(9, $lang('uploadeder', 'Залил')) . '</td>';
+    }
 
-		print('<tr' . $row_class . ">\n");
+    if ($is_moderator && $is_index) {
+        $out[] = '<td class="colhead center">' . $sort_link(10, 'Проверен') . '</td>';
+        $out[] = '<td class="colhead center">' . $e($lang('delete', 'Удалить')) . '</td>';
+    }
 
-		print('<td class="center" style="padding:0;">');
+    if ($is_bookmarks) {
+        $out[] = '<td class="colhead center">' . $e($lang('delete', 'Удалить')) . '</td>';
+    }
 
-		if (!empty($row['cat_name'])) {
-			$cat_id = isset($row['category']) ? (int)$row['category'] : 0;
-			print('<a href="browse.php?cat=' . $cat_id . '">');
+    $out[] = '</tr>';
+    $out[] = '<tbody id="highlighted">';
 
-			if (!empty($row['cat_pic'])) {
-				print('<img src="' . $e($pic_base_url . '/cat/' . $row['cat_pic']) . '" alt="' . $e($row['cat_name']) . '" />');
-			} else {
-				print($e($row['cat_name']));
-			}
+    while ($row = mysqli_fetch_assoc($res)) {
+        $rows[] = $row;
 
-			print('</a>');
-		} else {
-			print('-');
-		}
+        $id = isset($row['id']) ? (int)$row['id'] : 0;
 
-		print("</td>\n");
+        if ($id <= 0) {
+            continue;
+        }
 
-		$dispname = isset($row['name']) ? $row['name'] : '';
-		$freepic = '';
+        $is_sticky = isset($row['not_sticky']) && $row['not_sticky'] === 'no';
+        $owner_id = isset($row['owner']) ? (int)$row['owner'] : 0;
+        $owned = ($is_logged && $user_id === $owner_id) || $is_moderator;
 
-		if (isset($row['free']) && $row['free'] === 'yes') {
-			$freepic = '<img src="' . $e($pic_base_url . '/freedownload.gif') . '" title="' . $e($lang('golden', 'Золотая раздача')) . '" alt="' . $e($lang('golden', 'Золотая раздача')) . '" />';
-		} elseif (isset($row['free']) && $row['free'] === 'silver') {
-			$freepic = '<img src="' . $e($pic_base_url . '/silverdownload.gif') . '" title="' . $e($lang('silver', 'Серебряная раздача')) . '" alt="' . $e($lang('silver', 'Серебряная раздача')) . '" />';
-		}
+        $added = isset($row['added']) ? (string)$row['added'] : '';
+        $numfiles = isset($row['numfiles']) ? (int)$row['numfiles'] : 0;
+        $comments = isset($row['comments']) ? (int)$row['comments'] : 0;
+        $seeders = isset($row['seeders']) ? (int)$row['seeders'] : 0;
+        $leechers = isset($row['leechers']) ? (int)$row['leechers'] : 0;
 
-		print('<td class="left">');
+        $out[] = '<tr' . ($is_sticky ? ' class="highlight"' : '') . '>';
 
-		if ($is_sticky) {
-			print('<b>Важный:</b> ');
-		}
+        $out[] = '<td class="center" style="padding:0;">';
 
-		$details_url = 'details.php?';
+        if (!empty($row['cat_name'])) {
+            $cat_id = isset($row['category']) ? (int)$row['category'] : 0;
 
-		if ($variant === 'mytorrents') {
-			$return_to = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
-			$details_url .= 'returnto=' . urlencode($return_to) . '&amp;';
-		}
+            $out[] = '<a href="browse.php?cat=' . $cat_id . '">';
 
-		$details_url .= 'id=' . $id;
+            if (!empty($row['cat_pic'])) {
+                $out[] = '<img src="' . $e($pic_base_url . '/cat/' . $row['cat_pic']) . '" alt="' . $e($row['cat_name']) . '" />';
+            } else {
+                $out[] = $e($row['cat_name']);
+            }
 
-		if ($variant === 'index' || $variant === 'bookmarks') {
-			$details_url .= '&amp;hit=1';
-		}
+            $out[] = '</a>';
+        } else {
+            $out[] = '-';
+        }
+
+        $out[] = '</td>';
 
-		print('<a href="' . $details_url . '"><b>' . $e($dispname) . '</b></a> ' . $freepic . "\n");
+        $name_html = array();
 
-		if ($variant !== 'bookmarks' && $is_logged) {
-			print('<a href="bookmark.php?torrent=' . $id . '"><img src="' . $e($pic_base_url . '/bookmark.gif') . '" alt="' . $e($lang('bookmark_this', 'Добавить в закладки')) . '" title="' . $e($lang('bookmark_this', 'Добавить в закладки')) . '" /></a>' . "\n");
-		}
+        if ($is_sticky) {
+            $name_html[] = '<b>Важный:</b> ';
+        }
 
-		print('<a href="download.php?id=' . $id . '"><img src="' . $e($pic_base_url . '/download.gif') . '" alt="' . $e($lang('download', 'Скачать')) . '" title="' . $e($lang('download', 'Скачать')) . '" /></a>' . "\n");
+        $name_html[] = '<a href="' . $details_url($id) . '"><b>' . $e(isset($row['name']) ? $row['name'] : '') . '</b></a>';
 
-		if (isset($row['multitracker']) && $row['multitracker'] === 'yes' && function_exists('magnet')) {
-			$hash = isset($row['info_hash']) ? $row['info_hash'] : '';
-			$filename = isset($row['filename']) ? $row['filename'] : '';
-			$size = isset($row['size']) ? (int)$row['size'] : 0;
+        if (isset($row['free']) && $row['free'] === 'yes') {
+            $name_html[] = $img('freedownload.gif', $lang('golden', 'Золотая раздача'));
+        } elseif (isset($row['free']) && $row['free'] === 'silver') {
+            $name_html[] = $img('silverdownload.gif', $lang('silver', 'Серебряная раздача'));
+        }
 
-			print('<a href="' . $e(magnet(true, $hash, $filename, $size)) . '"><img src="' . $e($pic_base_url . '/magnet.png') . '" alt="' . $e($lang('magnet', 'Magnet')) . '" title="' . $e($lang('magnet', 'Magnet')) . '" /></a>' . "\n");
+        if (!$is_bookmarks && $is_logged) {
+            $name_html[] = '<a href="bookmark.php?torrent=' . $id . '">' . $img('bookmark.gif', $lang('bookmark_this', 'Добавить в закладки')) . '</a>';
+        }
 
-			$last_update = !empty($row['last_mt_update']) ? strtotime($row['last_mt_update']) : 0;
-			$allow_update = $last_update < (TIMENOW - 3600);
-			$suffix = $allow_update ? '_update' : '';
-			$external_key = 'external_torrent' . $suffix;
-			$external_title = $lang($external_key, $allow_update ? 'Обновить внешний торрент' : 'Внешний торрент');
+        $name_html[] = '<a href="download.php?id=' . $id . '">' . $img('download.gif', $lang('download', 'Скачать')) . '</a>';
 
-			$multi_image = '<img src="' . $e($pic_base_url . '/multitracker.png') . '" alt="' . $e($external_title) . '" title="' . $e($external_title) . '" />';
+        if (isset($row['multitracker']) && $row['multitracker'] === 'yes' && function_exists('magnet')) {
+            $hash = isset($row['info_hash']) ? $row['info_hash'] : '';
+            $filename = isset($row['filename']) ? $row['filename'] : '';
+            $size_for_magnet = isset($row['size']) ? (int)$row['size'] : 0;
 
-			if ($allow_update) {
-				$multi_image = '<a href="update_multi.php?id=' . $id . '">' . $multi_image . '</a>';
-			}
+            $name_html[] = '<a href="' . $e(magnet(true, $hash, $filename, $size_for_magnet)) . '">' . $img('magnet.png', $lang('magnet', 'Magnet')) . '</a>';
 
-			print($multi_image . "\n");
-		}
+            $last_update = !empty($row['last_mt_update']) ? strtotime($row['last_mt_update']) : 0;
+            $allow_update = $last_update < (TIMENOW - 3600);
+
+            $external_title = $lang(
+                $allow_update ? 'external_torrent_update' : 'external_torrent',
+                $allow_update ? 'Обновить внешний торрент' : 'Внешний торрент'
+            );
+
+            $multi_image = $img('multitracker.png', $external_title);
 
-		$owner_id = isset($row['owner']) ? (int)$row['owner'] : 0;
-		$owned = ($is_logged && $user_id === $owner_id) || $is_moderator;
+            $name_html[] = $allow_update
+                ? '<a href="update_multi.php?id=' . $id . '">' . $multi_image . '</a>'
+                : $multi_image;
+        }
+
+        if ($owned) {
+            $name_html[] = '<a href="edit.php?id=' . $id . '">' . $img('pen.gif', $lang('edit', 'Редактировать')) . '</a>';
+        }
+
+        if ($is_index && isset($row['readtorrent']) && (int)$row['readtorrent'] === 0) {
+            $name_html[] = '<span class="red small"><b>[новый]</b></span>';
+        }
+
+        if ($added !== '') {
+            $name_html[] = '<br /><i>' . $e($added) . '</i>';
+        }
+
+        $out[] = '<td class="left">' . implode("\n", $name_html) . '</td>';
+
+        if ($wait > 0) {
+            $added_time = $added !== '' ? strtotime($added) : 0;
+            $elapsed = $added_time > 0 ? floor((gmtime() - $added_time) / 3600) : $wait;
+
+            if ($elapsed < $wait) {
+                $out[] = '<td class="center nowrap"><span class="red"><b>' . number_format(max(0, $wait - $elapsed)) . ' ч.</b></span></td>';
+            } else {
+                $out[] = '<td class="center nowrap">' . $e($lang('no', 'Нет')) . '</td>';
+            }
+        }
+
+        if ($is_mytorrents) {
+            if (isset($row['visible']) && $row['visible'] === 'no') {
+                $out[] = '<td class="center"><span class="red"><b>' . $e($lang('no', 'Нет')) . '</b></span></td>';
+            } else {
+                $out[] = '<td class="center"><span class="green">' . $e($lang('yes', 'Да')) . '</span></td>';
+            }
+        }
+
+        if (isset($row['type']) && $row['type'] === 'single') {
+            $out[] = '<td class="right">' . $numfiles . '</td>';
+        } else {
+            $file_extra = $is_index ? '&amp;filelist=1' : '&amp;filelist=1#filelist';
+            $out[] = '<td class="right"><b><a href="' . $details_url($id, $file_extra) . '">' . $numfiles . '</a></b></td>';
+        }
+
+        if ($comments <= 0) {
+            $out[] = '<td class="right">0</td>';
+        } else {
+            $comm_extra = $is_index ? '&amp;tocomm=1' : '&amp;page=0#startcomments';
+            $out[] = '<td class="right"><b><a href="' . $details_url($id, $comm_extra) . '">' . $comments . '</a></b></td>';
+        }
+
+        if ($has_ttl) {
+            if ($added !== '' && function_exists('sql_timestamp_to_unix_timestamp')) {
+                $added_unix = sql_timestamp_to_unix_timestamp($added);
+            } else {
+                $added_unix = $added !== '' ? strtotime($added) : 0;
+            }
 
-		if ($owned) {
-			print('<a href="edit.php?id=' . $id . '"><img src="' . $e($pic_base_url . '/pen.gif') . '" alt="' . $e($lang('edit', 'Редактировать')) . '" title="' . $e($lang('edit', 'Редактировать')) . '" /></a>' . "\n");
-		}
+            $ttl = max(0, ((int)$ttl_days * 24) - floor((gmtime() - (int)$added_unix) / 3600));
 
-		if (isset($row['readtorrent']) && (int)$row['readtorrent'] === 0 && $variant === 'index') {
-			print(' <span class="red small"><b>[новый]</b></span>');
-		}
+            $out[] = '<td class="center nowrap">' . (int)$ttl . ' ' . ($ttl === 1 ? 'час' : 'часов') . '</td>';
+        }
 
-		if (!empty($row['added'])) {
-			print('<br /><i>' . $e($row['added']) . '</i>');
-		}
-
-		print("</td>\n");
+        $size = isset($row['size']) ? (float)$row['size'] : 0;
+        $out[] = '<td class="center nowrap">' . str_replace(' ', '<br />', mksize($size)) . '</td>';
 
-		if ($wait > 0) {
-			$added_time = !empty($row['added']) ? strtotime($row['added']) : 0;
-			$elapsed = $added_time > 0 ? floor((gmtime() - $added_time) / 3600) : $wait;
+        $sl = array();
 
-			if ($elapsed < $wait) {
-				$left = max(0, $wait - $elapsed);
-				print('<td class="center nowrap"><span class="red"><b>' . number_format($left) . ' ч.</b></span></td>' . "\n");
-			} else {
-				print('<td class="center nowrap">' . $e($lang('no', 'Нет')) . "</td>\n");
-			}
-		}
+        if ($seeders > 0) {
+            if ($is_index) {
+                $ratio = $leechers > 0 ? ($seeders / $leechers) : 1;
+                $color = function_exists('get_slr_color') ? get_slr_color($ratio) : 'green';
 
-		if ($variant === 'mytorrents') {
-			print('<td class="center">');
+                $sl[] = '<b><a href="' . $details_url($id, '&amp;toseeders=1') . '"><font color="' . $e($color) . '">' . $seeders . '</font></a></b>';
+            } else {
+                $link_class = function_exists('linkcolor') ? linkcolor($seeders) : 'green';
 
-			if (isset($row['visible']) && $row['visible'] === 'no') {
-				print('<span class="red"><b>' . $e($lang('no', 'Нет')) . '</b></span>');
-			} else {
-				print('<span class="green">' . $e($lang('yes', 'Да')) . '</span>');
-			}
+                $sl[] = '<b><a class="' . $e($link_class) . '" href="details.php?id=' . $id . '&amp;dllist=1#seeders">' . $seeders . '</a></b>';
+            }
+        } else {
+            $link_class = function_exists('linkcolor') ? linkcolor(0) : 'red';
+            $sl[] = '<span class="' . $e($link_class) . '">0</span>';
+        }
 
-			print("</td>\n");
-		}
+        $sl[] = '|';
 
-		$numfiles = isset($row['numfiles']) ? (int)$row['numfiles'] : 0;
-		$type = isset($row['type']) ? $row['type'] : '';
+        if ($leechers > 0) {
+            if ($is_index) {
+                $sl[] = '<b><a href="' . $details_url($id, '&amp;todlers=1') . '">' . number_format($leechers) . '</a></b>';
+            } else {
+                $link_class = function_exists('linkcolor') ? linkcolor($leechers) : 'red';
 
-		if ($type === 'single') {
-			print('<td class="right">' . $numfiles . "</td>\n");
-		} else {
-			if ($variant === 'index') {
-				print('<td class="right"><b><a href="details.php?id=' . $id . '&amp;hit=1&amp;filelist=1">' . $numfiles . "</a></b></td>\n");
-			} else {
-				print('<td class="right"><b><a href="details.php?id=' . $id . '&amp;filelist=1#filelist">' . $numfiles . "</a></b></td>\n");
-			}
-		}
-
-		$comments = isset($row['comments']) ? (int)$row['comments'] : 0;
+                $sl[] = '<b><a class="' . $e($link_class) . '" href="details.php?id=' . $id . '&amp;dllist=1#leechers">' . $leechers . '</a></b>';
+            }
+        } else {
+            $sl[] = '0';
+        }
 
-		if ($comments <= 0) {
-			print('<td class="right">0</td>' . "\n");
-		} else {
-			if ($variant === 'index') {
-				print('<td class="right"><b><a href="details.php?id=' . $id . '&amp;hit=1&amp;tocomm=1">' . $comments . "</a></b></td>\n");
-			} else {
-				print('<td class="right"><b><a href="details.php?id=' . $id . '&amp;page=0#startcomments">' . $comments . "</a></b></td>\n");
-			}
-		}
+        $out[] = '<td class="center nowrap">' . implode(' ', $sl) . '</td>';
 
-		if (!empty($use_ttl)) {
-			$added_unix = !empty($row['added']) && function_exists('sql_timestamp_to_unix_timestamp')
-				? sql_timestamp_to_unix_timestamp($row['added'])
-				: (!empty($row['added']) ? strtotime($row['added']) : 0);
+        if ($is_index || $is_bookmarks) {
+            if (!empty($row['username'])) {
+                $owner_class = isset($row['class']) ? (int)$row['class'] : 0;
+                $username = htmlspecialchars_uni($row['username']);
 
-			$ttl = ((int)$ttl_days * 24) - floor((gmtime() - (int)$added_unix) / 3600);
-			$ttl = max(0, (int)$ttl);
+                $owner_html = '<a href="userdetails.php?id=' . $owner_id . '"><b>' . get_user_class_color($owner_class, $username) . '</b></a>';
+            } else {
+                $owner_html = '<i>неизвестно</i>';
+            }
 
-			$ttl_text = $ttl . ' ' . ($ttl === 1 ? 'час' : 'часов');
+            $out[] = '<td class="center">' . $owner_html . '</td>';
+        }
 
-			print('<td class="center nowrap">' . $ttl_text . "</td>\n");
-		}
+        if ($is_moderator && $is_index) {
+            if (isset($row['moderated']) && $row['moderated'] === 'no') {
+                $moderated_html = '<span class="red"><b>Нет</b></span>';
+            } else {
+                $moderatedby = isset($row['moderatedby']) ? (int)$row['moderatedby'] : 0;
+                $moderated_html = '<span class="green"><b>Да</b></span>';
 
-		$size = isset($row['size']) ? (float)$row['size'] : 0;
-		print('<td class="center nowrap">' . str_replace(' ', '<br />', mksize($size)) . "</td>\n");
+                if ($moderatedby > 0) {
+                    $moderated_html = '<a href="userdetails.php?id=' . $moderatedby . '">' . $moderated_html . '</a>';
+                }
+            }
 
-		$seeders = isset($row['seeders']) ? (int)$row['seeders'] : 0;
-		$leechers = isset($row['leechers']) ? (int)$row['leechers'] : 0;
+            $out[] = '<td class="center">' . $moderated_html . '</td>';
+            $out[] = '<td class="center"><input type="checkbox" name="delete[]" value="' . $id . '" /></td>';
+        }
 
-		print('<td class="center nowrap">');
+        if ($is_bookmarks) {
+            $bookmark_id = isset($row['bookmarkid']) ? (int)$row['bookmarkid'] : 0;
+            $out[] = '<td class="center"><input type="checkbox" name="delbookmark[]" value="' . $bookmark_id . '" /></td>';
+        }
 
-		if ($seeders > 0) {
-			if ($variant === 'index') {
-				$ratio = $leechers > 0 ? ($seeders / $leechers) : 1;
-				$color = function_exists('get_slr_color') ? get_slr_color($ratio) : 'green';
+        $out[] = '</tr>';
+    }
 
-				print('<b><a href="details.php?id=' . $id . '&amp;hit=1&amp;toseeders=1"><font color="' . $e($color) . '">' . $seeders . '</font></a></b>');
-			} else {
-				$link_class = function_exists('linkcolor') ? linkcolor($seeders) : 'green';
-				print('<b><a class="' . $e($link_class) . '" href="details.php?id=' . $id . '&amp;dllist=1#seeders">' . $seeders . '</a></b>');
-			}
-		} else {
-			$link_class = function_exists('linkcolor') ? linkcolor(0) : 'red';
-			print('<span class="' . $e($link_class) . '">0</span>');
-		}
+    $out[] = '</tbody>';
 
-		print(' | ');
+    if ($is_index && $is_logged) {
+        $out[] = '<tr><td class="colhead center" colspan="' . $cols . '"><a href="markread.php" class="altlink_white">Все торренты прочитаны</a></td></tr>';
+    }
 
-		if ($leechers > 0) {
-			if ($variant === 'index') {
-				print('<b><a href="details.php?id=' . $id . '&amp;hit=1&amp;todlers=1">' . number_format($leechers) . '</a></b>');
-			} else {
-				$link_class = function_exists('linkcolor') ? linkcolor($leechers) : 'red';
-				print('<b><a class="' . $e($link_class) . '" href="details.php?id=' . $id . '&amp;dllist=1#leechers">' . $leechers . '</a></b>');
-			}
-		} else {
-			print('0');
-		}
+    if ($is_index && $is_moderator) {
+        $out[] = '<tr><td class="right" colspan="' . $cols . '"><input type="submit" class="buttonS" value="Удалить выбранные" /></td></tr>';
+    }
 
-		print("</td>\n");
+    if ($is_bookmarks) {
+        $out[] = '<tr><td class="right" colspan="' . $cols . '"><input type="submit" class="buttonS" value="' . $e($lang('delete', 'Удалить')) . '" /></td></tr>';
+    }
 
-		if ($variant === 'index' || $variant === 'bookmarks') {
-			print('<td class="center">');
+    if (($is_index && $is_moderator) || $is_bookmarks) {
+        $out[] = '</form>';
+    }
 
-			if (!empty($row['username'])) {
-				$owner_class = isset($row['class']) ? (int)$row['class'] : 0;
-				$username = htmlspecialchars_uni($row['username']);
+    print implode("\n", $out) . "\n";
 
-				print('<a href="userdetails.php?id=' . $owner_id . '"><b>' . get_user_class_color($owner_class, $username) . '</b></a>');
-			} else {
-				print('<i>неизвестно</i>');
-			}
-
-			print("</td>\n");
-		}
-
-		if ($is_moderator && $variant === 'index') {
-			print('<td class="center">');
-
-			if (isset($row['moderated']) && $row['moderated'] === 'no') {
-				print('<span class="red"><b>Нет</b></span>');
-			} else {
-				$moderatedby = isset($row['moderatedby']) ? (int)$row['moderatedby'] : 0;
-
-				if ($moderatedby > 0) {
-					print('<a href="userdetails.php?id=' . $moderatedby . '"><span class="green"><b>Да</b></span></a>');
-				} else {
-					print('<span class="green"><b>Да</b></span>');
-				}
-			}
-
-			print("</td>\n");
-		}
-
-		if ($is_moderator && $variant === 'index') {
-			print('<td class="center"><input type="checkbox" name="delete[]" value="' . $id . '" /></td>' . "\n");
-		}
-
-		if ($variant === 'bookmarks') {
-			$bookmark_id = isset($row['bookmarkid']) ? (int)$row['bookmarkid'] : 0;
-			print('<td class="center"><input type="checkbox" name="delbookmark[]" value="' . $bookmark_id . '" /></td>' . "\n");
-		}
-
-		print("</tr>\n");
-	}
-
-	print("</tbody>\n");
-
-	if ($variant === 'index' && $is_logged) {
-		print('<tr><td class="colhead center" colspan="' . $cols . '"><a href="markread.php" class="altlink_white">Все торренты прочитаны</a></td></tr>' . "\n");
-	}
-
-	if ($variant === 'index' && $is_moderator) {
-		print('<tr><td class="right" colspan="' . $cols . '"><input type="submit" class="buttonS" value="Удалить выбранные" /></td></tr>' . "\n");
-	}
-
-	if ($variant === 'bookmarks') {
-		print('<tr><td class="right" colspan="' . $cols . '"><input type="submit" class="buttonS" value="' . $e($lang('delete', 'Удалить')) . '" /></td></tr>' . "\n");
-	}
-
-	if (($variant === 'index' && $is_moderator) || $variant === 'bookmarks') {
-		print("</form>\n");
-	}
-
-	return $rows;
+    return $rows;
 }
-
