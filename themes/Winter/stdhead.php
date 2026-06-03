@@ -89,6 +89,11 @@ if ($is_logged) {
     }
 }
 
+$pm_new_word = 'новых';
+if ($unread % 10 === 1 && $unread % 100 !== 11) {
+    $pm_new_word = 'новое';
+}
+
 $logout_url = '/logout.php';
 
 if ($is_logged) {
@@ -262,7 +267,7 @@ $page_title = $title !== '' ? $title : $site_name;
             <div class="menu">
 
                 <div class="bx2_0">
-                    <ul class="men">
+                    <ul class="men"<?= ($is_logged && $unread > 0) ? ' style="background: url(\'/pic/msgget.gif\') 95% 35% no-repeat;"' : '' ?>>
                         <?php if ($is_logged) { ?>
                             <li class="tp2 center b">
                                 <a href="/userdetails.php?id=<?= $user_id ?>" class="<?= h($user_class_css) ?>"><?= h($username) ?></a>
@@ -281,14 +286,12 @@ $page_title = $title !== '' ? $title : $site_name;
 
                             <li style="padding-left:14px;">
                                 <span class="bulet"></span>
-                                <a href="/inbox.php">
-                                    ЛС:
+                                <a href="/inbox.php">ЛС:
                                     <?php if ($unread > 0) { ?>
-                                        ( <?= $unread ?> новых )
+                                        <span id="pm_unread_count" class="green">( <?= (int)$unread ?> <?= h($pm_new_word) ?> )</span>
                                     <?php } else { ?>
-                                        ( нет новых )
-                                    <?php } ?>
-                                </a>
+                                        <span id="pm_unread_count">( нет новых )</span>
+                                    <?php } ?></a>
                             </li>
 
                             <li style="padding-left:14px;">
@@ -399,13 +402,6 @@ $page_title = $title !== '' ? $title : $site_name;
                 <div class="mn3_content" <?= $hide_right_blocks ? ' style="margin-right:0; width:auto;"' : '' ?>>
 
                     <?php
-                    if ($is_logged && $unread > 0) {
-                        echo '<div class="bx1">';
-                        echo '<div class="pad10x10 center b">';
-                        echo '<a href="/inbox.php" class="sba">У вас новых личных сообщений: ' . (int)$unread . '</a>';
-                        echo '</div>';
-                        echo '</div>';
-                    }
                     $current_module = isset($current_module)
                         ? $current_module
                         : str_replace('.php', '', basename($_SERVER['PHP_SELF'] ?? ''));
