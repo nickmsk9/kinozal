@@ -9,6 +9,16 @@ function multitracker_h($value)
 	return function_exists('htmlspecialchars_uni') ? htmlspecialchars_uni((string)$value) : htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function multitracker_is_client_only_error($error)
+{
+	$error = strtolower(trim((string)$error));
+	if ($error === '') {
+		return false;
+	}
+
+	return (bool)preg_match('/\bhttp 403\b|scrape not supported|server stats unavailable|invalid scrape response/i', $error);
+}
+
 function multitracker_primary_announce()
 {
 	global $announce_urls, $DEFAULTBASEURL;
@@ -45,6 +55,29 @@ function multitracker_valid_announce_url($url)
 	return (bool)filter_var(preg_replace('#^udp://#i', 'http://', $url), FILTER_VALIDATE_URL);
 }
 
+function multitracker_is_server_reachable_url($url)
+{
+	if (multitracker_is_local_url($url)) {
+		return true;
+	}
+
+	$parts = @parse_url($url);
+	if (!is_array($parts) || empty($parts['host'])) {
+		return false;
+	}
+
+	$host = strtolower(trim((string)$parts['host'], '[]'));
+	if ($host === 'localhost' || substr($host, -6) === '.local') {
+		return false;
+	}
+
+	if (filter_var($host, FILTER_VALIDATE_IP)) {
+		return (bool)filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+	}
+
+	return true;
+}
+
 function multitracker_url_key($url)
 {
 	$url = multitracker_normalize_url($url);
@@ -63,6 +96,32 @@ function multitracker_url_key($url)
 function multitracker_is_local_url($url)
 {
 	return multitracker_url_key($url) === multitracker_url_key(multitracker_primary_announce());
+}
+
+function multitracker_is_local_announce_family($url)
+{
+	$url_parts = @parse_url(multitracker_normalize_url($url));
+	$primary_parts = @parse_url(multitracker_primary_announce());
+	if (!is_array($url_parts) || !is_array($primary_parts)) {
+		return false;
+	}
+
+	$url_host = strtolower($url_parts['host'] ?? '');
+	$primary_host = strtolower($primary_parts['host'] ?? '');
+	$url_path = $url_parts['path'] ?? '';
+	$primary_path = $primary_parts['path'] ?? '';
+
+	return $url_host === $primary_host && $url_path === $primary_path;
+}
+
+function multitracker_is_client_only_announce_url($url)
+{
+	if (stripos((string)$url, 'udp://') === 0 || multitracker_is_local_url($url)) {
+		return false;
+	}
+
+	$path = (string)parse_url(multitracker_normalize_url($url), PHP_URL_PATH);
+	return (bool)preg_match('%/ann$%i', $path);
 }
 
 function multitracker_column_exists($table, $column)
@@ -140,6 +199,9 @@ function multitracker_extract_announces(array $dict)
 		if (!multitracker_valid_announce_url($url)) {
 			continue;
 		}
+		if (!multitracker_is_server_reachable_url($url)) {
+			continue;
+		}
 		$key = multitracker_url_key($url);
 		if (isset($seen[$key])) {
 			continue;
@@ -192,9 +254,7 @@ function multitracker_recover_external_info_hash($torrentid, $local_info_hash = 
 		return $local_info_hash;
 	}
 
-	$info = $dict['info'];
-	unset($info['private'], $info['source']);
-	$hash = multitracker_normalize_info_hash(sha1(BEncode($info)));
+	$hash = multitracker_normalize_info_hash(sha1(BEncode($dict['info'])));
 	return $hash !== '' ? $hash : $local_info_hash;
 }
 
@@ -233,6 +293,32 @@ function multitracker_save_trackers($torrentid, array $urls, $external_info_hash
 		sql_query("UPDATE torrent_trackers SET enabled = 'no' WHERE torrentid = $torrentid AND announce_url NOT IN (" . implode(',', $active) . ")") or sqlerr(__FILE__, __LINE__);
 	}
 	multitracker_sync_torrent_totals($torrentid);
+}
+
+function multitracker_prune_unsupported_trackers($torrentid = 0)
+{
+	$torrentid = (int)$torrentid;
+	$where = "enabled = 'yes' AND is_primary = 'no'";
+	if ($torrentid > 0) {
+		$where .= " AND torrentid = $torrentid";
+	}
+
+	$res = sql_query("SELECT id, torrentid, announce_url FROM torrent_trackers WHERE $where") or sqlerr(__FILE__, __LINE__);
+	$changed = array();
+	while ($row = mysqli_fetch_assoc($res)) {
+		$url = multitracker_normalize_url($row['announce_url']);
+		if (multitracker_is_server_reachable_url($url)) {
+			continue;
+		}
+
+		$id = (int)$row['id'];
+		sql_query("UPDATE torrent_trackers SET enabled = 'no', last_error = 'server stats unsupported', last_checked = NOW() WHERE id = $id") or sqlerr(__FILE__, __LINE__);
+		$changed[(int)$row['torrentid']] = true;
+	}
+
+	if ($changed) {
+		multitracker_sync_torrent_totals_bulk(array_keys($changed));
+	}
 }
 
 function multitracker_sync_torrent_totals($torrentid)
@@ -292,6 +378,7 @@ function multitracker_sync_local_tracker($torrentid, $seeders, $leechers, $compl
 function multitracker_get_trackers($torrentid)
 {
 	multitracker_ensure_schema();
+	multitracker_prune_unsupported_trackers($torrentid);
 	$rows = array();
 	$res = sql_query("SELECT * FROM torrent_trackers WHERE torrentid = " . (int)$torrentid . " ORDER BY (is_primary = 'yes') DESC, id ASC") or sqlerr(__FILE__, __LINE__);
 	while ($row = mysqli_fetch_assoc($res)) {
@@ -349,6 +436,21 @@ function multitracker_render_details_block($torrentid)
 
 function multitracker_render_details_block_from_rows($torrentid, array $rows)
 {
+	multitracker_prune_unsupported_trackers($torrentid);
+	foreach ($rows as $idx => $row) {
+		if (($row['is_primary'] ?? 'no') === 'yes') {
+			continue;
+		}
+		if (($row['enabled'] ?? 'yes') !== 'yes') {
+			unset($rows[$idx]);
+			continue;
+		}
+		$url = multitracker_normalize_url($row['announce_url'] ?? '');
+		if (!multitracker_is_server_reachable_url($url)) {
+			unset($rows[$idx]);
+		}
+	}
+
 	if (!$rows) {
 		return '';
 	}
@@ -357,6 +459,9 @@ function multitracker_render_details_block_from_rows($torrentid, array $rows)
 	$html .= '<tr><td class="b">URL</td><td class="b center">Статус</td><td class="b center">Сиды</td><td class="b center">Пиры/личи</td><td class="b center">Проверен</td></tr>';
 	foreach ($rows as $row) {
 		$is_primary = $row['is_primary'] === 'yes';
+		if (!$is_primary && (multitracker_is_client_only_announce_url($row['announce_url'] ?? '') || multitracker_is_client_only_error($row['last_error'] ?? ''))) {
+			$row['last_error'] = '';
+		}
 		$status = $is_primary ? 'локальный' : ($row['enabled'] === 'yes' ? (trim((string)$row['last_error']) === '' ? 'ok' : 'ошибка') : 'отключен');
 		$seeders = $is_primary || $row['seeders'] !== null ? (int)$row['seeders'] : 'н/д';
 		$leechers = $is_primary || $row['leechers'] !== null ? (int)$row['leechers'] : 'н/д';
@@ -389,7 +494,7 @@ function multitracker_scrape_tracker($url, $info_hash)
 		require_once ROOT_PATH . 'include/scraper/httptscraper.php';
 		static $http_scraper = null;
 		if ($http_scraper === null) {
-			$http_scraper = new httptscraper(12, 65536);
+			$http_scraper = new httptscraper(5, 65536);
 		}
 		$scraper = $http_scraper;
 	}
@@ -419,9 +524,26 @@ function multitracker_tracker_update_set($info_hash, $stats = null, $error = '')
 	return implode(', ', $set);
 }
 
+function multitracker_client_only_update_set($info_hash)
+{
+	$set = array();
+	$info_hash = multitracker_normalize_info_hash($info_hash);
+	if ($info_hash !== '') {
+		$set[] = 'external_info_hash = ' . sqlesc($info_hash);
+	}
+
+	$set[] = 'seeders = NULL';
+	$set[] = 'leechers = NULL';
+	$set[] = 'completed = NULL';
+	$set[] = 'last_checked = NOW()';
+	$set[] = "last_error = ''";
+	return implode(', ', $set);
+}
+
 function multitracker_update_due_trackers($limit = 25)
 {
 	multitracker_ensure_schema();
+	multitracker_prune_unsupported_trackers();
 	$limit = max(1, min(100, (int)$limit));
 	$res = sql_query("
 		SELECT tt.id, tt.torrentid, tt.announce_url, tt.external_info_hash, t.info_hash
@@ -467,6 +589,7 @@ function multitracker_update_torrent_trackers($torrentid)
 	if ($torrentid <= 0) {
 		return array('success' => 0, 'errors' => 0, 'total' => 0);
 	}
+	multitracker_prune_unsupported_trackers($torrentid);
 
 	$res = sql_query("
 		SELECT tt.id, tt.announce_url, tt.external_info_hash, t.info_hash
@@ -498,7 +621,11 @@ function multitracker_update_torrent_trackers($torrentid)
 			$success++;
 		} catch (Exception $e) {
 			sql_query("UPDATE torrent_trackers SET " . multitracker_tracker_update_set($info_hash, null, $e->getMessage()) . " WHERE id = $tracker_id") or sqlerr(__FILE__, __LINE__);
-			$errors++;
+			if (multitracker_is_client_only_error($e->getMessage())) {
+				$success++;
+			} else {
+				$errors++;
+			}
 		}
 	}
 

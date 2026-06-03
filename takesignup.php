@@ -260,7 +260,7 @@ $values = array(
     $theme,
     $ip,
     $passkey,
-    function_exists('reputation_signup_value') ? reputation_signup_value() : 1
+    function_exists('reputation_signup_value') ? reputation_signup_value() : 0
 );
 
 if (!$users) {

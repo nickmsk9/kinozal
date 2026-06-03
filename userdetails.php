@@ -296,6 +296,9 @@ $seed_total = ud_minutes($user["seedtime"] ?? 0);
 $leech_total = ud_minutes($user["leechtime"] ?? 0);
 $bonus = function_exists('pay_user_votes_from_array') ? pay_user_votes_from_array($user) : (isset($user["bonus"]) ? (float)$user["bonus"] : 0);
 $reputation = isset($user["simpaty"]) ? (int)$user["simpaty"] : 0;
+if ($reputation === 1 && function_exists('reputation_count') && reputation_count($id, 1) === 0) {
+	$reputation = 0;
+}
 $rank_name = ud_h(ud_rank_name($user));
 $user_class_css = 'u' . (int)$user["class"];
 $user_icons = function_exists('get_user_icons') ? get_user_icons($user) : '';

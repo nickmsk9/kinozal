@@ -51,8 +51,8 @@ function reputation_install_schema()
 
 	sql_query("
 		INSERT INTO site_settings (setting_key, setting_value)
-		VALUES ('reputation_daily_limit', '1'), ('reputation_signup_value', '1')
-		ON DUPLICATE KEY UPDATE setting_value = setting_value
+		VALUES ('reputation_daily_limit', '1'), ('reputation_signup_value', '0')
+		ON DUPLICATE KEY UPDATE setting_value = IF(setting_key = 'reputation_signup_value' AND setting_value = '1', '0', setting_value)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
@@ -86,7 +86,7 @@ function reputation_daily_limit()
 
 function reputation_signup_value()
 {
-	return max(0, (int)reputation_setting('reputation_signup_value', 1));
+	return max(0, (int)reputation_setting('reputation_signup_value', 0));
 }
 
 function reputation_given_today($userid)

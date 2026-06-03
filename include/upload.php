@@ -722,8 +722,307 @@ function upload_collect_design(array $design, array $defaults = array())
 		'url' => upload_post_text($design, 'kinopoisk_url'),
 		'rating' => upload_post_text($design, 'kinopoisk_rating'),
 	);
+	$out = upload_autofill_external_ratings($out);
 
 	return $out;
+}
+
+function upload_autofill_external_ratings(array $design)
+{
+	foreach (array('imdb', 'kinopoisk') as $key) {
+		if (empty($design[$key]['enabled']) || trim((string)($design[$key]['url'] ?? '')) === '') {
+			continue;
+		}
+		if (trim((string)($design[$key]['rating'] ?? '')) !== '') {
+			continue;
+		}
+
+		$rating = $key === 'imdb'
+			? upload_fetch_imdb_rating($design[$key]['url'])
+			: upload_fetch_kinopoisk_rating($design[$key]['url']);
+		if ($rating !== '') {
+			$design[$key]['rating'] = $rating;
+		}
+	}
+
+	return $design;
+}
+
+function upload_fetch_rating_url($url, $timeout = 10)
+{
+	$url = trim((string)$url);
+	if ($url === '' || !preg_match('#^https?://#i', $url)) {
+		return '';
+	}
+
+	if (function_exists('curl_init')) {
+		$ch = curl_init($url);
+		curl_setopt_array($ch, array(
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_CONNECTTIMEOUT => min(5, (int)$timeout),
+			CURLOPT_TIMEOUT => (int)$timeout,
+			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+			CURLOPT_HTTPHEADER => array(
+				'Accept: text/html,application/json,image/*,*/*',
+				'Accept-Language: ru-RU,ru;q=0.9,en;q=0.8',
+			),
+		));
+		$body = curl_exec($ch);
+		$code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+		curl_close($ch);
+		if (is_string($body) && $body !== '' && $code >= 200 && $code < 300) {
+			return substr($body, 0, 1024 * 1024);
+		}
+	}
+
+	$context = stream_context_create(array('http' => array(
+		'timeout' => (int)$timeout,
+		'header' => "User-Agent: Mozilla/5.0\r\nAccept-Language: ru-RU,ru;q=0.9,en;q=0.8\r\n",
+	)));
+	$body = @file_get_contents($url, false, $context);
+	return is_string($body) ? substr($body, 0, 1024 * 1024) : '';
+}
+
+function upload_rating_cache_path($service, $id)
+{
+	$id = preg_replace('/[^a-z0-9_-]+/i', '', (string)$id);
+	if ($id === '') {
+		return '';
+	}
+	return ROOT_PATH . 'cache/rating_' . $service . '_' . $id . '.json';
+}
+
+function upload_rating_cache_get($service, $id)
+{
+	$path = upload_rating_cache_path($service, $id);
+	if ($path === '' || !is_file($path) || filemtime($path) < time() - 86400) {
+		return '';
+	}
+	$data = json_decode((string)file_get_contents($path), true);
+	if (!is_array($data)) {
+		return '';
+	}
+
+	$legacy_key = $service === 'kinopoisk' ? 'kp' : $service;
+	return trim((string)($data['rating'] ?? ($data[$legacy_key] ?? '')));
+}
+
+function upload_rating_cache_set($service, $id, $rating)
+{
+	$path = upload_rating_cache_path($service, $id);
+	$rating = upload_normalize_external_rating($rating);
+	if ($path === '' || $rating === '') {
+		return;
+	}
+	@file_put_contents($path, json_encode(array('rating' => $rating), JSON_UNESCAPED_UNICODE));
+}
+
+function upload_normalize_external_rating($value)
+{
+	$value = str_replace(',', '.', trim((string)$value));
+	if (!preg_match('/[0-9]+(?:\.[0-9]+)?/', $value, $m)) {
+		return '';
+	}
+	$rating = (float)$m[0];
+	if ($rating <= 0 || $rating > 10) {
+		return '';
+	}
+	return number_format($rating, 1, '.', '');
+}
+
+function upload_fetch_imdb_rating($url)
+{
+	if (!preg_match('#imdb\.com/title/(tt[0-9]+)#i', (string)$url, $m)) {
+		return '';
+	}
+	$id = strtolower($m[1]);
+	$cached = upload_rating_cache_get('imdb', $id);
+	if ($cached !== '') {
+		return $cached;
+	}
+
+	$json_url = 'https://p.media-imdb.com/static-content/documents/v1/title/' . rawurlencode($id) . '/ratings%3Fjsonp=imdb.rating.run:imdb.api.title.ratings/data.json';
+	$body = upload_fetch_rating_url($json_url);
+	if (substr($body, 0, 2) === "\x1f\x8b") {
+		$decoded = @gzdecode($body);
+		if (is_string($decoded)) {
+			$body = $decoded;
+		}
+	}
+	if (preg_match('/"rating"\s*:\s*([0-9]+(?:\.[0-9]+)?)/i', $body, $rm)
+		|| preg_match('/"ratingValue"\s*:\s*"?([0-9]+(?:\.[0-9]+)?)/i', $body, $rm)) {
+		$rating = upload_normalize_external_rating($rm[1]);
+		upload_rating_cache_set('imdb', $id, $rating);
+		return $rating;
+	}
+
+	return '';
+}
+
+function upload_fetch_kinopoisk_rating($url)
+{
+	if (!preg_match('#kinopoisk\.ru/(?:film|series)/(?:[a-z0-9_-]+-)?([0-9]+)#i', (string)$url, $m)) {
+		return '';
+	}
+	$id = $m[1];
+	$cached = upload_rating_cache_get('kinopoisk', $id);
+	if ($cached !== '') {
+		return $cached;
+	}
+
+	$xml = upload_fetch_rating_url('https://rating.kinopoisk.ru/' . rawurlencode($id) . '.xml');
+	if (substr($xml, 0, 2) === "\x1f\x8b") {
+		$decoded = @gzdecode($xml);
+		if (is_string($decoded)) {
+			$xml = $decoded;
+		}
+	}
+	if (preg_match('#<kp_rating\b[^>]*>\s*([0-9]+(?:[.,][0-9]+)?)\s*</kp_rating>#iu', $xml, $rm)) {
+		$rating = upload_normalize_external_rating($rm[1]);
+		upload_rating_cache_set('kinopoisk', $id, $rating);
+		return $rating;
+	}
+
+	$gif = upload_fetch_rating_url('https://rating.kinopoisk.ru/' . rawurlencode($id) . '.gif');
+	$rating = upload_kinopoisk_rating_from_gif($gif);
+	if ($rating !== '') {
+		upload_rating_cache_set('kinopoisk', $id, $rating);
+		return $rating;
+	}
+
+	$body = upload_fetch_rating_url('https://widgets.kinopoisk.ru/discovery/api/trailer?filmId=' . rawurlencode($id));
+	if (preg_match('/"ratingValue"\s*:\s*"?([0-9]+(?:[.,][0-9]+)?)/iu', $body, $rm)
+		|| preg_match('/rating[^0-9]{0,80}([0-9]+[.,][0-9]+)/iu', $body, $rm)
+		|| preg_match('/' . preg_quote($id, '/') . '.{0,500}?([0-9]+[.,][0-9]+)/u', $body, $rm)) {
+		$rating = upload_normalize_external_rating($rm[1]);
+		upload_rating_cache_set('kinopoisk', $id, $rating);
+		return $rating;
+	}
+
+	return '';
+}
+
+function upload_kinopoisk_rating_from_gif($gif)
+{
+	if (!function_exists('imagecreatefromstring') || !is_string($gif) || $gif === '') {
+		return '';
+	}
+
+	$im = @imagecreatefromstring($gif);
+	if (!$im) {
+		return '';
+	}
+
+	$min_x = 999;
+	$min_y = 999;
+	$max_x = -1;
+	$max_y = -1;
+	for ($y = 17; $y < 31; $y++) {
+		for ($x = 0; $x < 36; $x++) {
+			if (upload_kinopoisk_gif_dark_pixel($im, $x, $y)) {
+				$min_x = min($min_x, $x);
+				$min_y = min($min_y, $y);
+				$max_x = max($max_x, $x);
+				$max_y = max($max_y, $y);
+			}
+		}
+	}
+
+	if ($max_x < $min_x || $max_y < $min_y) {
+		return '';
+	}
+
+	$columns = array();
+	for ($x = $min_x; $x <= $max_x; $x++) {
+		$has = false;
+		for ($y = $min_y; $y <= $max_y; $y++) {
+			if (upload_kinopoisk_gif_dark_pixel($im, $x, $y)) {
+				$has = true;
+				break;
+			}
+		}
+		$columns[$x] = $has;
+	}
+
+	$segments = array();
+	$start = null;
+	foreach ($columns as $x => $has) {
+		if ($has && $start === null) {
+			$start = $x;
+		} elseif (!$has && $start !== null) {
+			$segments[] = array($start, $x - 1);
+			$start = null;
+		}
+	}
+	if ($start !== null) {
+		$segments[] = array($start, $max_x);
+	}
+
+	$out = '';
+	foreach ($segments as $segment) {
+		$width = $segment[1] - $segment[0] + 1;
+		if ($width <= 2) {
+			if ($out !== '' && strpos($out, '.') === false) {
+				$out .= '.';
+			}
+			continue;
+		}
+		if (strlen(str_replace('.', '', $out)) >= 2) {
+			break;
+		}
+
+		$digit = upload_kinopoisk_ocr_digit($im, $segment[0], $segment[1], $min_y, $max_y);
+		if ($digit === '') {
+			return '';
+		}
+		$out .= $digit;
+	}
+
+	return upload_normalize_external_rating($out);
+}
+
+function upload_kinopoisk_gif_dark_pixel($im, $x, $y)
+{
+	$rgb = imagecolorat($im, $x, $y);
+	$colors = imagecolorsforindex($im, $rgb);
+	$r = (int)($colors['red'] ?? 255);
+	$g = (int)($colors['green'] ?? 255);
+	$b = (int)($colors['blue'] ?? 255);
+
+	return $r < 140 && $g < 140 && $b < 140;
+}
+
+function upload_kinopoisk_ocr_digit($im, $x1, $x2, $y1, $y2)
+{
+	$lines = array();
+	for ($y = $y1; $y <= $y2; $y++) {
+		$line = '';
+		for ($x = $x1; $x <= $x2; $x++) {
+			$line .= upload_kinopoisk_gif_dark_pixel($im, $x, $y) ? '#' : ' ';
+		}
+		$lines[] = rtrim($line);
+	}
+
+	$pattern = implode("\n", $lines);
+	$templates = array(
+		'2' => " ####\n##  ##\n    ##\n    ##\n   ###\n   ##\n  ###\n ##",
+		'6' => "  ####\n ##\n##\n######\n##  ##\n##  ###\n##  ###\n##  ##",
+		'7' => "#######\n    ##\n   ###\n   ##\n  ###\n  ##\n ###\n ##",
+		'8' => "  ####\n ##  ##\n ##  ###\n ##  ##\n  #####\n ##  ###\n###  ###\n ##  ##",
+	);
+
+	$best_digit = '';
+	$best_score = 9999;
+	foreach ($templates as $digit => $template) {
+		$score = levenshtein($pattern, $template);
+		if ($score < $best_score) {
+			$best_score = $score;
+			$best_digit = $digit;
+		}
+	}
+
+	return $best_score <= 8 ? $best_digit : '';
 }
 
 function upload_collect_post($torrent_size = 0)

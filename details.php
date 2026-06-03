@@ -12,6 +12,7 @@ require_once("include/bittorrent.php");
 require_once("include/upload.php");
 require_once("include/persons.php");
 require_once("include/multitracker.php");
+require_once("include/flags.php");
 
 dbconn(false, true);
 
@@ -282,11 +283,15 @@ function details_starbar($id, $rating, $user_rating = 0)
 function details_parse_rating_number($value)
 {
 	$value = str_replace(',', '.', trim((string)$value));
-	if ($value === '' || !preg_match('/^[0-9]+(?:\.[0-9]+)?$/', $value)) {
+	if ($value === '') {
 		return '';
 	}
 
-	$rating = (float)$value;
+	if (!preg_match('/[0-9]+(?:\.[0-9]+)?/', $value, $m)) {
+		return '';
+	}
+
+	$rating = (float)$m[0];
 	if ($rating <= 0 || $rating > 10) {
 		return '';
 	}
@@ -300,6 +305,57 @@ function details_external_ratings(array $design)
 		'imdb' => details_parse_rating_number($design['imdb']['rating'] ?? ''),
 		'kinopoisk' => details_parse_rating_number($design['kinopoisk']['rating'] ?? ''),
 	);
+}
+
+function details_rating_fallback_from_text($text, $title)
+{
+	$text = (string)$text;
+	$title_pattern = preg_quote($title, '#');
+
+	if (!preg_match('#\[b\]\s*' . $title_pattern . '\s*:?\s*\[/b\]\s*\[url=([^\]]+)\]([^\[]*)\[/url\]#iu', $text, $m)) {
+		return array('url' => '', 'rating' => '');
+	}
+
+	return array(
+		'url' => trim((string)$m[1]),
+		'rating' => trim((string)$m[2]),
+	);
+}
+
+function details_apply_external_rating_fallbacks(array $design, array $row)
+{
+	$text = (string)($row['ori_descr'] ?? '');
+	if ($text === '') {
+		$text = (string)($row['descr'] ?? '');
+	}
+
+	foreach (array('imdb' => 'IMDb', 'kinopoisk' => 'КиноПоиск') as $key => $title) {
+		$current_url = trim((string)($design[$key]['url'] ?? ''));
+		$current_rating = trim((string)($design[$key]['rating'] ?? ''));
+
+		$fallback = details_rating_fallback_from_text($text, $title);
+		if ($current_url === '' && $fallback['url'] !== '') {
+			$current_url = $fallback['url'];
+		}
+		if ($current_rating === '' && $current_url !== '') {
+			if ($key === 'imdb' && function_exists('upload_fetch_imdb_rating')) {
+				$current_rating = upload_fetch_imdb_rating($current_url);
+			} elseif ($key === 'kinopoisk' && function_exists('upload_fetch_kinopoisk_rating')) {
+				$current_rating = upload_fetch_kinopoisk_rating($current_url);
+			}
+		}
+		if ($current_url === '' && $fallback['url'] === '' && $current_rating === '' && $fallback['rating'] === '') {
+			continue;
+		}
+
+		$design[$key] = array(
+			'enabled' => 1,
+			'url' => $current_url,
+			'rating' => $current_rating !== '' ? $current_rating : $fallback['rating'],
+		);
+	}
+
+	return $design;
 }
 
 function details_query_terms(array $row, array $video, $mode)
@@ -553,14 +609,16 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 	$pager = details_paginator('/details.php?id=' . (int)$torrentid . '&amp;', $page, $pages);
 
 	$rows = function_exists('tracker_cache_remember')
-		? tracker_cache_remember('details:comments:' . (int)$torrentid . ':' . (int)$comment_count . ':' . $page, 60, function () use ($torrentid, $offset, $perpage) {
+		? tracker_cache_remember('details:comments:v2:' . (int)$torrentid . ':' . (int)$comment_count . ':' . $page, 60, function () use ($torrentid, $offset, $perpage) {
 			$res = sql_query("
 				SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
 				       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+				       co.name AS country_name, co.flagpic AS country_flagpic,
 				       ums.manual_status_keys,
 				       e.username AS editedbyname
 				FROM comments AS c
 				LEFT JOIN users AS u ON u.id = c.user
+				LEFT JOIN countries AS co ON co.id = u.country
 				LEFT JOIN users AS e ON e.id = c.editedby
 				LEFT JOIN (
 					SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
@@ -585,10 +643,12 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 		$res = sql_query("
 			SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
 			       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+			       co.name AS country_name, co.flagpic AS country_flagpic,
 			       ums.manual_status_keys,
 			       e.username AS editedbyname
 			FROM comments AS c
 			LEFT JOIN users AS u ON u.id = c.user
+			LEFT JOIN countries AS co ON co.id = u.country
 			LEFT JOIN users AS e ON e.id = c.editedby
 			LEFT JOIN (
 				SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
@@ -631,7 +691,9 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 		}
 
 		$country = (int)($row['country'] ?? 0);
-		$flag = $country > 0 ? "<img src='/pic/emty.gif' class='i2 c$country'/>" : '';
+		$flag = function_exists('tracker_country_flag_html')
+			? tracker_country_flag_html($country, $row['country_flagpic'] ?? '', $row['country_name'] ?? '')
+			: ($country > 0 ? "<img src='/pic/emty.gif' class='i2 c$country'/>" : '');
 		$user = details_user_link((int)$row['user'], (string)($row['username'] ?? ''), (int)($row['class'] ?? 0), $row);
 		$username_js = json_encode((string)($row['username'] ?? ''), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 		$reply = $CURUSER ? ' | <a class="sba" onclick="return c_replay(' . (int)$row['id'] . ',' . details_h($username_js) . ');" href="#">Ответить</a>' : '';
@@ -779,6 +841,7 @@ if (isset($_GET['hit'])) {
 $owned = $moderator || ($CURUSER && (int)$CURUSER['id'] === (int)$row['owner']);
 $torrent_details = details_upload_details_from_row($id, $row);
 list($video, $design) = details_data($torrent_details);
+$design = details_apply_external_rating_fallbacks($design, $row);
 $owner = details_owner($row);
 $rating = details_rating_value($row);
 $user_rating = (int)($row['user_rating'] ?? 0);

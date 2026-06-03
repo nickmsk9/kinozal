@@ -78,17 +78,54 @@ $name = str_replace(array(',', ';'), '', $name);
 
 require_once "include/BDecode.php";
 require_once "include/BEncode.php";
+require_once "include/multitracker.php";
 
 tracker_ensure_user_passkey($CURUSER);
 
 $dict = bdecode(file_get_contents($fn));
 
-//$dict['announce'] = $announce_urls[0]."?passkey=$CURUSER[passkey]";//"$DEFAULTBASEURL/announce.php?passkey=$CURUSER[passkey]";
+$local_announce = $announce_urls[0] . "?passkey=$CURUSER[passkey]";
+$external_announces = array();
+$seen_announces = array();
 
-if (!empty($dict['announce-list'])) {
-	$dict['announce-list'][][0] = $announce_urls[0]."?passkey=$CURUSER[passkey]"; // Just add one tracker for multitrackers, we are the last
-} else
-	$dict['announce'] = $announce_urls[0]."?passkey=$CURUSER[passkey]";//"$DEFAULTBASEURL/announce.php?passkey=$CURUSER[passkey]";
+$collect_announce = function ($url) use (&$external_announces, &$seen_announces) {
+	$url = multitracker_normalize_url($url);
+	if ($url === '' || !multitracker_valid_announce_url($url) || !multitracker_is_server_reachable_url($url)) {
+		return;
+	}
+	if (multitracker_is_local_announce_family($url)) {
+		return;
+	}
+
+	$key = multitracker_url_key($url);
+	if (isset($seen_announces[$key])) {
+		return;
+	}
+
+	$seen_announces[$key] = true;
+	$external_announces[] = $url;
+};
+
+if (!empty($dict['announce'])) {
+	$collect_announce($dict['announce']);
+}
+if (!empty($dict['announce-list']) && is_array($dict['announce-list'])) {
+	foreach ($dict['announce-list'] as $tier) {
+		if (is_array($tier)) {
+			foreach ($tier as $url) {
+				$collect_announce($url);
+			}
+		} else {
+			$collect_announce($tier);
+		}
+	}
+}
+
+$dict['announce'] = $local_announce;
+$dict['announce-list'] = array(array($local_announce));
+foreach ($external_announces as $url) {
+	$dict['announce-list'][] = array($url);
+}
 
 torrent_download_register((int)$CURUSER['id'], $id);
 

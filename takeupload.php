@@ -92,9 +92,6 @@ function takeupload_parse_torrent($file)
 
 	$announce_list = multitracker_extract_announces($dict);
 	$dict = multitracker_apply_announces_to_dict($dict, $announce_list);
-	$dict['info']['private'] = 1;
-	$dict['info']['source'] = "[$DEFAULTBASEURL] $SITENAME";
-	unset($dict['info']['crc32'], $dict['info']['ed2k'], $dict['info']['md5sum'], $dict['info']['sha1'], $dict['info']['tiger']);
 
 	$dict = BDecode(BEncode($dict));
 	$dict['comment'] = "Торрент создан для '$SITENAME'";

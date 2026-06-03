@@ -53,8 +53,8 @@
 			}
 
 			$path = (string)parse_url($url, PHP_URL_PATH);
-			if (preg_match('%/(ann)$%i', $path)) {
-				return $this->announceRequest($url, $infohash, new ScraperException('No scrape endpoint for /ann tracker.'));
+			if (preg_match('%/ann$%i', $path)) {
+				return $this->announceRequest($url, $infohash, new ScraperException('announce stats unavailable.'));
 			}
 
 			$scrapeurl = $url;
@@ -65,8 +65,16 @@
 			try {
 				return $this->scrapeRequest($scrapeurl, $infohash);
 			} catch (ScraperException $e) {
+				if (!$this->canUseAnnounceFallback($url)) {
+					throw $e;
+				}
 				return $this->announceRequest($url, $infohash, $e);
 			}
+		}
+
+		protected function canUseAnnounceFallback($url){
+			$path = (string)parse_url($url, PHP_URL_PATH);
+			return (bool)preg_match('%/(?:ann|announce[^/]*)$%i', $path);
 		}
 
 		protected function readUrl($requesturl){
@@ -123,7 +131,15 @@
 			if (!function_exists('shell_exec')) {
 				return '';
 			}
-			$curl = trim((string)@shell_exec('command -v curl 2>/dev/null'));
+			if (stripos(PHP_OS, 'WIN') === 0) {
+				$curl = trim((string)@shell_exec('where curl 2>NUL'));
+				if ($curl !== '') {
+					$lines = preg_split('/\r\n|\r|\n/', $curl);
+					$curl = trim((string)$lines[0]);
+				}
+			} else {
+				$curl = trim((string)@shell_exec('command -v curl 2>/dev/null'));
+			}
 			if ($curl === '') {
 				return '';
 			}

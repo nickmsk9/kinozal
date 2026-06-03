@@ -447,7 +447,7 @@ INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES
   ('maxusers', '10000'),
   ('max_torrent_size', '1048576'),
   ('reputation_daily_limit', '1'),
-  ('reputation_signup_value', '1');
+  ('reputation_signup_value', '0');
 
 #
 # Structure for the `pay_settings` table :
@@ -878,7 +878,7 @@ CREATE TABLE `users` (
   `donor` enum('yes','no') NOT NULL default 'no',
   `pay_donor_until` datetime NULL DEFAULT NULL,
   `pay_vip_until` datetime NULL DEFAULT NULL,
-  `simpaty` int(10) NOT NULL default '1',
+  `simpaty` int(10) NOT NULL default '0',
   `warned` enum('yes','no') NOT NULL default 'no',
   `warneduntil` datetime NULL DEFAULT NULL,
   `torrentsperpage` int(3) unsigned NOT NULL default '0',

@@ -67,7 +67,7 @@ $state = array(
 	'name' => $row['name'],
 	'kind' => $kind,
 	'category' => (int)$row['category'],
-	'allow_file' => $row['multitracker'] == 'no',
+	'allow_file' => true,
 	'returnto' => $returnto,
 	'details' => $details,
 	'service_controls' => $service_controls,

@@ -57,7 +57,9 @@ function commenttable($rows, $redaktor = "comment")
 		}
 
 		$country = (int)($row['country'] ?? 0);
-		$flag = $country > 0 ? "<img src='/pic/emty.gif' class='i2 c$country'/>" : '';
+		$flag = function_exists('tracker_country_flag_html')
+			? tracker_country_flag_html($country, $row['country_flagpic'] ?? '', $row['country_name'] ?? '')
+			: ($country > 0 ? "<img src='/pic/emty.gif' class='i2 c$country'/>" : '');
 		$user = commenttable_user_link($row);
 		$commentid = (int)($row['id'] ?? 0);
 		$userid = (int)($row['user'] ?? $row['userid'] ?? 0);

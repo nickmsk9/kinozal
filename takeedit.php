@@ -85,9 +85,6 @@ function takeedit_parse_torrent($file)
 
 	$announce_list = multitracker_extract_announces($dict);
 	$dict = multitracker_apply_announces_to_dict($dict, $announce_list);
-	$dict['info']['private'] = 1;
-	$dict['info']['source'] = "[$DEFAULTBASEURL] $SITENAME";
-	unset($dict['info']['crc32'], $dict['info']['ed2k'], $dict['info']['md5sum'], $dict['info']['sha1'], $dict['info']['tiger']);
 
 	$dict = BDecode(BEncode($dict));
 	$dict['comment'] = "Торрент создан для '$SITENAME'";
@@ -163,9 +160,6 @@ $rgroup_button = trim((string)($_POST['rbut'] ?? ''));
 $file = takeedit_file();
 $torrent_data = null;
 if ($file) {
-	if ($row['multitracker'] == 'yes') {
-		bark("Для мультитрекерной раздачи torrent-файл не обновляется.");
-	}
 	$torrent_data = takeedit_parse_torrent($file);
 	upload_apply_torrent_size($details_data, $kind, $torrent_data['size']);
 } else {
