@@ -49,10 +49,21 @@ function reputation_install_schema()
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
 
+	if (reputation_table_exists('users')) {
+		sql_query("ALTER TABLE users MODIFY simpaty INT(10) NOT NULL DEFAULT 0") or sqlerr(__FILE__, __LINE__);
+		sql_query("UPDATE users SET simpaty = 0 WHERE simpaty IS NULL") or sqlerr(__FILE__, __LINE__);
+		sql_query("
+			UPDATE users AS u
+			LEFT JOIN simpaty AS s ON s.touserid = u.id
+			SET u.simpaty = 0
+			WHERE u.simpaty = 1 AND s.id IS NULL
+		") or sqlerr(__FILE__, __LINE__);
+	}
+
 	sql_query("
 		INSERT INTO site_settings (setting_key, setting_value)
 		VALUES ('reputation_daily_limit', '1'), ('reputation_signup_value', '0')
-		ON DUPLICATE KEY UPDATE setting_value = IF(setting_key = 'reputation_signup_value' AND setting_value = '1', '0', setting_value)
+		ON DUPLICATE KEY UPDATE setting_value = IF(setting_key = 'reputation_signup_value', '0', setting_value)
 	") or sqlerr(__FILE__, __LINE__);
 }
 
@@ -86,7 +97,21 @@ function reputation_daily_limit()
 
 function reputation_signup_value()
 {
-	return max(0, (int)reputation_setting('reputation_signup_value', 0));
+	return 0;
+}
+
+function reputation_value($user)
+{
+	if (!is_array($user)) {
+		return 0;
+	}
+
+	$value = isset($user['simpaty']) ? (int)$user['simpaty'] : 0;
+	if ($value === 1 && !empty($user['id']) && reputation_count((int)$user['id'], 1) === 0) {
+		return 0;
+	}
+
+	return max(0, $value);
 }
 
 function reputation_given_today($userid)
@@ -262,7 +287,7 @@ function profile_menu_html($user, $viewer)
 	$id = (int)$user['id'];
 	$class = 'u' . (int)$user['class'];
 	$avatar = !empty($user['avatar']) ? reputation_h($user['avatar']) : '/pic/default_avatar.gif';
-	$reputation = (int)($user['simpaty'] ?? 0);
+	$reputation = reputation_value($user);
 	$bonus = function_exists('pay_user_votes_from_array')
 		? number_format(pay_user_votes_from_array($viewer), 0, '.', ' ')
 		: (isset($viewer['bonus']) ? number_format((float)$viewer['bonus'], 0, '.', ' ') : 0);
@@ -380,7 +405,7 @@ function reputation_add($targetid, $direction, $description)
 
 	$good = $direction === 'plus' ? 1 : 0;
 	$bad = $direction === 'minus' ? 1 : 0;
-	$deltaSql = $direction === 'plus' ? 'simpaty + 1' : 'simpaty - 1';
+	$deltaSql = $direction === 'plus' ? 'simpaty + 1' : 'IF(simpaty > 0, simpaty - 1, 0)';
 
 	sql_query("
 		INSERT INTO simpaty (touserid, fromuserid, fromusername, bad, good, type, respect_time, description)

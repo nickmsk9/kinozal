@@ -71,9 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         sql_query("
             INSERT INTO users 
-                (added, last_access, secret, username, passhash, status, email, passkey) 
+                (added, last_access, secret, username, passhash, status, email, passkey, simpaty) 
             VALUES
-                ($added, $added, $secret, $username, $passhash, 'confirmed', $email, $passkey)
+                ($added, $added, $secret, $username, $passhash, 'confirmed', $email, $passkey, 0)
         ");
     } catch (mysqli_sql_exception $e) {
         if ((int)$e->getCode() === 1062) {

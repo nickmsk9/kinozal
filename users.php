@@ -413,7 +413,7 @@ stdhead('Список пользователей - Поиск пользоват
                     $last_access = users_date_text($user['last_access']);
                     $torrent_count = (int)$user['torrent_count'];
                     $comment_count = (int)$user['comment_count'];
-                    $reputation = (int)$user['simpaty'];
+                    $reputation = function_exists('reputation_value') ? reputation_value($user) : max(0, (int)$user['simpaty']);
                     ?>
                     <div class="bx5x5">
                         <img class="imgg rot180" src="<?= $avatar ?>" alt="">

@@ -13,7 +13,7 @@ function my_menu($user) {
 	$id = (int)$user["id"];
 	$name = my_h($user["username"]);
 	$avatar = !empty($user["avatar"]) ? my_h($user["avatar"]) : "/pic/default_avatar.gif";
-	$reputation = isset($user["simpaty"]) ? (int)$user["simpaty"] : 0;
+	$reputation = function_exists('reputation_value') ? reputation_value($user) : (isset($user["simpaty"]) ? max(0, (int)$user["simpaty"]) : 0);
 	$bonus = function_exists('pay_user_votes_from_array') ? number_format(pay_user_votes_from_array($user), 0, '.', ' ') : (isset($user["bonus"]) ? number_format((float)$user["bonus"], 0, '.', ' ') : 0);
 
 	return '
