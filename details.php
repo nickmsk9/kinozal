@@ -556,8 +556,7 @@ function details_comment_format($text)
 	$text = preg_replace('#\[url\](https?://[^\s\[]+)\[/url\]#isu', '<a href="$1" class="sba" target="_blank">$1</a>', $text);
 	$text = preg_replace('#\[url=(https?://[^\]\s]+)\](.*?)\[/url\]#isu', '<a href="$1" class="sba" target="_blank">$2</a>', $text);
 	$text = preg_replace('#\[img\](https?://[^\s\[]+)\[/img\]#isu', '<img src="$1" class="p200" alt="">', $text);
-	$text = preg_replace('#\[quote=([^\]]+)\](.*?)\[/quote\]#isu', '<fieldset class="ft_cmt"><legend><span class="f_um b">$1</span></legend>$2</fieldset>', $text);
-	$text = preg_replace('#\[quote\](.*?)\[/quote\]#isu', '<fieldset class="ft_cmt"><legend><span class="f_um b">Цитата</span></legend>$1</fieldset>', $text);
+	$text = format_quote_fieldsets($text);
 
 	$text = preg_replace_callback('#(?<![">])(https?://[^\s<]+)#iu', function ($m) {
 		$url = rtrim($m[1], '.,!?');

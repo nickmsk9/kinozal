@@ -717,6 +717,36 @@ function format_quotes($s) {
 	return $s;
 }
 
+function format_quote_fieldsets($s) {
+	while (true) {
+		$close = stripos($s, '[/quote]');
+		if ($close === false) {
+			return $s;
+		}
+
+		$before_close = substr($s, 0, $close);
+		$open_plain = strripos($before_close, '[quote]');
+		$open_from = strripos($before_close, '[quote=');
+
+		if ($open_plain === false && $open_from === false) {
+			return $s;
+		}
+
+		$open = $open_from !== false && ($open_plain === false || $open_from > $open_plain) ? $open_from : $open_plain;
+		$quote = substr($s, $open, $close - $open + 8);
+
+		if (preg_match('#^\[quote=([^\]]+)\]\s*(.*?)\s*\[/quote\]$#isu', $quote, $m)) {
+			$replacement = '<fieldset class="ft_cmt"><legend><span class="f_um b">' . $m[1] . '</span></legend>' . $m[2] . '</fieldset>';
+		} elseif (preg_match('#^\[quote\]\s*(.*?)\s*\[/quote\]$#isu', $quote, $m)) {
+			$replacement = '<fieldset class="ft_cmt"><legend><span class="f_um b">&#1062;&#1080;&#1090;&#1072;&#1090;&#1072;</span></legend>' . $m[1] . '</fieldset>';
+		} else {
+			return $s;
+		}
+
+		$s = substr($s, 0, $open) . $replacement . substr($s, $close + 8);
+	}
+}
+
 // Format quote
 function encode_quote($text) {
 	$start_html = "<div align=\"center\"><div style=\"width: 85%; overflow: auto\">"
@@ -911,6 +941,7 @@ function format_comment($text, $strip_html = true) {
 	$html[] = '<iframe width="640" height="360" src="//www.youtube.com/embed/\\1?rel=0" frameborder="0" allowfullscreen></iframe>';
 
 	$s = preg_replace($bb, $html, $s);
+	$s = format_quote_fieldsets($s);
 
 	// Linebreaks
 	$s = nl2br($s);
@@ -929,12 +960,6 @@ function format_comment($text, $strip_html = true) {
 	foreach ($privatesmilies as $code => $url)
 		$s = str_replace($code, "<img border=\"0\" src=\"$pic_base_url/smilies/$url\">", $s);
 
-	while (preg_match("#\[quote\](.*?)\[/quote\]#si", $s)) {
-		$s = encode_quote($s);
-	}
-	while (preg_match("#\[quote=(.+?)\](.*?)\[/quote\]#si", $s)) {
-		$s = encode_quote_from($s);
-	}
 	while (preg_match("#\[hide\](.*?)\[/hide\]#si", $s)) {
 		$s = encode_spoiler($s);
 	}
