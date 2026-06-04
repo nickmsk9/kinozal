@@ -112,20 +112,6 @@ function get_themes() {
 	return $themelist;
 }
 
-function theme_selector($sel_theme = "", $use_fsw = false) {
-	global $DEFAULTBASEURL;
-	$themes = get_themes();
-	$content = "<select name=\"theme\"".($use_fsw ? " onchange=\"window.location='$DEFAULTBASEURL/changetheme.php?theme='+this.options[this.selectedIndex].value\"" : "").">\n";
-	$selectedResolved = theme_resolve_name($sel_theme);
-	foreach ($themes as $theme) {
-		$label = theme_display_name($theme);
-		$value = ($theme === 'TBDev') ? 'Основная' : (($theme === 'Winter') ? 'Зимний' : $theme);
-		$content .= "<option value=\"$value\"".(theme_resolve_name($theme) == $selectedResolved ? " selected" : "").">$label</option>\n";
-	}
-	$content .= "</select>";
-	return $content;
-}
-
 function select_theme() {
 	global $CURUSER, $default_theme;
 	if ($CURUSER)
@@ -137,47 +123,6 @@ function select_theme() {
 	if (!is_theme($theme))
 		$theme = $default;
 	return $theme;
-}
-
-function decode_to_utf8($int = 0) {
-	$t = '';
-	if ( $int < 0 ) {
-		return chr(0);
-	} else if ( $int <= 0x007f ) {
-		$t .= chr($int);
-	} else if ( $int <= 0x07ff ) {
-		$t .= chr(0xc0 | ($int >> 6));
-		$t .= chr(0x80 | ($int & 0x003f));
-	} else if ( $int <= 0xffff ) {
-		$t .= chr(0xe0 | ($int  >> 12));
-		$t .= chr(0x80 | (($int >> 6) & 0x003f));
-		$t .= chr(0x80 | ($int  & 0x003f));
-	} else if ( $int <= 0x10ffff ) {
-		$t .= chr(0xf0 | ($int  >> 18));
-		$t .= chr(0x80 | (($int >> 12) & 0x3f));
-		$t .= chr(0x80 | (($int >> 6) & 0x3f));
-		$t .= chr(0x80 | ($int  &  0x3f));
-	} else {
-		return chr(0);
-	}
-	return $t;
-}
-
-function convert_unicode($t, $to = 'utf8') {
-	$to = strtolower($to);
-	if ($to == 'utf-8') {
-		$t = preg_replace( '#%u([0-9A-F]{1,4})#ie', "decode_to_utf8(hexdec('\\1'))", utf8_encode($t) );
-		$t = urldecode ($t);
-	} else {
-		$t = preg_replace( '#%u([0-9A-F]{1,4})#ie', "'&#' . hexdec('\\1') . ';'", $t );
-		$t = urldecode ($t);
-		$t = @html_entity_decode($t, ENT_NOQUOTES, $to);
-	}
-	return $t;
-}
-
-function local_user() {
-	return $_SERVER["SERVER_ADDR"] == $_SERVER["REMOTE_ADDR"];
 }
 
 function sql_query($query)
@@ -479,50 +424,6 @@ function userlogin($lightmode = false): void
     }
 }
 
-function get_server_load() {
-    global $tracker_lang; // глобальный массив языковых строк (используется только для 'unknown')
-    
-    // Windows: нагрузка не определяется штатными средствами
-    if (stripos(PHP_OS, 'WIN') === 0) {
-        return 0;
-    }
-    
-    $load = null;
-    
-    // Способ 1: чтение из /proc/loadavg (Linux)
-    if (@file_exists('/proc/loadavg')) {
-        $content = @file_get_contents('/proc/loadavg');
-        if ($content !== false) {
-            $parts = explode(' ', $content);
-            if (isset($parts[0])) {
-                $load = (float)trim($parts[0]);
-            }
-        }
-    }
-    
-    // Способ 2: вызов uptime (Unix, BSD, macOS)
-    if ($load === null && function_exists('exec')) {
-        $uptime = @exec('uptime');
-        if ($uptime && preg_match('/load average[s]?:?\s*(.+)/', $uptime, $matches)) {
-            $load_str = trim($matches[1]);
-            // Обычно формат: "0.08, 0.03, 0.01" – берём первое значение
-            $load_parts = explode(',', $load_str);
-            if (isset($load_parts[0])) {
-                $load = (float)trim($load_parts[0]);
-            }
-        }
-    }
-    
-    // Если нагрузку получить не удалось
-    if ($load === null) {
-        $unknown = isset($tracker_lang['unknown']) ? $tracker_lang['unknown'] : 'unknown';
-        return $unknown;
-    }
-    
-    // Округляем до 4 знаков (сохраняем поведение оригинала)
-    return round($load, 4);
-}
-
 function user_session()
 {
 	global $CURUSER, $use_sessions;
@@ -776,29 +677,6 @@ function mksize($bytes) {
     }
 }
 
-function mksizeint($bytes) {
-    // Неотрицательное значение (оригинальное поведение)
-    $bytes = max(0, $bytes);
-
-    // Множители (бинарные)
-    $kB = 1024;
-    $MB = $kB * 1024;       // 1 048 576
-    $GB = $MB * 1024;       // 1 073 741 824
-    $TB = $GB * 1024;       // 1 099 511 627 776
-
-    if ($bytes < 1000) {
-        return floor($bytes) . " B";
-    } elseif ($bytes < 1000 * $kB) {
-        return floor($bytes / $kB) . " kB";
-    } elseif ($bytes < 1000 * $MB) {
-        return floor($bytes / $MB) . " MB";
-    } elseif ($bytes < 1000 * $GB) {
-        return floor($bytes / $GB) . " GB";
-    } else {
-        return floor($bytes / $TB) . " TB";
-    }
-}
-
 function deadtime() {
     global $announce_interval;
 
@@ -809,61 +687,6 @@ function deadtime() {
 
     // Оригинальная формула: вычитаем 130% от announce_interval
     return time() - (int)floor($announce_interval * 1.3);
-}
-
-function mkprettytime($s) {
-    // Приводим к целому и гарантируем неотрицательность
-    $s = (int)$s;
-    if ($s < 0) {
-        $s = 0;
-    }
-
-    // Массив для хранения единиц времени
-    $parts = [];
-
-    // Шаги преобразования: делитель → ключ массива
-    $steps = [
-        [60, 'sec'],   // секунды
-        [60, 'min'],   // минуты
-        [24, 'hour'],  // часы
-        [0,  'day']    // дни (делитель 0 означает «оставшееся значение»)
-    ];
-
-    foreach ($steps as $step) {
-        list($divisor, $key) = $step;
-        if ($divisor > 1) {
-            $parts[$key] = $s % $divisor;
-            $s = (int)($s / $divisor);
-        } else {
-            $parts[$key] = $s;   // остаток — это дни
-        }
-    }
-
-    // Выбор формата вывода в зависимости от наличия дней/часов
-    if ($parts['day']) {
-        return $parts['day'] . "d " . sprintf("%02d:%02d:%02d", $parts['hour'], $parts['min'], $parts['sec']);
-    }
-    if ($parts['hour']) {
-        return sprintf("%d:%02d:%02d", $parts['hour'], $parts['min'], $parts['sec']);
-    }
-    return sprintf("%d:%02d", $parts['min'], $parts['sec']);
-}
-
-function tr($x, $y, $noesc=0, $prints = true, $width = "", $relation = '') {
-	if ($noesc)
-		$a = $y;
-	else {
-		$a = htmlspecialchars_uni($y);
-		$a = str_replace("\n", "<br />\n", $a);
-	}
-	if ($prints) {
-	  $print = "<td width=\"". $width ."\" class=\"heading\" valign=\"top\" align=\"right\">$x</td>";
-	  $colpan = "align=\"left\"";
-	} else {
-		$colpan = "colspan=\"2\"";
-	}
-
-	print("<tr".( $relation ? " relation=\"$relation\"" : "").">$print<td valign=\"top\" $colpan>$a</td></tr>\n");
 }
 
 function validfilename($name) {
@@ -953,21 +776,6 @@ function sqlwildcardesc($x) {
 	}
 
 	return str_replace(array("%","_"), array("\\%","\\_"), mysqli_real_escape_string($link, (string)$x));
-}
-
-function urlparse($m) {
-	$t = $m[0];
-	if (preg_match(',^\w+://,', $t))
-		return "<a href=\"$t\">$t</a>";
-	return "<a href=\"http://$t\">$t</a>";
-}
-
-function parsedescr($d, $html) {
-	if (!$html) {
-	  $d = htmlspecialchars_uni($d);
-	  $d = str_replace("\n", "\n<br>", $d);
-	}
-	return $d;
 }
 
 function stdhead($title = "", $msgalert = true)
@@ -1484,82 +1292,6 @@ function page_online_block_html($content)
 		. "</div>\n";
 }
 
-function downloaderdata($res)
-{
-	$rows = array();
-	$ids = array();
-	$peerdata = array();
-
-	if (!$res) {
-		return array($rows, $peerdata);
-	}
-
-	while ($row = mysqli_fetch_assoc($res)) {
-		$id = isset($row['id']) ? (int)$row['id'] : 0;
-
-		if ($id <= 0) {
-			continue;
-		}
-
-		$rows[] = $row;
-		$ids[] = $id;
-
-		$peerdata[$id] = array(
-			'downloaders' => 0,
-			'seeders' => 0,
-			'comments' => 0
-		);
-	}
-
-	if (!$ids) {
-		return array($rows, $peerdata);
-	}
-
-	$allids = implode(',', array_unique($ids));
-
-	$peers_res = sql_query("
-		SELECT 
-			COUNT(*) AS c,
-			torrent,
-			seeder
-		FROM peers
-		WHERE torrent IN (" . $allids . ")
-		GROUP BY torrent, seeder
-	") or sqlerr(__FILE__, __LINE__);
-
-	while ($row = mysqli_fetch_assoc($peers_res)) {
-		$torrent_id = (int)$row['torrent'];
-
-		if (!isset($peerdata[$torrent_id])) {
-			continue;
-		}
-
-		$key = ($row['seeder'] === 'yes') ? 'seeders' : 'downloaders';
-		$peerdata[$torrent_id][$key] = (int)$row['c'];
-	}
-
-	$comments_res = sql_query("
-		SELECT 
-			COUNT(*) AS c,
-			torrent
-		FROM comments
-		WHERE torrent IN (" . $allids . ")
-		GROUP BY torrent
-	") or sqlerr(__FILE__, __LINE__);
-
-	while ($row = mysqli_fetch_assoc($comments_res)) {
-		$torrent_id = (int)$row['torrent'];
-
-		if (!isset($peerdata[$torrent_id])) {
-			continue;
-		}
-
-		$peerdata[$torrent_id]['comments'] = (int)$row['c'];
-	}
-
-	return array($rows, $peerdata);
-}
-
 function genrelist() {
 	if (function_exists('tracker_cache_remember')) {
 		return tracker_cache_remember('categories:genrelist', 600, 'genrelist_query');
@@ -1582,46 +1314,6 @@ function linkcolor($num) {
 //	if ($num == 1)
 //		return 'yellow';
 	return 'green';
-}
-
-function ratingpic($num) {
-	global $pic_base_url, $tracker_lang, $ss_uri;
-	$r = round($num);
-	if ($r < 1 || $r > 5)
-		return;
-	return "<img src=\"themes/$ss_uri/images/rating/$r.gif\" border=\"0\" alt=\"".$tracker_lang['rating'].": $num / 5\" />";
-}
-
-function writecomment($userid, $comment)
-{
-	$userid = (int)$userid;
-
-	if ($userid <= 0) {
-		throw new InvalidArgumentException('ID пользователя не может быть пустым или равным 0.');
-	}
-
-	$comment = trim((string)$comment);
-
-	if ($comment === '') {
-		return false;
-	}
-
-	$modcomment = sqlesc(date('d.m.Y') . ' - ' . $comment);
-
-	$sql = "
-		UPDATE users
-		SET modcomment = CONCAT_WS('\n', $modcomment, NULLIF(modcomment, ''))
-		WHERE id = " . $userid . "
-		LIMIT 1
-	";
-
-	$res = sql_query($sql);
-
-	if (!$res) {
-		sqlerr(__FILE__, __LINE__);
-	}
-
-	return $res;
 }
 
 function hash_pad($hash) {
@@ -1681,30 +1373,4 @@ function magnet($arg1, $arg2 = null, $arg3 = null, $arg4 = null, $arg5 = array()
     );
 }
 
-function mysql_modified_rows(): int
-{
-    global $link;
-
-    if (!$link instanceof mysqli) {
-        return 0;
-    }
-
-    $affectedRows = mysqli_affected_rows($link);
-
-    if ($affectedRows > 0) {
-        return $affectedRows;
-    }
-
-    $info = mysqli_info($link);
-
-    if (!is_string($info) || $info === '') {
-        return max(0, $affectedRows);
-    }
-
-    if (preg_match('/Rows matched:\s*([0-9]+)/i', $info, $matched)) {
-        return (int) $matched[1];
-    }
-
-    return max(0, $affectedRows);
-}
 ?>
