@@ -81,7 +81,7 @@ if (!function_exists('MultitrackerAdmin')) {
 			echo '<td>' . multitracker_h($row['announce_url']) . ($error !== '' ? '<div class="small red">' . multitracker_h($error) . '</div>' : '') . '</td>';
 			echo '<td class="center green b">' . ($row['seeders'] === null ? 'н/д' : (int)$row['seeders']) . '</td>';
 			echo '<td class="center red b">' . ($row['leechers'] === null ? 'н/д' : (int)$row['leechers']) . '</td>';
-			echo '<td class="center">' . (!empty($row['last_checked']) ? multitracker_h($row['last_checked']) : 'н/д') . '</td>';
+			echo '<td class="center">' . multitracker_h(multitracker_format_checked_at($row['last_checked'] ?? '')) . '</td>';
 			echo '<td class="center">' . ($error === '' ? 'ok' : 'ошибка') . '</td>';
 			echo '<td class="center"><form method="post" action="' . multitracker_h($admin_file) . '.php?op=MultitrackerAdmin">';
 			echo '<input type="hidden" name="mt_action" value="toggle_tracker"><input type="hidden" name="tracker_id" value="' . (int)$row['id'] . '">';
