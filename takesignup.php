@@ -70,7 +70,12 @@ if ($maxusers > 0 && $users >= $maxusers) {
     stderr($tracker_lang['error'], sprintf($tracker_lang['signup_users_limit'], number_format($maxusers)));
 }
 
-if (!mkglobal("wantusername:wantpassword:passagain:email")) {
+$wantusername = isset($_GET['wantusername']) ? trim((string)$_GET['wantusername']) : (isset($_POST['wantusername']) ? trim((string)$_POST['wantusername']) : null);
+$wantpassword = isset($_GET['wantpassword']) ? (string)$_GET['wantpassword'] : (isset($_POST['wantpassword']) ? (string)$_POST['wantpassword'] : null);
+$passagain = isset($_GET['passagain']) ? (string)$_GET['passagain'] : (isset($_POST['passagain']) ? (string)$_POST['passagain'] : null);
+$email = isset($_GET['email']) ? trim((string)$_GET['email']) : (isset($_POST['email']) ? trim((string)$_POST['email']) : null);
+
+if ($wantusername === null || $wantpassword === null || $passagain === null || $email === null) {
     stderr($tracker_lang['error'], $tracker_lang['dad']);
 }
 
@@ -100,9 +105,6 @@ function validusername($username)
     return (bool)preg_match('/^[a-zA-Z0-9_а-яА-ЯёЁьъЬЪ]+$/u', $username);
 }
 
-$wantusername = trim((string)$wantusername);
-$wantpassword = (string)$wantpassword;
-$passagain = (string)$passagain;
 $email = trim(strtolower((string)$email));
 
 $gender = isset($_POST['gender']) ? trim((string)$_POST['gender']) : '';

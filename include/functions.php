@@ -849,20 +849,6 @@ function mkprettytime($s) {
     return sprintf("%d:%02d", $parts['min'], $parts['sec']);
 }
 
-function mkglobal($vars) {
-	if (!is_array($vars))
-		$vars = explode(":", $vars);
-	foreach ($vars as $v) {
-		if (isset($_GET[$v]))
-			$GLOBALS[$v] = unesc($_GET[$v]);
-		elseif (isset($_POST[$v]))
-			$GLOBALS[$v] = unesc($_POST[$v]);
-		else
-			return 0;
-	}
-	return 1;
-}
-
 function tr($x, $y, $noesc=0, $prints = true, $width = "", $relation = '') {
 	if ($noesc)
 		$a = $y;
