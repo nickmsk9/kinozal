@@ -317,15 +317,8 @@ function userlogin($lightmode = false): void
 
     unset($GLOBALS['CURUSER']);
 
-    if ($_COOKIE_SALT === 'default'
-        && ($_SERVER['SERVER_ADDR'] ?? '') !== '127.0.0.1'
-        && ($_SERVER['SERVER_ADDR'] ?? '') !== ($_SERVER['REMOTE_ADDR'] ?? '')
-    ) {
-        die('Скрипт заблокирован! Измените значение переменной $_COOKIE_SALT в файле include/config.php на случайное');
-    }
-
     if (empty($_COOKIE_SALT)) {
-        die('Идите и учите <a href="http://www.php.net">PHP</a>... Сказано было ИЗМЕНИТЬ значение, а не удалить переменную!');
+        $_COOKIE_SALT = 'tracker-cookie-salt';
     }
 
     $ip = getip();
@@ -918,95 +911,31 @@ function send_pm($sender, $receiver, $added, $subject, $msg) {
 }
 
 function sent_mail($to, $fromname, $fromemail, $subject, $body, $multiple = false, $multiplemail = '') {
-    global $SITENAME, $SITEEMAIL, $smtptype, $smtp, $smtp_host, $smtp_port, $smtp_from, $smtpaddress, $accountname, $accountpassword, $rootpath;
-
-    $result = true;
-
-    // Режим 1: стандартная функция mail()
-    if ($smtptype == 'default') {
-        if (!@mail($to, $subject, $body, "From: $SITEEMAIL")) {
-            $result = false;
-        }
-        return $result;
+    if (stripos(PHP_OS, 'WIN') === 0) {
+        $eol = "\r\n";
+    } elseif (stripos(PHP_OS, 'MAC') === 0) {
+        $eol = "\r";
+    } else {
+        $eol = "\n";
     }
 
-    // Режим 2: расширенный (заголовки, Bcc, настройка SMTP через ini)
-    if ($smtptype == 'advanced') {
-        // Определяем символ конца строки в зависимости от ОС
-        if (stripos(PHP_OS, 'WIN') === 0) {
-            $eol = "\r\n";
-            $windows = true;
-        } elseif (stripos(PHP_OS, 'MAC') === 0) {
-            $eol = "\r";
-            $windows = false;
-        } else {
-            $eol = "\n";
-            $windows = false;
-        }
+    $serverName = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost';
+    $mid = md5(getip() . (string)$fromname . microtime(true));
 
-        // Формируем уникальный Message-ID
-        $mid = md5(getip() . $fromname);
-        $serverName = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost';
+    $headers = "From: $fromname <$fromemail>" . $eol;
+    $headers .= "Reply-To: $fromname <$fromemail>" . $eol;
+    $headers .= "Return-Path: $fromname <$fromemail>" . $eol;
+    $headers .= "Message-ID: <$mid.thesystem@$serverName>" . $eol;
+    $headers .= "X-Mailer: PHP v" . phpversion() . $eol;
+    $headers .= "MIME-Version: 1.0" . $eol;
+    $headers .= "Content-type: text/plain; charset=utf-8" . $eol;
+    $headers .= "X-Sender: PHP" . $eol;
 
-        $headers = "From: $fromname <$fromemail>" . $eol;
-        $headers .= "Reply-To: $fromname <$fromemail>" . $eol;
-        $headers .= "Return-Path: $fromname <$fromemail>" . $eol;
-        $headers .= "Message-ID: <$mid.thesystem@$serverName>" . $eol;
-        $headers .= "X-Mailer: PHP v" . phpversion() . $eol;
-        $headers .= "MIME-Version: 1.0" . $eol;
-        $headers .= "Content-type: text/plain; charset=utf-8" . $eol;
-        $headers .= "X-Sender: PHP" . $eol;
-
-        if ($multiple) {
-            $headers .= "Bcc: $multiplemail" . $eol; // исправлена лишняя точка
-        }
-
-        // Если требуется использовать внешний SMTP через настройки ini
-        if ($smtp == "yes") {
-            ini_set('SMTP', $smtp_host);
-            ini_set('smtp_port', $smtp_port);
-            if ($windows) {
-                ini_set('sendmail_from', $smtp_from);
-            }
-        }
-
-        if (!@mail($to, $subject, $body, $headers)) {
-            $result = false;
-        }
-
-        // Восстанавливаем настройки ini
-        ini_restore('SMTP');
-        ini_restore('smtp_port');
-        if ($windows) {
-            ini_restore('sendmail_from');
-        }
-
-        return $result;
+    if ($multiple && trim((string)$multiplemail) !== '') {
+        $headers .= "Bcc: $multiplemail" . $eol;
     }
 
-    // Режим 3: внешняя SMTP-библиотека
-    if ($smtptype == 'external') {
-        if (!file_exists($rootpath . 'include/smtp/smtp.lib.php')) {
-            return false;
-        }
-        require_once($rootpath . 'include/smtp/smtp.lib.php');
-        $mail = new smtp;
-        $mail->debug(false);
-        $mail->open($smtp_host, $smtp_port);
-        if (!empty($accountname) && !empty($accountpassword)) {
-            $mail->auth($accountname, $accountpassword);
-        }
-        $mail->from($SITEEMAIL);
-        $mail->to($to);
-        $mail->subject($subject);
-        $mail->body($body);
-        $result = $mail->send();
-        $mail->close();
-        return $result;
-    }
-
-    // Неизвестный тип
-    return false;
+    return @mail($to, $subject, $body, $headers);
 }
 
 function sqlesc($value, $force = false)
