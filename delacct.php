@@ -27,6 +27,7 @@
 */
 
 require_once __DIR__ . '/include/bittorrent.php';
+require_once __DIR__ . '/include/account_delete.php';
 
 dbconn();
 
@@ -301,7 +302,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 
     try {
-        delacct_delete_user($userid);
+        account_delete_user($userid);
     } catch (Throwable $e) {
         stderr($tracker_lang['error'], 'Не удалось полностью удалить аккаунт. Изменения отменены.');
     }
