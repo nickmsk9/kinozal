@@ -28,6 +28,7 @@ function BuildMenu($url, $title, $image = '')
 
     $icons = array(
         'adduser' => array('#4a7f52', '<circle cx="13" cy="11" r="4"/><path d="M6 25c1-5 3.5-8 7-8 2.2 0 4.1 1.2 5.4 3.3M23 16v10M18 21h10"/>'),
+        'bans' => array('#b45d4d', '<circle cx="16" cy="16" r="9"/><path d="M10 10l12 12"/>'),
         'block' => array('#5a71b0', '<rect x="7" y="8" width="18" height="6" rx="1.5"/><rect x="7" y="18" width="8" height="6" rx="1.5"/><rect x="18" y="18" width="7" height="6" rx="1.5"/>'),
         'blocksadmin' => array('#5a71b0', '<rect x="7" y="8" width="18" height="6" rx="1.5"/><rect x="7" y="18" width="8" height="6" rx="1.5"/><rect x="18" y="18" width="7" height="6" rx="1.5"/>'),
         'db' => array('#4a7f52', '<ellipse cx="16" cy="9" rx="8" ry="3"/><path d="M8 9v10c0 1.7 3.6 3 8 3s8-1.3 8-3V9"/><path d="M8 14c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'),
