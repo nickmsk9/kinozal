@@ -346,29 +346,65 @@ function persons_pager($base_url, $page, $pages)
 
 function persons_http_json($url)
 {
+	static $cache = array();
+	static $last_request_at = 0.0;
+
+	$key = md5((string)$url);
+	if (array_key_exists($key, $cache)) {
+		return $cache[$key];
+	}
+
 	$body = '';
-	if (function_exists('curl_init')) {
-		$ch = curl_init($url);
-		curl_setopt_array($ch, array(
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_CONNECTTIMEOUT => 4,
-			CURLOPT_TIMEOUT => 8,
-			CURLOPT_USERAGENT => 'kinozal-persons/1.0',
-		));
-		$body = curl_exec($ch);
-		$code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-		curl_close($ch);
-		if ($code < 200 || $code >= 300) {
-			$body = '';
+	for ($attempt = 0; $attempt < 3; $attempt++) {
+		$elapsed = microtime(true) - $last_request_at;
+		if ($elapsed < 0.18) {
+			usleep((int)((0.18 - $elapsed) * 1000000));
 		}
-	} else {
-		$ctx = stream_context_create(array('http' => array('timeout' => 8, 'header' => "User-Agent: kinozal-persons/1.0\r\n")));
-		$body = @file_get_contents($url, false, $ctx);
+		$last_request_at = microtime(true);
+		$code = 0;
+
+		if (function_exists('curl_init')) {
+			$ch = curl_init($url);
+			curl_setopt_array($ch, array(
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_FOLLOWLOCATION => true,
+				CURLOPT_CONNECTTIMEOUT => 4,
+				CURLOPT_TIMEOUT => 12,
+				CURLOPT_USERAGENT => 'kinozal.lv-persons/2.0 (https://kinozal.lv/)',
+			));
+			$body = curl_exec($ch);
+			$code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+			curl_close($ch);
+		} else {
+			$ctx = stream_context_create(array('http' => array(
+				'timeout' => 12,
+				'ignore_errors' => true,
+				'header' => "User-Agent: kinozal.lv-persons/2.0 (https://kinozal.lv/)\r\n",
+			)));
+			$body = @file_get_contents($url, false, $ctx);
+			foreach ($http_response_header ?? array() as $header) {
+				if (preg_match('#^HTTP/\S+\s+(\d{3})#i', $header, $m)) {
+					$code = (int)$m[1];
+				}
+			}
+		}
+
+		if ($code >= 200 && $code < 300) {
+			break;
+		}
+		$body = '';
+		if (!in_array($code, array(429, 502, 503, 504), true)) {
+			break;
+		}
+		sleep($attempt + 1);
 	}
 
 	$data = json_decode((string)$body, true);
-	return is_array($data) ? $data : array();
+	$data = is_array($data) ? $data : array();
+	if ($data) {
+		$cache[$key] = $data;
+	}
+	return $data;
 }
 
 function persons_wd_label(array $entities, $id)
@@ -385,6 +421,11 @@ function persons_wd_entity_id($claim)
 	return (string)($claim['mainsnak']['datavalue']['value']['id'] ?? '');
 }
 
+function persons_wd_claim_value($claim)
+{
+	return $claim['mainsnak']['datavalue']['value'] ?? null;
+}
+
 function persons_wd_labels(array $ids)
 {
 	$ids = array_values(array_unique(array_filter($ids)));
@@ -392,27 +433,294 @@ function persons_wd_labels(array $ids)
 		return array();
 	}
 
-	$data = persons_http_json('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels&languages=ru|en&ids=' . rawurlencode(implode('|', $ids)));
 	$labels = array();
-	foreach (($data['entities'] ?? array()) as $id => $entity) {
-		$labels[$id] = (string)($entity['labels']['ru']['value'] ?? $entity['labels']['en']['value'] ?? '');
+	foreach (array_chunk($ids, 45) as $chunk) {
+		$data = persons_http_json('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels&languages=ru|en&ids=' . rawurlencode(implode('|', $chunk)));
+		foreach (($data['entities'] ?? array()) as $id => $entity) {
+			$labels[$id] = (string)($entity['labels']['ru']['value'] ?? $entity['labels']['en']['value'] ?? '');
+		}
 	}
 	return $labels;
 }
 
-function persons_wd_date($claim)
+function persons_wd_date_info($claim)
 {
-	$time = (string)($claim['mainsnak']['datavalue']['value']['time'] ?? '');
+	$value = persons_wd_claim_value($claim);
+	$time = (string)($value['time'] ?? '');
+	$precision = (int)($value['precision'] ?? 0);
 	if ($time === '') {
-		return '';
+		return array('date' => '', 'text' => '');
 	}
 	if (preg_match('/^\+?([0-9]{4})-([0-9]{2})-([0-9]{2})/', $time, $m)) {
-		if (!checkdate((int)$m[2], (int)$m[3], (int)$m[1])) {
-			return '';
+		if ($precision >= 11 && checkdate((int)$m[2], (int)$m[3], (int)$m[1])) {
+			return array('date' => $m[1] . '-' . $m[2] . '-' . $m[3], 'text' => '');
 		}
-		return $m[1] . '-' . $m[2] . '-' . $m[3];
+		if ($precision === 10 && (int)$m[2] >= 1 && (int)$m[2] <= 12) {
+			return array('date' => '', 'text' => $m[1] . '-' . $m[2]);
+		}
+		return array('date' => '', 'text' => $m[1]);
 	}
-	return '';
+	return array('date' => '', 'text' => '');
+}
+
+function persons_wd_date($claim)
+{
+	$info = persons_wd_date_info($claim);
+	return $info['date'];
+}
+
+function persons_wd_text_value($claim)
+{
+	$value = persons_wd_claim_value($claim);
+	if (is_array($value)) {
+		return trim((string)($value['text'] ?? ''));
+	}
+	return trim((string)$value);
+}
+
+function persons_wd_quantity($claim)
+{
+	$value = persons_wd_claim_value($claim);
+	if (!is_array($value) || !isset($value['amount'])) {
+		return '';
+	}
+
+	$amount = (float)$value['amount'];
+	$unit = (string)($value['unit'] ?? '');
+	if (substr($unit, -6) === 'Q11573') {
+		$amount *= 100;
+	} elseif (substr($unit, -7) !== 'Q174728') {
+		return '';
+	}
+	return rtrim(rtrim(number_format($amount, 1, '.', ''), '0'), '.') . ' см';
+}
+
+function persons_wikipedia_html_text($html)
+{
+	if (!class_exists('DOMDocument')) {
+		$text = html_entity_decode(strip_tags((string)$html), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+		return trim(preg_replace('/[ \t]+/u', ' ', $text));
+	}
+
+	$dom = new DOMDocument();
+	$old = libxml_use_internal_errors(true);
+	$dom->loadHTML('<?xml encoding="utf-8" ?><div>' . (string)$html . '</div>', LIBXML_NOERROR | LIBXML_NOWARNING);
+	libxml_clear_errors();
+	libxml_use_internal_errors($old);
+	$xpath = new DOMXPath($dom);
+	foreach ($xpath->query(
+		'//sup|//style|//script|//h1|//h2|//h3|//h4|//h5|//h6'
+		. '|//*[contains(concat(" ", normalize-space(@class), " "), " navbox ")]'
+		. '|//*[contains(concat(" ", normalize-space(@class), " "), " reflist ")]'
+		. '|//*[contains(concat(" ", normalize-space(@class), " "), " references ")]'
+		. '|//*[contains(concat(" ", normalize-space(@class), " "), " mw-editsection ")]'
+	) as $node) {
+		$node->parentNode->removeChild($node);
+	}
+
+	$lines = array();
+	foreach ($xpath->query('//p|//li|//tr') as $node) {
+		if ($node->parentNode && in_array(strtolower($node->parentNode->nodeName), array('li', 'tr'), true)) {
+			continue;
+		}
+		if (strtolower($node->nodeName) === 'tr') {
+			$cells = array();
+			foreach ($xpath->query('./th|./td', $node) as $cell) {
+				$value = preg_replace('/\s+/u', ' ', trim($cell->textContent));
+				if ($value !== '') {
+					$cells[] = $value;
+				}
+			}
+			$line = implode(' | ', $cells);
+		} else {
+			$line = preg_replace('/\s+/u', ' ', trim($node->textContent));
+		}
+		$line = preg_replace('/\[\s*\d+\s*\]/u', '', $line);
+		if ($line !== '' && !in_array($line, $lines, true)) {
+			$lines[] = $line;
+		}
+	}
+	return trim(implode("\n", $lines));
+}
+
+function persons_wikipedia_sections($api, $title)
+{
+	$data = persons_http_json($api . '?action=parse&format=json&formatversion=2&prop=sections&page=' . rawurlencode($title));
+	$sections = array();
+	foreach (($data['parse']['sections'] ?? array()) as $section) {
+		$line = trim(html_entity_decode(strip_tags((string)($section['line'] ?? '')), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+		$index = (string)($section['index'] ?? '');
+		if ($line === '' || $index === '') {
+			continue;
+		}
+		$sections[] = array('index' => $index, 'line' => $line, 'level' => (int)($section['level'] ?? 2));
+	}
+	return $sections;
+}
+
+function persons_wikipedia_section_text($api, $title, array $sections, array $patterns)
+{
+	$parts = array();
+	$used = array();
+	foreach ($sections as $section) {
+		foreach ($patterns as $pattern) {
+			if (!preg_match($pattern, $section['line'])) {
+				continue;
+			}
+			if (isset($used[$section['index']])) {
+				continue 2;
+			}
+			$used[$section['index']] = true;
+			$data = persons_http_json($api . '?action=parse&format=json&formatversion=2&prop=text&page=' . rawurlencode($title) . '&section=' . rawurlencode($section['index']));
+			$text = persons_wikipedia_html_text((string)($data['parse']['text'] ?? ''));
+			if ($text !== '') {
+				$parts[] = $text;
+			}
+			continue 2;
+		}
+	}
+	return trim(implode("\n\n", array_unique($parts)));
+}
+
+function persons_normalize_filmography($text)
+{
+	$types = array(
+		'ф', 'с', 'тф', 'кор', 'ки', 'мф', 'мс', 'док',
+		'film', 'tv', 'short', 'video game', 'voice',
+	);
+	$lines = array();
+	foreach (preg_split('#\r\n|\r|\n#', trim((string)$text)) as $line) {
+		$columns = array_map('trim', explode('|', $line));
+		if (count($columns) < 2) {
+			if (trim($line) !== '') {
+				$lines[] = trim($line);
+			}
+			continue;
+		}
+
+		$first = function_exists('mb_strtolower') ? mb_strtolower($columns[0], 'UTF-8') : strtolower($columns[0]);
+		$second = function_exists('mb_strtolower') ? mb_strtolower($columns[1], 'UTF-8') : strtolower($columns[1]);
+		if (in_array($first, $types, true)) {
+			array_shift($columns);
+		} elseif (in_array($second, $types, true)) {
+			array_splice($columns, 1, 1);
+		}
+		$lines[] = implode(' | ', array_values(array_filter($columns, static function ($value) {
+			return $value !== '';
+		})));
+	}
+	return trim(implode("\n", $lines));
+}
+
+function persons_wikimedia_photos($category, $poster_url = '')
+{
+	$photos = array();
+	if ($poster_url !== '') {
+		$photos[] = $poster_url;
+	}
+	$category = trim((string)$category);
+	if ($category === '') {
+		return implode("\n", $photos);
+	}
+
+	$url = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=categorymembers'
+		. '&gcmtitle=' . rawurlencode('Category:' . $category) . '&gcmtype=file&gcmlimit=20'
+		. '&prop=imageinfo&iiprop=url';
+	$data = persons_http_json($url);
+	foreach (($data['query']['pages'] ?? array()) as $page) {
+		$image_url = (string)($page['imageinfo'][0]['url'] ?? '');
+		if ($image_url === '' || !preg_match('/\.(?:jpe?g|png|webp)(?:\?|$)/i', $image_url)) {
+			continue;
+		}
+		$photos[] = $image_url;
+		if (count(array_unique($photos)) >= 10) {
+			break;
+		}
+	}
+	return implode("\n", array_values(array_unique($photos)));
+}
+
+function persons_wikipedia_page_photos($api, $title, $poster_url = '', $alternate_title = '')
+{
+	$photos = array();
+	if ($poster_url !== '') {
+		$photos[] = $poster_url;
+	}
+
+	$url = $api . '?action=query&format=json&formatversion=2&generator=images'
+		. '&titles=' . rawurlencode($title) . '&gimlimit=50&prop=imageinfo&iiprop=url|size';
+	$data = persons_http_json($url);
+	$names = trim($title . ' ' . $alternate_title);
+	$name_words = preg_split('/[^\p{L}\p{N}]+/u', function_exists('mb_strtolower') ? mb_strtolower($names, 'UTF-8') : strtolower($names), -1, PREG_SPLIT_NO_EMPTY);
+	foreach (($data['query']['pages'] ?? array()) as $page) {
+		$image = $page['imageinfo'][0] ?? array();
+		$image_url = (string)($image['url'] ?? '');
+		$image_title = function_exists('mb_strtolower') ? mb_strtolower((string)($page['title'] ?? ''), 'UTF-8') : strtolower((string)($page['title'] ?? ''));
+		if ($image_url === '' || !preg_match('/\.(?:jpe?g|png|webp)(?:\?|$)/i', $image_url)) {
+			continue;
+		}
+		if ((int)($image['width'] ?? 0) < 300 || (int)($image['height'] ?? 0) < 300) {
+			continue;
+		}
+		$matches_name = false;
+		foreach ($name_words as $word) {
+			if ((function_exists('mb_strlen') ? mb_strlen($word, 'UTF-8') : strlen($word)) >= 4 && strpos($image_title, $word) !== false) {
+				$matches_name = true;
+				break;
+			}
+		}
+		if (!$matches_name) {
+			continue;
+		}
+		$photos[] = $image_url;
+		if (count(array_unique($photos)) >= 10) {
+			break;
+		}
+	}
+
+	if (count(array_unique($photos)) < 4) {
+		$search_title = trim($alternate_title) !== '' ? trim($alternate_title) : $title;
+		$url = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2'
+			. '&generator=search&gsrnamespace=6&gsrlimit=30&gsrsearch=' . rawurlencode($search_title)
+			. '&prop=imageinfo&iiprop=url|size';
+		$data = persons_http_json($url);
+		foreach (($data['query']['pages'] ?? array()) as $page) {
+			$image = $page['imageinfo'][0] ?? array();
+			$image_url = (string)($image['url'] ?? '');
+			$image_title = function_exists('mb_strtolower') ? mb_strtolower((string)($page['title'] ?? ''), 'UTF-8') : strtolower((string)($page['title'] ?? ''));
+			if ($image_url === '' || !preg_match('/\.(?:jpe?g|png|webp)(?:\?|$)/i', $image_url)) {
+				continue;
+			}
+			if ((int)($image['width'] ?? 0) < 300 || (int)($image['height'] ?? 0) < 300) {
+				continue;
+			}
+			$matches_name = false;
+			foreach ($name_words as $word) {
+				if ((function_exists('mb_strlen') ? mb_strlen($word, 'UTF-8') : strlen($word)) >= 4 && strpos($image_title, $word) !== false) {
+					$matches_name = true;
+					break;
+				}
+			}
+			if (!$matches_name) {
+				continue;
+			}
+			$photos[] = $image_url;
+			if (count(array_unique($photos)) >= 10) {
+				break;
+			}
+		}
+	}
+	return implode("\n", array_values(array_unique($photos)));
+}
+
+function persons_wd_is_human(array $claims)
+{
+	foreach (($claims['P31'] ?? array()) as $claim) {
+		if (persons_wd_entity_id($claim) === 'Q5') {
+			return true;
+		}
+	}
+	return false;
 }
 
 function persons_import_from_wikipedia($name, $lang = 'ru')
@@ -424,66 +732,156 @@ function persons_import_from_wikipedia($name, $lang = 'ru')
 	}
 
 	$api = 'https://' . $lang . '.wikipedia.org/w/api.php';
-	$search = persons_http_json($api . '?action=query&format=json&list=search&srlimit=1&utf8=1&srsearch=' . rawurlencode($name));
-	$title = (string)($search['query']['search'][0]['title'] ?? $name);
-
-	$page_data = persons_http_json($api . '?action=query&format=json&prop=extracts|pageimages|pageprops|info&explaintext=1&exsectionformat=plain&piprop=original&inprop=url&utf8=1&titles=' . rawurlencode($title));
-	$pages = $page_data['query']['pages'] ?? array();
-	$page = $pages ? reset($pages) : array();
+	$search = persons_http_json($api . '?action=query&format=json&formatversion=2&list=search&srlimit=5&srnamespace=0&utf8=1&srsearch=' . rawurlencode($name));
+	$page = array();
+	$entity = array();
+	$qid = '';
+	foreach (($search['query']['search'] ?? array()) as $candidate) {
+		$page_data = persons_http_json($api . '?action=query&format=json&formatversion=2&prop=extracts|pageimages|pageprops|info&exintro=1&explaintext=1&piprop=original&inprop=url&utf8=1&pageids=' . (int)($candidate['pageid'] ?? 0));
+		$candidate_page = $page_data['query']['pages'][0] ?? array();
+		$candidate_qid = (string)($candidate_page['pageprops']['wikibase_item'] ?? '');
+		if ($candidate_qid === '') {
+			continue;
+		}
+		$wd = persons_http_json('https://www.wikidata.org/wiki/Special:EntityData/' . rawurlencode($candidate_qid) . '.json');
+		$candidate_entity = $wd['entities'][$candidate_qid] ?? array();
+		if (!persons_wd_is_human($candidate_entity['claims'] ?? array())) {
+			continue;
+		}
+		$page = $candidate_page;
+		$entity = $candidate_entity;
+		$qid = $candidate_qid;
+		break;
+	}
+	if (!$page || !$entity || $qid === '') {
+		return array();
+	}
+	$title = (string)($page['title'] ?? $name);
 
 	$result = array(
 		'name' => $title ?: $name,
+		'type' => 11,
 		'biography' => trim((string)($page['extract'] ?? '')),
 		'poster_url' => (string)($page['original']['source'] ?? ''),
 		'source_url' => (string)($page['fullurl'] ?? ''),
 	);
 
-	$qid = (string)($page['pageprops']['wikibase_item'] ?? '');
-	if ($qid !== '') {
-		$wd = persons_http_json('https://www.wikidata.org/wiki/Special:EntityData/' . rawurlencode($qid) . '.json');
-		$entity = $wd['entities'][$qid] ?? array();
-		$claims = $entity['claims'] ?? array();
-		$labels = $entity['labels'] ?? array();
-		$claim_ids = array();
+	$claims = $entity['claims'] ?? array();
+	$labels = $entity['labels'] ?? array();
+	$claim_ids = array();
+	foreach (array('P19' => 1, 'P106' => 12, 'P136' => 12, 'P26' => 8, 'P166' => 20) as $prop => $limit) {
+		foreach (array_slice($claims[$prop] ?? array(), 0, $limit) as $claim) {
+			$id = persons_wd_entity_id($claim);
+			if ($id !== '') {
+				$claim_ids[] = $id;
+			}
+		}
+	}
+	$claim_labels = persons_wd_labels($claim_ids);
 
-		if (!empty($labels['ru']['value'])) {
-			$result['name'] = $labels['ru']['value'];
+	if (!empty($labels['ru']['value'])) {
+		$result['name'] = $labels['ru']['value'];
+	}
+	if (!empty($claims['P1559'][0])) {
+		$result['original_name'] = persons_wd_text_value($claims['P1559'][0]);
+	}
+	if (empty($result['original_name']) && !empty($claims['P1477'][0])) {
+		$result['original_name'] = persons_wd_text_value($claims['P1477'][0]);
+	}
+	if (empty($result['original_name']) && !empty($labels['en']['value'])) {
+		$result['original_name'] = $labels['en']['value'];
+	}
+	if (!empty($claims['P569'][0])) {
+		$birth = persons_wd_date_info($claims['P569'][0]);
+		$result['birth_date'] = $birth['date'];
+		$result['birth_text'] = $birth['text'];
+	}
+	if (!empty($claims['P19'][0])) {
+		$result['birth_place'] = (string)($claim_labels[persons_wd_entity_id($claims['P19'][0])] ?? '');
+	}
+	if (!empty($claims['P21'][0])) {
+		$gender_id = persons_wd_entity_id($claims['P21'][0]);
+		if ($gender_id === 'Q6581072') {
+			$result['gender'] = 2;
+		} elseif ($gender_id === 'Q6581097') {
+			$result['gender'] = 1;
 		}
-		if (!empty($labels['en']['value'])) {
-			$result['original_name'] = $labels['en']['value'];
-		}
-		if (!empty($claims['P569'][0])) {
-			$result['birth_date'] = persons_wd_date($claims['P569'][0]);
-		}
-		foreach (array('P19', 'P21', 'P106') as $prop) {
-			foreach (($claims[$prop] ?? array()) as $claim) {
-				$id = persons_wd_entity_id($claim);
-				if ($id !== '') {
-					$claim_ids[] = $id;
-				}
+	}
+
+	$list_fields = array('career' => 'P106', 'genre' => 'P136', 'spouse' => 'P26', 'awards' => 'P166');
+	foreach ($list_fields as $field => $prop) {
+		$values = array();
+		foreach ($claims[$prop] ?? array() as $claim) {
+			$label = (string)($claim_labels[persons_wd_entity_id($claim)] ?? '');
+			if ($label !== '') {
+				$values[] = $label;
 			}
 		}
-		$claim_labels = persons_wd_labels($claim_ids);
-		if (!empty($claims['P19'][0])) {
-			$result['birth_place'] = (string)($claim_labels[persons_wd_entity_id($claims['P19'][0])] ?? '');
+		if ($values) {
+			$result[$field] = $field === 'awards' ? implode("\n", array_unique($values)) : implode(', ', array_unique($values));
 		}
-		if (!empty($claims['P21'][0])) {
-			$gender = (string)($claim_labels[persons_wd_entity_id($claims['P21'][0])] ?? '');
-			if (stripos($gender, 'female') !== false || stripos($gender, 'жен') !== false) {
-				$result['gender'] = 2;
-			} elseif (stripos($gender, 'male') !== false || stripos($gender, 'муж') !== false) {
-				$result['gender'] = 1;
-			}
+	}
+	if (!empty($claims['P2048'][0])) {
+		$result['height'] = persons_wd_quantity($claims['P2048'][0]);
+	}
+
+	$commons_category = !empty($claims['P373'][0]) ? persons_wd_text_value($claims['P373'][0]) : '';
+	if ($commons_category === '') {
+		$commons_title = (string)($entity['sitelinks']['commonswiki']['title'] ?? '');
+		if (stripos($commons_title, 'Category:') === 0) {
+			$commons_category = trim(substr($commons_title, 9));
 		}
-		if (!empty($claims['P106'])) {
-			$career = array();
-			foreach (array_slice($claims['P106'], 0, 8) as $claim) {
-				$label = (string)($claim_labels[persons_wd_entity_id($claim)] ?? '');
-				if ($label !== '') {
-					$career[] = $label;
-				}
-			}
-			$result['career'] = implode(', ', array_unique($career));
+	}
+	$commons_photos = persons_wikimedia_photos($commons_category, $result['poster_url']);
+	$page_photos = persons_wikipedia_page_photos($api, $title, $result['poster_url'], $result['original_name'] ?? '');
+	$result['photos'] = implode("\n", array_unique(array_merge(
+		preg_split('#\r\n|\r|\n#', $commons_photos, -1, PREG_SPLIT_NO_EMPTY),
+		preg_split('#\r\n|\r|\n#', $page_photos, -1, PREG_SPLIT_NO_EMPTY)
+	)));
+
+	$links = array();
+	if ($result['source_url'] !== '') {
+		$links[] = 'Wikipedia (' . $lang . ')|' . $result['source_url'];
+	}
+	$links[] = 'Wikidata|https://www.wikidata.org/wiki/' . $qid;
+	if (!empty($claims['P345'][0])) {
+		$imdb_id = persons_wd_text_value($claims['P345'][0]);
+		if ($imdb_id !== '') {
+			$links[] = 'IMDb|https://www.imdb.com/name/' . rawurlencode($imdb_id) . '/';
+		}
+	}
+	if (!empty($claims['P856'][0])) {
+		$official_url = persons_wd_text_value($claims['P856'][0]);
+		if (preg_match('#^https?://#i', $official_url)) {
+			$links[] = 'Официальный сайт|' . $official_url;
+		}
+	}
+	if ($commons_category !== '') {
+		$links[] = 'Wikimedia Commons|https://commons.wikimedia.org/wiki/Category:' . rawurlencode(str_replace(' ', '_', $commons_category));
+	}
+	$result['links'] = implode("\n", array_unique($links));
+
+	$sections = persons_wikipedia_sections($api, $title);
+	$section_map = array(
+		'trivia' => array('/^(?:Знаете ли вы|Интересные факты|Факты|Trivia)$/iu'),
+		'filmography' => array('/^(?:Избранная\s+)?(?:Фильмография|Filmography|Selected filmography|Selected works|Acting credits(?: and accolades)?|Credits)$/iu'),
+		'voice' => array('/(?:Озвучивание|Дубляж|Voice acting|Voice roles)/iu'),
+		'producer' => array('/(?:Продюсерские работы|Продюсер|Producer credits|Producer)/iu'),
+		'director' => array('/(?:Режисс[её]рские работы|Режисс[её]р|Directing|Director credits)/iu'),
+		'writer' => array('/(?:Сценарные работы|Сценарист|Screenwriting|Writer credits)/iu'),
+		'awards_sections' => array('/^(?:Награды(?: и номинации)?|Awards(?: and nominations)?)$/iu'),
+	);
+	foreach ($section_map as $field => $patterns) {
+		$text = persons_wikipedia_section_text($api, $title, $sections, $patterns);
+		if ($text === '') {
+			continue;
+		}
+		if ($field === 'awards_sections') {
+			$result['awards'] = trim(implode("\n\n", array_filter(array($result['awards'] ?? '', $text))));
+		} elseif ($field === 'filmography') {
+			$result[$field] = persons_normalize_filmography($text);
+		} else {
+			$result[$field] = $text;
 		}
 	}
 
@@ -492,12 +890,21 @@ function persons_import_from_wikipedia($name, $lang = 'ru')
 
 function persons_merge_import(array $existing, array $import, $overwrite = false)
 {
-	$fields = array('name', 'original_name', 'gender', 'poster_url', 'birth_date', 'birth_place', 'career', 'biography', 'source_url');
+	$fields = array(
+		'name', 'original_name', 'type', 'gender', 'poster_url', 'birth_date', 'birth_text',
+		'birth_place', 'career', 'genre', 'height', 'spouse', 'biography', 'trivia',
+		'filmography', 'voice', 'producer', 'director', 'writer', 'awards', 'links', 'source_url'
+	);
 	$out = $existing;
 	foreach ($fields as $field) {
-		if (array_key_exists($field, $import) && ($overwrite || empty($out[$field]))) {
+		if (array_key_exists($field, $import) && trim((string)$import[$field]) !== '' && ($overwrite || empty($out[$field]))) {
 			$out[$field] = $import[$field];
 		}
+	}
+	if (array_key_exists('photos', $import)) {
+		$old_photos = preg_split('#\r\n|\r|\n#', (string)($out['photos'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+		$new_photos = preg_split('#\r\n|\r|\n#', (string)$import['photos'], -1, PREG_SPLIT_NO_EMPTY);
+		$out['photos'] = implode("\n", $overwrite ? array_unique($new_photos) : array_unique(array_merge($old_photos, $new_photos)));
 	}
 	return $out;
 }

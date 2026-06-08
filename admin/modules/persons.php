@@ -78,6 +78,9 @@ if (!function_exists('PersonsAdmin')) {
 				$set[] = $field . ' = ' . sqlesc((string)($person[$field] ?? ''));
 			}
 			sql_query("UPDATE persons SET " . implode(', ', $set) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
+			if (array_key_exists('photos', $person)) {
+				persons_save_photos($id, $person['photos']);
+			}
 			return $id;
 		}
 
@@ -88,7 +91,11 @@ if (!function_exists('PersonsAdmin')) {
 				(" . sqlesc($name) . ", " . sqlesc((string)($person['original_name'] ?? '')) . ", " . (int)($person['type'] ?? 11) . ", " . (int)($person['gender'] ?? 0) . ", " . sqlesc((string)($person['poster_url'] ?? '')) . ", $birth_date_sql, " . sqlesc((string)($person['birth_text'] ?? '')) . ", " . sqlesc((string)($person['birth_place'] ?? '')) . ", " . sqlesc((string)($person['career'] ?? '')) . ", " . sqlesc((string)($person['genre'] ?? '')) . ", " . sqlesc((string)($person['height'] ?? '')) . ", " . sqlesc((string)($person['spouse'] ?? '')) . ", " . sqlesc((string)($person['biography'] ?? '')) . ", " . sqlesc((string)($person['trivia'] ?? '')) . ", " . sqlesc((string)($person['filmography'] ?? '')) . ", " . sqlesc((string)($person['voice'] ?? '')) . ", " . sqlesc((string)($person['producer'] ?? '')) . ", " . sqlesc((string)($person['director'] ?? '')) . ", " . sqlesc((string)($person['writer'] ?? '')) . ", " . sqlesc((string)($person['awards'] ?? '')) . ", " . sqlesc((string)($person['links'] ?? '')) . ", " . sqlesc((string)($person['source_url'] ?? '')) . ", " . (int)$CURUSER['id'] . ", " . sqlesc(get_date_time()) . ", " . (int)$CURUSER['id'] . ", " . sqlesc(get_date_time()) . ")
 		") or sqlerr(__FILE__, __LINE__);
 
-		return (int)mysqli_insert_id($link);
+		$id = (int)mysqli_insert_id($link);
+		if ($id > 0 && array_key_exists('photos', $person)) {
+			persons_save_photos($id, $person['photos']);
+		}
+		return $id;
 	}
 
 	function persons_admin_split_names($text)
@@ -171,6 +178,7 @@ if (!function_exists('PersonsAdmin')) {
 
 		$created = 0;
 		$existing = 0;
+		$updated = 0;
 		$seen = array();
 		while ($row = mysqli_fetch_assoc($res)) {
 			foreach (persons_admin_extract_from_torrent($row) as $name => $role) {
@@ -179,13 +187,20 @@ if (!function_exists('PersonsAdmin')) {
 					continue;
 				}
 				$seen[$key] = true;
-				if (persons_find(0, $name)) {
+				$found_person = persons_find(0, $name);
+				if ($found_person && !$fill_wikipedia) {
 					$existing++;
 					continue;
 				}
 
-				$person = persons_admin_default_row($name);
-				$person['career'] = $role === 'director' ? 'режиссер' : 'актер';
+				$person = $found_person ?: persons_admin_default_row($name);
+				if ($found_person) {
+					$person['photos'] = persons_photo_text((int)$found_person['id']);
+				}
+				$before = $person;
+				if (empty($person['career'])) {
+					$person['career'] = $role === 'director' ? 'режиссер' : 'актер';
+				}
 				if ($fill_wikipedia) {
 					$import = persons_import_from_wikipedia($name, 'ru');
 					if ($import) {
@@ -193,13 +208,21 @@ if (!function_exists('PersonsAdmin')) {
 						$person['name'] = $name;
 					}
 				}
+				if ($found_person && $person == $before) {
+					$existing++;
+					continue;
+				}
 				if (persons_admin_save($person) > 0) {
-					$created++;
+					if ($found_person) {
+						$updated++;
+					} else {
+						$created++;
+					}
 				}
 			}
 		}
 
-		return array('created' => $created, 'existing' => $existing, 'found' => count($seen));
+		return array('created' => $created, 'updated' => $updated, 'existing' => $existing, 'found' => count($seen));
 	}
 
 	function PersonsAdmin()
@@ -223,6 +246,9 @@ if (!function_exists('PersonsAdmin')) {
 				} else {
 					$existing = $pid > 0 ? persons_find($pid, '') : persons_find(0, $name);
 					$base = $existing ?: persons_admin_default_row($name);
+					if ($existing) {
+						$base['photos'] = persons_photo_text((int)$existing['id']);
+					}
 					$merged = persons_merge_import($base, $import, $overwrite);
 					if (empty($merged['name'])) {
 						$merged['name'] = $name;
@@ -238,7 +264,7 @@ if (!function_exists('PersonsAdmin')) {
 
 		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['autoparse_persons'])) {
 			$result = persons_admin_autoparse((int)($_POST['autoparse_limit'] ?? 100), !empty($_POST['fill_wikipedia']));
-			stdmsg('Персоны', 'Автопарсинг завершен. Найдено: ' . (int)$result['found'] . ', создано: ' . (int)$result['created'] . ', уже было: ' . (int)$result['existing'] . '.');
+			stdmsg('Персоны', 'Автопарсинг завершен. Найдено: ' . (int)$result['found'] . ', создано: ' . (int)$result['created'] . ', дополнено: ' . (int)$result['updated'] . ', пропущено: ' . (int)$result['existing'] . '.');
 		}
 
 		echo '<div class="mn_wrap">';
@@ -260,7 +286,7 @@ if (!function_exists('PersonsAdmin')) {
 		echo '<input type="hidden" name="autoparse_persons" value="1">';
 		echo '<table class="tables2 w100p">';
 		echo '<tr><td class="w250">Сколько последних раздач обработать</td><td><input type="text" name="autoparse_limit" value="100" size="6"></td></tr>';
-		echo '<tr><td>Заполнять карточки из Wikipedia</td><td><input type="checkbox" name="fill_wikipedia" value="1"> <span class="small">медленнее, делает внешние запросы по новым персонам</span></td></tr>';
+		echo '<tr><td>Заполнять карточки из Wikipedia</td><td><input type="checkbox" name="fill_wikipedia" value="1"> <span class="small">добавляет данные новым и дополняет уже существующие карточки, не затирая заполненные поля</span></td></tr>';
 		echo '<tr><td colspan="2" class="center"><input type="submit" class="buttonS" value="Найти и добавить персон"></td></tr>';
 		echo '</table>';
 		echo '</form>';
