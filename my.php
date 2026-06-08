@@ -168,6 +168,18 @@ if (isset($_GET["mailsent"])) {
 				<tr><td colspan="3"><input type="submit" value="Сменить почту" class="buttonS w200"></td></tr>
 			</table></div>
 		</form>
+
+		<div class="bx1_0">
+			<div class="pad5x5 red"><span class="bulet_red"></span><b>Удаление аккаунта</b></div>
+			<div class="pad10x10">
+				<div class="w200 nw floatleft">
+					<a href="/delacct.php" class="buttonS w200">Удалить аккаунт</a>
+				</div>
+				<div style="padding: 0 0 0 220px;">
+					Удаление необратимо. На следующей странице потребуется повторно ввести пароль и подтвердить действие.
+				</div>
+			</div>
+		</div>
 	</div>
 	<div class="clr"></div>
 </div>
