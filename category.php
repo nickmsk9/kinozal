@@ -26,312 +26,272 @@
 // +--------------------------------------------------------------------------+
 */
 
-ob_start();
-
 require_once __DIR__ . '/include/bittorrent.php';
 
 dbconn(false);
 loggedinorreturn();
 
 if (get_user_class() < UC_SYSOP) {
-    die($tracker_lang['access_denied'] ?? 'Доступ запрещён');
+    stderr($tracker_lang['error'], $tracker_lang['access_denied']);
 }
 
-if (!function_exists('category_h')) {
-    function category_h($value): string
-    {
-        if (function_exists('htmlspecialchars_uni')) {
-            return htmlspecialchars_uni((string)$value);
+function category_h($value): string
+{
+    return htmlspecialchars_uni((string)$value);
+}
+
+function category_redirect(): void
+{
+    header('Location: /category.php');
+    exit;
+}
+
+function category_image_name($value): string
+{
+    $value = trim((string)$value);
+
+    if ($value === '') {
+        return '';
+    }
+
+    if ($value !== basename($value) || !preg_match('/^[a-zA-Z0-9._-]+$/', $value)) {
+        stderr('Ошибка', 'Укажите только имя файла картинки, например 8.gif.');
+    }
+
+    return $value;
+}
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    $action = trim((string)($_POST['action'] ?? 'save'));
+    $id = (int)($_POST['id'] ?? 0);
+
+    if ($action === 'delete') {
+        if (!is_valid_id($id)) {
+            stderr('Ошибка', 'Некорректный идентификатор категории.');
         }
 
-        return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-    }
-}
+        $countRes = sql_query("
+            SELECT COUNT(*) AS torrent_count
+            FROM torrents
+            WHERE category = $id
+        ") or sqlerr(__FILE__, __LINE__);
+        $countRow = mysqli_fetch_assoc($countRes);
+        $torrentCount = (int)($countRow['torrent_count'] ?? 0);
 
-$self = category_h($_SERVER['PHP_SELF'] ?? 'category.php');
+        if ($torrentCount > 0) {
+            stderr(
+                'Ошибка',
+                'Категорию нельзя удалить: к ней привязано раздач — ' . $torrentCount . '.'
+            );
+        }
 
-stdhead('Категории');
-
-print '<h1 align="center">Категории</h1>';
-print '<br>';
-
-/*
- * Удаление категории.
- */
-$sure = $_GET['sure'] ?? '';
-$delid = isset($_GET['delid']) ? (int)$_GET['delid'] : 0;
-
-if ($sure === 'yes' && is_valid_id($delid)) {
-    sql_query("
-        DELETE FROM `categories`
-        WHERE `id` = " . $delid . "
-        LIMIT 1
-    ") or sqlerr(__FILE__, __LINE__);
-
-    print '<table border="1" cellspacing="0" cellpadding="5" align="center" width="650">';
-    print '<tr><td class="colhead" align="center">Удаление категории</td></tr>';
-    print '<tr><td class="text" align="center">';
-    print 'Категория успешно удалена. [ <a href="category.php">Назад</a> ]';
-    print '</td></tr>';
-    print '</table>';
-
-    stdfoot();
-    exit;
-}
-
-if (is_valid_id($delid)) {
-    $name = category_h($_GET['cat'] ?? '');
-
-    print '<table border="1" cellspacing="0" cellpadding="5" align="center" width="70%">';
-    print '<tr><td class="colhead" align="center">Подтверждение удаления</td></tr>';
-    print '<tr><td class="text" align="center">';
-    print 'Вы действительно хотите удалить категорию <b>' . $name . '</b>? ';
-    print '[ <strong><a href="' . $self . '?delid=' . $delid . '&amp;cat=' . urlencode((string)($_GET['cat'] ?? '')) . '&amp;sure=yes">Да</a></strong> / ';
-    print '<strong><a href="' . $self . '">Нет</a></strong> ]';
-    print '</td></tr>';
-    print '</table>';
-
-    stdfoot();
-    exit;
-}
-
-/*
- * Сохранение редактирования категории.
- */
-$edited = isset($_GET['edited']) ? (int)$_GET['edited'] : 0;
-
-if ($edited === 1) {
-    $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-    $catName = trim((string)($_GET['cat_name'] ?? ''));
-    $catImg = trim((string)($_GET['cat_img'] ?? ''));
-    $catSort = isset($_GET['cat_sort']) ? (int)$_GET['cat_sort'] : 0;
-
-    if (!is_valid_id($id)) {
-        stderr('Ошибка', 'Некорректный ID категории.');
+        sql_query("DELETE FROM categories WHERE id = $id LIMIT 1") or sqlerr(__FILE__, __LINE__);
+        category_redirect();
     }
 
-    if ($catName === '') {
+    if ($action !== 'save') {
+        stderr('Ошибка', 'Неизвестное действие.');
+    }
+
+    $name = trim((string)($_POST['name'] ?? ''));
+    $image = category_image_name($_POST['image'] ?? '');
+    $sort = max(0, (int)($_POST['sort'] ?? 0));
+
+    if ($name === '') {
         stderr('Ошибка', 'Введите название категории.');
     }
 
-    sql_query("
-        UPDATE `categories`
-        SET
-            `name` = " . sqlesc($catName) . ",
-            `image` = " . sqlesc($catImg) . ",
-            `sort` = " . $catSort . "
-        WHERE `id` = " . $id . "
-        LIMIT 1
-    ") or sqlerr(__FILE__, __LINE__);
+    if (mb_strlen($name, 'UTF-8') > 80) {
+        stderr('Ошибка', 'Название категории не должно превышать 80 символов.');
+    }
 
-    print '<table border="1" cellspacing="0" cellpadding="5" align="center" width="70%">';
-    print '<tr><td class="colhead" align="center">Редактирование категории</td></tr>';
-    print '<tr><td class="text" align="center">';
-    print 'Категория успешно отредактирована. [ <a href="category.php">Назад</a> ]';
-    print '</td></tr>';
-    print '</table>';
+    if ($image !== '' && !is_file(__DIR__ . '/pic/cat/' . $image)) {
+        stderr('Ошибка', 'Файл pic/cat/' . category_h($image) . ' не найден.');
+    }
 
-    stdfoot();
-    exit;
+    if (is_valid_id($id)) {
+        sql_query("
+            UPDATE categories
+            SET name = " . sqlesc($name) . ",
+                image = " . sqlesc($image) . ",
+                sort = $sort
+            WHERE id = $id
+            LIMIT 1
+        ") or sqlerr(__FILE__, __LINE__);
+    } else {
+        sql_query("
+            INSERT INTO categories (sort, name, image)
+            VALUES ($sort, " . sqlesc($name) . ", " . sqlesc($image) . ")
+        ") or sqlerr(__FILE__, __LINE__);
+    }
+
+    category_redirect();
 }
 
-/*
- * Форма редактирования категории.
- */
-$editid = isset($_GET['editid']) ? (int)$_GET['editid'] : 0;
+$editId = (int)($_GET['edit'] ?? 0);
+$editCategory = array(
+    'id' => 0,
+    'name' => '',
+    'image' => '',
+    'sort' => 0,
+);
 
-if (is_valid_id($editid)) {
-    $res = sql_query("
-        SELECT `id`, `name`, `image`, `sort`
-        FROM `categories`
-        WHERE `id` = " . $editid . "
+if (is_valid_id($editId)) {
+    $editRes = sql_query("
+        SELECT id, name, image, sort
+        FROM categories
+        WHERE id = $editId
         LIMIT 1
     ") or sqlerr(__FILE__, __LINE__);
+    $editRow = mysqli_fetch_assoc($editRes);
 
-    $cat = mysqli_fetch_assoc($res);
-
-    if (!$cat) {
+    if (!$editRow) {
         stderr('Ошибка', 'Категория не найдена.');
     }
 
-    $id = (int)$cat['id'];
-    $name = category_h($cat['name']);
-    $img = category_h($cat['image']);
-    $sort = (int)$cat['sort'];
-
-    print '<form method="get" action="' . $self . '">';
-    print '<input type="hidden" name="edited" value="1">';
-    print '<input type="hidden" name="id" value="' . $id . '">';
-
-    print '<table border="1" cellspacing="0" cellpadding="5" align="center" width="70%">';
-    print '<tr><td class="colhead" colspan="2" align="center">Редактирование категории: ' . $name . '</td></tr>';
-
-    print '<tr>';
-    print '<td class="rowhead" width="180">Название</td>';
-    print '<td class="text"><input type="text" size="50" name="cat_name" value="' . $name . '"></td>';
-    print '</tr>';
-
-    print '<tr>';
-    print '<td class="rowhead">Картинка</td>';
-    print '<td class="text"><input type="text" size="50" name="cat_img" value="' . $img . '"></td>';
-    print '</tr>';
-
-    print '<tr>';
-    print '<td class="rowhead">Сортировка</td>';
-    print '<td class="text"><input type="text" size="50" name="cat_sort" value="' . $sort . '"></td>';
-    print '</tr>';
-
-    print '<tr>';
-    print '<td class="text" colspan="2" align="center">';
-    print '<input type="submit" value="Редактировать" class="buttonS">';
-    print ' ';
-    print '<a href="category.php">Отмена</a>';
-    print '</td>';
-    print '</tr>';
-
-    print '</table>';
-    print '</form>';
-
-    stdfoot();
-    exit;
+    $editCategory = $editRow;
 }
 
-/*
- * Добавление новой категории.
- */
-$success = false;
-$add = $_GET['add'] ?? '';
+$res = sql_query("
+    SELECT
+        c.id,
+        c.name,
+        c.image,
+        c.sort,
+        COUNT(t.id) AS torrent_count
+    FROM categories AS c
+    LEFT JOIN torrents AS t ON t.category = c.id
+    GROUP BY c.id, c.name, c.image, c.sort
+    ORDER BY c.sort ASC, c.name ASC
+") or sqlerr(__FILE__, __LINE__);
 
-if ($add === 'true') {
-    $catName = trim((string)($_GET['cat_name'] ?? ''));
-    $catImg = trim((string)($_GET['cat_img'] ?? ''));
-    $catSort = isset($_GET['cat_sort']) ? (int)$_GET['cat_sort'] : 0;
-
-    if ($catName === '') {
-        stderr('Ошибка', 'Введите название категории.');
-    }
-
-    sql_query("
-        INSERT INTO `categories`
-            (`name`, `image`, `sort`)
-        VALUES
-            (" . sqlesc($catName) . ", " . sqlesc($catImg) . ", " . $catSort . ")
-    ") or sqlerr(__FILE__, __LINE__);
-
-    $success = true;
+$categories = array();
+while ($row = mysqli_fetch_assoc($res)) {
+    $categories[] = $row;
 }
 
-/*
- * Форма добавления категории.
- */
-print '<form method="get" action="' . $self . '">';
-print '<input type="hidden" name="add" value="true">';
+stdhead('Категории');
+?>
 
-print '<table border="1" cellspacing="0" cellpadding="5" align="center" width="70%">';
-print '<tr><td class="colhead" colspan="2" align="center">Добавить новую категорию</td></tr>';
+<div class="mn_wrap" id="category-form">
+    <div class="tp1_title">
+        <b><?=$editId > 0 ? 'Редактировать категорию' : 'Добавить категорию';?></b>
+    </div>
+    <div class="tp1_body">
+        <form method="post" action="/category.php">
+            <input type="hidden" name="action" value="save">
+            <input type="hidden" name="id" value="<?=(int)$editCategory['id'];?>">
 
-if ($success) {
-    print '<tr><td class="text" colspan="2" align="center"><strong>Категория успешно добавлена.</strong></td></tr>';
-}
+            <table class="tables1 w100p">
+                <tr>
+                    <td class="rowhead w150"><label for="category-name">Название</label></td>
+                    <td>
+                        <input
+                            type="text"
+                            id="category-name"
+                            name="name"
+                            class="w300"
+                            maxlength="80"
+                            value="<?=category_h($editCategory['name']);?>"
+                            required
+                            autofocus
+                        >
+                    </td>
+                </tr>
+                <tr>
+                    <td class="rowhead"><label for="category-image">Картинка</label></td>
+                    <td>
+                        <input
+                            type="text"
+                            id="category-image"
+                            name="image"
+                            class="w300"
+                            maxlength="255"
+                            value="<?=category_h($editCategory['image']);?>"
+                            placeholder="Например: 8.gif"
+                        >
+                        <span class="small">Файл из папки pic/cat</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="rowhead"><label for="category-sort">Порядок</label></td>
+                    <td>
+                        <input
+                            type="number"
+                            id="category-sort"
+                            name="sort"
+                            class="w90"
+                            min="0"
+                            value="<?=(int)$editCategory['sort'];?>"
+                        >
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="right">
+                        <?php if ($editId > 0) { ?>
+                            <a href="/category.php" class="buttonS">Отмена</a>
+                        <?php } ?>
+                        <input type="submit" class="buttonS" value=" <?=$editId > 0 ? 'Сохранить' : 'Добавить';?> ">
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
 
-print '<tr>';
-print '<td class="rowhead" width="180">Название</td>';
-print '<td class="text"><input type="text" size="50" name="cat_name"></td>';
-print '</tr>';
+<div class="mn_wrap">
+    <div class="tp1_title">
+        <b>Категории раздач</b>
+        <span class="floatright">Всего: <?=count($categories);?></span>
+    </div>
+    <div class="tp1_body">
+        <table class="brd w100p">
+            <tr>
+                <th class="center">Порядок</th>
+                <th class="center">Иконка</th>
+                <th>Название</th>
+                <th class="center">Раздачи</th>
+                <th class="center">Управление</th>
+            </tr>
 
-print '<tr>';
-print '<td class="rowhead">Картинка</td>';
-print '<td class="text"><input type="text" size="50" name="cat_img"></td>';
-print '</tr>';
+            <?php foreach ($categories as $category) {
+                $id = (int)$category['id'];
+                $torrentCount = (int)$category['torrent_count'];
+                $image = trim((string)$category['image']);
+                $imageExists = $image !== '' && is_file(__DIR__ . '/pic/cat/' . $image);
+            ?>
+                <tr class="bov">
+                    <td class="center"><b><?=(int)$category['sort'];?></b></td>
+                    <td class="center">
+                        <?php if ($imageExists) { ?>
+                            <img src="/pic/cat/<?=category_h($image);?>" alt="<?=category_h($category['name']);?>">
+                        <?php } elseif ($image !== '') { ?>
+                            <span class="red small">Файл не найден</span>
+                        <?php } else { ?>
+                            <span class="small">Нет</span>
+                        <?php } ?>
+                    </td>
+                    <td>
+                        <b><?=category_h($category['name']);?></b>
+                        <div class="small">ID: <?=$id;?><?= $image !== '' ? ' · ' . category_h($image) : '';?></div>
+                    </td>
+                    <td class="center">
+                        <a href="/browse.php?cat=<?=$id;?>" class="sbab"><?=$torrentCount;?></a>
+                    </td>
+                    <td class="center nw">
+                        <a href="/category.php?edit=<?=$id;?>#category-form" class="buttonS">Изменить</a>
+                        <form method="post" action="/category.php" style="display:inline;" onsubmit="return confirm('Удалить эту категорию?');">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id" value="<?=$id;?>">
+                            <input type="submit" class="buttonS" value="Удалить" <?=$torrentCount > 0 ? 'disabled title="Сначала перенесите раздачи"' : '';?>>
+                        </form>
+                    </td>
+                </tr>
+            <?php } ?>
+        </table>
+    </div>
+</div>
 
-print '<tr>';
-print '<td class="rowhead">Сортировка</td>';
-print '<td class="text"><input type="text" size="50" name="cat_sort"></td>';
-print '</tr>';
-
-print '<tr>';
-print '<td class="text" colspan="2" align="center">';
-print '<input type="submit" value="Создать категорию" class="buttonS">';
-print '</td>';
-print '</tr>';
-
-print '</table>';
-print '</form>';
-
-print '<br>';
-
-/*
- * Список существующих категорий.
- */
-print '<table border="1" cellspacing="0" cellpadding="5" align="center" width="1450">';
-print '<tr><td class="colhead" colspan="7" align="center">Существующие категории</td></tr>';
-
-print '<tr>';
-print '<td class="colhead" align="center">ID</td>';
-print '<td class="colhead" align="center">Сортировка</td>';
-print '<td class="colhead" align="left">Название</td>';
-print '<td class="colhead" align="center">Картинка</td>';
-print '<td class="colhead" align="center">Просмотр</td>';
-print '<td class="colhead" align="center">Редактировать</td>';
-print '<td class="colhead" align="center">Удалить</td>';
-print '</tr>';
-
-$query = "
-    SELECT `id`, `name`, `image`, `sort`
-    FROM `categories`
-    ORDER BY `sort` ASC, `name` ASC
-";
-
-$sql = sql_query($query) or sqlerr(__FILE__, __LINE__);
-
-while ($row = mysqli_fetch_assoc($sql)) {
-    $id = (int)$row['id'];
-    $sort = (int)$row['sort'];
-    $nameRaw = (string)$row['name'];
-    $imgRaw = (string)$row['image'];
-
-    $name = category_h($nameRaw);
-    $img = category_h($imgRaw);
-
-    $catImgUrl = category_h($DEFAULTBASEURL . '/pic/cat/' . $imgRaw);
-
-    print '<tr>';
-
-    print '<td class="text" align="center"><strong>' . $id . '</strong></td>';
-    print '<td class="text" align="center"><strong>' . $sort . '</strong></td>';
-    print '<td class="text" align="left"><strong>' . $name . '</strong></td>';
-
-    print '<td class="text" align="center">';
-    if ($imgRaw !== '') {
-        print '<img src="' . $catImgUrl . '" border="0" alt="' . $name . '">';
-    } else {
-        print '&nbsp;';
-    }
-    print '</td>';
-
-    print '<td class="text" align="center">';
-    print '<a href="browse.php?cat=' . $id . '">';
-    print '<img src="' . category_h($DEFAULTBASEURL . '/pic/viewnfo.gif') . '" border="0" class="special" alt="Просмотр">';
-    print '</a>';
-    print '</td>';
-
-    print '<td class="text" align="center">';
-    print '<a href="category.php?editid=' . $id . '">';
-    print '<img src="' . category_h($DEFAULTBASEURL . '/pic/multipage.gif') . '" border="0" class="special" alt="Редактировать">';
-    print '</a>';
-    print '</td>';
-
-    print '<td class="text" align="center">';
-    print '<a href="category.php?delid=' . $id . '&amp;cat=' . urlencode($nameRaw) . '">';
-    print '<img src="' . category_h($DEFAULTBASEURL . '/pic/warned2.gif') . '" border="0" class="special" alt="Удалить">';
-    print '</a>';
-    print '</td>';
-
-    print '</tr>';
-}
-
-print '</table>';
-
+<?php
 stdfoot();
-
 ?>
