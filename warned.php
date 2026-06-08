@@ -50,7 +50,8 @@ stdhead('Предупрежденные пользователи');
 
 $warnedCount = (int)get_row_count('users', "WHERE warned = 'yes'");
 
-begin_frame('Предупрежденные пользователи: (' . number_format($warnedCount) . ')', true);
+begin_main_frame();
+begin_frame('Предупрежденные пользователи: (' . number_format($warnedCount) . ')');
 
 $res = sql_query("
     SELECT
@@ -83,6 +84,7 @@ if (mysqli_num_rows($res) < 1) {
     echo '</table>';
 
     end_frame();
+    end_main_frame();
     stdfoot();
     exit;
 }
@@ -165,6 +167,7 @@ echo '</table>';
 echo '</form>';
 
 end_frame();
+end_main_frame();
 
 stdfoot();
 
