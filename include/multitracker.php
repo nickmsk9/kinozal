@@ -9,6 +9,22 @@ function multitracker_h($value)
 	return function_exists('htmlspecialchars_uni') ? htmlspecialchars_uni((string)$value) : htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function multitracker_format_checked_at($value)
+{
+	$value = trim((string)$value);
+	if ($value === '') {
+		return 'н/д';
+	}
+
+	$value = preg_replace('/\.\d+$/', '', $value);
+	$time = strtotime($value);
+	if ($time === false) {
+		return $value;
+	}
+
+	return date('Y-m-d H:i:s', $time);
+}
+
 function multitracker_is_client_only_error($error)
 {
 	$error = strtolower(trim((string)$error));
@@ -465,7 +481,7 @@ function multitracker_render_details_block_from_rows($torrentid, array $rows)
 		$status = $is_primary ? 'локальный' : ($row['enabled'] === 'yes' ? (trim((string)$row['last_error']) === '' ? 'ok' : 'ошибка') : 'отключен');
 		$seeders = $is_primary || $row['seeders'] !== null ? (int)$row['seeders'] : 'н/д';
 		$leechers = $is_primary || $row['leechers'] !== null ? (int)$row['leechers'] : 'н/д';
-		$checked = !empty($row['last_checked']) ? multitracker_h($row['last_checked']) : 'н/д';
+		$checked = multitracker_h(multitracker_format_checked_at($row['last_checked'] ?? ''));
 		$error = (!$is_primary && trim((string)$row['last_error']) !== '') ? '<div class="small red">' . multitracker_h($row['last_error']) . '</div>' : '';
 		$html .= '<tr><td>' . ($is_primary ? '<b>наш трекер</b><br>' : '') . '<span title="' . multitracker_h($row['announce_url']) . '">' . multitracker_h($row['announce_url']) . '</span>' . $error . '</td>';
 		$html .= '<td class="center">' . multitracker_h($status) . '</td><td class="center green b">' . $seeders . '</td><td class="center red b">' . $leechers . '</td><td class="center">' . $checked . '</td></tr>';

@@ -48,9 +48,8 @@ $use_blocks = 1; // Использовать систему блоков. 1 - д
 $use_gzip = 1; // Использовать сжатие GZip на страницах.
 $use_ipbans = 1; // Использовать функцию блокирования IP-адресов. 0 - нет, 1 - да.
 $use_sessions = 1; // Использовать сессии. 0 - нет, 1 - да.
-$smtptype = 'advanced'; // Тип отправки почты, по умолчанию advanced, лучше не менять
 $allow_block_hide = true; // Разрешить сворачивание блоков
-$check_for_working_mta = true; // Проверять работу почтового MTA при регистрации пользователя (TCP connect @ domain:25)
+$check_for_working_mta = false; // Проверка почтового MTA отключена: SMTP из движка удален.
 $force_private_tracker = true; // Yet not working
 $max_image_size = 1024*1024; // 1mb
 $allow_guests_details = false; // Разрешить гостям доступ к странице деталей торрента
@@ -60,7 +59,7 @@ $website_name = 'TBDev'; // Краткое имя сайта, для формы 
 
 $enable_adv_antidreg = false; // Использовать продвинутую систему против двойных регистраций. Пояснение внизу:
 
-$_COOKIE_SALT = 'default'; // Соль для cookie пользователей
+$_COOKIE_SALT = '772dbf613d6dcbfa5a843a812d1f6e741345549d041396e9'; // Соль для cookie пользователей
 if (!defined('COOKIE_SALT')) {
     define('COOKIE_SALT', $_COOKIE_SALT);
 }

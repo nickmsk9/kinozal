@@ -28,7 +28,10 @@
 
 require_once("include/bittorrent.php");
 
-if (!mkglobal("username:password"))
+$username = isset($_GET['username']) ? trim((string)$_GET['username']) : (isset($_POST['username']) ? trim((string)$_POST['username']) : null);
+$password = isset($_GET['password']) ? (string)$_GET['password'] : (isset($_POST['password']) ? (string)$_POST['password'] : null);
+
+if ($username === null || $password === null)
 	die();
 
 dbconn();

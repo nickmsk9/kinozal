@@ -4,11 +4,12 @@ require_once("include/bittorrent.php");
 require_once("include/upload.php");
 require_once("include/multitracker.php");
 
-if (!mkglobal("id")) {
+$id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['id']) ? (int)$_POST['id'] : 0);
+
+if (!$id) {
 	die();
 }
 
-$id = intval($id);
 if (!$id) {
 	die();
 }

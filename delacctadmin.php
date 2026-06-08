@@ -32,7 +32,7 @@ dbconn();
 if (get_user_class() < UC_ADMINISTRATOR)
 stderr($tracker_lang['error'], "Нет доступа.");
 
-if ($HTTP_SERVER_VARS["REQUEST_METHOD"] == "POST")
+if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
     $username = trim((string)$_POST["username"]);
 

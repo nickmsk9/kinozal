@@ -37,10 +37,11 @@ function bark($msg) {
   exit;
 }
 
-if (!mkglobal("id"))
+$id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['id']) ? (int)$_POST['id'] : 0);
+
+if (!$id)
 	bark("Нехватает данных");
 
-$id = intval($id);
 if (!$id)
 	die();
 
