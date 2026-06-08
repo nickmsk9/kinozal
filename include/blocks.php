@@ -348,11 +348,13 @@ function show_blocks($position)
         $which = array_map('trim', explode(',', (string) $block['which']));
         $module_name = str_replace('.php', '', basename($_SERVER['PHP_SELF'] ?? ''));
         $is_home_like_module = in_array($module_name, array('index', 'radio'), true);
+        $is_home_module = $module_name === 'index';
 
         if (
             !in_array($module_name, $which, true)
             && !in_array('all', $which, true)
             && !(in_array('ihome', $which, true) && $is_home_like_module)
+            && !(in_array('home', $which, true) && $is_home_module)
         ) {
             continue;
         }
@@ -363,7 +365,7 @@ function show_blocks($position)
             render_blocks($blockfile, $title, $content, $bid, $bposition, $allow_hide);
         } elseif ($view === 2 && get_user_class() >= UC_MODERATOR) {
             render_blocks($blockfile, $title, $content, $bid, $bposition, $allow_hide);
-        } elseif ($view === 3 && (empty($CURUSER) || get_user_class() >= UC_MODERATOR)) {
+        } elseif ($view === 3 && empty($CURUSER)) {
             render_blocks($blockfile, $title, $content, $bid, $bposition, $allow_hide);
         }
     }

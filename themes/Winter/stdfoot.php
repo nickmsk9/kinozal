@@ -45,6 +45,12 @@ if (function_exists('show_blocks')) {
 <div class="clr"></div>
 </div><!-- /#main -->
 
+<?php
+if (function_exists('show_blocks')) {
+	show_blocks('f');
+}
+?>
+
 <div id="footer">
 	<div class="footer_inner justify">
 		Файлы для обмена предоставлены пользователями,<br>

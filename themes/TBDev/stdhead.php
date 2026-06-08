@@ -263,6 +263,12 @@ $page_title = $title !== '' ? $title : $site_name;
 
         <div class="clr"></div>
 
+        <?php
+        if (function_exists('show_blocks')) {
+            show_blocks('b');
+        }
+        ?>
+
         <div id="main">
             <div class="menu">
 
@@ -383,14 +389,6 @@ $page_title = $title !== '' ? $title : $site_name;
                     <div class="mn3_menu">
                         <?php
                         $current_module = str_replace('.php', '', basename($_SERVER['PHP_SELF'] ?? ''));
-
-                        require_once ROOT_PATH . 'include/uarch.php';
-                        echo uarch_block_html();
-                        echo '<div class="pad0x0x5x0 center">';
-                        echo '<a href="/radio.php" title="Радио Кинозал.ТВ">';
-                        echo '<img src="/pic/radio_ban.jpg" height="57" class="w190 block" alt="Радио Кинозал.ТВ">';
-                        echo '</a>';
-                        echo '</div>';
 
                         if (function_exists('show_blocks')) {
                             show_blocks('r');

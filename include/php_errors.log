@@ -404,3 +404,52 @@ Stack trace:
 #0 C:\OSPanel\domains\kinozal.lv\userdetails.php(371): mysqli_fetch_assoc()
 #1 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\userdetails.php on line 371
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "h" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 66
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "n" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 105
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "r" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 108
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "rt" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 112
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "r" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 116
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "r2" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 117
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "st" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 120
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "st" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 124
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "em" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 129
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ip" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 131
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "as" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 134
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "as" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 138
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "co" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 144
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ma" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 146
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "c" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 148
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "c" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 150
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "d" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 165
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "dt" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 169
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "d" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 174
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "d2" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 176
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ul" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 181
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ult" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 185
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ul" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 190
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ul2" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 192
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "do" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 195
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "do" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 199
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ls" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 207
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "lst" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 211
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ls" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 216
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ls2" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 218
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\OSPanel\domains\kinozal.lv\include\init.php on line 16
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "dl" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 221
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "dlt" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 225
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "dl" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 230
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "dl2" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 232
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "w" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 236
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "w" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 240
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "ac" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 247
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined array key "dip" in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 249
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pagemenu in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 901
+[08-Jun-2026 09:32:54 Europe/Moscow] PHP Warning:  Undefined variable $browsemenu in C:\OSPanel\domains\kinozal.lv\usersearch.php on line 901
