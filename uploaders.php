@@ -1,140 +1,140 @@
 <?php
 
-/*
-// +--------------------------------------------------------------------------+
-// | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
-// |                                               Do not remove above lines! |
-// +--------------------------------------------------------------------------+
-*/
+declare(strict_types=1);
 
-require "include/bittorrent.php";
+require_once __DIR__ . '/include/bittorrent.php';
+
 dbconn(true);
+loggedinorreturn();
 
-stdhead("Аплоадеры");
-
-loggedinorreturn;
-
-if ($CURUSER['class'] >= UC_MODERATOR)
-
-{
-
-$query = "SELECT id, username, added, uploaded, downloaded, donor, warned FROM users WHERE class = ".UC_UPLOADER;
-$result = sql_query($query);
-$num = mysqli_num_rows($result); // how many uploaders
-echo "<h2>Информация о аплоадерах</h2>";
-echo "<p>У нас " . $num . " аплоадер" . ($num > 1 ? "ов" : "") . "</p>";
-
-$zerofix = $num - 1; // remove one row because mysql starts at zero
-
-if ($num > 0)
-{
-echo "<table cellpadding=4 align=center border=1>";
-echo "<tr>";
-echo "<td class=colhead>Номер</td>";
-echo "<td class=colhead>Пользователь</td>";
-echo "<td class=colhead>Раздал&nbsp;/&nbsp;Скачал</td>";
-echo "<td class=colhead>Рейтинг</td>";
-echo "<td class=colhead>Залил&nbsp;торрентов</td>";
-echo "<td class=colhead>Последняя&nbsp;заливка</td>";
-echo "<td class=colhead>Отправить ЛС</td>";
-echo "</tr>";
-
-for ($i = 0; $i <= $zerofix; $i++)
-{
-$id = mysql_result($result, $i, "id");
-$username = mysql_result($result, $i, "username");
-$added = mysql_result($result, $i, "added");
-$uploaded = mksize(mysql_result($result, $i, "uploaded"));
-$downloaded = mksize(mysql_result($result, $i, "downloaded"));
-$uploadedratio = mysql_result($result, $i, "uploaded");
-$downloadedratio = mysql_result($result, $i, "downloaded");
-$donor = mysql_result($result, $i, "donor");
-$warned = mysql_result($result, $i, "warned");
-
-// get uploader torrents activity
-$upperquery = "SELECT added FROM torrents WHERE owner = $id";
-$upperresult = sql_query($upperquery);
-$numtorrents = mysqli_num_rows($upperresult);
-$lastadded = '0000-00-00 00:00:00';
-while ($torrentinfo = mysqli_fetch_array($upperresult))
-	if (strtotime($torrentinfo['added']) > strtotime($lastadded))
-		$lastadded = $torrentinfo['added'];
-
-if ($downloaded > 0)
-{
-$ratio = $uploadedratio / $downloadedratio;
-$ratio = number_format($ratio, 3);
-$color = get_ratio_color($ratio);
-if ($color)
-$ratio = "<font color=$color>$ratio</font>";
-}
-else
-if ($uploaded > 0)
-$ratio = "Inf.";
-else
-$ratio = "---";
-
-// get donor
-if ($donor == "yes")
-$star = "<img src=pic/star.gif>";
-else
-$star = "";
-
-// get warned
-if ($warned == "yes")
-$klicaj = "<img src=pic/warned8.gif>";
-else
-$klicaj = "";
-
-$counter = $i + 1;
-
-echo "<tr>";
-echo "<td align=center>$counter</td>";
-echo "<td><a href=userdetails.php?id=$id>$username</a> $star $klicaj</td>";
-echo "<td>$uploaded / $downloaded</td>";
-echo "<td>$ratio</td>";
-echo "<td>$numtorrents торрентов</td>";
-if ($numtorrents > 0)
-{
-//$lastadded = mysql_result($upperresult, $numtorrents - 1, "added");
-
-echo "<td>" . get_elapsed_time(sql_timestamp_to_unix_timestamp($lastadded)) . " назад (" . date("d. M Y",strtotime($lastadded)) . ")</td>";
-}
-else
-echo "<td>---</td>";
-echo "<td align=center><a href=sendmessage.php?receiver=$id><img border=0 src=pic/button_pm.gif></a></td>";
-
-echo "</tr>";
-
-
-}
-echo "</table>";
+if (get_user_class() < UC_MODERATOR) {
+    stderr(
+        $tracker_lang['error'] ?? 'Ошибка',
+        $tracker_lang['access_denied'] ?? 'Доступ запрещен.'
+    );
 }
 
+function uploaders_h(mixed $value): string
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-else
-stdmsg($tracker_lang['error'],$tracker_lang['access_denied']);
+function uploaders_ratio(float|int $uploaded, float|int $downloaded): string
+{
+    if ($downloaded > 0) {
+        return number_format($uploaded / $downloaded, 3, '.', '');
+    }
 
-stdfoot();
+    return $uploaded > 0 ? 'Inf.' : '---';
+}
 
+function uploaders_last_upload(?string $date): string
+{
+    if ($date === null || $date === '' || $date === '0000-00-00 00:00:00') {
+        return '---';
+    }
+
+    $timestamp = strtotime($date);
+    if ($timestamp === false) {
+        return '---';
+    }
+
+    return get_elapsed_time($timestamp) . ' назад (' . date('d.m.Y', $timestamp) . ')';
+}
+
+$res = sql_query("
+    SELECT
+        u.id,
+        u.username,
+        u.class,
+        u.uploaded,
+        u.downloaded,
+        u.donor,
+        u.warned,
+        u.enabled,
+        COUNT(t.id) AS torrent_count,
+        MAX(t.added) AS last_upload
+    FROM users AS u
+    LEFT JOIN torrents AS t ON t.owner = u.id
+    WHERE u.class = " . (int)UC_UPLOADER . "
+    GROUP BY
+        u.id,
+        u.username,
+        u.class,
+        u.uploaded,
+        u.downloaded,
+        u.donor,
+        u.warned,
+        u.enabled
+    ORDER BY u.username ASC
+") or sqlerr(__FILE__, __LINE__);
+
+$uploaders = array();
+while ($row = mysqli_fetch_assoc($res)) {
+    $uploaders[] = $row;
+}
+
+$hide_right_blocks = true;
+stdhead('Аплоадеры');
 ?>
+<div class="bx2">
+    <div class="pad0x0x5x0">
+        <h1>
+            <span class="bulet"></span>
+            <a href="uploaders.php" class="sbab">Информация об аплоадерах</a>
+        </h1>
+    </div>
+
+    <div class="bx2_0">
+        <div class="pad10x10">
+            <div class="pad0x0x10x0">
+                Всего аплоадеров: <b><?= count($uploaders) ?></b>
+            </div>
+
+            <?php if ($uploaders) { ?>
+                <table class="brd w100p">
+                    <tr class="colhead center">
+                        <td class="nw">№</td>
+                        <td>Пользователь</td>
+                        <td class="nw">Раздал / скачал</td>
+                        <td>Рейтинг</td>
+                        <td>Раздач</td>
+                        <td>Последняя загрузка</td>
+                        <td>ЛС</td>
+                    </tr>
+
+                    <?php foreach ($uploaders as $index => $uploader) { ?>
+                        <?php
+                        $userId = (int)$uploader['id'];
+                        $uploaded = (float)$uploader['uploaded'];
+                        $downloaded = (float)$uploader['downloaded'];
+                        $icons = function_exists('get_user_icons') ? get_user_icons($uploader) : '';
+                        ?>
+                        <tr>
+                            <td class="center"><?= $index + 1 ?></td>
+                            <td>
+                                <a class="u<?= (int)$uploader['class'] ?>" href="userdetails.php?id=<?= $userId ?>">
+                                    <?= uploaders_h($uploader['username']) ?>
+                                </a>
+                                <?= $icons ?>
+                            </td>
+                            <td class="center nw">
+                                <?= uploaders_h(mksize($uploaded)) ?> / <?= uploaders_h(mksize($downloaded)) ?>
+                            </td>
+                            <td class="center"><?= uploaders_ratio($uploaded, $downloaded) ?></td>
+                            <td class="center"><?= (int)$uploader['torrent_count'] ?></td>
+                            <td class="center nw"><?= uploaders_h(uploaders_last_upload($uploader['last_upload'])) ?></td>
+                            <td class="center">
+                                <a class="buttonS" href="sendmessage.php?receiver=<?= $userId ?>">Написать</a>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                </table>
+            <?php } else { ?>
+                <div class="bx5x5 center">Аплоадеры не найдены.</div>
+            <?php } ?>
+        </div>
+    </div>
+</div>
+<?php
+stdfoot();

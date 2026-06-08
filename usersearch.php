@@ -1,30 +1,5 @@
 <?
 
-/*
-// +--------------------------------------------------------------------------+
-// | Project:    TBDevYSE - TBDev Yuna Scatari Edition                        |
-// +--------------------------------------------------------------------------+
-// | This file is part of TBDevYSE. TBDevYSE is based on TBDev,               |
-// | originally by RedBeard of TorrentBits, extensively modified by           |
-// | Gartenzwerg.                                                             |
-// |                                                                          |
-// | TBDevYSE is free software; you can redistribute it and/or modify         |
-// | it under the terms of the GNU General Public License as published by     |
-// | the Free Software Foundation; either version 2 of the License, or        |
-// | (at your option) any later version.                                      |
-// |                                                                          |
-// | TBDevYSE is distributed in the hope that it will be useful,              |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of           |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            |
-// | GNU General Public License for more details.                             |
-// |                                                                          |
-// | You should have received a copy of the GNU General Public License        |
-// | along with TBDevYSE; if not, write to the Free Software Foundation,      |
-// | Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA            |
-// +--------------------------------------------------------------------------+
-// |                                               Do not remove above lines! |
-// +--------------------------------------------------------------------------+
-*/
 
 require "include/bittorrent.php";
 
@@ -60,12 +35,56 @@ loggedinorreturn();
 if (get_user_class() < UC_MODERATOR)
 	stderr($tracker_lang['error'], "Отказано в доступе.");
 
-stdhead("Административный поиск");
-echo "<h1>Административный поиск</h1>\n";
+$has_search_params = count($_GET) > 0;
 
-if ($_GET['h'])
+$_GET += array(
+	'h' => '',
+	'n' => '',
+	'r' => '',
+	'rt' => '0',
+	'r2' => '',
+	'st' => '0',
+	'em' => '',
+	'ip' => '',
+	'as' => '0',
+	'co' => '',
+	'ma' => '',
+	'c' => '1',
+	'd' => '',
+	'dt' => '0',
+	'd2' => '',
+	'ul' => '',
+	'ult' => '0',
+	'ul2' => '',
+	'do' => '0',
+	'ls' => '',
+	'lst' => '0',
+	'ls2' => '',
+	'dl' => '',
+	'dlt' => '0',
+	'dl2' => '',
+	'w' => '0',
+	'ac' => '',
+	'dip' => '',
+);
+
+$hide_right_blocks = true;
+stdhead("Административный поиск пользователей");
+?>
+<div class="bx2">
+	<div class="pad0x0x5x0">
+		<h1>
+			<span class="bulet"></span>
+			<a href="usersearch.php" class="sbab">Административный поиск пользователей</a>
+		</h1>
+	</div>
+	<div class="bx2_0">
+		<div class="pad10x10">
+<?
+
+if (!empty($_GET['h']))
 {
-	begin_frame("Инструкция<font color=#009900> - Читать обязательно</font>");
+	begin_frame("Инструкция - читать обязательно");
 ?>
 <ul>
 <li>Пустые поля будут проигнорированы</li>
@@ -89,16 +108,18 @@ of the torrents in progress.</li>
 }
 else
 {
-	echo "<p align=center>(<a href='".$_SERVER["PHP_SELF"]."?h=1'>Инструкция</a>)";
-	echo "&nbsp;-&nbsp;(<a href='".$_SERVER["PHP_SELF"]."'>Сброс</a>)</p>\n";
+	echo '<div class="center pad0x0x10x0">';
+	echo '<a class="buttonS" href="' . htmlspecialchars_uni($_SERVER["PHP_SELF"]) . '?h=1">Инструкция</a> ';
+	echo '<a class="buttonS" href="' . htmlspecialchars_uni($_SERVER["PHP_SELF"]) . '">Сбросить фильтры</a>';
+	echo '</div>';
 }
 
-$highlight = " bgcolor=#BBAF9B";
+$highlight = "";
 
 ?>
 
-<form method=get action=<?=htmlspecialchars_uni($_SERVER["PHP_SELF"]);?>>
-<table border="1" cellspacing="0" cellpadding="5">
+<form method="get" action="<?=htmlspecialchars_uni($_SERVER["PHP_SELF"]);?>">
+<table class="brd w100p" cellspacing="0" cellpadding="5">
 <tr>
 
   <td valign="middle" class=rowhead>Имя:</td>
@@ -248,10 +269,12 @@ $highlight = " bgcolor=#BBAF9B";
   <td valign="middle" class=rowhead>Забаненые&nbsp;IP: </td>
   <td<?=$_GET['dip']?$highlight:""?>><input name="dip" type="checkbox" value="1" <?=($_GET['dip'])?"checked":"" ?>></td>
   </tr>
-<tr><td colspan="6" align=center><input name="submit" type=submit class=btn value=Искать></td></tr>
+<tr><td colspan="6" class="center"><input name="submit" type="submit" value="Найти пользователей"></td></tr>
 </table>
-<br /><br />
 </form>
+		</div>
+	</div>
+</div>
 
 <?
 
@@ -301,8 +324,16 @@ function haswildcard($text){
 
 ///////////////////////////////////////////////////////////////////////////////
 
-if (count($_GET) > 0 && !$_GET['h'])
+if ($has_search_params && empty($_GET['h']))
 {
+  $where_is = "";
+  $q = "";
+  $join_is = "";
+  $names_inc = null;
+  $names_exc = null;
+  $comments_inc = null;
+  $comments_exc = null;
+
 	// name
   $names = explode(' ',trim($_GET['n']));
   if ($names[0] !== "")
@@ -320,15 +351,16 @@ if (count($_GET) > 0 && !$_GET['h'])
 
     if (is_array($names_inc))
     {
-	  	$where_is .= isset($where_is)?" AND (":"(";
+	  $name_is = "";
+	  	$where_is .= $where_is !== "" ? " AND (" : "(";
 	    foreach($names_inc as $name)
 	    {
       	if (!haswildcard($name))
-	        $name_is .= (isset($name_is)?" OR ":"")."u.username = ".sqlesc($name);
+	        $name_is .= ($name_is !== "" ? " OR " : "")."u.username = ".sqlesc($name);
 	      else
 	      {
 	        $name = str_replace(array('?','*'), array('_','%'), $name);
-	        $name_is .= (isset($name_is)?" OR ":"")."u.username LIKE ".sqlesc($name);
+	        $name_is .= ($name_is !== "" ? " OR " : "")."u.username LIKE ".sqlesc($name);
 	      }
 	    }
       $where_is .= $name_is.")";
@@ -337,15 +369,16 @@ if (count($_GET) > 0 && !$_GET['h'])
 
     if (is_array($names_exc))
     {
-	  	$where_is .= isset($where_is)?" AND NOT (":" NOT (";
+	  $name_is = "";
+	  	$where_is .= $where_is !== "" ? " AND NOT (" : "NOT (";
 	    foreach($names_exc as $name)
 	    {
 	    	if (!haswildcard($name))
-	      	$name_is .= (isset($name_is)?" OR ":"")."u.username = ".sqlesc($name);
+	      	$name_is .= ($name_is !== "" ? " OR " : "")."u.username = ".sqlesc($name);
 	      else
 	      {
 	      	$name = str_replace(array('?','*'), array('_','%'), $name);
-	        $name_is .= (isset($name_is)?" OR ":"")."u.username LIKE ".sqlesc($name);
+	        $name_is .= ($name_is !== "" ? " OR " : "")."u.username LIKE ".sqlesc($name);
 	      }
 	    }
       $where_is .= $name_is.")";
@@ -357,7 +390,8 @@ if (count($_GET) > 0 && !$_GET['h'])
   $emaila = explode(' ', trim($_GET['em']));
   if ($emaila[0] !== "")
   {
-  	$where_is .= isset($where_is)?" AND (":"(";
+	$email_is = "";
+  	$where_is .= $where_is !== "" ? " AND (" : "(";
     foreach($emaila as $email)
     {
 	  	if (strpos($email,'*') === False && strpos($email,'?') === False
@@ -369,12 +403,12 @@ if (count($_GET) > 0 && !$_GET['h'])
 	        stdfoot();
 	      	die();
 	      }
-	      $email_is .= (isset($email_is)?" OR ":"")."u.email =".sqlesc($email);
+	      $email_is .= ($email_is !== "" ? " OR " : "")."u.email =".sqlesc($email);
       }
       else
       {
 	    	$sql_email = str_replace(array('?','*'), array('_','%'), $email);
-	      $email_is .= (isset($email_is)?" OR ":"")."u.email LIKE ".sqlesc($sql_email);
+	      $email_is .= ($email_is !== "" ? " OR " : "")."u.email LIKE ".sqlesc($sql_email);
 	    }
     }
 		$where_is .= $email_is.")";
@@ -386,7 +420,7 @@ if (count($_GET) > 0 && !$_GET['h'])
   $class = $_GET['c'] - 2;
 	if (is_valid_id($class + 1))
 	{
-  	$where_is .= (isset($where_is)?" AND ":"")."u.class=$class";
+  	$where_is .= ($where_is !== "" ? " AND " : "")."u.class=$class";
     $q .= ($q ? "&amp;" : "") . "c=".($class+2);
   }
 
@@ -404,7 +438,7 @@ if (count($_GET) > 0 && !$_GET['h'])
 
     $mask = trim($_GET['ma']);
     if ($mask == "" || $mask == "255.255.255.255")
-    	$where_is .= (isset($where_is)?" AND ":"")."u.ip = '$ip'";
+    	$where_is .= ($where_is !== "" ? " AND " : "")."u.ip = '$ip'";
     else
     {
     	if (substr($mask,0,1) == "/")
@@ -425,7 +459,7 @@ if (count($_GET) > 0 && !$_GET['h'])
 				stdfoot();
 	      die();
       }
-      $where_is .= (isset($where_is)?" AND ":"")."INET_ATON(u.ip) & INET_ATON('$mask') = INET_ATON('$ip') & INET_ATON('$mask')";
+      $where_is .= ($where_is !== "" ? " AND " : "")."INET_ATON(u.ip) & INET_ATON('$mask') = INET_ATON('$ip') & INET_ATON('$mask')";
       $q .= ($q ? "&amp;" : "") . "ma=$mask";
     }
     $q .= ($q ? "&amp;" : "") . "ip=$ip";
@@ -438,13 +472,13 @@ if (count($_GET) > 0 && !$_GET['h'])
   	if ($ratio == '---')
   	{
     	$ratio2 = "";
-      $where_is .= isset($where_is)?" AND ":"";
+      $where_is .= $where_is !== "" ? " AND " : "";
       $where_is .= " u.uploaded = 0 and u.downloaded = 0";
     }
     elseif (strtolower(substr($ratio,0,3)) == 'inf')
     {
     	$ratio2 = "";
-      $where_is .= isset($where_is)?" AND ":"";
+      $where_is .= $where_is !== "" ? " AND " : "";
       $where_is .= " u.uploaded > 0 and u.downloaded = 0";
     }
     else
@@ -455,7 +489,7 @@ if (count($_GET) > 0 && !$_GET['h'])
       	stdfoot();
         die();
       }
-      $where_is .= isset($where_is)?" AND ":"";
+      $where_is .= $where_is !== "" ? " AND " : "";
       $where_is .= " (u.uploaded/u.downloaded)";
       $ratiotype = $_GET['rt'];
       $q .= ($q ? "&amp;" : "") . "rt=$ratiotype";
@@ -504,15 +538,16 @@ if (count($_GET) > 0 && !$_GET['h'])
 
     if (is_array($comments_inc))
     {
-	  	$where_is .= isset($where_is)?" AND (":"(";
+	  $comment_is = "";
+	  	$where_is .= $where_is !== "" ? " AND (" : "(";
 	    foreach($comments_inc as $comment)
 	    {
 	    	if (!haswildcard($comment))
-		    	$comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".sqlesc("%".$comment."%");
+		    	$comment_is .= ($comment_is !== "" ? " OR " : "")."u.modcomment LIKE ".sqlesc("%".$comment."%");
         else
         {
 	      	$comment = str_replace(array('?','*'), array('_','%'), $comment);
-	        $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".sqlesc($comment);
+	        $comment_is .= ($comment_is !== "" ? " OR " : "")."u.modcomment LIKE ".sqlesc($comment);
         }
       }
       $where_is .= $comment_is.")";
@@ -521,15 +556,16 @@ if (count($_GET) > 0 && !$_GET['h'])
 
     if (is_array($comments_exc))
     {
-	  	$where_is .= isset($where_is)?" AND NOT (":" NOT (";
+	  $comment_is = "";
+	  	$where_is .= $where_is !== "" ? " AND NOT (" : "NOT (";
 	    foreach($comments_exc as $comment)
 	    {
 	    	if (!haswildcard($comment))
-		    	$comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".sqlesc("%".$comment."%");
+		    	$comment_is .= ($comment_is !== "" ? " OR " : "")."u.modcomment LIKE ".sqlesc("%".$comment."%");
         else
         {
 	      	$comment = str_replace(array('?','*'), array('_','%'), $comment);
-	        $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".sqlesc($comment);
+	        $comment_is .= ($comment_is !== "" ? " OR " : "")."u.modcomment LIKE ".sqlesc($comment);
 	      }
       }
       $where_is .= $comment_is.")";
@@ -549,7 +585,7 @@ if (count($_GET) > 0 && !$_GET['h'])
     	stdfoot();
       die();
     }
-    $where_is .= isset($where_is)?" AND ":"";
+    $where_is .= $where_is !== "" ? " AND " : "";
     $where_is .= " u.uploaded ";
     $ultype = $_GET['ult'];
     $q .= ($q ? "&amp;" : "") . "ult=$ultype";
@@ -590,7 +626,7 @@ if (count($_GET) > 0 && !$_GET['h'])
     	stdfoot();
       die();
     }
-    $where_is .= isset($where_is)?" AND ":"";
+    $where_is .= $where_is !== "" ? " AND " : "";
     $where_is .= " u.downloaded ";
     $dltype = $_GET['dlt'];
     $q .= ($q ? "&amp;" : "") . "dlt=$dltype";
@@ -637,11 +673,11 @@ if (count($_GET) > 0 && !$_GET['h'])
     if ($datetype == "0")
     // For mySQL 4.1.1 or above use instead
     // $where_is .= (isset($where_is)?" AND ":"")."DATE(added) = DATE('$date')";
-    $where_is .= (isset($where_is)?" AND ":"").
+    $where_is .= ($where_is !== "" ? " AND " : "").
     		"(UNIX_TIMESTAMP(added) - UNIX_TIMESTAMP('$date')) BETWEEN 0 and 86400";
     else
     {
-      $where_is .= (isset($where_is)?" AND ":"")."u.added ";
+      $where_is .= ($where_is !== "" ? " AND " : "")."u.added ";
       if ($datetype == "3")
       {
         $date2 = mkdate(trim($_GET['d2']));
@@ -686,11 +722,11 @@ if (count($_GET) > 0 && !$_GET['h'])
     if ($lasttype == "0")
     // For mySQL 4.1.1 or above use instead
     // $where_is .= (isset($where_is)?" AND ":"")."DATE(added) = DATE('$date')";
-    	$where_is .= (isset($where_is)?" AND ":"").
+    	$where_is .= ($where_is !== "" ? " AND " : "").
       		"(UNIX_TIMESTAMP(last_access) - UNIX_TIMESTAMP('$last')) BETWEEN 0 and 86400";
     else
     {
-    	$where_is .= (isset($where_is)?" AND ":"")."u.last_access ";
+    	$where_is .= ($where_is !== "" ? " AND " : "")."u.last_access ";
       if ($lasttype == "3")
       {
       	$last2 = mkdate(trim($_GET['ls2']));
@@ -717,7 +753,7 @@ if (count($_GET) > 0 && !$_GET['h'])
   $status = $_GET['st'];
   if ($status)
   {
-  	$where_is .= ((isset($where_is))?" AND ":"");
+  	$where_is .= $where_is !== "" ? " AND " : "";
     if ($status == "1")
     	$where_is .= "u.status = 'confirmed'";
     else
@@ -729,7 +765,7 @@ if (count($_GET) > 0 && !$_GET['h'])
   $accountstatus = $_GET['as'];
   if ($accountstatus)
   {
-  	$where_is .= (isset($where_is))?" AND ":"";
+  	$where_is .= $where_is !== "" ? " AND " : "";
     if ($accountstatus == "1")
     	$where_is .= " u.enabled = 'yes'";
     else
@@ -741,7 +777,7 @@ if (count($_GET) > 0 && !$_GET['h'])
 	$donor = $_GET['do'];
   if ($donor)
   {
-		$where_is .= (isset($where_is))?" AND ":"";
+		$where_is .= $where_is !== "" ? " AND " : "";
     if ($donor == 1)
     	$where_is .= " u.donor = 'yes'";
     else
@@ -753,7 +789,7 @@ if (count($_GET) > 0 && !$_GET['h'])
 	$warned = $_GET['w'];
   if ($warned)
   {
-		$where_is .= (isset($where_is))?" AND ":"";
+		$where_is .= $where_is !== "" ? " AND " : "";
     if ($warned == 1)
     	$where_is .= " u.warned = 'yes'";
     else
@@ -767,7 +803,7 @@ if (count($_GET) > 0 && !$_GET['h'])
   {
   	$distinct = "DISTINCT ";
     $join_is .= " LEFT JOIN users AS u2 ON u.ip = u2.ip";
-		$where_is .= ((isset($where_is))?" AND ":"")."u2.enabled = 'no'";
+		$where_is .= ($where_is !== "" ? " AND " : "")."u2.enabled = 'no'";
     $q .= ($q ? "&amp;" : "") . "dip=$disabled";
   }
 
@@ -809,7 +845,7 @@ if (count($_GET) > 0 && !$_GET['h'])
 //    </temporary>   /////////////////////////////////////////////////////
 
   $res = sql_query($queryc) or sqlerr(__FILE__, __LINE__);
-  $arr = mysql_fetch_row($res);
+  $arr = mysqli_fetch_row($res);
   $count = $arr[0];
 
   $q = isset($q)?($q."&amp;"):"";
@@ -826,9 +862,10 @@ if (count($_GET) > 0 && !$_GET['h'])
   	stdmsg("Внимание","Пользователь не был найден.");
   else
   {
+	begin_frame("Результаты поиска: " . number_format($count));
   	if ($count > $perpage)
   		echo $pagertop;
-    echo "<table border=1 cellspacing=0 cellpadding=5>\n";
+    echo "<table class=\"brd w100p\" cellspacing=\"0\" cellpadding=\"5\">\n";
     echo "<tr><td class=colhead align=left>Пользователь</td>
     		<td class=colhead align=left>Рейтинг</td>
         <td class=colhead align=left>IP</td>
@@ -852,11 +889,11 @@ if (count($_GET) > 0 && !$_GET['h'])
       {
 	    	$nip = ip2long($user['ip']);
         $auxres = sql_query("SELECT COUNT(*) FROM bans WHERE $nip >= first AND $nip <= last") or sqlerr(__FILE__, __LINE__);
-        $array = mysql_fetch_row($auxres);
+        $array = mysqli_fetch_row($auxres);
     	  if ($array[0] == 0)
       		$ipstr = $user['ip'];
 	  	  else
-	      	$ipstr = "<a href='testip.php?ip=" . $user['ip'] . "'><font color='#FF0000'><b>" . $user['ip'] . "</b></font></a>";
+			$ipstr = "<a class='red b' href='testip.php?ip=" . $user['ip'] . "'>" . $user['ip'] . "</a>";
 			}
 			else
       	$ipstr = "---";
@@ -867,12 +904,10 @@ if (count($_GET) > 0 && !$_GET['h'])
       $pul = $array['pul'];
       $pdl = $array['pdl'];
 
-      $n_posts = $n[0];
-
       $auxres = sql_query("SELECT COUNT(id) FROM comments WHERE user = ".$user['id']) or sqlerr(__FILE__, __LINE__);
 			// Use LEFT JOIN to exclude orphan comments
       // $auxres = sql_query("SELECT COUNT(c.id) FROM comments AS c LEFT JOIN torrents as t ON c.torrent = t.id WHERE c.user = '".$user['id']."'") or sqlerr(__FILE__, __LINE__);
-      $n = mysql_fetch_row($auxres);
+      $n = mysqli_fetch_row($auxres);
       $n_comments = $n[0];
 
     	echo "<tr><td><b><a href='userdetails.php?id=" . $user['id'] . "'>" .
@@ -895,10 +930,10 @@ if (count($_GET) > 0 && !$_GET['h'])
     if ($count > $perpage)
     	echo "$pagerbottom";
 
+    end_frame();
   }
 }
 
-print("<p>$pagemenu<br />$browsemenu</p>");
 stdfoot();
 die;
 
