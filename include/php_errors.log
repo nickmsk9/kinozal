@@ -1138,3 +1138,39 @@ Stack trace:
 #0 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\uploaders.php on line 9
 [08-Jun-2026 13:05:56 Europe/Moscow] PHP Warning:  Undefined array key "id" in C:\OSPanel\domains\kinozal.lv\torrent_info.php on line 64
+[09-Jun-2026 11:28:18 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:28:53 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:28:54 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:28:54 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:28:54 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:28:54 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8

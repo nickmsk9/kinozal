@@ -83,6 +83,9 @@ function theme_resolve_name($theme = "") {
 	if ($lower === 'winter' || $lower === 'зимний') {
 		return 'Winter';
 	}
+	if ($lower === 'tbdev2030' || $lower === 'tbdev 2030 (экспериментальная)') {
+		return 'TBDev2030';
+	}
 
 	return $theme;
 }
@@ -94,6 +97,9 @@ function theme_display_name($theme = "") {
 	}
 	if ($resolved === 'Winter') {
 		return 'Зимний';
+	}
+	if ($resolved === 'TBDev2030') {
+		return 'TBDev 2030 (экспериментальная)';
 	}
 	return $theme;
 }
