@@ -1548,6 +1548,30 @@ function upload_textarea($name, $value, $rows = 6, $placeholder = '')
 	return '<textarea name="' . h($name) . '" rows="' . (int)$rows . '" class="w100p up"' . ($placeholder !== '' ? ' placeholder="' . h($placeholder) . '"' : '') . '>' . h($value) . '</textarea>';
 }
 
+function upload_bbcode_editor($name, $value, $rows = 8)
+{
+	$buttons = array(
+		'b' => 'B',
+		'i' => 'I',
+		'u' => 'U',
+		's' => 'S',
+		'quote' => 'Цитата',
+		'url' => 'URL',
+		'img' => 'IMG',
+		'code' => 'Код',
+		'center' => 'Центр',
+	);
+	$html = '<div class="upl-bbcode">';
+	$html .= '<div class="upl-bbcode-toolbar">';
+	foreach ($buttons as $tag => $label) {
+		$html .= '<button type="button" class="upl-bbcode-button" data-tag="' . h($tag) . '" onclick="return Upl.insertBbcode(this, \'' . h($tag) . '\');">' . h($label) . '</button>';
+	}
+	$html .= '</div>';
+	$html .= upload_textarea($name, $value, $rows);
+	$html .= '</div>';
+	return $html;
+}
+
 function upload_render_info_sidebar()
 {
 	global $CURUSER;
@@ -1762,7 +1786,7 @@ function upload_render_video_template(array $data, array $section_modes)
 		<tr><td>Режиссер:</td><td><?= upload_input('video[director]', $video['director'] ?? '', 'Имя Фамилия') ?></td></tr>
 		<tr><td>В ролях:</td><td><?= upload_textarea('video[cast]', $video['cast'] ?? '', 4, 'Имя Фамилия, Имя Фамилия') ?><div class="n">Список исполняющих роли через запятую</div></td></tr>
 	</table>
-	<div class="upl-advanced upl-section-0" style="display:none;"><?= upload_textarea('advanced[desc1]', $advanced['desc1'] ?? '', 8) ?></div>
+	<div class="upl-advanced upl-section-0" style="display:none;"><?= upload_bbcode_editor('advanced[desc1]', $advanced['desc1'] ?? '', 8) ?></div>
 	<?php
 	upload_render_section_end();
 
@@ -1771,7 +1795,7 @@ function upload_render_video_template(array $data, array $section_modes)
 	<table class="tables1 w100p upl-normal upl-section-1">
 		<tr><td class="w175">О фильме:</td><td><?= upload_textarea('video[about]', $video['about'] ?? '', 10, 'Краткое описание фильма...') ?><div class="n">Рекомендуем писать собственное описание, а не копировать его из сети - это положительно скажется на количестве сидов и пиров.</div></td></tr>
 	</table>
-	<div class="upl-advanced upl-section-1" style="display:none;"><?= upload_textarea('advanced[desc2]', $advanced['desc2'] ?? '', 10) ?></div>
+	<div class="upl-advanced upl-section-1" style="display:none;"><?= upload_bbcode_editor('advanced[desc2]', $advanced['desc2'] ?? '', 10) ?></div>
 	<?php
 	upload_render_section_end();
 
@@ -1787,14 +1811,14 @@ function upload_render_video_template(array $data, array $section_modes)
 		<tr><td>Язык:</td><td><?= upload_option_select('video[language]', upload_language_options(), $video['language'] ?? '') ?><div class="n">Для отечественного видео</div></td></tr>
 		<tr><td>Субтитры:</td><td><?= upload_option_select('video[subtitles]', upload_subtitle_options(), $video['subtitles'] ?? '') ?><div class="n">Укажите субтитры, если имеются</div></td></tr>
 	</table>
-	<div class="upl-advanced upl-section-2" style="display:none;"><?= upload_textarea('advanced[desc3]', $advanced['desc3'] ?? '', 8) ?></div>
+	<div class="upl-advanced upl-section-2" style="display:none;"><?= upload_bbcode_editor('advanced[desc3]', $advanced['desc3'] ?? '', 8) ?></div>
 	<?php
 	upload_render_section_end();
 
 	upload_render_section_start(3, 'Оформление, вкладки, примечания, скриншоты', $section_modes[3]);
 	upload_render_design_fields($design);
 	?>
-	<div class="upl-advanced upl-section-3" style="display:none;"><?= upload_textarea('advanced[desc4]', $advanced['desc4'] ?? '', 31) ?></div>
+	<div class="upl-advanced upl-section-3" style="display:none;"><?= upload_bbcode_editor('advanced[desc4]', $advanced['desc4'] ?? '', 31) ?></div>
 	<?php
 	upload_render_section_end();
 }
@@ -1983,7 +2007,7 @@ function upload_render_release_template($kind, array $data, array $section_modes
 		if ($value === '') {
 			$value = $default;
 		}
-		echo '<div class="upl-advanced upl-section-' . (int)$i . '" style="display:none;">' . upload_textarea('templates[' . $kind . '][advanced][desc' . ($i + 1) . ']', $value, $i === 1 ? 10 : 8) . '</div>';
+		echo '<div class="upl-advanced upl-section-' . (int)$i . '" style="display:none;">' . upload_bbcode_editor('templates[' . $kind . '][advanced][desc' . ($i + 1) . ']', $value, $i === 1 ? 10 : 8) . '</div>';
 		upload_render_section_end();
 	}
 
@@ -1994,7 +2018,7 @@ function upload_render_release_template($kind, array $data, array $section_modes
 	if ($value === '') {
 		$value = $default;
 	}
-	echo '<div class="upl-advanced upl-section-3" style="display:none;">' . upload_textarea('templates[' . $kind . '][advanced][desc4]', $value, 20) . '</div>';
+	echo '<div class="upl-advanced upl-section-3" style="display:none;">' . upload_bbcode_editor('templates[' . $kind . '][advanced][desc4]', $value, 20) . '</div>';
 	upload_render_section_end();
 }
 
@@ -2053,6 +2077,33 @@ function upload_render_js($kind, $mode, array $section_modes)
 	?>
 	<script type="text/javascript">
 	var Upl = {
+		insertBbcode: function(button, tag) {
+			var editor = button;
+			while (editor && (' ' + editor.className + ' ').indexOf(' upl-bbcode ') === -1) {
+				editor = editor.parentNode;
+			}
+			if (!editor) return false;
+			var textarea = editor.getElementsByTagName('textarea')[0];
+			if (!textarea) return false;
+
+			var start = typeof textarea.selectionStart === 'number' ? textarea.selectionStart : textarea.value.length;
+			var end = typeof textarea.selectionEnd === 'number' ? textarea.selectionEnd : start;
+			var selected = textarea.value.substring(start, end);
+			var open = '[' + tag + ']';
+			var close = '[/' + tag + ']';
+			var replacement = open + selected + close;
+
+			textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+			textarea.focus();
+			if (typeof textarea.setSelectionRange === 'function') {
+				if (selected === '') {
+					textarea.setSelectionRange(start + open.length, start + open.length);
+				} else {
+					textarea.setSelectionRange(start, start + replacement.length);
+				}
+			}
+			return false;
+		},
 		setTemplate: function(kind) {
 			var kinds = ['video', 'music', 'game', 'audiobook', 'program', 'book', 'graphic'];
 			document.getElementById('kind').value = kind;

@@ -13,7 +13,13 @@ if ((string)($_GET['action'] ?? '') === 'getch') {
 		pay_add_chat_message($tab, $_POST['t'] ?? '');
 	}
 	header('Content-Type: text/html; charset=' . ($tracker_lang['language_charset'] ?? 'UTF-8'));
-	echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="./themes/TBDev/TBDev.css" type="text/css"></head><body style="background:#fff;">';
+	$theme = select_theme();
+	$theme_path = './themes/' . rawurlencode($theme) . '/';
+	echo '<!DOCTYPE html><html><head><meta charset="UTF-8">';
+	if (file_exists(__DIR__ . '/themes/' . $theme . '/engine.css')) {
+		echo '<link rel="stylesheet" href="' . $theme_path . 'engine.css" type="text/css">';
+	}
+	echo '<link rel="stylesheet" href="' . $theme_path . 'TBDev.css" type="text/css"></head><body style="background:#fff;">';
 	echo pay_chat_html($tab, (int)($_GET['imes'] ?? 50));
 	echo '</body></html>';
 	exit;
@@ -74,7 +80,7 @@ table.smstable td {
 
 <div class="bx1 justify">
 	На Вашем счете <b><?= (int)$votes ?> голосов</b> и <b><?= number_format($bonus, 2, '.', ' ') ?> бонусов</b>.
-	Голоса теперь получаются не через платежные системы, а через обмен бонусов из раздела <a href="/mybonus.php" class="sbab">Мой бонус</a>.
+	Голоса начисляются здесь через обмен накопленных бонусов.
 	С помощью голосов можно оставлять отзывы в профилях пользователей, писать пожелания проекту, получать статус Меценат и управлять счетчиками.
 </div>
 

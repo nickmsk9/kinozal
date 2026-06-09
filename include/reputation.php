@@ -295,7 +295,7 @@ function profile_menu_html($user, $viewer)
 	$hash = reputation_h($viewer['hash4u'] ?? ($viewer['logout_hash'] ?? ''));
 
 	$html = '<ul class="men ' . $class . ' w200">';
-	$html .= '<li class="img"><a href="/userdetails.php?id=' . $id . '"><img src="' . $avatar . '" class="p200" alt=""></a></li>';
+	$html .= '<li class="img profile-menu-avatar"><a href="/userdetails.php?id=' . $id . '"><img src="' . $avatar . '" class="p200" alt=""></a></li>';
 	$html .= '<li class="tp">&#1052;&#1077;&#1085;&#1102; &#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1103;</li>';
 
 	if ($isOwn) {

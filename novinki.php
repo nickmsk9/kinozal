@@ -44,9 +44,9 @@ $page_patterns = array('/novinki.php%', 'novinki.php%');
 ?>
 <div class="mn_wrap">
     <div class="bx2_0">
-        <table class="main" width="100%" border="0" cellspacing="0" cellpadding="0">
+        <table class="main novinki-layout" width="100%" border="0" cellspacing="0" cellpadding="0">
             <tr>
-                <td style="background:#F1D29C; padding:3px 6px;">
+                <td class="novinki-title">
                     <a class="sbab" href="novinki.php">Новинки раздач - новые материалы Кинозал.ТВ</a>
                 </td>
             </tr>
@@ -56,11 +56,11 @@ $page_patterns = array('/novinki.php%', 'novinki.php%');
                         <div style="padding-bottom:4px;">
                             <img src="pic/p_novinki.jpg" alt="Новинки кино" title="Новинки кино" border="0">
                         </div>
-                        <div style="background:#F1D29C; color:#000000; font-weight:bold; padding:3px 6px;">Новинки Кинозал.ТВ</div>
+                        <div class="novinki-side-title">Новинки Кинозал.ТВ</div>
                         <div style="padding:6px 4px 10px 4px; text-align:justify;">
                             Здесь собираются новые раздачи трекера: фильмы, сериалы, мультфильмы, музыка, программы и другие свежие материалы.
                         </div>
-                        <div style="background:#F1D29C; color:#000000; font-weight:bold; padding:3px 6px;">Информация</div>
+                        <div class="novinki-side-title">Информация</div>
                         <div style="padding:6px 4px 4px 4px; text-align:justify;">
                             Раздачи отсортированы по дате добавления. Если у материала нет постера, показывается иконка его категории.
                         </div>
@@ -68,7 +68,7 @@ $page_patterns = array('/novinki.php%', 'novinki.php%');
 
                     <div style="overflow:hidden;">
                         <?php if ($posters) { ?>
-                            <table class="main" width="100%" border="0" cellspacing="4" cellpadding="0">
+                            <table class="main novinki-posters" width="100%" border="0" cellspacing="4" cellpadding="0">
                                 <tr valign="top">
                                     <?php
                                     $columns = 12;

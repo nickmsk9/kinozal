@@ -72,7 +72,7 @@ function ps_person_grid(array $persons, $title)
 		echo '<div class="pad10x10">Персоны не найдены.</div></div>';
 		return;
 	}
-	echo '<table class="tables3 w100p">';
+	echo '<table class="tables3 w100p person-grid">';
 	$col = 0;
 	foreach ($persons as $person) {
 		if ($col === 0) {

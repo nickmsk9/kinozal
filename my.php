@@ -18,7 +18,7 @@ function my_menu($user) {
 
 	return '
 	<div class="mn1_menu">
-		<ul class="men u2 w200">
+		<ul class="men w200">
 			<li class="img"><a href="/userdetails.php?id=' . $id . '"><img src="' . $avatar . '" class="p200" alt=""></a></li>
 			<li class="tp">Меню пользователя</li>
 			<li><span class="bulet"></span><a href="/inbox.php">Личные сообщения</a></li>

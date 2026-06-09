@@ -570,6 +570,8 @@ function pay_tabs($active)
 
 function pay_sidebar($user)
 {
+	$theme = select_theme();
+	$banner = '/themes/' . rawurlencode($theme) . '/images/bnr_pay_sm.jpg';
 	$votes = pay_user_votes_from_array($user);
 	$bonus = isset($user['bonus']) ? (float)$user['bonus'] : 0;
 	$active = pay_top_helpers('active', 1);
@@ -577,7 +579,7 @@ function pay_sidebar($user)
 	?>
 	<div class="mn3_menu">
 		<ul class="men">
-			<li class="img"><a href="/pay.php"><img src="/themes/TBDev/images/bnr_pay_sm.jpg" height="75" class="block w200" alt=""></a></li>
+			<li class="img"><a href="/pay.php"><img src="<?= pay_h($banner) ?>" height="75" class="block w200" alt=""></a></li>
 			<li class="tp">Раздел Меценатов и ВИП</li>
 			<li class="justify">На Вашем счете <b><?= (int)$votes ?> голосов</b> и <b><?= number_format($bonus, 2, '.', ' ') ?> бонусов</b>. Бонусы можно обменивать на голоса, а голоса тратить на возможности проекта.</li>
 			<li class="tp">Кубки меценатов</li>

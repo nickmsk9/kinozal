@@ -416,7 +416,7 @@ stdhead('Список пользователей - Поиск пользоват
                     $reputation = function_exists('reputation_value') ? reputation_value($user) : max(0, (int)$user['simpaty']);
                     ?>
                     <div class="bx5x5">
-                        <img class="imgg rot180" src="<?= $avatar ?>" alt="">
+                        <img class="imgg" src="<?= $avatar ?>" alt="">
                         <div class="ptable_r">
                             <a href="/sendmessage.php?receiver=<?= $uid ?>" class="sba">Отправить сообщение</a>
                             <br>

@@ -66,8 +66,8 @@ function torrenttable($res, $variant = 'index')
     $get = $_GET;
     unset($get['sort'], $get['type']);
 
-    $oldlink = http_build_query($get, '', '&amp;');
-    $oldlink = $oldlink !== '' ? $oldlink . '&amp;' : '';
+    $oldlink = http_build_query($get, '', '&');
+    $oldlink = $oldlink !== '' ? $oldlink . '&' : '';
 
     $current_sort = isset($_GET['sort']) ? (int)$_GET['sort'] : 0;
     $current_type = isset($_GET['type']) && $_GET['type'] === 'desc' ? 'desc' : 'asc';
@@ -99,13 +99,13 @@ function torrenttable($res, $variant = 'index')
 
         if ($variant === 'mytorrents') {
             $return_to = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
-            $url .= 'returnto=' . urlencode($return_to) . '&amp;';
+            $url .= 'returnto=' . urlencode($return_to) . '&';
         }
 
         $url .= 'id=' . (int)$id;
 
         if ($is_index || $is_bookmarks) {
-            $url .= '&amp;hit=1';
+            $url .= '&hit=1';
         }
 
         return $e($url . $extra);
@@ -284,14 +284,14 @@ function torrenttable($res, $variant = 'index')
         if (isset($row['type']) && $row['type'] === 'single') {
             $out[] = '<td class="right">' . $numfiles . '</td>';
         } else {
-            $file_extra = $is_index ? '&amp;filelist=1' : '&amp;filelist=1#filelist';
+            $file_extra = $is_index ? '&filelist=1' : '&filelist=1#filelist';
             $out[] = '<td class="right"><b><a href="' . $details_url($id, $file_extra) . '">' . $numfiles . '</a></b></td>';
         }
 
         if ($comments <= 0) {
             $out[] = '<td class="right">0</td>';
         } else {
-            $comm_extra = $is_index ? '&amp;tocomm=1' : '&amp;page=0#startcomments';
+            $comm_extra = $is_index ? '&tocomm=1' : '&page=0#startcomments';
             $out[] = '<td class="right"><b><a href="' . $details_url($id, $comm_extra) . '">' . $comments . '</a></b></td>';
         }
 
@@ -317,7 +317,7 @@ function torrenttable($res, $variant = 'index')
                 $ratio = $leechers > 0 ? ($seeders / $leechers) : 1;
                 $color = function_exists('get_slr_color') ? get_slr_color($ratio) : 'green';
 
-                $sl[] = '<b><a href="' . $details_url($id, '&amp;toseeders=1') . '"><font color="' . $e($color) . '">' . $seeders . '</font></a></b>';
+                $sl[] = '<b><a href="' . $details_url($id, '&toseeders=1') . '"><font color="' . $e($color) . '">' . $seeders . '</font></a></b>';
             } else {
                 $link_class = function_exists('linkcolor') ? linkcolor($seeders) : 'green';
 
@@ -332,7 +332,7 @@ function torrenttable($res, $variant = 'index')
 
         if ($leechers > 0) {
             if ($is_index) {
-                $sl[] = '<b><a href="' . $details_url($id, '&amp;todlers=1') . '">' . number_format($leechers) . '</a></b>';
+                $sl[] = '<b><a href="' . $details_url($id, '&todlers=1') . '">' . number_format($leechers) . '</a></b>';
             } else {
                 $link_class = function_exists('linkcolor') ? linkcolor($leechers) : 'red';
 

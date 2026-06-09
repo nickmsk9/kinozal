@@ -17,7 +17,7 @@ function friends_user_menu($user) {
 
 	return '
 	<div class="mn1_menu">
-		<ul class="men u2 w200">
+		<ul class="men w200">
 			<li class="img"><a href="/userdetails.php?id=' . $id . '"><img src="' . $avatar . '" class="p200" alt=""></a></li>
 			<li class="tp">Меню пользователя</li>
 			<li><span class="bulet"></span><a href="/inbox.php">Личные сообщения</a></li>
@@ -88,7 +88,7 @@ function friends_render_user_card($row, $userid, $type) {
 	<div class=\"pad5x0x0x5 mn2\">
 		<table class=\"tables2 w100p\">
 			<tr>
-				<td class=\"w50 top\"><img src=\"" . $avatar . "\" class=\"w50 rot180\" alt=\"\"></td>
+				<td class=\"w50 top\"><img src=\"" . $avatar . "\" class=\"w50\" alt=\"\"></td>
 				<td class=\"top\">
 					<a href=\"/userdetails.php?id=" . $targetid . "\" class=\"u" . $userclass . "\">" . friends_h($username) . "</a>" . get_user_icons($row) . "<br>
 					<a href=\"/sendmessage.php?receiver=" . $targetid . "\" class=\"sba\">Сообщ.</a>

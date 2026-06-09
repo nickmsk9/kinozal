@@ -46,6 +46,8 @@ if ($action === 'getch') {
 	}
 
 	$rows = radio_chat_messages($tab, $limit);
+	$radio_theme = select_theme();
+	$radio_theme_path = '/themes/' . rawurlencode($radio_theme) . '/images/sbg.gif';
 	header('Content-Type: text/html; charset=UTF-8');
 	?>
 	<!DOCTYPE html>
@@ -61,8 +63,8 @@ if ($action === 'getch') {
 			.chat-row { margin:0; }
 			.chat-head { min-height:15px; padding:2px 7px; background:#f1d29c; font-weight:bold; overflow:hidden; }
 			.chat-head .time { float:right; color:#000; font-weight:normal; }
-			.chat-text { min-height:17px; padding:4px 10px; background:#f4fbff url('/themes/TBDev/images/sbg.gif') repeat-x top; border-left:1px solid #e7d8bd; border-right:1px solid #e7d8bd; word-wrap:break-word; }
-			.empty { padding:8px; background:#f4fbff url('/themes/TBDev/images/sbg.gif') repeat-x top; border:3px solid #f1d29c; }
+			.chat-text { min-height:17px; padding:4px 10px; background:#f4fbff url('<?= radio_ph($radio_theme_path) ?>') repeat-x top; border-left:1px solid #e7d8bd; border-right:1px solid #e7d8bd; word-wrap:break-word; }
+			.empty { padding:8px; background:#f4fbff url('<?= radio_ph($radio_theme_path) ?>') repeat-x top; border:3px solid #f1d29c; }
 			.u0,.u1,.u2,.u3,.u4,.u5,.u6,.u7,.u8,.u9 { font-weight:bold; }
 			.u3 { color:#fb4a01; } .u8 { color:#5870ad; }
 		</style>

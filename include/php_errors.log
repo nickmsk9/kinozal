@@ -1174,3 +1174,168 @@ Stack trace:
 #1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
 #2 {main}
   thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:31:26 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:31:26 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:31:26 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:31:27 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:32:21 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:32:32 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function h() in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php:8
+Stack trace:
+#0 C:\OSPanel\domains\kinozal.lv\include\functions.php(814): require_once()
+#1 C:\OSPanel\domains\kinozal.lv\my.php(92): stdhead()
+#2 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 8
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $keywords in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 51
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $description in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 53
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 56
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 57
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 64
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 74
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 145
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 221
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 231
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 232
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 279
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 331
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 349
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 351
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $keywords in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 51
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $description in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 53
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 56
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 57
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 64
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 74
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 145
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 221
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 231
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 232
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 279
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 331
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 349
+[09-Jun-2026 11:32:54 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 351
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $keywords in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 51
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $description in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 53
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 56
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 57
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 64
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 74
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 145
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 221
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 231
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 232
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 279
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 331
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 349
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 351
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $keywords in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 51
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $description in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 53
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 56
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 57
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 64
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 74
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 145
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 221
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 231
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 232
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 279
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 331
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 349
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 351
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $keywords in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 51
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $description in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 53
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 56
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 57
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 64
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 74
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 145
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 221
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 231
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 232
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 279
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 331
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 349
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 351
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $keywords in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 51
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $description in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 53
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 56
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 57
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 64
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 74
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 145
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 221
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 231
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 232
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 279
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 331
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 349
+[09-Jun-2026 11:32:55 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 351
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $keywords in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 51
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $description in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 53
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 56
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 57
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 64
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 74
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 145
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 221
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 231
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 232
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 279
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 331
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 349
+[09-Jun-2026 11:33:13 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 351
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $keywords in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 51
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $description in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 53
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 56
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 57
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 64
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 74
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 145
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 221
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 231
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 232
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 279
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 331
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $pic_base_url in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 349
+[09-Jun-2026 11:33:22 Europe/Moscow] PHP Warning:  Undefined variable $DEFAULTBASEURL in C:\OSPanel\domains\kinozal.lv\themes\TBDev2030\stdhead.php on line 351
+[09-Jun-2026 11:37:44 Europe/Moscow] PHP Fatal error:  Uncaught Error: Call to undefined function mysql_fetch_assoc() in C:\OSPanel\domains\kinozal.lv\subnet.php:80
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\subnet.php on line 80
+[09-Jun-2026 11:41:21 Europe/Moscow] PHP Warning:  Undefined array key "type" in C:\OSPanel\domains\kinozal.lv\log.php on line 37
+[09-Jun-2026 11:41:21 Europe/Moscow] PHP Fatal error:  Uncaught Error: Undefined constant "tracker" in C:\OSPanel\domains\kinozal.lv\log.php:40
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\log.php on line 40
+[09-Jun-2026 12:00:25 Europe/Moscow] PHP Warning:  Undefined array key "type" in C:\OSPanel\domains\kinozal.lv\log.php on line 37
+[09-Jun-2026 12:00:25 Europe/Moscow] PHP Fatal error:  Uncaught Error: Undefined constant "tracker" in C:\OSPanel\domains\kinozal.lv\log.php:40
+Stack trace:
+#0 {main}
+  thrown in C:\OSPanel\domains\kinozal.lv\log.php on line 40
+[09-Jun-2026 12:11:31 Europe/Moscow] PHP Warning:  Undefined array key -1 in C:\OSPanel\domains\kinozal.lv\include\functions_global.php on line 1279
+[09-Jun-2026 12:11:31 Europe/Moscow] PHP Warning:  Undefined array key "" in C:\OSPanel\domains\kinozal.lv\include\functions_global.php on line 1280
+[09-Jun-2026 12:37:54 Europe/Moscow] PHP Warning:  Undefined array key "SERVER_PORT" in C:\OSPanel\domains\kinozal.lv\include\init.php on line 33

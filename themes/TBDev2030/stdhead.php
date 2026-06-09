@@ -1,11 +1,21 @@
 <?php
 if (!defined('UC_SYSOP'))
 	die('Direct access denied.');
+
+$keywords = $keywords ?? '';
+$description = $description ?? '';
+$DEFAULTBASEURL = $GLOBALS['DEFAULTBASEURL'] ?? '';
+$pic_base_url = $GLOBALS['pic_base_url'] ?? './pic';
 ?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html lang="ru">
 <head>
+<meta charset="UTF-8">
 <title><?= $title ?></title>
-<link rel="stylesheet" href="./themes/<?= h($ss_uri) ?>/TBDev.css" type="text/css">
+<link rel="stylesheet" href="./themes/<?= htmlspecialchars((string)$ss_uri, ENT_QUOTES, 'UTF-8') ?>/TBDev.css?v=20260609-5" type="text/css">
+<link rel="stylesheet" href="./themes/<?= htmlspecialchars((string)$ss_uri, ENT_QUOTES, 'UTF-8') ?>/engine.css?v=20260609-5" type="text/css">
+<?php if (in_array(basename($_SERVER['PHP_SELF'] ?? ''), array('upload.php', 'edit.php'), true)) { ?>
+<link rel="stylesheet" href="./themes/<?= htmlspecialchars((string)$ss_uri, ENT_QUOTES, 'UTF-8') ?>/upload.css?v=20260609-5" type="text/css">
+<?php } ?>
 <script language="javascript" type="text/javascript" src="js/resizer.js"></script>
 <!--<script language="javascript" type="text/javascript" src="js/tooltips.js"></script>-->
 <script language="javascript" type="text/javascript" src="js/jquery.js"></script>
@@ -47,7 +57,7 @@ $(document).ready(function(){
 
 //-->
 </script>
-<?
+<?php
 if($keywords)
     echo "<meta name=\"keywords\" content=\"$keywords\" />\n";
 if($description)
@@ -69,44 +79,25 @@ if($description)
 </tr>
 </table>
 
-<!-- Top Navigation Menu for unregistered-->
+<!-- Top navigation -->
 <table width="90%" align="center" border="0" cellspacing="0" cellpadding="2"><tr>
-<td align="center" class="topnav">&nbsp;<a href="<?=$DEFAULTBASEURL;?>/"><font color="#FFFFFF"><?=$tracker_lang['homepage'];?></font></a>
-&nbsp;&#8226;&nbsp;
-<a href="browse.php"><font color="#FFFFFF"><?=$tracker_lang['browse'];?></font></a>
-<? if ($CURUSER) { ?>
-&nbsp;&#8226;&nbsp;
-<a href="bookmarks.php"><font color="#FFFFFF"><?=$tracker_lang['bookmarks'];?></font></a>
-<? } ?>
-<? if (get_user_class() >= UC_USER) { ?>
-&nbsp;&#8226;&nbsp;
-<a href="upload.php"><font color="#FFFFFF"><?=$tracker_lang['upload'];?></font></a>
-<? } ?>
-<? if ($CURUSER) { ?>
-&nbsp;&#8226;&nbsp;
-<a href="log.php"><font color="#FFFFFF"><?=$tracker_lang['logs'];?></font></a>
-<? } ?>
-&nbsp;&#8226;&nbsp;
-<a href="rules.php"><font color="#FFFFFF"><?=$tracker_lang['rules'];?></font></a>
-&nbsp;&#8226;&nbsp;
-<a href="faq.php"><font color="#FFFFFF"><?=$tracker_lang['faq'];?></font></a>
-<? if ($CURUSER) { ?>
-&nbsp;&#8226;&nbsp;
-<!--<a href="helpdesk.php"><font color="#FFFFFF">Тех. Поддержка</font></a>
-&nbsp;&#8226;&nbsp;-->
-<a href="staff.php"><font color="#FFFFFF"><?=$tracker_lang['staff'];?></font></a>
-<? } ?>
-&nbsp;&#8226;&nbsp;
-<a href="contactus.php"><font color="#FFFFFF"><?=$tracker_lang['contactus'];?></font></a>
+<td align="center" class="topnav">
+<a href="/">Главная</a><span class="nav-sep">•</span>
+<a href="/browse.php">Раздачи</a><span class="nav-sep">•</span>
+<a href="/top.php">Топ раздач</a><span class="nav-sep">•</span>
+<a href="/personsearch.php">Персоны</a><span class="nav-sep">•</span>
+<a href="/novinki.php">Новинки кино</a><span class="nav-sep">•</span>
+<a href="/groupexlist.php">Группы</a><span class="nav-sep">•</span>
+<a href="/radio.php">Радио</a>
 </td></tr>
 </table>
-<!-- /////// Top Navigation Menu for unregistered-->
+<!-- /Top navigation -->
 
 <!-- /////// some vars for the statusbar;o) //////// -->
 
-<? if ($CURUSER) { ?>
+<?php if ($CURUSER) { ?>
 
-<?
+<?php
 
 $uped = mksize($CURUSER['uploaded']);
 $downed = mksize($CURUSER['downloaded']);
@@ -130,26 +121,26 @@ if ($CURUSER['warned'] == "yes")
 	$warn = "<img src=\"{$pic_base_url}/warned.gif\" alt=\"Предупрежден\" title=\"Предупрежден\">";
 
 //// check for messages ////////////////// 
-        $res1 = sql_query("SELECT COUNT(*) FROM messages WHERE receiver=" . $CURUSER["id"] . " AND location=1") or print(mysql_error()); 
-        $arr1 = mysql_fetch_row($res1);
+        $res1 = sql_query("SELECT COUNT(*) FROM messages WHERE receiver=" . $CURUSER["id"] . " AND location=1") or sqlerr(__FILE__, __LINE__);
+        $arr1 = mysqli_fetch_row($res1);
         $messages = $arr1[0];
-        /*$res1 = sql_query("SELECT COUNT(*) FROM messages WHERE receiver=" . $CURUSER["id"] . " AND location=1 AND unread='yes'") or print(mysql_error()); 
-        $arr1 = mysql_fetch_row($res1);
-        $unread = $arr1[0];*/
-        $res1 = sql_query("SELECT COUNT(*) FROM messages WHERE sender=" . $CURUSER["id"] . " AND saved='yes'") or print(mysql_error()); 
-        $arr1 = mysql_fetch_row($res1);
+        $res1 = sql_query("SELECT COUNT(*) FROM messages WHERE receiver=" . $CURUSER["id"] . " AND location=1 AND unread='yes'") or sqlerr(__FILE__, __LINE__);
+        $arr1 = mysqli_fetch_row($res1);
+        $unread = $arr1[0];
+        $res1 = sql_query("SELECT COUNT(*) FROM messages WHERE sender=" . $CURUSER["id"] . " AND saved='yes'") or sqlerr(__FILE__, __LINE__);
+        $arr1 = mysqli_fetch_row($res1);
         $outmessages = $arr1[0];
         if ($unread)
                 $inboxpic = "<img height=\"16px\" style=\"border:none\" alt=\"inbox\" title=\"Есть новые сообщения\" src=\"{$pic_base_url}/pn_inboxnew.gif\">";
         else
                 $inboxpic = "<img height=\"16px\" style=\"border:none\" alt=\"inbox\" title=\"Нет новых сообщений\" src=\"{$pic_base_url}/pn_inbox.gif\">";
 
-$res2 = sql_query("SELECT COUNT(*) FROM peers WHERE userid = {$CURUSER["id"]} AND seeder='yes'") or print(mysql_error());
-$row = mysql_fetch_row($res2);
+$res2 = sql_query("SELECT COUNT(*) FROM peers WHERE userid = {$CURUSER["id"]} AND seeder='yes'") or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_row($res2);
 $activeseed = $row[0];
 
-$res2 = sql_query("SELECT COUNT(*) FROM peers WHERE userid = {$CURUSER["id"]} AND seeder='no'") or print(mysql_error());
-$row = mysql_fetch_row($res2);
+$res2 = sql_query("SELECT COUNT(*) FROM peers WHERE userid = {$CURUSER["id"]} AND seeder='no'") or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_row($res2);
 $activeleech = $row[0];
 
 //// end
@@ -169,14 +160,14 @@ $activeleech = $row[0];
 				<tr>
 					<td class="bottom" align="left"><span class="smallfont"><?= $tracker_lang['welcome_back']; ?><b><a
 									href="userdetails.php?id=<?= $CURUSER['id'] ?>"><?= get_user_class_color($CURUSER['class'], $CURUSER['username']) ?></a></b><?= $medaldon ?><?= $warn ?>
-							&nbsp; [<a href="bookmarks.php">Закладки</a>] [<a href="mybonus.php">Мой бонус</a>] [<a
+							&nbsp; [<a href="bookmarks.php">Закладки</a>] [<a href="pay.php">Голоса и рейтинг</a>] [<a
 								href="logout.php">Выйти</a>]<br/>
 <font color=1900D1><?= $tracker_lang['ratio']; ?>:</font> <?= $ratio ?>&nbsp;&nbsp;<font
 								color=green><?= $tracker_lang['uploaded']; ?>:</font> <font
 								color=black><?= $uped ?></font>&nbsp;&nbsp;<font
 								color=darkred><?= $tracker_lang['downloaded']; ?>:</font> <font
 								color=black><?= $downed ?></font>&nbsp;&nbsp;<font
-								color=darkblue><?= $tracker_lang['bonus']; ?>:</font> <a href="mybonus.php"
+								color=darkblue><?= $tracker_lang['bonus']; ?>:</font> <a href="pay.php"
 																						 class="online"><font
 									color=black><?= $CURUSER["bonus"] ?></font></a>&nbsp;&nbsp;<font color="1900D1"><?=$tracker_lang['torrents'];?>:&nbsp;</font></span>
 						<img alt="<?=$tracker_lang['seeding'];?>" title="<?=$tracker_lang['seeding'];?>" src="./themes/<?= $ss_uri; ?>/images/arrowup.gif">&nbsp;<font
@@ -214,19 +205,19 @@ refrClock();
 </script>
 <!-- / clock hack -->
 
-<?
+<?php
 if ($messages) {
-	print("<span class=smallfont><a href=message.php>$inboxpic</a> $messages ($unread новых)</span>");
+	print("<span class=smallfont><a href=/inbox.php>$inboxpic</a> $messages ($unread новых)</span>");
 	if ($outmessages)
-		print("<span class=smallfont>&nbsp;&nbsp;<a href=message.php?action=viewmailbox&box=-1><img height=16px style=border:none alt=Отправленые title=Отправленые src={$pic_base_url}/pn_sentbox.gif></a> $outmessages</span>");
+		print("<span class=smallfont>&nbsp;&nbsp;<a href=/inbox.php><img height=16px style=border:none alt=Отправленые title=Отправленые src={$pic_base_url}/pn_sentbox.gif></a> $outmessages</span>");
 	else
-		print("<span class=smallfont>&nbsp;&nbsp;<a href=message.php?action=viewmailbox&box=-1><img height=16px style=border:none alt=Отправленые title=Отправленые src={$pic_base_url}/pn_sentbox.gif></a> 0</span>");
+		print("<span class=smallfont>&nbsp;&nbsp;<a href=/inbox.php><img height=16px style=border:none alt=Отправленые title=Отправленые src={$pic_base_url}/pn_sentbox.gif></a> 0</span>");
 } else {
-	print("<span class=smallfont><a href=message.php><img height=16px style=border:none alt=Полученные title=Полученные src={$pic_base_url}/pn_inbox.gif></a> 0</span>");
+	print("<span class=smallfont><a href=/inbox.php><img height=16px style=border:none alt=Полученные title=Полученные src={$pic_base_url}/pn_inbox.gif></a> 0</span>");
 	if ($outmessages)
-		print("<span class=smallfont>&nbsp;&nbsp;<a href=message.php?action=viewmailbox&box=-1><img height=16px style=border:none alt=Отправленые title=Отправленые src={$pic_base_url}/pn_sentbox.gif></a> $outmessages</span>");
+		print("<span class=smallfont>&nbsp;&nbsp;<a href=/inbox.php><img height=16px style=border:none alt=Отправленые title=Отправленые src={$pic_base_url}/pn_sentbox.gif></a> $outmessages</span>");
 	else
-		print("<span class=smallfont>&nbsp;&nbsp;<a href=message.php?action=viewmailbox&box=-1><img height=16px style=border:none alt=Отправленые title=Отправленые src={$pic_base_url}/pn_sentbox.gif></a> 0</span>");
+		print("<span class=smallfont>&nbsp;&nbsp;<a href=/inbox.php><img height=16px style=border:none alt=Отправленые title=Отправленые src={$pic_base_url}/pn_sentbox.gif></a> 0</span>");
 }
 print("&nbsp;<a href=friends.php><img style=border:none alt=Друзья title=Друзья src={$pic_base_url}/buddylist.gif></a>");
 print("&nbsp;<a href=getrss.php><img style=border:none alt=RSS title=RSS src={$pic_base_url}/rss.gif></a>");
@@ -237,11 +228,11 @@ print("&nbsp;<a href=getrss.php><img style=border:none alt=RSS title=RSS src={$p
 </table></table>
 <p>
 
-<? } else {?>
+<?php } else {?>
 
 <br />
 
-<? } ?>
+<?php } ?>
 <!-- /////////// here we go, with the menu //////////// -->
 
 <?php
@@ -254,26 +245,38 @@ $w = "width=\"90%\"";
 
 <!------------- MENU ------------------------------------------------------------------------>
 
-<? $fn = substr($_SERVER['PHP_SELF'], strrpos($_SERVER['PHP_SELF'], "/") + 1); ?>
+<?php $fn = substr($_SERVER['PHP_SELF'], strrpos($_SERVER['PHP_SELF'], "/") + 1); ?>
 
 <td valign="top" width="155">
-<?
+<?php
+
+$messages = $messages ?? 0;
+$unread = $unread ?? 0;
+$outmessages = $outmessages ?? 0;
+$inboxpic = $inboxpic ?? '';
+$activeseed = $activeseed ?? 0;
+$activeleech = $activeleech ?? 0;
+$ratio = $ratio ?? '---';
+$uped = $uped ?? '0 B';
+$downed = $downed ?? '0 B';
+$medaldon = $medaldon ?? '';
+$warn = $warn ?? '';
 
 show_blocks("l");
 
 if ($messages) {
-                $message_in = "<span class=\"smallfont\">&nbsp;<a href=\"message.php\">$inboxpic</a> $messages " . sprintf($tracker_lang["new_pm"], $unread) . "</span>";
+                $message_in = "<span class=\"smallfont\">&nbsp;<a href=\"/inbox.php\">$inboxpic</a> $messages " . sprintf($tracker_lang["new_pm"], $unread) . "</span>";
                 if ($outmessages)
-                        $message_out = "<span class=\"smallfont\">&nbsp;<a href=\"message.php?action=viewmailbox&box=-1\"><img height=\"16px\" style=\"border:none\" alt=\"" . $tracker_lang['outbox'] . "\" title=\"" . $tracker_lang['outbox'] . "\" src=\"{$pic_base_url}/pn_sentbox.gif\"></a> $outmessages</span>";
+                        $message_out = "<span class=\"smallfont\">&nbsp;<a href=\"/inbox.php\"><img height=\"16px\" style=\"border:none\" alt=\"" . $tracker_lang['outbox'] . "\" title=\"" . $tracker_lang['outbox'] . "\" src=\"{$pic_base_url}/pn_sentbox.gif\"></a> $outmessages</span>";
                 else
-                        $message_out = "<span class=\"smallfont\">&nbsp;<a href=\"message.php?action=viewmailbox&box=-1\"><img height=\"16px\" style=\"border:none\" alt=\"" . $tracker_lang['outbox'] . "\" title=\"" . $tracker_lang['outbox'] . "\" src=\"{$pic_base_url}/pn_sentbox.gif\"></a> 0</span>";
+                        $message_out = "<span class=\"smallfont\">&nbsp;<a href=\"/inbox.php\"><img height=\"16px\" style=\"border:none\" alt=\"" . $tracker_lang['outbox'] . "\" title=\"" . $tracker_lang['outbox'] . "\" src=\"{$pic_base_url}/pn_sentbox.gif\"></a> 0</span>";
         }
         else {
-                $message_in = "<span class=\"smallfont\">&nbsp;<a href=\"message.php\"><img height=\"16px\" style=\"border:none\" alt=\"{$tracker_lang['inbox']}\" title=\"{$tracker_lang['inbox']}\" src=\"{$pic_base_url}/pn_inbox.gif\"></a> 0</span>";
+                $message_in = "<span class=\"smallfont\">&nbsp;<a href=\"/inbox.php\"><img height=\"16px\" style=\"border:none\" alt=\"{$tracker_lang['inbox']}\" title=\"{$tracker_lang['inbox']}\" src=\"{$pic_base_url}/pn_inbox.gif\"></a> 0</span>";
                 if ($outmessages)
-                        $message_out = "<span class=\"smallfont\">&nbsp;<a href=\"message.php?action=viewmailbox&box=-1\"><img height=\"16px\" style=\"border:none\" alt=\"" . $tracker_lang['outbox'] . "\" title=\"" . $tracker_lang['outbox'] . "\" src=\"{$pic_base_url}/pn_sentbox.gif\"></a> $outmessages</span>";
+                        $message_out = "<span class=\"smallfont\">&nbsp;<a href=\"/inbox.php\"><img height=\"16px\" style=\"border:none\" alt=\"" . $tracker_lang['outbox'] . "\" title=\"" . $tracker_lang['outbox'] . "\" src=\"{$pic_base_url}/pn_sentbox.gif\"></a> $outmessages</span>";
                 else
-                        $message_out = "<span class=\"smallfont\">&nbsp;<a href=\"message.php?action=viewmailbox&box=-1\"><img height=\"16px\" style=\"border:none\" alt=\"" . $tracker_lang['outbox'] . "\" title=\"" . $tracker_lang['outbox'] . "\" src=\"{$pic_base_url}/pn_sentbox.gif\"></a> 0</span>";
+                        $message_out = "<span class=\"smallfont\">&nbsp;<a href=\"/inbox.php\"><img height=\"16px\" style=\"border:none\" alt=\"" . $tracker_lang['outbox'] . "\" title=\"" . $tracker_lang['outbox'] . "\" src=\"{$pic_base_url}/pn_sentbox.gif\"></a> 0</span>";
         }
 
 if ($CURUSER) {
@@ -283,7 +286,7 @@ if ($CURUSER) {
 	<font color=\"1900D1\">{$tracker_lang['ratio']}:</font>&nbsp;{$ratio}<br />
 	<font color=\"green\">{$tracker_lang['uploaded']}:</font>&nbsp;{$uped}<br />
 	<font color=\"red\">{$tracker_lang['downloaded']}:</font>&nbsp;{$downed}<br />
-	<font color=\"darkblue\">{$tracker_lang['bonus']}:</font>&nbsp;<a href=\"mybonus.php\" class=\"online\"><font color=black>$CURUSER[bonus]</font></a><br />
+	<font color=\"darkblue\">{$tracker_lang['bonus']}:</font>&nbsp;<a href=\"pay.php\" class=\"online\"><font color=black>$CURUSER[bonus]</font></a><br />
 	<font color=\"blue\">{$tracker_lang['pm']}:</font>&nbsp;{$message_in} {$message_out}<br />
 	{$tracker_lang['torrents']}:&nbsp;
 	<img alt=\"{$tracker_lang['seeding']}\" title=\"{$tracker_lang['seeding']}\" src=\"./themes/$ss_uri/images/arrowup.gif\">&nbsp;<font color=green><span class=\"smallfont\">{$activeseed}</span></font>&nbsp;
@@ -331,40 +334,39 @@ refrClock2();
 <a class="menu" href="signup.php"><center>'.$tracker_lang['signup'].'</center></a>';
 }
 
-if ($CURUSER['override_class'] != 255)
+if ($CURUSER && $CURUSER['override_class'] != 255)
 	$usrclass = "&nbsp;<img src=\"{$pic_base_url}/warning.gif\" title=" . get_user_class_name($CURUSER['class']) . " alt=" . get_user_class_name($CURUSER['class']) . ">&nbsp;";
 elseif (get_user_class() >= UC_MODERATOR)
 	$usrclass = "&nbsp;<a href=\"setclass.php\"><img src=\"{$pic_base_url}/warning.gif\" title=\"" . get_user_class_name($CURUSER['class']) . "\" alt=\"" . get_user_class_name($CURUSER['class']) . "\" border=\"0\"></a>&nbsp;";
 
 	blok_menu($tracker_lang['welcome_back'].( $CURUSER ? "<a href=\"$DEFAULTBASEURL/userdetails.php?id=" . $CURUSER["id"] . "\">" . $CURUSER["username"] . "</a>&nbsp;".$usrclass."&nbsp;" : "гость" ) . $medaldon . $warn , $userbar , "155");
 
-	$mainmenu = "<a class=\"menu\" href=\"index.php\">&nbsp;{$tracker_lang['homepage']}</a>"
-           ."<a class=\"menu\" href=\"browse.php\">&nbsp;{$tracker_lang['browse']}</a>"
-           ."<a class=\"menu\" href=\"log.php\">&nbsp;{$tracker_lang['log']}</a>"
-           ."<a class=\"menu\" href=\"rules.php\">&nbsp;{$tracker_lang['rules']}</a>"
-           ."<a class=\"menu\" href=\"faq.php\">&nbsp;{$tracker_lang['faq']}</a>"
-           ."<a class=\"menu\" href=\"topten.php\">&nbsp;{$tracker_lang['topten']}</a>"
-           ."<a class=\"menu\" href=\"formats.php\">&nbsp;{$tracker_lang['formats']}</a>";
+	$mainmenu = "<a class=\"menu\" href=\"/\">Главная</a>"
+           ."<a class=\"menu\" href=\"/browse.php\">Раздачи</a>"
+           ."<a class=\"menu\" href=\"/top.php\">Топ раздач</a>"
+           ."<a class=\"menu\" href=\"/personsearch.php\">Персоны</a>"
+           ."<a class=\"menu\" href=\"/novinki.php\">Новинки кино</a>"
+           ."<a class=\"menu\" href=\"/groupexlist.php\">Группы</a>"
+           ."<a class=\"menu\" href=\"/radio.php\">Радио</a>"
+           ."<a class=\"menu\" href=\"/doku.php\">Правила и помощь</a>";
 
 	blok_menu($tracker_lang['main_menu'], $mainmenu , "155");
 
 if ($CURUSER) {
 
-	$usermenu = "<a class=\"menu\" href=\"my.php\">&nbsp;{$tracker_lang['my']}</a>"
-           ."<a class=\"menu\" href=\"userdetails.php?id={$CURUSER['id']}\">&nbsp;{$tracker_lang['profile']}</a>"
-           ."<a class=\"menu\" href=\"bookmarks.php\">&nbsp;{$tracker_lang['bookmarks']}</a>"
-           ."<a class=\"menu\" href=\"mybonus.php\">&nbsp;{$tracker_lang['my_bonus']}</a>"
-           ."<a class=\"menu\" href=\"invite.php\">&nbsp;{$tracker_lang['invite']}</a>"
-           ."<a class=\"menu\" href=\"users.php\">&nbsp;{$tracker_lang['users']}</a>"
-           ."<a class=\"menu\" href=\"friends.php\">&nbsp;{$tracker_lang['personal_lists']}</a>"
-           ."<a class=\"menu\" href=\"subnet.php\">&nbsp;{$tracker_lang['neighbours']}</a>"
-           ."<a class=\"menu\" href=\"mytorrents.php\">&nbsp;{$tracker_lang['my_torrents']}</a>"
-           ."<a class=\"menu\" href=\"logout.php\">&nbsp;{$tracker_lang['logout']}!</a>";
+	$usermenu = "<a class=\"menu\" href=\"/my.php\">Настройки профиля</a>"
+           ."<a class=\"menu\" href=\"/userdetails.php?id={$CURUSER['id']}\">Мой профиль</a>"
+           ."<a class=\"menu\" href=\"/bookmarks.php\">Закладки</a>"
+           ."<a class=\"menu\" href=\"/pay.php\">Голоса и рейтинг</a>"
+           ."<a class=\"menu\" href=\"/users.php\">Пользователи</a>"
+           ."<a class=\"menu\" href=\"/friends.php\">Друзья и враги</a>"
+           ."<a class=\"menu\" href=\"/mytorrents.php\">Мои раздачи</a>"
+           ."<a class=\"menu\" href=\"/logout.php\">Выйти</a>";
 
 	blok_menu($tracker_lang['user_menu'], $usermenu , "155");
 
-	$messages = "<a class=\"menu\" href=\"message.php\">&nbsp;{$tracker_lang['inbox']}</a>"
-           ."<a class=\"menu\" href=\"message.php?action=viewmailbox&box=-1\">&nbsp;{$tracker_lang['outbox']}</a>";
+	$messages = "<a class=\"menu\" href=\"/inbox.php\">Личные сообщения</a>"
+           ."<a class=\"menu\" href=\"/sendmessage.php\">Написать сообщение</a>";
 
 	blok_menu($tracker_lang['messages'], $messages , "155");
 
@@ -385,13 +387,13 @@ if ($CURUSER) {
 ?>
 </td>
 
-<td align="center" valign="top" class="outer" style="padding-top: 5px; padding-bottom: 5px">
-<?
+<td align="left" valign="top" class="outer" style="padding-top: 5px; padding-bottom: 5px">
+<?php
 
 if ($CURUSER) {
 	if ($unread) {
 		print("<p><table border=0 cellspacing=0 cellpadding=10 bgcolor=red><tr><td style='padding: 10px; background: red'>\n");
-		print("<b><a href=\"message.php\"><font color=white>".sprintf($tracker_lang['new_pms'],$unread)."</font></a></b>");
+		print("<b><a href=\"/inbox.php\"><font color=white>".sprintf($tracker_lang['new_pms'],$unread)."</font></a></b>");
 		print("</td></tr></table></p>\n");
 	}
 }
@@ -402,10 +404,13 @@ if (COOKIE_SALT == 'default') {
     print("</td></tr></table></p>\n");
 }
 
-if ($CURUSER['override_class'] != 255 && $CURUSER) { // Second condition needed so that this box isn't displayed for non members/logged out members.
+if ($CURUSER && $CURUSER['override_class'] != 255) { // Second condition needed so that this box isn't displayed for non members/logged out members.
 	print("<p><table border=0 cellspacing=0 cellpadding=10 bgcolor=green><tr><td style='padding: 10px; background: green'>\n");
 	print("<b><a href=\"$DEFAULTBASEURL/restoreclass.php\"><font color=white>{$tracker_lang['lower_class']}</font></a></b>");
 	print("</td></tr></table></p>\n");
 }
 
-show_blocks('c');
+$current_module = basename($_SERVER['PHP_SELF'] ?? '');
+if ($current_module !== 'radio.php') {
+	show_blocks('c');
+}

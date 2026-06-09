@@ -73,7 +73,7 @@
 
     print("<tr><td class=\"colhead\">Написание</td><td class=\"colhead\">Смайл</td></tr>\n");
 
-    while (list($code, $url) = each($smilies))
+    foreach ($smilies as $code => $url)
       print("<tr><td>$code</td><td><img src=\"$DEFAULTBASEURL/pic/smilies/$url\"></td>\n");
 
     end_table();
@@ -86,10 +86,16 @@
 
 function blok_menu($title, $content , $width="155") {
 	global $ss_uri;
-	$thefile = addslashes(file_get_contents('themes/'.$ss_uri.'/html/block-left.html'));
-	$thefile = "\$r_file=\"".$thefile."\";";
-	eval($thefile);
-	echo $r_file;
+	$template = file_get_contents('themes/'.$ss_uri.'/html/block-left.html');
+	if ($template === false) {
+		return;
+	}
+	echo strtr($template, array(
+		'$ss_uri' => $ss_uri,
+		'$title' => $title,
+		'$content' => $content,
+		'$width' => $width,
+	));
 }
 
 ?>

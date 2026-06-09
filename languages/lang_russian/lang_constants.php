@@ -1,6 +1,6 @@
 <?php
 
-return array('language_charset' => 'utf8mb4',
+return array('language_charset' => 'UTF-8',
 			 'page_generated' => "Page generated in %f seconds with %d queries (%s%% PHP / %s%% MySQL)",
 			 'unknown' => 'Неизвестно',
 			 'access_denied' => 'Доступ запрещен.',
