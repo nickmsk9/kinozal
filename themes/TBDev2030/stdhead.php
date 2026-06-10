@@ -74,13 +74,12 @@ if($description)
 <a href="<?=$DEFAULTBASEURL?>"><img style="border: none" alt="<?=$SITENAME?>" title="<?=$SITENAME?>" src="./themes/<?=$ss_uri;?>/images/logo.gif" /></a>
 </td>
 <td class="embedded" width="50%" align="right" style="text-align: right" background="./themes/<?=$ss_uri;?>/images/logobg.gif">
-	<noindex><iframe src="http://bit-torrent.kiev.ua/banner.php" width="468" height="60" marginwidth="0" marginheight="0" scrolling="no" frameborder="0"></iframe></noindex>&nbsp;
 </td>
 </tr>
 </table>
 
 <!-- Top navigation -->
-<table width="90%" align="center" border="0" cellspacing="0" cellpadding="2"><tr>
+<table width="90%" align="center" border="0" cellspacing="0" cellpadding="6"><tr>
 <td align="center" class="topnav">
 <a href="/">Главная</a><span class="nav-sep">•</span>
 <a href="/browse.php">Раздачи</a><span class="nav-sep">•</span>

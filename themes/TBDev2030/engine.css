@@ -581,7 +581,7 @@ fieldset.ft_cmt legend { padding: 0 5px; color: #516a88; }
 	color: #fff !important;
 	font-weight: bold;
 	text-decoration: none;
-	padding: 0 5px;
+	padding: 0 10px;
 }
 
 .topnav a:hover,
@@ -1146,4 +1146,20 @@ ul.men li.letters {
 
 .kz-block-list .kz-block-content li:last-child {
 	border-bottom: 0;
+}
+.is_foot * .copyright {
+    color: #9abd6d !important;
+    font-size: 9pt;
+}
+
+.is_foot {
+    text-align: center;
+    background-color: rgb(245 245 245);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+    background-size: 1rem 1rem;
+    color: black;
+}
+
+.is_foot > b{
+    line-height: 16pt;
 }

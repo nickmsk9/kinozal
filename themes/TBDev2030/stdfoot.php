@@ -16,20 +16,46 @@ global $hide_right_blocks;
 <?php } ?>
 <?php
 
-// Variables for End Time
-$seconds = (timer() - $tstart);
+$seconds = timer() - $tstart;
 
-$phptime = 		$seconds - $querytime;
-$query_time = 	$querytime;
-$percentphp = 	$seconds > 0 ? number_format(($phptime/$seconds) * 100, 2) : 0;
-$percentsql = 	$seconds > 0 ? number_format(($query_time/$seconds) * 100, 2) : 0;
-$seconds = 		substr($seconds, 0, 8);
-	// Хочешь убрать копирайт? (TBVERSION) - Поддержки разработчика, заплати! Не будь быдлом!
-	print("</td></tr></table>\n");
-	print("<table class=\"bottom\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\"><tr valign=\"top\">\n");
-	$version = defined('TBVERSION') ? TBVERSION : '';
-	$beta_notice = defined('BETA') && BETA && defined('BETA_NOTICE') ? BETA_NOTICE : '';
-	print("<td width=\"49%\" class=\"bottom\"><div align=\"center\"><br /><b>".$version.$beta_notice."<br />".sprintf($tracker_lang["page_generated"], $seconds, $queries, $percentphp, $percentsql)."</b></div></td>\n");
-	print("</tr></table>\n");
-	print("</body></html>\n");
+$sqlTime = (float)$querytime;
+$phpTime = max(0, $seconds - $sqlTime);
+
+$sqlPercent = $seconds > 0 ? number_format(($sqlTime / $seconds) * 100, 2) : '0.00';
+$phpPercent = $seconds > 0 ? number_format(($phpTime / $seconds) * 100, 2) : '0.00';
+
+$secondsView = number_format($seconds, 4);
+$sqlTimeView = number_format($sqlTime, 4);
+$phpTimeView = number_format($phpTime, 4);
+
+$gzipStatus = !empty($gzip) ? 1 : 0;
+
+// Если переменные кеша/отложенных запросов есть в движке — покажет их.
+// Если нет — не будет сыпать ошибками.
+$cachedQueries = isset($cached_queries) ? (int)$cached_queries : 0;
+$delayedTime = isset($delayed_time) ? number_format((float)$delayed_time, 4) : '0.0000';
+
+print("
+<tr>
+    <td colspan='3' class=\"is_foot\">
+        <b>
+            .:Кинозал.ТВ
+            <noindex>
+                <a href=\"?copyright\" class=\"copyright\" title=\"Движок сайта: TBDev v.Core 2k26 © 2008-2026. &lt;br /&gt;Владельцем движка (создатель исходника) является Nick.\">©</a>
+            </noindex>
+            2026 TBDev v.Core:.
+        </b>
+        <br />
+        Страничка сгенерирована за {$secondsView} секунд (gzip {$gzipStatus}, cache showing)
+        <br />
+        <b>{$queries}</b>, <b>{$sqlPercent}%</b> 
+        (queries, {$sqlTimeView} -> sql, {$cachedQueries} -> cached) - 
+        <b>{$phpPercent}%</b> ({$phpTimeView} -> php, {$delayedTime} -> delayed)
+    </td>
+</tr>
+</table>
+</body>
+</html>
+");
+
 ?>
