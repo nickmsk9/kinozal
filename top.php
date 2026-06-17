@@ -376,7 +376,7 @@ stdhead("Топ раздач");
             <div class="pad0x0x5x0"><?= $pagertop ?></div>
         <?php } ?>
 
-        <div class="bx1 stable top_poster_grid">
+        <div class="bx1 top_poster_grid">
             <?php if ($res) { ?>
                 <?php while ($torrent = mysqli_fetch_assoc($res)) { ?>
                     <?php

@@ -383,6 +383,7 @@ CREATE TABLE `ratings` (
   `added` datetime NULL DEFAULT NULL,
   PRIMARY KEY  (`id`),
   KEY `torrent` (`torrent`),
+  KEY `rating_torrent_user` (`torrent`,`user`,`id`),
   KEY `user` (`user`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -562,7 +563,9 @@ CREATE TABLE `simpaty` (
   KEY `fromuserid` (`fromuserid`),
   KEY `fromusername` (`fromusername`),
   KEY `respect_time` (`respect_time`),
-  KEY `profile_wall` (`touserid`,`respect_time`)
+  KEY `profile_wall` (`touserid`,`respect_time`),
+  KEY `touserid_time_id` (`touserid`,`respect_time`,`id`),
+  KEY `fromuserid_time_id` (`fromuserid`,`respect_time`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #

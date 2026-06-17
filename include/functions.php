@@ -1359,7 +1359,6 @@ function pager($rpp, $count, $href, $opts = array())
         $html .= '<li><a rel="prev" href="' . $href . 'page=' . ($page - 1) . '">Назад</a></li>';
     }
 
-    $dotspace = 3;
     $dotted = false;
 
     for ($i = 0; $i < $pages; $i++) {
@@ -1395,7 +1394,7 @@ function pager($rpp, $count, $href, $opts = array())
 
     $html .= '</ul></div>';
 
-    $pagertop = '';
+    $pagertop = $html . "\n";
 
     $pagerbottom =
         '<div class="pager_info">Всего ' . $count .

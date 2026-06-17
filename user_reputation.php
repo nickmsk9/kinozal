@@ -39,10 +39,9 @@ if (preg_match('/LIMIT\s+([0-9]+),([0-9]+)/i', $limit, $m)) {
 	$limitNumber = (int)$m[2];
 }
 
-$rows = reputation_rows($userid, $type, 0);
-if ($limitNumber > 0) {
-	$rows = array_slice($rows, $offsetNumber, $limitNumber);
-}
+$rows = $limitNumber > 0
+	? reputation_rows($userid, $type, $limitNumber, $offsetNumber)
+	: reputation_rows($userid, $type, 0);
 
 $hide_right_blocks = true;
 stdhead("&#1056;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1103; :: " . $user["username"]);

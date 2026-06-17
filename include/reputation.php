@@ -11,13 +11,20 @@ function reputation_h($value)
 
 function reputation_table_exists($table)
 {
+	static $exists_cache = array();
+
 	$table = trim((string)$table);
 	if ($table === '' || !preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
 		return false;
 	}
 
+	if (array_key_exists($table, $exists_cache)) {
+		return $exists_cache[$table];
+	}
+
 	$res = sql_query("SHOW TABLES LIKE " . sqlesc($table, true)) or sqlerr(__FILE__, __LINE__);
-	return mysqli_num_rows($res) > 0;
+	$exists_cache[$table] = mysqli_num_rows($res) > 0;
+	return $exists_cache[$table];
 }
 
 function reputation_install_schema()
@@ -45,7 +52,9 @@ function reputation_install_schema()
 			KEY touserid (touserid),
 			KEY fromuserid (fromuserid),
 			KEY respect_time (respect_time),
-			KEY profile_wall (touserid, respect_time)
+			KEY profile_wall (touserid, respect_time),
+			KEY touserid_time_id (touserid, respect_time, id),
+			KEY fromuserid_time_id (fromuserid, respect_time, id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
 
@@ -187,11 +196,12 @@ function reputation_user_link($user)
 	return '<a href="/userdetails.php?id=' . $userid . '" class="u' . $class . '">' . $username . '</a>' . $icons;
 }
 
-function reputation_rows($userid, $type = 1, $limit = 0)
+function reputation_rows($userid, $type = 1, $limit = 0, $offset = 0)
 {
 	$userid = (int)$userid;
 	$type = (int)$type;
 	$limit = (int)$limit;
+	$offset = max(0, (int)$offset);
 
 	if (!is_valid_id($userid) || !reputation_table_exists('simpaty')) {
 		return array();
@@ -199,7 +209,7 @@ function reputation_rows($userid, $type = 1, $limit = 0)
 
 	$where = $type === 2 ? "s.fromuserid = $userid" : "s.touserid = $userid";
 	$joinField = $type === 2 ? 's.touserid' : 's.fromuserid';
-	$limitSql = $limit > 0 ? " LIMIT $limit" : '';
+	$limitSql = $limit > 0 ? " LIMIT $offset, $limit" : '';
 
 	$res = sql_query("
 		SELECT

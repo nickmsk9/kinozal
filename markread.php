@@ -31,7 +31,14 @@ dbconn(false);
 loggedinorreturn();
 stdhead();
 
-if (mysql_query("INSERT IGNORE INTO readtorrents (userid, torrentid) SELECT ".sqlesc($CURUSER["id"]).", id FROM torrents")) {
+$userid = (int)$CURUSER["id"];
+if (mysql_query("
+	INSERT IGNORE INTO readtorrents (userid, torrentid)
+	SELECT $userid, t.id
+	FROM torrents AS t
+	LEFT JOIN readtorrents AS r ON r.userid = $userid AND r.torrentid = t.id
+	WHERE r.torrentid IS NULL
+")) {
 	stdmsg("Успешно", "Новые торренты отмечены как прочитаные.");
 } else {
 	stdmsg("Ошибка", "Отметка новых торрентов произошла с ошибкой: ".mysql_error());

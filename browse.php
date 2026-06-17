@@ -453,6 +453,10 @@ if (isset($cleansearchstr)) {
     <img src="pic/pay_bn2.png" style="display:inline-block;" alt="">
 </div>
 
+<?php if ($num_torrents && !empty($pagertop)) { ?>
+    <div class="browse_pager browse_pager_top"><?= $pagertop ?></div>
+<?php } ?>
+
 <div class="bx2_0">
     <table class="t_peer w100p">
         <tr class="mn">
@@ -514,8 +518,8 @@ if (isset($cleansearchstr)) {
     </table>
 </div>
 
-<?php if ($num_torrents && isset($pagertop) && $pagertop) { ?>
-    <div class="small" style="padding:6px 0 0 0;"><?= $pagertop ?></div>
+<?php if ($num_torrents && !empty($pagerbottom)) { ?>
+    <div class="browse_pager browse_pager_bottom"><?= $pagerbottom ?></div>
 <?php } ?>
 <?php
 stdfoot();

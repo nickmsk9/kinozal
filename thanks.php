@@ -17,24 +17,24 @@ if (empty($torrentid)) {
 
 $ajax = (string) $_POST["ajax"];
 if ($ajax == "yes") {
-	sql_query("INSERT INTO thanks (torrentid, userid) VALUES ($torrentid, $userid)");// or sqlerr(__FILE__,__LINE__);
-	$count_sql = sql_query("SELECT COUNT(*) FROM thanks WHERE torrentid = $torrentid");
-	$count_row = mysqli_fetch_array($count_sql);
-	$count = $count_row[0];
+	sql_query("INSERT IGNORE INTO thanks (torrentid, userid) VALUES ($torrentid, $userid)") or sqlerr(__FILE__, __LINE__);
 
+	$thanksby = '';
+	$can_not_thanks = false;
+	$count = 0;
+	$thanked_sql = sql_query("SELECT thanks.userid, users.username, users.class FROM thanks INNER JOIN users ON thanks.userid = users.id WHERE thanks.torrentid = $torrentid ORDER BY thanks.id ASC") or sqlerr(__FILE__, __LINE__);
+	while ($thanked_row = mysqli_fetch_assoc($thanked_sql)) {
+		$count++;
+		if ($thanked_row["userid"] == $CURUSER["id"])
+			$can_not_thanks = true;
+		$thanks_userid = (int)$thanked_row["userid"];
+		$username = $thanked_row["username"];
+		$class = (int)$thanked_row["class"];
+		$thanksby .= "<a href=\"userdetails.php?id=$thanks_userid\">".get_user_class_color($class, $username)."</a>, ";
+	}
 	if ($count == 0) {
 		$thanksby = $tracker_lang['none_yet'];
 	} else {
-		$thanked_sql = sql_query("SELECT thanks.userid, users.username, users.class FROM thanks INNER JOIN users ON thanks.userid = users.id WHERE thanks.torrentid = $torrentid");
-		while ($thanked_row = mysql_fetch_assoc($thanked_sql)) {
-			if (($thanked_row["userid"] == $CURUSER["id"]) || ($thanked_row["userid"] == $row["owner"]))
-			$can_not_thanks = true;
-			//list($userid, $username) = $thanked_row;
-			$userid = $thanked_row["userid"];
-			$username = $thanked_row["username"];
-			$class = $thanked_row["class"];
-			$thanksby .= "<a href=\"userdetails.php?id=$userid\">".get_user_class_color($class, $username)."</a>, ";
-		}
 		if ($thanksby)
 			$thanksby = substr($thanksby, 0, -2);
 	}
@@ -45,7 +45,7 @@ if ($ajax == "yes") {
 	header ("Content-Type: text/html; charset=" . $tracker_lang['language_charset']);
 	print $thanksby;
 } else {
-	$res = sql_query("INSERT INTO thanks (torrentid, userid) VALUES ($torrentid, $userid)");// or sqlerr(__FILE__,__LINE__);
+	sql_query("INSERT IGNORE INTO thanks (torrentid, userid) VALUES ($torrentid, $userid)") or sqlerr(__FILE__, __LINE__);
 	header("Location: $DEFAULTBASEURL/details.php?id=$torrentid&thanks=1");
 }
 ?>

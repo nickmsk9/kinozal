@@ -2,19 +2,22 @@
 if (!defined('UC_SYSOP'))
 	die('Direct access denied.');
 
+$title = $title ?? '';
 $keywords = $keywords ?? '';
 $description = $description ?? '';
 $DEFAULTBASEURL = $GLOBALS['DEFAULTBASEURL'] ?? '';
 $pic_base_url = $GLOBALS['pic_base_url'] ?? './pic';
+$theme_uri = htmlspecialchars((string)($ss_uri ?? 'TBDev2030'), ENT_QUOTES, 'UTF-8');
+$site_name = htmlspecialchars((string)($SITENAME ?? ''), ENT_QUOTES, 'UTF-8');
 ?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title><?= $title ?></title>
-<link rel="stylesheet" href="./themes/<?= htmlspecialchars((string)$ss_uri, ENT_QUOTES, 'UTF-8') ?>/TBDev.css?v=20260609-5" type="text/css">
-<link rel="stylesheet" href="./themes/<?= htmlspecialchars((string)$ss_uri, ENT_QUOTES, 'UTF-8') ?>/engine.css?v=20260609-5" type="text/css">
+<title><?= htmlspecialchars((string)$title, ENT_QUOTES, 'UTF-8') ?></title>
+<link rel="stylesheet" href="./themes/<?= $theme_uri ?>/TBDev.css?v=20260617-1" type="text/css">
+<link rel="stylesheet" href="./themes/<?= $theme_uri ?>/engine.css?v=20260617-1" type="text/css">
 <?php if (in_array(basename($_SERVER['PHP_SELF'] ?? ''), array('upload.php', 'edit.php'), true)) { ?>
-<link rel="stylesheet" href="./themes/<?= htmlspecialchars((string)$ss_uri, ENT_QUOTES, 'UTF-8') ?>/upload.css?v=20260609-5" type="text/css">
+<link rel="stylesheet" href="./themes/<?= $theme_uri ?>/upload.css?v=20260617-1" type="text/css">
 <?php } ?>
 <script language="javascript" type="text/javascript" src="js/resizer.js"></script>
 <!--<script language="javascript" type="text/javascript" src="js/tooltips.js"></script>-->
@@ -59,9 +62,9 @@ $(document).ready(function(){
 </script>
 <?php
 if($keywords)
-    echo "<meta name=\"keywords\" content=\"$keywords\" />\n";
+    echo '<meta name="keywords" content="' . htmlspecialchars((string)$keywords, ENT_QUOTES, 'UTF-8') . "\" />\n";
 if($description)
-    echo "<meta name=\"description\" content=\"$description\" />\n";
+    echo '<meta name="description" content="' . htmlspecialchars((string)$description, ENT_QUOTES, 'UTF-8') . "\" />\n";
 ?>
 <link rel="alternate" type="application/rss+xml" title="Последние торренты" href="<?=$DEFAULTBASEURL?>/rss.php">
 <link rel="shortcut icon" href="<?=$DEFAULTBASEURL;?>/favicon.ico" type="image/x-icon" />
@@ -70,10 +73,10 @@ if($description)
 
 <table width="90%" class="clear" align="center" border="0" cellspacing="0" cellpadding="0" style="background: transparent;">
 <tr>
-<td class="embedded" width="50%" background="./themes/<?=$ss_uri;?>/images/logobg.gif">
-<a href="<?=$DEFAULTBASEURL?>"><img style="border: none" alt="<?=$SITENAME?>" title="<?=$SITENAME?>" src="./themes/<?=$ss_uri;?>/images/logo.gif" /></a>
+<td class="embedded" width="50%" background="./themes/<?= $theme_uri ?>/images/logobg.gif">
+<a href="<?=$DEFAULTBASEURL?>"><img style="border: none" alt="<?= $site_name ?>" title="<?= $site_name ?>" src="./themes/<?= $theme_uri ?>/images/logo.gif" /></a>
 </td>
-<td class="embedded" width="50%" align="right" style="text-align: right" background="./themes/<?=$ss_uri;?>/images/logobg.gif">
+<td class="embedded" width="50%" align="right" style="text-align: right" background="./themes/<?= $theme_uri ?>/images/logobg.gif">
 </td>
 </tr>
 </table>
@@ -120,37 +123,41 @@ if ($CURUSER['warned'] == "yes")
 	$warn = "<img src=\"{$pic_base_url}/warned.gif\" alt=\"Предупрежден\" title=\"Предупрежден\">";
 
 //// check for messages ////////////////// 
-        $res1 = sql_query("SELECT COUNT(*) FROM messages WHERE receiver=" . $CURUSER["id"] . " AND location=1") or sqlerr(__FILE__, __LINE__);
-        $arr1 = mysqli_fetch_row($res1);
-        $messages = $arr1[0];
-        $res1 = sql_query("SELECT COUNT(*) FROM messages WHERE receiver=" . $CURUSER["id"] . " AND location=1 AND unread='yes'") or sqlerr(__FILE__, __LINE__);
-        $arr1 = mysqli_fetch_row($res1);
-        $unread = $arr1[0];
-        $res1 = sql_query("SELECT COUNT(*) FROM messages WHERE sender=" . $CURUSER["id"] . " AND saved='yes'") or sqlerr(__FILE__, __LINE__);
-        $arr1 = mysqli_fetch_row($res1);
-        $outmessages = $arr1[0];
+        $uid = (int)$CURUSER["id"];
+        $res1 = sql_query("
+                SELECT
+                        SUM(receiver = $uid AND location = 1) AS messages,
+                        SUM(receiver = $uid AND location = 1 AND unread = 'yes') AS unread,
+                        SUM(sender = $uid AND saved = 'yes') AS outmessages
+                FROM messages
+                WHERE (receiver = $uid AND location = 1)
+                   OR (sender = $uid AND saved = 'yes')
+        ") or sqlerr(__FILE__, __LINE__);
+        $arr1 = mysqli_fetch_assoc($res1);
+        $messages = (int)($arr1['messages'] ?? 0);
+        $unread = (int)($arr1['unread'] ?? 0);
+        $outmessages = (int)($arr1['outmessages'] ?? 0);
         if ($unread)
                 $inboxpic = "<img height=\"16px\" style=\"border:none\" alt=\"inbox\" title=\"Есть новые сообщения\" src=\"{$pic_base_url}/pn_inboxnew.gif\">";
         else
                 $inboxpic = "<img height=\"16px\" style=\"border:none\" alt=\"inbox\" title=\"Нет новых сообщений\" src=\"{$pic_base_url}/pn_inbox.gif\">";
 
-$res2 = sql_query("SELECT COUNT(*) FROM peers WHERE userid = {$CURUSER["id"]} AND seeder='yes'") or sqlerr(__FILE__, __LINE__);
-$row = mysqli_fetch_row($res2);
-$activeseed = $row[0];
-
-$res2 = sql_query("SELECT COUNT(*) FROM peers WHERE userid = {$CURUSER["id"]} AND seeder='no'") or sqlerr(__FILE__, __LINE__);
-$row = mysqli_fetch_row($res2);
-$activeleech = $row[0];
+$res2 = sql_query("
+        SELECT
+                SUM(seeder = 'yes') AS activeseed,
+                SUM(seeder = 'no') AS activeleech
+        FROM peers
+        WHERE userid = $uid
+") or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_assoc($res2);
+$activeseed = (int)($row['activeseed'] ?? 0);
+$activeleech = (int)($row['activeleech'] ?? 0);
 
 //// end
 
 ?>
 
 <!-- //////// start the statusbar ///////////// -->
-
-</table>
-
-<p>
 
 <table align="center" cellpadding="4" cellspacing="0" border="0" style="width:90%">
 	<tr>
@@ -224,7 +231,10 @@ print("&nbsp;<a href=getrss.php><img style=border:none alt=RSS title=RSS src={$p
 </span></td>
 
 </tr>
-</table></table>
+</table>
+</td>
+</tr>
+</table>
 <p>
 
 <?php } else {?>
@@ -241,6 +251,7 @@ $w = "width=\"90%\"";
 
 ?>
 <table class="mainouter" align="center" <?=$w; ?> border="1" cellspacing="0" cellpadding="5">
+<tr>
 
 <!------------- MENU ------------------------------------------------------------------------>
 
@@ -260,6 +271,7 @@ $uped = $uped ?? '0 B';
 $downed = $downed ?? '0 B';
 $medaldon = $medaldon ?? '';
 $warn = $warn ?? '';
+$usrclass = '';
 
 show_blocks("l");
 
@@ -279,6 +291,7 @@ if ($messages) {
         }
 
 if ($CURUSER) {
+	$remoteAddr = htmlspecialchars_uni($_SERVER["REMOTE_ADDR"] ?? '');
 
 	$userbar = "<center><a href=\"my.php\"><img src=\"" . ( $CURUSER["avatar"] ? $CURUSER["avatar"] : "./themes/$ss_uri/images/default_avatar.gif" ) . "\" width=\"100\" alt=\"{$tracker_lang['avatar']}\" title=\"{$tracker_lang['avatar']}\" border=\"0\" /></a></center>
 	<br />
@@ -316,7 +329,7 @@ setTimeout(\"refrClock2()\",1000);
 refrClock2();
 </script>
 <!-- / clock hack --><br />
-	<font color=\"#FF6600\">" . $tracker_lang['your_ip'] . ": " . $_SERVER["REMOTE_ADDR"] . "</font><br />
+	<font color=\"#FF6600\">" . $tracker_lang['your_ip'] . ": " . $remoteAddr . "</font><br />
 	<br />
 	<center><img src=\"{$pic_base_url}/disabled.gif\" border=\"0\" />&nbsp;[<a href=\"logout.php\">{$tracker_lang['logout']}</a>]</center>
 	";
@@ -333,10 +346,13 @@ refrClock2();
 <a class="menu" href="signup.php"><center>'.$tracker_lang['signup'].'</center></a>';
 }
 
-if ($CURUSER && $CURUSER['override_class'] != 255)
-	$usrclass = "&nbsp;<img src=\"{$pic_base_url}/warning.gif\" title=" . get_user_class_name($CURUSER['class']) . " alt=" . get_user_class_name($CURUSER['class']) . ">&nbsp;";
-elseif (get_user_class() >= UC_MODERATOR)
-	$usrclass = "&nbsp;<a href=\"setclass.php\"><img src=\"{$pic_base_url}/warning.gif\" title=\"" . get_user_class_name($CURUSER['class']) . "\" alt=\"" . get_user_class_name($CURUSER['class']) . "\" border=\"0\"></a>&nbsp;";
+if ($CURUSER && $CURUSER['override_class'] != 255) {
+	$className = htmlspecialchars_uni(get_user_class_name($CURUSER['class']));
+	$usrclass = "&nbsp;<img src=\"{$pic_base_url}/warning.gif\" title=\"{$className}\" alt=\"{$className}\">&nbsp;";
+} elseif ($CURUSER && get_user_class() >= UC_MODERATOR) {
+	$className = htmlspecialchars_uni(get_user_class_name($CURUSER['class']));
+	$usrclass = "&nbsp;<img src=\"{$pic_base_url}/warning.gif\" title=\"{$className}\" alt=\"{$className}\" border=\"0\">&nbsp;";
+}
 
 	blok_menu($tracker_lang['welcome_back'].( $CURUSER ? "<a href=\"$DEFAULTBASEURL/userdetails.php?id=" . $CURUSER["id"] . "\">" . $CURUSER["username"] . "</a>&nbsp;".$usrclass."&nbsp;" : "гость" ) . $medaldon . $warn , $userbar , "155");
 

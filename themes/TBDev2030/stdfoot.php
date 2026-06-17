@@ -7,6 +7,7 @@ global $hide_right_blocks;
 
 	show_blocks('d');
 ?>
+</td>
 <?php if (empty($hide_right_blocks)) { ?>
 <td valign="top" width="155">
 <?php
@@ -34,10 +35,12 @@ $gzipStatus = !empty($gzip) ? 1 : 0;
 // Если нет — не будет сыпать ошибками.
 $cachedQueries = isset($cached_queries) ? (int)$cached_queries : 0;
 $delayedTime = isset($delayed_time) ? number_format((float)$delayed_time, 4) : '0.0000';
+$footerColspan = empty($hide_right_blocks) ? 3 : 2;
 
 print("
+</tr>
 <tr>
-    <td colspan='3' class=\"is_foot\">
+    <td colspan='{$footerColspan}' class=\"is_foot\">
         <b>
             .:Кинозал.ТВ
             <noindex>

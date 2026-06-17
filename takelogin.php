@@ -45,7 +45,7 @@ function is_password_correct($password, $secret, $hash) {
 	return ($hash == md5($secret . $password . $secret) || $hash == md5($secret . trim($password) . $secret)); // А нахуя вторая часть? Дебилы вводят из писем пароли с пробелом в конце/начале
 }
 
-$res = sql_query("SELECT id, passhash, secret, enabled, status FROM users WHERE username = " . sqlesc($username));
+$res = sql_query("SELECT id, passhash, secret, enabled, status, ip FROM users WHERE username = " . sqlesc($username) . " LIMIT 1");
 $row = mysqli_fetch_array($res);
 
 if (!$row)
@@ -60,10 +60,9 @@ if (!is_password_correct($password, $row['secret'], $row['passhash']))
 if ($row["enabled"] == "no")
 	bark("Этот аккаунт отключен.");
 
-$peers = sql_query("SELECT COUNT(id) FROM peers WHERE userid = " . (int)$row["id"]);
-$num = mysqli_fetch_row($peers);
+$peers = sql_query("SELECT 1 FROM peers WHERE userid = " . (int)$row["id"] . " LIMIT 1");
 $ip = getip();
-if ($num[0] > 0 && ($row["ip"] ?? '') != $ip && !empty($row["ip"]))
+if (mysqli_num_rows($peers) > 0 && ($row["ip"] ?? '') != $ip && !empty($row["ip"]))
 	bark("Этот пользователь на данный момент активен с другого IP. Вход невозможен.");
 
 logincookie($row["id"], $row["passhash"]);

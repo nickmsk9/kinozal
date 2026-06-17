@@ -857,11 +857,58 @@ if ($has_search_params && empty($_GET['h']))
   $query .= $limit;
 
   $res = sql_query($query) or sqlerr(__FILE__, __LINE__);
+  $users = array();
+  while ($user = mysqli_fetch_array($res))
+    $users[] = $user;
 
-  if (mysqli_num_rows($res) == 0)
+  if (!$users)
   	stdmsg("Внимание","Пользователь не был найден.");
   else
   {
+	$user_ids = array();
+	$user_ips = array();
+	foreach ($users as $user) {
+		$uid = (int)$user['id'];
+		if ($uid > 0)
+			$user_ids[$uid] = true;
+		if (!empty($user['ip'])) {
+			$nip = ip2long($user['ip']);
+			if ($nip !== false)
+				$user_ips[$user['ip']] = $nip;
+		}
+	}
+
+	$peer_totals = array();
+	if ($user_ids) {
+		$id_sql = implode(',', array_keys($user_ids));
+		$auxres = sql_query("SELECT userid, SUM(uploaded) AS pul, SUM(downloaded) AS pdl FROM peers WHERE userid IN ($id_sql) GROUP BY userid") or sqlerr(__FILE__, __LINE__);
+		while ($array = mysqli_fetch_assoc($auxres))
+			$peer_totals[(int)$array['userid']] = array('pul' => (float)$array['pul'], 'pdl' => (float)$array['pdl']);
+	}
+
+	$content_counts = function_exists('tracker_user_content_counts')
+		? tracker_user_content_counts(array_keys($user_ids))
+		: array();
+
+	$banned_ips = array();
+	if ($user_ips) {
+		$ban_where = array();
+		foreach ($user_ips as $nip)
+			$ban_where[] = ((int)$nip) . " >= first AND " . ((int)$nip) . " <= last";
+		$auxres = sql_query("SELECT first, last FROM bans WHERE " . implode(' OR ', $ban_where)) or sqlerr(__FILE__, __LINE__);
+		$ban_ranges = array();
+		while ($array = mysqli_fetch_assoc($auxres))
+			$ban_ranges[] = array((int)$array['first'], (int)$array['last']);
+		foreach ($user_ips as $ip => $nip) {
+			foreach ($ban_ranges as $range) {
+				if ($nip >= $range[0] && $nip <= $range[1]) {
+					$banned_ips[$ip] = true;
+					break;
+				}
+			}
+		}
+	}
+
 	begin_frame("Результаты поиска: " . number_format($count));
   	if ($count > $perpage)
   		echo $pagertop;
@@ -878,7 +925,7 @@ if ($has_search_params && empty($_GET['h']))
         "<td class=colhead>pUL</td>".
         "<td class=colhead>pDL</td>".
         "<td class=colhead>История</td></tr>";
-    while ($user = mysqli_fetch_array($res))
+    foreach ($users as $user)
     {
     	if ($user['added'] == '0000-00-00 00:00:00')
       	$user['added'] = '---';
@@ -887,28 +934,19 @@ if ($has_search_params && empty($_GET['h']))
 
       if ($user['ip'])
       {
-	    	$nip = ip2long($user['ip']);
-        $auxres = sql_query("SELECT COUNT(*) FROM bans WHERE $nip >= first AND $nip <= last") or sqlerr(__FILE__, __LINE__);
-        $array = mysqli_fetch_row($auxres);
-    	  if ($array[0] == 0)
-      		$ipstr = $user['ip'];
-	  	  else
-			$ipstr = "<a class='red b' href='testip.php?ip=" . $user['ip'] . "'>" . $user['ip'] . "</a>";
-			}
-			else
-      	$ipstr = "---";
+	      if (empty($banned_ips[$user['ip']])) {
+		      $ipstr = $user['ip'];
+	      } else {
+		      $ipstr = "<a class='red b' href='testip.php?ip=" . $user['ip'] . "'>" . $user['ip'] . "</a>";
+	      }
+      }
+      else
+	      $ipstr = "---";
 
-      $auxres = sql_query("SELECT SUM(uploaded) AS pul, SUM(downloaded) AS pdl FROM peers WHERE userid = " . $user['id']) or sqlerr(__FILE__, __LINE__);
-      $array = mysqli_fetch_array($auxres);
-
-      $pul = $array['pul'];
-      $pdl = $array['pdl'];
-
-      $auxres = sql_query("SELECT COUNT(id) FROM comments WHERE user = ".$user['id']) or sqlerr(__FILE__, __LINE__);
-			// Use LEFT JOIN to exclude orphan comments
-      // $auxres = sql_query("SELECT COUNT(c.id) FROM comments AS c LEFT JOIN torrents as t ON c.torrent = t.id WHERE c.user = '".$user['id']."'") or sqlerr(__FILE__, __LINE__);
-      $n = mysqli_fetch_row($auxres);
-      $n_comments = $n[0];
+      $uid = (int)$user['id'];
+      $pul = isset($peer_totals[$uid]) ? $peer_totals[$uid]['pul'] : 0;
+      $pdl = isset($peer_totals[$uid]) ? $peer_totals[$uid]['pdl'] : 0;
+      $n_comments = isset($content_counts[$uid]) ? $content_counts[$uid]['comments_count'] : 0;
 
     	echo "<tr><td><b><a href='userdetails.php?id=" . $user['id'] . "'>" .
       		$user['username']."</a></b>" . get_user_icons($user) . "</td>" .

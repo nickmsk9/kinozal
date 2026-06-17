@@ -68,12 +68,15 @@ if (!$torrent) {
 
 $torrentName = (string)$torrent['name'];
 
-$count = get_row_count(
-    'bookmarks',
-    'WHERE `userid` = ' . $userId . ' AND `torrentid` = ' . $id
-);
+$exists = sql_query("
+    SELECT `id`
+    FROM `bookmarks`
+    WHERE `userid` = " . $userId . "
+      AND `torrentid` = " . $id . "
+    LIMIT 1
+") or sqlerr(__FILE__, __LINE__);
 
-if ($count > 0) {
+if (mysqli_num_rows($exists) > 0) {
     bookmarks_message(
         ($tracker_lang['torrent'] ?? 'Торрент') .
         ' "' . bookmarks_h($torrentName) . '" ' .

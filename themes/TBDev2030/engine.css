@@ -529,6 +529,12 @@ fieldset.ft_cmt legend { padding: 0 5px; color: #516a88; }
 .f_um { color: #516a88; }
 .pager_info { padding: 4px 0; color: #516a88; font-size: 10px; }
 
+.browse_pager,
+.top_pager {
+	margin: 5px 0;
+	overflow: hidden;
+}
+
 /* Status icons */
 .i1 {
 	display: inline-block;
@@ -703,18 +709,47 @@ ul.men li.letters {
 }
 
 .person-grid {
+	display: block;
 	width: 100%;
-	table-layout: fixed;
+	table-layout: auto;
+	border-collapse: separate;
+	background: transparent;
+}
+
+.person-grid tbody {
+	display: block;
+	width: 100%;
+}
+
+.person-grid tr {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+	gap: 6px;
+	width: 100%;
 }
 
 .person-grid td {
+	display: block;
+	box-sizing: border-box;
+	width: auto !important;
+	min-width: 0;
 	padding: 5px 3px;
 	vertical-align: top;
 }
 
+.person-grid td:empty {
+	display: none;
+}
+
+.person-grid a {
+	display: block;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
 .person-grid img {
 	display: block;
-	width: 120px;
+	width: 100%;
 	max-width: 100%;
 	height: 170px;
 	margin: 0 auto 4px;
@@ -875,15 +910,18 @@ ul.men li.letters {
 }
 
 .paginator ul {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 3px;
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
 .paginator li {
-	float: left;
+	float: none;
 	list-style: none;
-	margin: 0 3px 0 0;
+	margin: 0;
 	padding: 0;
 }
 
@@ -896,6 +934,12 @@ ul.men li.letters {
 
 .paginator .current a {
 	background: #d1d8ec;
+}
+
+.paginator .dots {
+	padding: 3px 5px;
+	color: #516a88;
+	line-height: 18px;
 }
 
 .share {
