@@ -434,6 +434,7 @@ function tracker_cache_invalidate_for_query($query)
 
 	if ($has('cups') || $has('user_cups') || $has('user_status_assignments') || $has('countries')) {
 		$patterns[] = 'cups:*';
+		$patterns[] = 'countries:*';
 		$patterns[] = 'userdetails:*';
 		$patterns[] = 'block:*';
 		$patterns[] = 'index:*';

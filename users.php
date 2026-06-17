@@ -229,6 +229,7 @@ $sort_sql = isset($sort_fields[$sort]) ? $sort_fields[$sort] : $sort_fields['0']
 $order_sql = ($order === '1') ? 'ASC' : 'DESC';
 $perpage = 30;
 $page = isset($_GET['page']) ? max(0, (int)$_GET['page']) : 0;
+$needs_count_sort = ($sort === '1' || $sort === '3');
 
 $count_res = sql_query("SELECT COUNT(*) FROM users AS u WHERE $where_sql") or sqlerr(__FILE__, __LINE__);
 $count_row = mysqli_fetch_row($count_res);
@@ -239,24 +240,64 @@ if ($page >= $pages) {
 }
 $offset = $page * $perpage;
 
+$count_select_sql = $needs_count_sort
+    ? "COALESCE(tc.torrent_count, 0) AS torrent_count,
+        COALESCE(cc.comment_count, 0) AS comment_count"
+    : "0 AS torrent_count,
+        0 AS comment_count";
+$count_join_sql = $needs_count_sort
+    ? "
+    LEFT JOIN (
+        SELECT owner AS userid, COUNT(*) AS torrent_count
+        FROM torrents
+        GROUP BY owner
+    ) AS tc ON tc.userid = u.id
+    LEFT JOIN (
+        SELECT user AS userid, COUNT(*) AS comment_count
+        FROM comments
+        GROUP BY user
+    ) AS cc ON cc.userid = u.id"
+    : "";
+
 $res = sql_query("
     SELECT
         u.*,
         c.name AS country_name,
         c.flagpic,
-        (SELECT COUNT(*) FROM torrents AS t WHERE t.owner = u.id) AS torrent_count,
-        (SELECT COUNT(*) FROM comments AS cm WHERE cm.user = u.id) AS comment_count
+        $count_select_sql
     FROM users AS u
     LEFT JOIN countries AS c ON c.id = u.country
+    $count_join_sql
     WHERE $where_sql
     ORDER BY $sort_sql $order_sql, u.id DESC
     LIMIT $offset, $perpage
 ") or sqlerr(__FILE__, __LINE__);
 
-$countries = array();
-$country_res = sql_query('SELECT id, name FROM countries ORDER BY name ASC') or sqlerr(__FILE__, __LINE__);
-while ($row = mysqli_fetch_assoc($country_res)) {
-    $countries[] = $row;
+$users = array();
+while ($row = mysqli_fetch_assoc($res)) {
+    $users[] = $row;
+}
+
+if (!$needs_count_sort && function_exists('tracker_attach_user_content_counts')) {
+    $users = tracker_attach_user_content_counts($users);
+}
+
+$countries = function_exists('tracker_cache_remember')
+    ? tracker_cache_remember('countries:list', 3600, function () {
+        $rows = array();
+        $country_res = sql_query('SELECT id, name FROM countries ORDER BY name ASC') or sqlerr(__FILE__, __LINE__);
+        while ($row = mysqli_fetch_assoc($country_res)) {
+            $rows[] = $row;
+        }
+        return $rows;
+    })
+    : null;
+if ($countries === null) {
+    $countries = array();
+    $country_res = sql_query('SELECT id, name FROM countries ORDER BY name ASC') or sqlerr(__FILE__, __LINE__);
+    while ($row = mysqli_fetch_assoc($country_res)) {
+        $countries[] = $row;
+    }
 }
 
 $hide_right_blocks = true;
@@ -399,8 +440,8 @@ stdhead('Список пользователей - Поиск пользоват
     </div>
     <div class="mn1_content">
         <div class="bx2_0">
-            <?php if (mysqli_num_rows($res) > 0) { ?>
-                <?php while ($user = mysqli_fetch_assoc($res)) { ?>
+            <?php if ($users) { ?>
+                <?php foreach ($users as $user) { ?>
                     <?php
                     $uid = (int)$user['id'];
                     $avatar = !empty($user['avatar']) ? users_h($user['avatar']) : '/pic/default_avatar.gif';

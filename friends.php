@@ -216,9 +216,7 @@ $res = sql_query("
 		u.warned,
 		u.enabled,
 		u.birthday,
-		u.last_access,
-		(SELECT COUNT(*) FROM torrents AS t WHERE t.owner = f.friendid) AS torrents_count,
-		(SELECT COUNT(*) FROM comments AS c WHERE c.user = f.friendid) AS comments_count
+		u.last_access
 	FROM friends AS f
 	LEFT JOIN users AS u ON f.friendid = u.id
 	WHERE f.userid = $userid
@@ -226,6 +224,9 @@ $res = sql_query("
 ") or sqlerr(__FILE__, __LINE__);
 while ($row = mysqli_fetch_assoc($res)) {
 	$friends[] = $row;
+}
+if (function_exists('tracker_attach_user_content_counts')) {
+	$friends = tracker_attach_user_content_counts($friends);
 }
 
 $blocks = array();
@@ -242,9 +243,7 @@ $res = sql_query("
 		u.warned,
 		u.enabled,
 		u.birthday,
-		u.last_access,
-		(SELECT COUNT(*) FROM torrents AS t WHERE t.owner = b.blockid) AS torrents_count,
-		(SELECT COUNT(*) FROM comments AS c WHERE c.user = b.blockid) AS comments_count
+		u.last_access
 	FROM blocks AS b
 	LEFT JOIN users AS u ON b.blockid = u.id
 	WHERE b.userid = $userid
@@ -252,6 +251,9 @@ $res = sql_query("
 ") or sqlerr(__FILE__, __LINE__);
 while ($row = mysqli_fetch_assoc($res)) {
 	$blocks[] = $row;
+}
+if (function_exists('tracker_attach_user_content_counts')) {
+	$blocks = tracker_attach_user_content_counts($blocks);
 }
 
 $profile_class_css = 'u' . (int)($user["class"] ?? UC_USER);

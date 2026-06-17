@@ -123,8 +123,8 @@ function index_preload_right_blocks()
 			 WHERE status = 'confirmed') AS user_stats";
 		$parts[] = "(SELECT JSON_OBJECT(
 				'torrents_total', COUNT(*),
-				'seeders_total', COALESCE(SUM(seeders), 0),
-				'leechers_total', COALESCE(SUM(leechers), 0)
+				'seeders_total', COALESCE(SUM(seeders + remote_seeders), 0),
+				'leechers_total', COALESCE(SUM(leechers + remote_leechers), 0)
 			 )
 			 FROM torrents
 			 WHERE visible = 'yes'

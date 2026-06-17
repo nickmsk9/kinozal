@@ -10,7 +10,7 @@ function uh_h($value)
 	return htmlspecialchars_uni((string)$value);
 }
 
-function uh_comment_page_url($torrentid, $commentid)
+function uh_comment_page_url($torrentid, $commentid, $newer_count = null)
 {
 	$torrentid = (int)$torrentid;
 	$commentid = (int)$commentid;
@@ -19,9 +19,13 @@ function uh_comment_page_url($torrentid, $commentid)
 		return '';
 	}
 
-	$res = sql_query("SELECT COUNT(*) FROM comments WHERE torrent = $torrentid AND id > $commentid") or sqlerr(__FILE__, __LINE__);
-	$row = mysqli_fetch_row($res);
-	$count = (int)($row[0] ?? 0);
+	if ($newer_count === null) {
+		$res = sql_query("SELECT COUNT(*) FROM comments WHERE torrent = $torrentid AND id > $commentid") or sqlerr(__FILE__, __LINE__);
+		$row = mysqli_fetch_row($res);
+		$newer_count = (int)($row[0] ?? 0);
+	}
+
+	$count = (int)$newer_count;
 	$page = (int)floor($count / 20);
 
 	return 'details.php?id=' . $torrentid . '&amp;tocomm=1' . ($page > 0 ? '&amp;page=' . $page : '') . '#cm' . $commentid;
@@ -74,6 +78,27 @@ if ($commentCount > $offset) {
 	}
 }
 
+$comment_newer_counts = array();
+if ($comments) {
+	$comment_ids = array();
+	foreach ($comments as $comment) {
+		$comment_ids[] = (int)$comment['id'];
+	}
+	$comment_id_sql = implode(',', array_filter($comment_ids));
+	if ($comment_id_sql !== '') {
+		$res = sql_query("
+			SELECT c.id, COUNT(c2.id) AS newer_count
+			FROM comments AS c
+			LEFT JOIN comments AS c2 ON c2.torrent = c.torrent AND c2.id > c.id
+			WHERE c.id IN ($comment_id_sql)
+			GROUP BY c.id
+		") or sqlerr(__FILE__, __LINE__);
+		while ($row = mysqli_fetch_assoc($res)) {
+			$comment_newer_counts[(int)$row['id']] = (int)$row['newer_count'];
+		}
+	}
+}
+
 $profileClass = 'u' . (int)($user['class'] ?? UC_USER);
 $hide_right_blocks = true;
 
@@ -109,7 +134,7 @@ stdhead('История комментариев');
 				$commentid = (int)$comment['id'];
 				$torrentid = (int)$comment['torrentid'];
 				$torrentName = trim((string)($comment['torrent_name'] ?? ''));
-				$commentUrl = uh_comment_page_url($torrentid, $commentid);
+				$commentUrl = uh_comment_page_url($torrentid, $commentid, $comment_newer_counts[$commentid] ?? null);
 				$added = uh_h($comment['added']);
 				if (!empty($comment['added'])) {
 					$added .= ' GMT (' . uh_h(get_elapsed_time(sql_timestamp_to_unix_timestamp($comment['added']))) . ' назад)';

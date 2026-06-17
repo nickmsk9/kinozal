@@ -71,7 +71,9 @@ CREATE TABLE `bookmarks` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `userid` int(10) unsigned NOT NULL default '0',
   `torrentid` int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  KEY `userid_torrentid` (`userid`,`torrentid`),
+  KEY `torrentid` (`torrentid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
@@ -152,6 +154,7 @@ CREATE TABLE `comments` (
   `ip` varchar(15) NOT NULL default '',
   PRIMARY KEY  (`id`),
   KEY `user` (`user`),
+  KEY `user_id` (`user`,`id`),
   KEY `torrent` (`torrent`),
   KEY `torrent_id` (`torrent`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -600,7 +603,8 @@ CREATE TABLE `snatched` (
   `finished` enum('yes','no') NOT NULL default 'no',
   PRIMARY KEY  (`id`),
   KEY `snatch` (`torrent`,`userid`),
-  KEY `userid_completed` (`userid`,`completedat`,`last_action`)
+  KEY `userid_completed` (`userid`,`completedat`,`last_action`),
+  KEY `userid_finished_completed` (`userid`,`finished`,`completedat`,`last_action`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
@@ -692,6 +696,7 @@ CREATE TABLE `torrents` (
   PRIMARY KEY  (`id`),
   UNIQUE KEY `info_hash` (`info_hash`),
   KEY `owner` (`owner`),
+  KEY `owner_visible_id` (`owner`,`visible`,`banned`,`id`),
   KEY `visible` (`visible`),
   KEY `category_visible` (`category`,`visible`),
   KEY `browse_main` (`visible`,`banned`,`is_test`,`not_sticky`,`added`,`id`),
@@ -902,6 +907,9 @@ CREATE TABLE `users` (
   PRIMARY KEY  (`id`),
   UNIQUE KEY `username` (`username`),
   KEY `status_added` (`status`,`added`),
+  KEY `status_class_added` (`status`,`class`,`added`),
+  KEY `status_country_added` (`status`,`country`,`added`),
+  KEY `status_gender_added` (`status`,`gender`,`added`),
   KEY `ip` (`ip`),
   KEY `uploaded` (`uploaded`),
   KEY `downloaded` (`downloaded`),

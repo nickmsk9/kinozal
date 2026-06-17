@@ -86,9 +86,17 @@ function test_torrents_ensure_schema()
 	$performance_indexes = array(
 		array('torrents', 'browse_main', 'ALTER TABLE torrents ADD KEY browse_main (visible, banned, is_test, not_sticky, added, id)'),
 		array('torrents', 'browse_category', 'ALTER TABLE torrents ADD KEY browse_category (category, visible, banned, is_test, not_sticky, added, id)'),
+		array('torrents', 'owner_visible_id', 'ALTER TABLE torrents ADD KEY owner_visible_id (owner, visible, banned, id)'),
+		array('bookmarks', 'userid_torrentid', 'ALTER TABLE bookmarks ADD KEY userid_torrentid (userid, torrentid)'),
+		array('bookmarks', 'torrentid', 'ALTER TABLE bookmarks ADD KEY torrentid (torrentid)'),
 		array('peers', 'torrent_id', 'ALTER TABLE peers ADD KEY torrent_id (torrent, id)'),
 		array('comments', 'torrent_id', 'ALTER TABLE comments ADD KEY torrent_id (torrent, id)'),
+		array('comments', 'user_id', 'ALTER TABLE comments ADD KEY user_id (user, id)'),
 		array('snatched', 'userid_completed', 'ALTER TABLE snatched ADD KEY userid_completed (userid, completedat, last_action)'),
+		array('snatched', 'userid_finished_completed', 'ALTER TABLE snatched ADD KEY userid_finished_completed (userid, finished, completedat, last_action, id)'),
+		array('users', 'status_class_added', 'ALTER TABLE users ADD KEY status_class_added (status, class, added)'),
+		array('users', 'status_country_added', 'ALTER TABLE users ADD KEY status_country_added (status, country, added)'),
+		array('users', 'status_gender_added', 'ALTER TABLE users ADD KEY status_gender_added (status, gender, added)'),
 	);
 
 	foreach ($performance_indexes as $index) {

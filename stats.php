@@ -61,8 +61,8 @@ $res = sql_query("SELECT COUNT(*) FROM peers") or sqlerr(__FILE__, __LINE__);
 $n = mysql_fetch_row($res);
 $n_peers = $n[0];
 
-$uporder = htmlspecialchars_uni($_GET['uporder']);
-$catorder = htmlspecialchars_uni($_GET["catorder"]);
+$uporder = isset($_GET['uporder']) ? htmlspecialchars_uni($_GET['uporder']) : '';
+$catorder = isset($_GET['catorder']) ? htmlspecialchars_uni($_GET["catorder"]) : '';
 
 if ($uporder == "lastul")
 	$orderby = "last DESC, name";
@@ -73,11 +73,26 @@ elseif ($uporder == "peers")
 else
 	$orderby = "name";
 
-$query = "SELECT u.id, u.username AS name, MAX(t.added) AS last, COUNT(DISTINCT t.id) AS n_t, COUNT(p.id) as n_p
-	FROM users as u LEFT JOIN torrents as t ON u.id = t.owner LEFT JOIN peers as p ON t.id = p.torrent WHERE u.class = ".UC_UPLOADER."
-	GROUP BY u.id UNION SELECT u.id, u.username AS name, MAX(t.added) AS last, COUNT(DISTINCT t.id) AS n_t, COUNT(p.id) as n_p
-	FROM users as u LEFT JOIN torrents as t ON u.id = t.owner LEFT JOIN peers as p ON t.id = p.torrent WHERE u.class > ".UC_UPLOADER."
-	GROUP BY u.id ORDER BY $orderby";
+$query = "SELECT
+		u.id,
+		u.username AS name,
+		t.last,
+		COALESCE(t.n_t, 0) AS n_t,
+		COALESCE(p.n_p, 0) AS n_p
+	FROM users AS u
+	LEFT JOIN (
+		SELECT owner, MAX(added) AS last, COUNT(*) AS n_t
+		FROM torrents
+		GROUP BY owner
+	) AS t ON t.owner = u.id
+	LEFT JOIN (
+		SELECT t.owner, COUNT(p.id) AS n_p
+		FROM torrents AS t
+		INNER JOIN peers AS p ON p.torrent = t.id
+		GROUP BY t.owner
+	) AS p ON p.owner = u.id
+	WHERE u.class >= ".UC_UPLOADER."
+	ORDER BY $orderby";
 
 $res = sql_query($query) or sqlerr(__FILE__, __LINE__);
 
@@ -121,9 +136,24 @@ else
 	else
 		$orderby = "c.name";
 
-  $res = sql_query("SELECT c.name, MAX(t.added) AS last, COUNT(DISTINCT t.id) AS n_t, COUNT(p.id) AS n_p
-	FROM categories as c LEFT JOIN torrents as t ON t.category = c.id LEFT JOIN peers as p
-	ON t.id = p.torrent GROUP BY c.id ORDER BY $orderby") or sqlerr(__FILE__, __LINE__);
+  $res = sql_query("SELECT
+		c.name,
+		t.last,
+		COALESCE(t.n_t, 0) AS n_t,
+		COALESCE(p.n_p, 0) AS n_p
+	FROM categories AS c
+	LEFT JOIN (
+		SELECT category, MAX(added) AS last, COUNT(*) AS n_t
+		FROM torrents
+		GROUP BY category
+	) AS t ON t.category = c.id
+	LEFT JOIN (
+		SELECT t.category, COUNT(p.id) AS n_p
+		FROM torrents AS t
+		INNER JOIN peers AS p ON p.torrent = t.id
+		GROUP BY t.category
+	) AS p ON p.category = c.id
+	ORDER BY $orderby") or sqlerr(__FILE__, __LINE__);
 
 	begin_frame("Активность категорий", True);
 	begin_table();

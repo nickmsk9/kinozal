@@ -300,9 +300,7 @@ stdhead('Закладки');
 		} elseif ($bookmarkType === 3) {
 			$res = sql_query("
 				SELECT
-					u.*,
-					(SELECT COUNT(*) FROM torrents AS t WHERE t.owner = u.id) AS torrents_count,
-					(SELECT COUNT(*) FROM comments AS c WHERE c.user = u.id) AS comments_count
+					u.*
 				FROM user_bookmarks AS b
 				INNER JOIN users AS u ON u.id = b.target_userid
 				WHERE b.userid = $userId
@@ -311,6 +309,9 @@ stdhead('Закладки');
 			$users = array();
 			while ($row = mysqli_fetch_assoc($res)) {
 				$users[] = $row;
+			}
+			if (function_exists('tracker_attach_user_content_counts')) {
+				$users = tracker_attach_user_content_counts($users);
 			}
 			echo bookmarks_grid($users, function ($row) {
 				global $userId;

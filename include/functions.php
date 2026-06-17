@@ -244,6 +244,76 @@ function sql_query($query)
 
     return $result;
 }
+
+function tracker_user_content_counts(array $user_ids)
+{
+    $ids = array();
+    foreach ($user_ids as $user_id) {
+        $user_id = (int)$user_id;
+        if ($user_id > 0) {
+            $ids[$user_id] = true;
+        }
+    }
+
+    if (!$ids) {
+        return array();
+    }
+
+    $counts = array();
+    foreach (array_keys($ids) as $user_id) {
+        $counts[$user_id] = array('torrents_count' => 0, 'comments_count' => 0);
+    }
+
+    $id_sql = implode(',', array_keys($ids));
+
+    $res = sql_query("
+        SELECT owner AS userid, COUNT(*) AS items
+        FROM torrents
+        WHERE owner IN ($id_sql)
+        GROUP BY owner
+    ") or sqlerr(__FILE__, __LINE__);
+    while ($row = mysqli_fetch_assoc($res)) {
+        $userid = (int)$row['userid'];
+        if (isset($counts[$userid])) {
+            $counts[$userid]['torrents_count'] = (int)$row['items'];
+        }
+    }
+
+    $res = sql_query("
+        SELECT user AS userid, COUNT(*) AS items
+        FROM comments
+        WHERE user IN ($id_sql)
+        GROUP BY user
+    ") or sqlerr(__FILE__, __LINE__);
+    while ($row = mysqli_fetch_assoc($res)) {
+        $userid = (int)$row['userid'];
+        if (isset($counts[$userid])) {
+            $counts[$userid]['comments_count'] = (int)$row['items'];
+        }
+    }
+
+    return $counts;
+}
+
+function tracker_attach_user_content_counts(array $rows, $id_field = 'id')
+{
+    $ids = array();
+    foreach ($rows as $row) {
+        if (isset($row[$id_field])) {
+            $ids[] = (int)$row[$id_field];
+        }
+    }
+
+    $counts = tracker_user_content_counts($ids);
+    foreach ($rows as $idx => $row) {
+        $userid = isset($row[$id_field]) ? (int)$row[$id_field] : 0;
+        $rows[$idx]['torrents_count'] = isset($counts[$userid]) ? $counts[$userid]['torrents_count'] : 0;
+        $rows[$idx]['comments_count'] = isset($counts[$userid]) ? $counts[$userid]['comments_count'] : 0;
+    }
+
+    return $rows;
+}
+
 function dbconn($autoclean = false, $lightmode = false)
 {
     global $mysql_host, $mysql_user, $mysql_pass, $mysql_db, $mysql_charset, $link;
@@ -1203,9 +1273,14 @@ function gmtime() {
 
 function logincookie($id, $passhash, $updatedb = 1, $expires = 0x7fffffff) {
 
-	$subnet = explode('.', getip());
-	$subnet[2] = $subnet[3] = 0;
-	$subnet = implode('.', $subnet); // 255.255.0.0
+	$ip = getip();
+	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+		$subnet = explode('.', $ip);
+		$subnet[2] = $subnet[3] = 0;
+		$subnet = implode('.', $subnet); // 255.255.0.0
+	} else {
+		$subnet = $ip;
+	}
 
 	setcookie(COOKIE_UID, $id, $expires, '/');
 	setcookie(COOKIE_PASSHASH, md5($passhash.COOKIE_SALT.$subnet), $expires, '/');
