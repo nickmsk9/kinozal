@@ -93,7 +93,9 @@ $numpeers = $torrent['numpeers'];
 $selfwhere = 'torrent = '.$torrentid.' AND peer_id = '.sqlesc($peer_id).' AND passkey = '.sqlesc($passkey);
 $selfexpr = 'peer_id = '.sqlesc($peer_id).' AND passkey = '.sqlesc($passkey);
 if ($numpeers > $rsize) {
-	$res = mysql_query('(SELECT '.$fields.', 1 AS is_self FROM peers WHERE '.$selfwhere.' LIMIT 1) UNION ALL (SELECT '.$fields.', 0 AS is_self FROM peers WHERE torrent = '.$torrentid.' AND NOT ('.$selfexpr.') ORDER BY RAND() LIMIT '.$rsize.')') or err('Peers error 1 (select)');
+	$peer_offset_max = max(0, (int)$numpeers - $rsize - 1);
+	$peer_offset = $peer_offset_max > 0 ? mt_rand(0, $peer_offset_max) : 0;
+	$res = mysql_query('(SELECT '.$fields.', 1 AS is_self FROM peers WHERE '.$selfwhere.' LIMIT 1) UNION ALL (SELECT '.$fields.', 0 AS is_self FROM peers WHERE torrent = '.$torrentid.' AND NOT ('.$selfexpr.') ORDER BY id ASC LIMIT '.$peer_offset.', '.$rsize.')') or err('Peers error 1 (select)');
 } else {
 	$res = mysql_query('SELECT '.$fields.', IF('.$selfexpr.', 1, 0) AS is_self FROM peers WHERE torrent = '.$torrentid) or err('Peers error 1 (select)');
 }

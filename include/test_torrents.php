@@ -26,9 +26,14 @@ function test_torrents_column_exists($column)
 	return $res && mysqli_num_rows($res) > 0;
 }
 
-function test_torrents_index_exists($index)
+function test_torrents_index_exists($index, $table = 'torrents')
 {
-	$res = sql_query("SHOW INDEX FROM torrents WHERE Key_name = " . sqlesc($index));
+	$table = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$table);
+	if ($table === '') {
+		return false;
+	}
+
+	$res = sql_query("SHOW INDEX FROM `$table` WHERE Key_name = " . sqlesc($index));
 	return $res && mysqli_num_rows($res) > 0;
 }
 
@@ -76,6 +81,20 @@ function test_torrents_ensure_schema()
 
 	if (!test_torrents_index_exists('test_helper_until')) {
 		sql_query("ALTER TABLE torrents ADD KEY test_helper_until (test_helper_until)") or sqlerr(__FILE__, __LINE__);
+	}
+
+	$performance_indexes = array(
+		array('torrents', 'browse_main', 'ALTER TABLE torrents ADD KEY browse_main (visible, banned, is_test, not_sticky, added, id)'),
+		array('torrents', 'browse_category', 'ALTER TABLE torrents ADD KEY browse_category (category, visible, banned, is_test, not_sticky, added, id)'),
+		array('peers', 'torrent_id', 'ALTER TABLE peers ADD KEY torrent_id (torrent, id)'),
+		array('comments', 'torrent_id', 'ALTER TABLE comments ADD KEY torrent_id (torrent, id)'),
+		array('snatched', 'userid_completed', 'ALTER TABLE snatched ADD KEY userid_completed (userid, completedat, last_action)'),
+	);
+
+	foreach ($performance_indexes as $index) {
+		if (!test_torrents_index_exists($index[1], $index[0])) {
+			sql_query($index[2]) or sqlerr(__FILE__, __LINE__);
+		}
 	}
 }
 

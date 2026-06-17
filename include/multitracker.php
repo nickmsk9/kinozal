@@ -363,8 +363,8 @@ function multitracker_sync_torrent_totals_bulk(array $torrentids)
 		LEFT JOIN (
 			SELECT
 				torrentid,
-				COALESCE(SUM(IF(last_error = '', COALESCE(seeders, 0), 0)), 0) AS seeders,
-				COALESCE(SUM(IF(last_error = '', COALESCE(leechers, 0), 0)), 0) AS leechers,
+				COALESCE(SUM(COALESCE(seeders, 0)), 0) AS seeders,
+				COALESCE(SUM(COALESCE(leechers, 0)), 0) AS leechers,
 				MAX(IF(last_error = '', last_checked, NULL)) AS last_checked,
 				COUNT(*) AS tracker_count
 			FROM torrent_trackers

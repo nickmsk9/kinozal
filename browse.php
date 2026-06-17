@@ -11,6 +11,8 @@ test_torrents_ensure_schema();
 multitracker_ensure_schema();
 
 function browse_fmt_added($datetime) {
+    static $today = null;
+
     if (empty($datetime) || $datetime === '0000-00-00 00:00:00') {
         return 'неизвестно';
     }
@@ -20,7 +22,11 @@ function browse_fmt_added($datetime) {
         return htmlspecialchars_uni($datetime);
     }
 
-    if (date('Y-m-d', $ts) === date('Y-m-d')) {
+    if ($today === null) {
+        $today = date('Y-m-d');
+    }
+
+    if (date('Y-m-d', $ts) === $today) {
         return 'сегодня в ' . date('H:i', $ts);
     }
 
@@ -206,9 +212,9 @@ if ($formatSelected > 0) {
 }
 
 if ($filterSelected === 1) {
-    $wherea[] = "DATE(t.added) = CURDATE()";
+    $wherea[] = "t.added >= CURDATE() AND t.added < DATE_ADD(CURDATE(), INTERVAL 1 DAY)";
 } elseif ($filterSelected === 2) {
-    $wherea[] = "DATE(t.added) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+    $wherea[] = "t.added >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND t.added < CURDATE()";
 } elseif ($filterSelected === 3) {
     $wherea[] = "t.added >= DATE_SUB(NOW(), INTERVAL 3 DAY)";
 } elseif ($filterSelected === 4) {
@@ -316,7 +322,7 @@ if ($count) {
     $addparam = http_build_query($pagerParams, '', '&amp;');
     $addparam = $addparam !== '' ? $addparam . '&amp;' : '';
     list($pagertop, $pagerbottom, $limit) = pager($torrentsperpage, $count, "browse.php?" . $addparam);
-    $query = "SELECT t.id, t.moderated, t.moderatedby, t.category, (t.leechers + t.remote_leechers) AS leechers, (t.seeders + t.remote_seeders) AS seeders, t.multitracker, t.last_mt_update, t.free, t.name, t.info_hash, t.times_completed, t.size, t.added, t.comments, t.numfiles, t.filename, t.not_sticky, t.owner, IF(t.numratings < $minvotes, NULL, ROUND(t.ratingsum / t.numratings, 1)) AS rating, c.name AS cat_name, c.image AS cat_pic, u.username, u.class" . ($CURUSER ? ", EXISTS(SELECT * FROM readtorrents WHERE readtorrents.userid = " . sqlesc($CURUSER["id"]) . " AND readtorrents.torrentid = t.id) AS readtorrent" : ", 1 AS readtorrent") . " FROM torrents AS t $joinSql LEFT JOIN categories AS c ON t.category = c.id LEFT JOIN users AS u ON t.owner = u.id $where $orderby $limit";
+    $query = "SELECT t.id, t.moderated, t.moderatedby, t.category, (t.leechers + t.remote_leechers) AS leechers, (t.seeders + t.remote_seeders) AS seeders, t.multitracker, t.last_mt_update, t.free, t.name, t.info_hash, t.times_completed, t.size, t.added, t.comments, t.numfiles, t.filename, t.not_sticky, t.owner, IF(t.numratings < $minvotes, NULL, ROUND(t.ratingsum / t.numratings, 1)) AS rating, c.name AS cat_name, c.image AS cat_pic, u.username, u.class" . ($CURUSER ? ", EXISTS(SELECT 1 FROM readtorrents WHERE readtorrents.userid = " . sqlesc($CURUSER["id"]) . " AND readtorrents.torrentid = t.id) AS readtorrent" : ", 1 AS readtorrent") . " FROM torrents AS t $joinSql LEFT JOIN categories AS c ON t.category = c.id LEFT JOIN users AS u ON t.owner = u.id $where $orderby $limit";
     $browseRowsKey = 'browse:rows:' . md5($query . ':' . (int)($CURUSER['id'] ?? 0));
     $browse_rows = function_exists('tracker_cache_remember')
         ? tracker_cache_remember($browseRowsKey, 120, function () use ($query) {

@@ -70,7 +70,21 @@ function check_port($host, $port, $timeout, $force_fsock = false) {
 
 function is_theme($theme = "") {
 	global $rootpath;
-	return file_exists($rootpath . "themes/$theme/stdhead.php") && file_exists($rootpath . "themes/$theme/stdfoot.php") && file_exists($rootpath . "themes/$theme/template.php");
+	static $theme_exists = array();
+
+	$theme = trim((string)$theme);
+	if ($theme === '' || basename($theme) !== $theme) {
+		return false;
+	}
+
+	if (!array_key_exists($theme, $theme_exists)) {
+		$base = $rootpath . "themes/$theme/";
+		$theme_exists[$theme] = is_file($base . 'stdhead.php')
+			&& is_file($base . 'stdfoot.php')
+			&& is_file($base . 'template.php');
+	}
+
+	return $theme_exists[$theme];
 }
 
 function theme_resolve_name($theme = "") {
@@ -106,6 +120,12 @@ function theme_display_name($theme = "") {
 
 function get_themes() {
 	global $rootpath;
+	static $themelist = null;
+
+	if ($themelist !== null) {
+		return $themelist;
+	}
+
 	$handle = opendir($rootpath . "themes");
 	$themelist = array();
 	while ($file = readdir($handle)) {
@@ -188,12 +208,14 @@ function sql_query($query)
         }
     }
 
-    $query_stat[] = array(
-        'seconds' => $query_time,
-        'query'   => $query,
-        'file'    => $debug_file,
-        'line'    => $debug_line,
-    );
+    if ($debug_enabled) {
+        $query_stat[] = array(
+            'seconds' => $query_time,
+            'query'   => $query,
+            'file'    => $debug_file,
+            'line'    => $debug_line,
+        );
+    }
 
     if ($result === false) {
         $error_file = $debug_file !== '' ? $debug_file : 'не определено';
@@ -661,9 +683,17 @@ function autoclean() {
 }
 
 function mksize($bytes) {
+    static $cache = array();
+
+    $bytes = (float)$bytes;
     // Обработка отрицательных и нулевых значений
     if ($bytes <= 0) {
         return '0 kB';
+    }
+
+    $cache_key = (string)(int)round($bytes);
+    if (isset($cache[$cache_key])) {
+        return $cache[$cache_key];
     }
 
     // Множители (1024 в разных степенях)
@@ -673,14 +703,20 @@ function mksize($bytes) {
     $tb = $gb * 1024;       // 1 099 511 627 776
 
     if ($bytes < 1000 * $kb) {           // < 1 024 000 байт (оригинал: 1000 * 1024)
-        return number_format($bytes / $kb, 2) . ' kB';
+        $formatted = number_format($bytes / $kb, 2) . ' kB';
     } elseif ($bytes < 1000 * $mb) {     // < 1 048 576 000 байт
-        return number_format($bytes / $mb, 2) . ' MB';
+        $formatted = number_format($bytes / $mb, 2) . ' MB';
     } elseif ($bytes < 1000 * $gb) {     // < 1 073 741 824 000 байт
-        return number_format($bytes / $gb, 2) . ' GB';
+        $formatted = number_format($bytes / $gb, 2) . ' GB';
     } else {
-        return number_format($bytes / $tb, 2) . ' TB';
+        $formatted = number_format($bytes / $tb, 2) . ' TB';
     }
+
+    if (count($cache) < 512) {
+        $cache[$cache_key] = $formatted;
+    }
+
+    return $formatted;
 }
 
 function deadtime() {
@@ -782,6 +818,51 @@ function sqlwildcardesc($x) {
 	}
 
 	return str_replace(array("%","_"), array("\\%","\\_"), mysqli_real_escape_string($link, (string)$x));
+}
+
+if (!function_exists('mysql_query')) {
+	function mysql_query($query) {
+		return sql_query($query);
+	}
+}
+
+if (!function_exists('mysql_error')) {
+	function mysql_error() {
+		global $link;
+		return $link instanceof mysqli ? mysqli_error($link) : '';
+	}
+}
+
+if (!function_exists('mysql_affected_rows')) {
+	function mysql_affected_rows() {
+		global $link;
+		return $link instanceof mysqli ? mysqli_affected_rows($link) : 0;
+	}
+}
+
+if (!function_exists('mysql_fetch_assoc')) {
+	function mysql_fetch_assoc($result) {
+		return mysqli_fetch_assoc($result);
+	}
+}
+
+if (!function_exists('mysql_fetch_array')) {
+	function mysql_fetch_array($result) {
+		return mysqli_fetch_array($result);
+	}
+}
+
+if (!function_exists('mysql_fetch_row')) {
+	function mysql_fetch_row($result) {
+		return mysqli_fetch_row($result);
+	}
+}
+
+if (!function_exists('mysql_real_escape_string')) {
+	function mysql_real_escape_string($value) {
+		global $link;
+		return $link instanceof mysqli ? mysqli_real_escape_string($link, (string)$value) : addslashes((string)$value);
+	}
 }
 
 function stdhead($title = "", $msgalert = true)
@@ -1031,9 +1112,16 @@ function tracker_upgrade_legacy_passkeys($limit = 200)
 {
 	$limit = max(1, min(1000, (int)$limit));
 
+	if (function_exists('tracker_cache_get') && tracker_cache_get('schema:passkeys_v2_done', false)) {
+		return;
+	}
+
 	$marker = sql_query("SELECT value_u FROM avps WHERE arg = 'passkeys_v2_done' LIMIT 1");
 	$row = $marker ? mysqli_fetch_assoc($marker) : null;
 	if ($row && (int)$row['value_u'] === 1) {
+		if (function_exists('tracker_cache_set')) {
+			tracker_cache_set('schema:passkeys_v2_done', true, 3600);
+		}
 		return;
 	}
 
@@ -1064,6 +1152,10 @@ function tracker_upgrade_legacy_passkeys($limit = 200)
 			VALUES ('passkeys_v2_done', 1, '')
 			ON DUPLICATE KEY UPDATE value_u = 1, value_s = ''
 		") or sqlerr(__FILE__, __LINE__);
+
+		if (function_exists('tracker_cache_set')) {
+			tracker_cache_set('schema:passkeys_v2_done', true, 3600);
+		}
 	}
 }
 
@@ -1106,7 +1198,7 @@ function httperr($code = 404) {
 }
 
 function gmtime() {
-	return strtotime(get_date_time());
+	return time();
 }
 
 function logincookie($id, $passhash, $updatedb = 1, $expires = 0x7fffffff) {

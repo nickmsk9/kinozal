@@ -152,7 +152,8 @@ CREATE TABLE `comments` (
   `ip` varchar(15) NOT NULL default '',
   PRIMARY KEY  (`id`),
   KEY `user` (`user`),
-  KEY `torrent` (`torrent`)
+  KEY `torrent` (`torrent`),
+  KEY `torrent_id` (`torrent`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
@@ -358,6 +359,7 @@ CREATE TABLE `peers` (
   PRIMARY KEY  (`id`),
   UNIQUE KEY `torrent_peer_id` (`torrent`,`peer_id`),
   KEY `torrent` (`torrent`),
+  KEY `torrent_id` (`torrent`,`id`),
   KEY `torrent_seeder` (`torrent`,`seeder`),
   KEY `last_action` (`last_action`),
   KEY `connectable` (`connectable`),
@@ -597,7 +599,8 @@ CREATE TABLE `snatched` (
   `connectable` enum('yes','no') NOT NULL default 'yes',
   `finished` enum('yes','no') NOT NULL default 'no',
   PRIMARY KEY  (`id`),
-  KEY `snatch` (`torrent`,`userid`)
+  KEY `snatch` (`torrent`,`userid`),
+  KEY `userid_completed` (`userid`,`completedat`,`last_action`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
@@ -691,6 +694,8 @@ CREATE TABLE `torrents` (
   KEY `owner` (`owner`),
   KEY `visible` (`visible`),
   KEY `category_visible` (`category`,`visible`),
+  KEY `browse_main` (`visible`,`banned`,`is_test`,`not_sticky`,`added`,`id`),
+  KEY `browse_category` (`category`,`visible`,`banned`,`is_test`,`not_sticky`,`added`,`id`),
   KEY `vnsi` (`visible`, `not_sticky`, `id`),
   KEY `is_test_visible` (`is_test`, `visible`, `banned`, `added`),
   KEY `test_helper_until` (`test_helper_until`)

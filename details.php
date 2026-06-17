@@ -387,14 +387,10 @@ function details_related_select($mode, array $where)
 		(SELECT " . sqlesc($mode) . " AS rel_mode,
 		       t.id, t.name, t.comments, t.size, t.seeders, t.leechers, t.ratingsum, t.numratings,
 		       u.id AS owner_id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled,
-		       u.uploaded, u.downloaded, ums.manual_status_keys
+		       u.uploaded, u.downloaded,
+		       (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys
 		FROM torrents AS t
 		LEFT JOIN users AS u ON u.id = t.owner
-		LEFT JOIN (
-			SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
-			FROM user_status_assignments
-			GROUP BY userid
-		) AS ums ON ums.userid = u.id
 		WHERE " . implode(' AND ', $where) . "
 		ORDER BY (t.seeders + t.times_completed + t.comments) DESC, t.id DESC
 		LIMIT 5)";
@@ -612,18 +608,13 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 			$res = sql_query("
 				SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
 				       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+				       (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys,
 				       co.name AS country_name, co.flagpic AS country_flagpic,
-				       ums.manual_status_keys,
 				       e.username AS editedbyname
 				FROM comments AS c
 				LEFT JOIN users AS u ON u.id = c.user
 				LEFT JOIN countries AS co ON co.id = u.country
 				LEFT JOIN users AS e ON e.id = c.editedby
-				LEFT JOIN (
-					SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
-					FROM user_status_assignments
-					GROUP BY userid
-				) AS ums ON ums.userid = u.id
 				WHERE c.torrent = " . (int)$torrentid . "
 				ORDER BY c.id DESC
 				LIMIT $offset, $perpage
@@ -642,18 +633,13 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 		$res = sql_query("
 			SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
 			       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+			       (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys,
 			       co.name AS country_name, co.flagpic AS country_flagpic,
-			       ums.manual_status_keys,
 			       e.username AS editedbyname
 			FROM comments AS c
 			LEFT JOIN users AS u ON u.id = c.user
 			LEFT JOIN countries AS co ON co.id = u.country
 			LEFT JOIN users AS e ON e.id = c.editedby
-			LEFT JOIN (
-				SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
-				FROM user_status_assignments
-				GROUP BY userid
-			) AS ums ON ums.userid = u.id
 			WHERE c.torrent = " . (int)$torrentid . "
 			ORDER BY c.id DESC
 			LIMIT $offset, $perpage
@@ -763,7 +749,7 @@ $res = sql_query("
 	       u.username AS owner_username, u.class AS owner_class, u.donor AS owner_donor, u.gender AS owner_gender,
 	       u.birthday AS owner_birthday, u.warned AS owner_warned, u.enabled AS owner_enabled,
 	       u.uploaded AS owner_uploaded, u.downloaded AS owner_downloaded, u.country AS owner_country,
-	       ums.manual_status_keys AS owner_manual_status_keys,
+	       (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS owner_manual_status_keys,
 	       tdet.tid AS tdet_exists, tdet.release_kind AS tdet_release_kind, tdet.poster_url AS tdet_poster_url,
 	       tdet.rgroup AS tdet_rgroup, tdet.rgroup_button AS tdet_rgroup_button,
 	       tdet.torrent_file_updated_at AS tdet_torrent_file_updated_at, tdet.form_mode AS tdet_form_mode,
@@ -801,11 +787,6 @@ $res = sql_query("
 	LEFT JOIN users AS u ON u.id = t.owner
 	LEFT JOIN torrents_descr AS td ON td.tid = t.id
 	LEFT JOIN torrent_details AS tdet ON tdet.tid = t.id
-	LEFT JOIN (
-		SELECT userid, GROUP_CONCAT(status_key) AS manual_status_keys
-		FROM user_status_assignments
-		GROUP BY userid
-	) AS ums ON ums.userid = u.id
 	WHERE t.id = $id
 	LIMIT 1
 ") or sqlerr(__FILE__, __LINE__);

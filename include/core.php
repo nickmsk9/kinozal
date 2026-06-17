@@ -34,7 +34,7 @@ if ($use_gzip) {
 // IMPORTANT CONSTANTS
 define("BETA", 0); // Set 0 to remove *BETA* notice.
 define("BETA_NOTICE", "\n<br />Внимание! Версия не для промышленого использования!");
-define("DEBUG_MODE", 1); // Shows the queries at the bottom of the page.
+define("DEBUG_MODE", 0); // SQL debug can still be enabled per request with ?yuna.
 
 // MAGIC QUOTES REMOVED
 // get_magic_quotes_gpc() удалён в PHP 8.

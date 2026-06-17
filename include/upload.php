@@ -748,7 +748,7 @@ function upload_autofill_external_ratings(array $design)
 	return $design;
 }
 
-function upload_fetch_rating_url($url, $timeout = 10)
+function upload_fetch_rating_url($url, $timeout = 4)
 {
 	$url = trim((string)$url);
 	if ($url === '' || !preg_match('#^https?://#i', $url)) {
@@ -760,7 +760,7 @@ function upload_fetch_rating_url($url, $timeout = 10)
 		curl_setopt_array($ch, array(
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_CONNECTTIMEOUT => min(5, (int)$timeout),
+			CURLOPT_CONNECTTIMEOUT => min(2, (int)$timeout),
 			CURLOPT_TIMEOUT => (int)$timeout,
 			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
 			CURLOPT_HTTPHEADER => array(
@@ -808,6 +808,17 @@ function upload_rating_cache_get($service, $id)
 	return trim((string)($data['rating'] ?? ($data[$legacy_key] ?? '')));
 }
 
+function upload_rating_cache_has_recent_miss($service, $id, $ttl = 3600)
+{
+	$path = upload_rating_cache_path($service, $id);
+	if ($path === '' || !is_file($path) || filemtime($path) < time() - (int)$ttl) {
+		return false;
+	}
+
+	$data = json_decode((string)file_get_contents($path), true);
+	return is_array($data) && !empty($data['miss']);
+}
+
 function upload_rating_cache_set($service, $id, $rating)
 {
 	$path = upload_rating_cache_path($service, $id);
@@ -816,6 +827,16 @@ function upload_rating_cache_set($service, $id, $rating)
 		return;
 	}
 	@file_put_contents($path, json_encode(array('rating' => $rating), JSON_UNESCAPED_UNICODE));
+}
+
+function upload_rating_cache_set_miss($service, $id)
+{
+	$path = upload_rating_cache_path($service, $id);
+	if ($path === '') {
+		return;
+	}
+
+	@file_put_contents($path, json_encode(array('miss' => 1), JSON_UNESCAPED_UNICODE));
 }
 
 function upload_normalize_external_rating($value)
@@ -841,6 +862,9 @@ function upload_fetch_imdb_rating($url)
 	if ($cached !== '') {
 		return $cached;
 	}
+	if (upload_rating_cache_has_recent_miss('imdb', $id)) {
+		return '';
+	}
 
 	$json_url = 'https://p.media-imdb.com/static-content/documents/v1/title/' . rawurlencode($id) . '/ratings%3Fjsonp=imdb.rating.run:imdb.api.title.ratings/data.json';
 	$body = upload_fetch_rating_url($json_url);
@@ -857,6 +881,7 @@ function upload_fetch_imdb_rating($url)
 		return $rating;
 	}
 
+	upload_rating_cache_set_miss('imdb', $id);
 	return '';
 }
 
@@ -869,6 +894,9 @@ function upload_fetch_kinopoisk_rating($url)
 	$cached = upload_rating_cache_get('kinopoisk', $id);
 	if ($cached !== '') {
 		return $cached;
+	}
+	if (upload_rating_cache_has_recent_miss('kinopoisk', $id)) {
+		return '';
 	}
 
 	$xml = upload_fetch_rating_url('https://rating.kinopoisk.ru/' . rawurlencode($id) . '.xml');
@@ -900,6 +928,7 @@ function upload_fetch_kinopoisk_rating($url)
 		return $rating;
 	}
 
+	upload_rating_cache_set_miss('kinopoisk', $id);
 	return '';
 }
 
