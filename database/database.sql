@@ -803,30 +803,6 @@ CREATE TABLE `person_photos` (
   KEY `sort` (`sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-#
-# Structure for the `torrents_scrape` table :
-#
-
-DROP TABLE IF EXISTS `torrents_scrape`;
-
-CREATE TABLE `torrents_scrape` (
-  `tid` int(10) unsigned NOT NULL DEFAULT '0',
-  `info_hash` varbinary(40) NOT NULL DEFAULT '',
-  `url` varchar(100) NOT NULL DEFAULT '',
-  `seeders` int(10) unsigned NOT NULL DEFAULT '0',
-  `leechers` int(10) unsigned NOT NULL DEFAULT '0',
-  `completed` int(10) unsigned NOT NULL DEFAULT '0',
-  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `state` enum('ok','error') NOT NULL DEFAULT 'ok',
-  `error` varchar(100) NOT NULL DEFAULT '',
-  PRIMARY KEY (`info_hash`,`url`),
-  KEY `tid` (`tid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-#
-# Structure for the `torrent_trackers` table :
-#
-
 DROP TABLE IF EXISTS `torrent_trackers`;
 
 CREATE TABLE `torrent_trackers` (
@@ -834,17 +810,26 @@ CREATE TABLE `torrent_trackers` (
   `torrentid` int(10) unsigned NOT NULL,
   `announce_url` varchar(500) NOT NULL,
   `external_info_hash` varchar(40) NOT NULL DEFAULT '',
+  `tracker_host` varchar(190) NOT NULL DEFAULT '',
+  `protocol` varchar(10) NOT NULL DEFAULT '',
+  `tier` tinyint(3) unsigned NOT NULL DEFAULT '1',
   `is_primary` enum('yes','no') NOT NULL DEFAULT 'no',
   `seeders` int(10) unsigned NULL DEFAULT NULL,
   `leechers` int(10) unsigned NULL DEFAULT NULL,
   `completed` int(10) unsigned NULL DEFAULT NULL,
   `last_checked` datetime NULL DEFAULT NULL,
+  `last_success` datetime NULL DEFAULT NULL,
+  `next_check` datetime NULL DEFAULT NULL,
+  `last_response_ms` int(10) unsigned NULL DEFAULT NULL,
+  `failures` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `last_error` varchar(255) NOT NULL DEFAULT '',
   `enabled` enum('yes','no') NOT NULL DEFAULT 'yes',
   PRIMARY KEY (`id`),
   UNIQUE KEY `torrent_url` (`torrentid`, `announce_url`(191)),
   KEY `torrentid` (`torrentid`),
   KEY `enabled_checked` (`enabled`, `last_checked`),
+  KEY `next_check` (`enabled`, `is_primary`, `next_check`),
+  KEY `protocol_host` (`protocol`, `tracker_host`),
   KEY `due_trackers` (`enabled`, `is_primary`, `last_checked`),
   KEY `torrent_active` (`torrentid`, `enabled`, `is_primary`, `last_error`(32))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

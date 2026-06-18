@@ -89,9 +89,6 @@
 					CURLOPT_USERAGENT => 'kinozal-multitracker/1.0',
 					CURLOPT_HTTPHEADER => array('Accept: */*'),
 				);
-				if (defined('CURLOPT_IPRESOLVE') && defined('CURL_IPRESOLVE_V4')) {
-					$options[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V4;
-				}
 				curl_setopt_array($ch, $options);
 				$return = curl_exec($ch);
 				$code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
@@ -103,10 +100,6 @@
 					return substr($return, 0, $this->maxreadsize);
 				}
 				$this->lastError = $error !== '' ? $error : ($code > 0 ? 'HTTP ' . $code : 'Could not open HTTP connection.');
-				$cli = $this->readUrlWithCurlCli($requesturl);
-				if ($cli !== '') {
-					return $cli;
-				}
 				throw new ScraperException($this->lastError, 0, true);
 			}
 
@@ -125,31 +118,6 @@
 			}
 			fclose($rh);
 			return $return;
-		}
-
-		protected function readUrlWithCurlCli($requesturl){
-			if (!function_exists('shell_exec')) {
-				return '';
-			}
-			if (stripos(PHP_OS, 'WIN') === 0) {
-				$curl = trim((string)@shell_exec('where curl 2>NUL'));
-				if ($curl !== '') {
-					$lines = preg_split('/\r\n|\r|\n/', $curl);
-					$curl = trim((string)$lines[0]);
-				}
-			} else {
-				$curl = trim((string)@shell_exec('command -v curl 2>/dev/null'));
-			}
-			if ($curl === '') {
-				return '';
-			}
-			$cmd = escapeshellcmd($curl)
-				. ' -4 -L -sS --connect-timeout ' . (int)min(5, $this->timeout)
-				. ' --max-time ' . (int)$this->timeout
-				. ' --user-agent ' . escapeshellarg('kinozal-multitracker/1.0')
-				. ' ' . escapeshellarg($requesturl) . ' 2>/dev/null';
-			$return = @shell_exec($cmd);
-			return is_string($return) ? substr($return, 0, $this->maxreadsize) : '';
 		}
 
 		protected function scrapeRequest($url, $infohash){

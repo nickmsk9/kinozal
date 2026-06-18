@@ -8,7 +8,7 @@ loggedinorreturn();
 
 $id = (int) $_GET["torrent"];
 
-$res = sql_query("SELECT torrents.seeders, torrents.banned, torrents.leechers, torrents.name, torrents.filename, torrents.times_completed, torrents.id, UNIX_TIMESTAMP(torrents.last_reseed) AS lr, categories.name AS cat_name FROM torrents LEFT JOIN categories ON torrents.category = categories.id WHERE torrents.id = $id") or sqlerr(__FILE__, __LINE__);
+$res = sql_query("SELECT (torrents.seeders + torrents.remote_seeders) AS seeders, torrents.banned, (torrents.leechers + torrents.remote_leechers) AS leechers, torrents.name, torrents.filename, torrents.times_completed, torrents.id, UNIX_TIMESTAMP(torrents.last_reseed) AS lr, categories.name AS cat_name FROM torrents LEFT JOIN categories ON torrents.category = categories.id WHERE torrents.id = $id") or sqlerr(__FILE__, __LINE__);
 $row = mysqli_fetch_array($res);
 
 if (!$row || $row["banned"] == "yes")

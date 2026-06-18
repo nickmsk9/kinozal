@@ -6,7 +6,7 @@ require_once('./include/core_announce.php');
 
 gzip();
 
-foreach (array('passkey','info_hash','peer_id','event','ip','localip') as $x) {
+foreach (array('passkey','info_hash','peer_id','event','ip','ipv6','localip') as $x) {
 	if(isset($_GET[$x]))
 		$GLOBALS[$x] = '' . $_GET[$x];
 }
@@ -27,6 +27,13 @@ foreach (array('passkey','info_hash','peer_id','port','downloaded','uploaded','l
 			if (!tracker_valid_passkey($passkey))
 				err('Invalid passkey (' . strlen($passkey) . ' - ' . $passkey . ')');
 $ip = getip();
+if (!empty($ipv6) && tracker_ip_version($ipv6) === 6) {
+	$ip = $ipv6;
+} elseif (!empty($ip) && tracker_ip_version($ip) === 0) {
+	$ip = getip();
+}
+if (tracker_ip_version($ip) === 0)
+	err('Invalid IP');
 $rsize = 50;
 
 foreach(array('num want', 'numwant', 'num_want') as $k) {
@@ -53,29 +60,6 @@ else
 if (isset($headers['Cookie']) || isset($headers['Accept-Language']) || isset($headers['Accept-Charset']))
 	err('Anti-Cheater: You cannot use this agent');
 
-if(substr($peer_id, 0, 6) == "exbc\08") err("BitComet 0.56 is Banned, Upgrade.");
-if(substr($peer_id, 0, 4) == "FUTB") err("FUTB? Fuck You Too."); //patched version of BitComet 0.57 (FUTB- Fuck U TorrentBits)
-if(substr($peer_id, 1, 2) == 'BC' && substr($peer_id, 5, 2) != 70 && substr($peer_id, 5, 2) != 63 && substr($peer_id, 5, 2) != 77 && substr($peer_id, 5, 2) >= 59/* && substr($peer_id, 5, 2) <= 88*/) err("BitComet ".substr($peer_id, 5, 2)." is banned. Use only 0.70 or switch to uTorrent 1.6.1.");
-if(substr($peer_id, 1, 2) == 'UT' && substr($peer_id, 3, 3) >= 170 && substr($peer_id, 3, 3) <= 174) err("uTorrent ".substr($peer_id, 3, 3)." is banned. Downgrade to 1.6.1 or use 1.7.5 or higher.");
-if(substr($peer_id, 0, 4) == "FUTB") err("FUTB? Fuck You Too.");
-if(substr($peer_id, 0, 3) == "-TS") err("TorrentStorm is Banned.");
-if(substr($peer_id, 0, 5) == "Mbrst") err("Burst! is Banned.");
-if(substr($peer_id, 0, 3) == "-BB") err("BitBuddy is Banned.");
-if(substr($peer_id, 0, 3) == "-SZ") err("Shareaza is Banned.");
-if(substr($peer_id, 0, 5) == "turbo") err("TurboBT is banned.");
-if(substr($peer_id, 0, 4) == "T03A") err("Please Update your BitTornado.");
-if(substr($peer_id, 0, 4) == "T03B") err("Please Update your BitTornado.");
-if(substr($peer_id, 0, 3 ) == "FRS") err("Rufus is Banned.");
-if(substr($peer_id, 0, 2 ) == "eX") err("eXeem is Banned.");
-if(substr($peer_id, 0, 8 ) == "-TR0005-") err("Transmission/0.5 is Banned.");
-if(substr($peer_id, 0, 8 ) == "-TR0006-") err("Transmission/0.6 is Banned.");
-if(substr($peer_id, 0, 8 ) == "-XX0025-") err("Transmission/0.6 is Banned.");
-if(substr($peer_id, 0, 1 ) == ",") err ("RAZA is banned.");
-if(substr($peer_id, 0, 3 ) == "-AG") err("This is a banned client. We recommend uTorrent or Azureus.");
-if(substr($peer_id, 0, 3 ) == "R34") err("BTuga/Revolution-3.4 is not an acceptalbe client.");
-if(substr($peer_id, 0, 4) == "exbc") err("This version of BitComet is banned! You can thank DHT for this ban!");
-if(substr($peer_id, 0, 3) == '-FG') err("FlashGet is banned!");
-
 dbconn();
 $user_res = mysql_query('SELECT id, uploaded, downloaded, enabled, parked, class, passkey_ip FROM users WHERE passkey = ' . sqlesc($passkey) . ' LIMIT 1') or err('Users error 1 (select)');
 $az = mysqli_fetch_array($user_res);
@@ -83,7 +67,7 @@ if (!$az)
 	err('Invalid passkey! Re-download the .torrent from '.$DEFAULTBASEURL);
 $hash = bin2hex($info_hash);
 // Announce works with local peers only; external tracker stats live outside `peers`.
-$res = mysql_query('SELECT id, visible, banned, free, seeders + leechers AS numpeers, UNIX_TIMESTAMP(added) AS ts FROM torrents WHERE info_hash = "'.$hash.'"') or err('Torrents error 1 (select)');
+$res = mysql_query('SELECT id, visible, banned, free, seeders, leechers, times_completed, seeders + leechers AS numpeers, UNIX_TIMESTAMP(added) AS ts FROM torrents WHERE info_hash = "'.$hash.'"') or err('Torrents error 1 (select)');
 $torrent = mysqli_fetch_array($res);
 if (!$torrent)
 	err('Torrent not registered with this tracker.');
@@ -100,9 +84,17 @@ if ($numpeers > $rsize) {
 	$res = mysql_query('SELECT '.$fields.', IF('.$selfexpr.', 1, 0) AS is_self FROM peers WHERE torrent = '.$torrentid) or err('Peers error 1 (select)');
 }
 $compact = (isset($_GET['compact']) && $_GET['compact'] == 1);
-$resp = 'd' . benc_str('interval') . 'i' . $announce_interval . 'e' . benc_str('peers') . ($compact ? '' : 'l');
+$resp = 'd'
+	. benc_str('interval') . 'i' . $announce_interval . 'e'
+	. benc_str('min interval') . 'i' . max(60, (int)($announce_interval / 2)) . 'e'
+	. benc_str('complete') . 'i' . (int)$torrent['seeders'] . 'e'
+	. benc_str('incomplete') . 'i' . (int)$torrent['leechers'] . 'e'
+	. benc_str('downloaded') . 'i' . (int)$torrent['times_completed'] . 'e'
+	. benc_str('private') . 'i1e';
 $no_peer_id = (isset($_GET['no_peer_id']) && $_GET['no_peer_id'] == 1);
-$plist = '';
+$plist4 = '';
+$plist6 = '';
+$peerlist = '';
 unset($self);
 while ($row = mysqli_fetch_array($res)) {
 	if (!empty($row['is_self'])) {
@@ -111,16 +103,31 @@ while ($row = mysqli_fetch_array($res)) {
 		continue;
 	}
 	if($compact) {
-		$peer_ip = explode('.', $row["ip"]);
-		$plist .= pack("C*", $peer_ip[0], $peer_ip[1], $peer_ip[2], $peer_ip[3]). pack("n*", (int) $row["port"]);
+		$packed_ip = @inet_pton($row["ip"]);
+		if ($packed_ip === false) {
+			continue;
+		}
+		if (strlen($packed_ip) === 4) {
+			$plist4 .= $packed_ip . pack("n", (int)$row["port"]);
+		} elseif (strlen($packed_ip) === 16) {
+			$plist6 .= $packed_ip . pack("n", (int)$row["port"]);
+		}
 	} else {
-		$resp .= 'd' .
+		$peerlist .= 'd' .
 			benc_str('ip') . benc_str($row['ip']) .
 			(!$no_peer_id ? benc_str("peer id") . benc_str($row["peer_id"]) : '') .
 			benc_str('port') . 'i' . $row['port'] . 'e' . 'e';
 	}
 }
-$resp .= ($compact ? benc_str($plist) : '') . (substr($peer_id, 0, 4) == '-BC0' ? "e7:privatei1ee" : "ee");
+if ($compact) {
+	$resp .= benc_str('peers') . benc_str($plist4);
+	if ($plist6 !== '') {
+		$resp .= benc_str('peers6') . benc_str($plist6);
+	}
+} else {
+	$resp .= benc_str('peers') . 'l' . $peerlist . 'e';
+}
+$resp .= 'e';
 
 $announce_wait = 10;
 $dt = sqlesc(date('Y-m-d H:i:s', time()));

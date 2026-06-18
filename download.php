@@ -90,12 +90,12 @@ $seen_announces = array();
 
 $collect_announce = function ($url) use (&$external_announces, &$seen_announces) {
 	$url = multitracker_normalize_url($url);
-	if ($url === '' || !multitracker_valid_announce_url($url) || !multitracker_is_server_reachable_url($url)) {
+	if ($url === '' || !multitracker_valid_announce_url($url)) {
 		return;
 	}
-	if (multitracker_is_local_announce_family($url)) {
-		return;
-	}
+		if (multitracker_is_local_announce_alias($url)) {
+			return;
+		}
 
 	$key = multitracker_url_key($url);
 	if (isset($seen_announces[$key])) {

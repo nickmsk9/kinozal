@@ -102,6 +102,16 @@ function getip() {
     return $_SERVER['REMOTE_ADDR'];
 }
 
+function tracker_ip_version($ip) {
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        return 6;
+    }
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return 4;
+    }
+    return 0;
+}
+
 function dbconn($autoclean = false, $lightmode = false) {
     global $mysql_host, $mysql_user, $mysql_pass, $mysql_db, $mysql_charset, $announce_link;
 
@@ -219,43 +229,41 @@ function tracker_valid_passkey($passkey) {
 
 // Check open port, requires --enable-sockets
 function check_port($host, $port, $timeout) {
+    if (!tracker_ip_version($host)) {
+        return false;
+    }
+
     if (function_exists('socket_create')) {
-        // Create a TCP/IP socket.
-        $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        $family = tracker_ip_version($host) === 6 ? AF_INET6 : AF_INET;
+        $socket = socket_create($family, SOCK_STREAM, SOL_TCP);
         if ($socket == false) {
             return false;
         }
-        //
         if (socket_set_nonblock($socket) == false) {
             socket_close($socket);
             return false;
         }
-        //
-        @socket_connect($socket, $host, $port); // will return FALSE as it's async, so no check
-        //
-        if (socket_set_block($socket) == false) {
-            socket_close($socket);
-            return false;
-        }
+
+        @socket_connect($socket, $host, $port);
 
         switch (socket_select($r = array($socket), $w = array($socket), $f = array($socket), $timeout)) {
             case 2:
-                // Refused
                 $result = false;
                 break;
             case 1:
-                $result = true;
+                $error_code = socket_get_option($socket, SOL_SOCKET, SO_ERROR);
+                $result = ($error_code === 0);
                 break;
             case 0:
-                // Timeout
+            default:
                 $result = false;
                 break;
         }
 
-        // cleanup
         socket_close($socket);
     } else {
-        $socket = @fsockopen($host, $port, $errno, $errstr, $timeout);
+        $target = tracker_ip_version($host) === 6 ? '[' . $host . ']' : $host;
+        $socket = @fsockopen($target, $port, $errno, $errstr, $timeout);
         if (!$socket)
             $result = false; else {
             $result = true;

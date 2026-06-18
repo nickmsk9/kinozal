@@ -18,9 +18,10 @@ $max_dead_torrent_time = 6 * 3600;
 // Max users on site
 $maxusers = 10000;
 $torrent_dir = 'torrents';
+$tracker_http_host = (string)($_SERVER['HTTP_HOST'] ?? getenv('HTTP_HOST') ?: 'localhost');
 
 // Email for sender/return path.
-$SITEEMAIL = 'noreply@' . $_SERVER['HTTP_HOST'];
+$SITEEMAIL = 'noreply@' . $tracker_http_host;
 
 $SITENAME = 'Торрент трекер Кинозал.ТВ';
 
@@ -54,7 +55,7 @@ $force_private_tracker = true; // Yet not working
 $max_image_size = 1024*1024; // 1mb
 $allow_guests_details = false; // Разрешить гостям доступ к странице деталей торрента
 
-$admin_email = 'admin@'.$_SERVER['HTTP_HOST']; // Почта администратора трекера, для формы обратной связи
+$admin_email = 'admin@'.$tracker_http_host; // Почта администратора трекера, для формы обратной связи
 $website_name = 'TBDev'; // Краткое имя сайта, для формы обратной связи
 
 $enable_adv_antidreg = false; // Использовать продвинутую систему против двойных регистраций. Пояснение внизу:

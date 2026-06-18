@@ -284,13 +284,13 @@ function persons_torrents(array $person, $sort = 'date', $offset = 0, $limit = 5
 {
 	$where = persons_torrent_like_conditions($person);
 	$order = $sort === 'top'
-		? '(t.seeders + t.times_completed + t.comments + t.numratings) DESC, t.id DESC'
+		? '(t.seeders + t.remote_seeders + t.times_completed + t.comments + t.numratings) DESC, t.id DESC'
 		: 't.added DESC, t.id DESC';
 	$offset = max(0, (int)$offset);
 	$limit = max(1, min(100, (int)$limit));
 
 	$res = sql_query("
-		SELECT t.id, t.name, t.comments, t.size, t.seeders, t.leechers, t.times_completed, t.added, t.image1,
+		SELECT t.id, t.name, t.comments, t.size, (t.seeders + t.remote_seeders) AS seeders, (t.leechers + t.remote_leechers) AS leechers, t.times_completed, t.added, t.image1,
 		       c.image AS cat_pic, td.poster_url
 		FROM torrents AS t
 		LEFT JOIN categories AS c ON c.id = t.category

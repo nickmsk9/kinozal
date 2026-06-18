@@ -4,6 +4,9 @@ services:
     container_name: kinozal-php
     ports:
       - "8098:80"
+    environment:
+      KZ_BASE_URL: http://localhost:8098
+      KZ_ANNOUNCE_URL: http://localhost:8098/announce.php
     volumes:
       - ./:/var/www/html
     depends_on:

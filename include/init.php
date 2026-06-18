@@ -28,12 +28,22 @@ if (!function_exists("htmlspecialchars_uni")) {
 
 // DEFINE IMPORTANT CONSTANTS
 define ('TIMENOW', time());
-$url = explode('/', htmlspecialchars_uni($_SERVER['PHP_SELF']));
-array_pop($url);
-$DEFAULTBASEURL = (($_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://").htmlspecialchars_uni($_SERVER['HTTP_HOST']).implode('/', $url);
+$configured_base_url = trim((string)(getenv('KZ_BASE_URL') ?: getenv('TRACKER_BASE_URL') ?: ''));
+if ($configured_base_url !== '') {
+	$DEFAULTBASEURL = rtrim($configured_base_url, '/');
+} else {
+	$php_self = (string)($_SERVER['PHP_SELF'] ?? '');
+	$url = explode('/', htmlspecialchars_uni($php_self));
+	array_pop($url);
+	$server_port = (int)($_SERVER['SERVER_PORT'] ?? 80);
+	$http_host = (string)($_SERVER['HTTP_HOST'] ?? getenv('HTTP_HOST') ?: 'localhost');
+	$https = !empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off';
+	$DEFAULTBASEURL = ($https || $server_port === 443 ? 'https://' : 'http://') . htmlspecialchars_uni($http_host) . implode('/', $url);
+}
 $BASEURL = $DEFAULTBASEURL;
 $announce_urls = array();
-$announce_urls[] = "$DEFAULTBASEURL/announce.php";
+$announce_url = trim((string)(getenv('KZ_ANNOUNCE_URL') ?: getenv('TRACKER_ANNOUNCE_URL') ?: ''));
+$announce_urls[] = $announce_url !== '' ? $announce_url : "$DEFAULTBASEURL/announce.php";
 
 // После смены этих двух параметров всем пользователям надо будет ввести логин пароль
 define ('COOKIE_UID', 'uid'); // Имя куки для userid

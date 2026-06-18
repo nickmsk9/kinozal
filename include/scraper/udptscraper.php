@@ -38,9 +38,11 @@
 				if(!preg_match('#^[a-f0-9]{40}$#i',$hash)){ throw new ScraperException('Invalid infohash: ' . $hash . '.'); }
 			}
 			if(count($infohash) > 74){ throw new ScraperException('Too many infohashes provided.'); }
-			if(!preg_match('%udp://([^:/]*)(?::([0-9]*))?(?:/)?%si', $url, $m)){ throw new ScraperException('Invalid tracker url.'); }
-			$tracker = 'udp://' . $m[1];
-			$port = isset($m[2]) ? $m[2] : 80;
+			$parts = parse_url($url);
+			if(!is_array($parts) || strtolower((string)($parts['scheme'] ?? '')) !== 'udp' || empty($parts['host'])){ throw new ScraperException('Invalid tracker url.'); }
+			$host = trim((string)$parts['host'], '[]');
+			$tracker = 'udp://' . (strpos($host, ':') !== false ? '[' . $host . ']' : $host);
+			$port = isset($parts['port']) ? (int)$parts['port'] : 80;
 			
 			$transaction_id = mt_rand(0,65535);
 			$fp = fsockopen($tracker, $port, $errno, $errstr);

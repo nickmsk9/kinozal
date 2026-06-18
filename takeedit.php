@@ -10,13 +10,47 @@ function bark($msg) {
 	stderr("Ошибка", $msg);
 }
 
+function takeedit_upload_error($code)
+{
+	switch ((int)$code) {
+		case UPLOAD_ERR_OK:
+			return '';
+		case UPLOAD_ERR_INI_SIZE:
+		case UPLOAD_ERR_FORM_SIZE:
+			return 'Torrent-файл не загружен: размер больше лимита PHP.';
+		case UPLOAD_ERR_PARTIAL:
+			return 'Torrent-файл загружен не полностью. Повторите загрузку.';
+		case UPLOAD_ERR_NO_FILE:
+			return 'Torrent-файл не выбран.';
+		case UPLOAD_ERR_NO_TMP_DIR:
+			return 'Torrent-файл не загружен: PHP не видит временную директорию upload_tmp_dir.';
+		case UPLOAD_ERR_CANT_WRITE:
+			return 'Torrent-файл не загружен: PHP не смог записать временный файл.';
+		case UPLOAD_ERR_EXTENSION:
+			return 'Torrent-файл не загружен: загрузку остановило расширение PHP.';
+		default:
+			return 'Torrent-файл не загружен: неизвестная ошибка upload #' . (int)$code . '.';
+	}
+}
+
 function takeedit_file()
 {
-	if (isset($_FILES['file']) && !empty($_FILES['file']['name'])) {
-		return $_FILES['file'];
-	}
-	if (isset($_FILES['tfile']) && !empty($_FILES['tfile']['name'])) {
-		return $_FILES['tfile'];
+	foreach (array('file', 'tfile') as $key) {
+		if (!isset($_FILES[$key]) || !is_array($_FILES[$key])) {
+			continue;
+		}
+		$file = $_FILES[$key];
+		$error = (int)($file['error'] ?? UPLOAD_ERR_OK);
+		if ($error === UPLOAD_ERR_NO_FILE) {
+			continue;
+		}
+		if ($error !== UPLOAD_ERR_OK) {
+			bark(takeedit_upload_error($error));
+		}
+		if (trim((string)($file['name'] ?? '')) === '') {
+			bark('Torrent-файл не загружен: браузер не передал имя файла.');
+		}
+		return $file;
 	}
 	return null;
 }
@@ -36,9 +70,17 @@ function takeedit_parse_torrent($file)
 		bark("Неверное имя файла (не .torrent).");
 	}
 
-	$tmpname = $file["tmp_name"];
+	$error = (int)($file['error'] ?? UPLOAD_ERR_OK);
+	if ($error !== UPLOAD_ERR_OK) {
+		bark(takeedit_upload_error($error));
+	}
+
+	$tmpname = (string)($file["tmp_name"] ?? '');
+	if ($tmpname === '') {
+		bark("PHP не передал временный torrent-файл. Проверьте upload_tmp_dir, upload_max_filesize и post_max_size.");
+	}
 	if (!is_uploaded_file($tmpname)) {
-		bark("Ошибка загрузки torrent-файла.");
+		bark("Временный torrent-файл не найден или недоступен. Повторите загрузку файла.");
 	}
 	if (!filesize($tmpname)) {
 		bark("Пустой файл!");

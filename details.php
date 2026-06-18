@@ -744,6 +744,8 @@ if (!is_valid_id($id)) {
 $CURUSER = $CURUSER ?? null;
 $viewer_id = $CURUSER ? (int)$CURUSER['id'] : 0;
 
+multitracker_sync_local_peer_counts($id);
+
 $res = sql_query("
 	SELECT t.*, td.descr_hash, td.descr_parsed, c.name AS cat_name, c.image AS cat_pic,
 	       u.username AS owner_username, u.class AS owner_class, u.donor AS owner_donor, u.gender AS owner_gender,
@@ -804,8 +806,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['mt_force_update'])) 
 	if (!$moderator) {
 		stderr($tracker_lang['error'], $tracker_lang['access_denied'] ?? 'Доступ запрещен');
 	}
-	$mt_result = multitracker_update_torrent_trackers($id);
-	header('Location: details.php?id=' . $id . '&mtupdated=1&mts=' . (int)$mt_result['success'] . '&mte=' . (int)$mt_result['errors']);
+	$mt_result = multitracker_update_torrent_trackers($id, true);
+	header('Location: details.php?id=' . $id . '&mtupdated=1&mts=' . (int)$mt_result['success'] . '&mte=' . (int)$mt_result['errors'] . '&mtc=' . (int)$mt_result['client_only'] . '&mtk=' . (int)$mt_result['skipped']);
 	exit;
 }
 if ($row['banned'] === 'yes' && !$moderator) {
@@ -841,7 +843,7 @@ $cat_img = !empty($row['cat_pic']) ? '<img src="/pic/cat/' . details_h($row['cat
 $free = (string)($row['free'] ?? 'no');
 $download_note = '';
 if (!empty($_GET['mtupdated'])) {
-	$download_note = '<b class="green">Мультитрекер обновлен.</b> Успешно: ' . (int)($_GET['mts'] ?? 0) . ', ошибок: ' . (int)($_GET['mte'] ?? 0) . '.';
+	$download_note = '<b class="green">Мультитрекер обновлен.</b> Успешно: ' . (int)($_GET['mts'] ?? 0) . ', клиентских: ' . (int)($_GET['mtc'] ?? 0) . ', пропущено: ' . (int)($_GET['mtk'] ?? 0) . ', ошибок: ' . (int)($_GET['mte'] ?? 0) . '.';
 }
 
 if ($download_note === '' && $free === 'yes') {

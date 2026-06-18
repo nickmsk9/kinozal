@@ -73,7 +73,7 @@ $res = sql_query("
 		t.id, t.name, t.descr, t.filename, t.size, t.category, t.seeders, t.leechers, t.added, t.times_completed,
 		COALESCE(SUM(p.downloaded), 0) AS peer_downloaded
 	FROM (
-		SELECT id, name, descr, filename, size, category, seeders, leechers, added, times_completed
+		SELECT id, name, descr, filename, size, category, seeders + remote_seeders AS seeders, leechers + remote_leechers AS leechers, added, times_completed
 		FROM torrents
 		WHERE $where
 		ORDER BY added DESC
