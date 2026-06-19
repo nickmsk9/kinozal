@@ -115,6 +115,7 @@ $page_title = $title !== '' ? $title : $site_name;
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <title><?= h($page_title) ?></title>
+    <meta name="engine-copyright" content="<?= engine_copyright_notice('attr') ?>">
 
     <?php if ($description !== '') { ?>
         <meta name="description" content="<?= h($description) ?>">

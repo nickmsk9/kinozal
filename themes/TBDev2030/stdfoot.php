@@ -36,6 +36,8 @@ $gzipStatus = !empty($gzip) ? 1 : 0;
 $cachedQueries = isset($cached_queries) ? (int)$cached_queries : 0;
 $delayedTime = isset($delayed_time) ? number_format((float)$delayed_time, 4) : '0.0000';
 $footerColspan = empty($hide_right_blocks) ? 3 : 2;
+$engineCopyrightHtml = engine_copyright_notice();
+$engineCopyrightTitle = engine_copyright_notice('attr');
 
 print("
 </tr>
@@ -44,10 +46,12 @@ print("
         <b>
             .:Кинозал.ТВ
             <noindex>
-                <a href=\"?copyright\" class=\"copyright\" title=\"Движок сайта: TBDev v.Core 2k26 © 2008-2026. &lt;br /&gt;Владельцем движка (создатель исходника) является Nick.\">©</a>
+                <a href=\"?copyright\" class=\"copyright\" title=\"{$engineCopyrightTitle}\">©</a>
             </noindex>
             2026 TBDev v.Core:.
         </b>
+        <br />
+        {$engineCopyrightHtml}
         <br />
         Страничка сгенерирована за {$secondsView} секунд (gzip {$gzipStatus}, cache showing)
         <br />

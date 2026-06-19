@@ -9,6 +9,20 @@ require_once($rootpath . 'include/functions_global.php');
 require_once($rootpath . 'include/functions_torrenttable.php');
 require_once($rootpath . 'include/functions_commenttable.php');
 
+function engine_copyright_notice($format = 'html') {
+	$text = 'Hello! This engine was designed and developed by Nikita Sevalnev. Telegram: @nswbt.';
+
+	if ($format === 'plain') {
+		return $text;
+	}
+
+	if ($format === 'attr') {
+		return htmlspecialchars_uni($text);
+	}
+
+	return '<span class="engine-copyright">' . htmlspecialchars_uni($text) . '</span>';
+}
+
 function check_port($host, $port, $timeout, $force_fsock = false) {
     // Валидация входных параметров
     if (empty($host) || $port < 1 || $port > 65535 || $timeout <= 0) {
@@ -950,6 +964,7 @@ function stdhead($title = "", $msgalert = true)
 	header('Content-Type: text/html; charset=' . $charset);
 	header('Cache-Control: no-cache');
 	header('Pragma: no-cache');
+	header('X-Engine-Copyright: ' . engine_copyright_notice('plain'));
 
 	$title = trim((string)$title);
 

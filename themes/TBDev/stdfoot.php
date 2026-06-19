@@ -58,7 +58,8 @@ if (function_exists('show_blocks')) {
 		Просьба не заливать файлы, защищенные авторскими правами.<br>
 		[ <a class="sba" href="/doku.php">Общие правила</a> ]
 		[ <a class="sba" href="/photo.php">Доступные фотохостинги</a> ]
-		@2006 - <?= $year ?>
+		@2006 - <?= $year ?><br>
+		<?= engine_copyright_notice() ?>
 	</div>
 </div>
 
