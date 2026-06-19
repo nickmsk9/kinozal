@@ -181,7 +181,12 @@ function upload_subtitle_options()
 
 function upload_default_data()
 {
-	return array(
+	static $data = null;
+	if ($data !== null) {
+		return $data;
+	}
+
+	$data = array(
 		'version' => 1,
 		'mode' => 0,
 		'section_modes' => array(0, 0, 0, 0),
@@ -237,6 +242,8 @@ function upload_default_data()
 			'desc4' => '',
 		),
 	);
+
+	return $data;
 }
 
 function upload_empty_advanced()
@@ -264,6 +271,11 @@ function upload_empty_design()
 
 function upload_templates_default_data()
 {
+	static $out = null;
+	if ($out !== null) {
+		return $out;
+	}
+
 	$out = array();
 	foreach (array('music', 'game', 'audiobook', 'program', 'book', 'graphic') as $kind) {
 		$out[$kind] = array(
@@ -503,18 +515,56 @@ function upload_release_specs()
 
 function upload_table_exists($table)
 {
+	static $cache = array();
+	$table = trim((string)$table);
+	if (!preg_match('/^[A-Za-z0-9_]+$/', $table)) {
+		return false;
+	}
+	if (!empty($cache[$table])) {
+		return true;
+	}
+
 	$res = sql_query("SHOW TABLES LIKE " . sqlesc($table));
-	return $res && mysqli_num_rows($res) > 0;
+	$exists = $res && mysqli_num_rows($res) > 0;
+	if ($exists) {
+		$cache[$table] = true;
+	}
+	return $exists;
 }
 
 function upload_table_column_exists($table, $column)
 {
-	$res = sql_query("SHOW COLUMNS FROM " . $table . " LIKE " . sqlesc($column));
-	return $res && mysqli_num_rows($res) > 0;
+	static $cache = array();
+	$table = trim((string)$table);
+	$column = trim((string)$column);
+	if (!preg_match('/^[A-Za-z0-9_]+$/', $table) || !preg_match('/^[A-Za-z0-9_]+$/', $column)) {
+		return false;
+	}
+	$key = $table . '.' . $column;
+	if (!empty($cache[$key])) {
+		return true;
+	}
+
+	$res = sql_query("SHOW COLUMNS FROM `" . $table . "` LIKE " . sqlesc($column));
+	$exists = $res && mysqli_num_rows($res) > 0;
+	if ($exists) {
+		$cache[$key] = true;
+	}
+	return $exists;
 }
 
 function upload_ensure_schema()
 {
+	static $done = false;
+	if ($done) {
+		return;
+	}
+	$done = true;
+
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+		return;
+	}
+
 	sql_query("
 		CREATE TABLE IF NOT EXISTS torrent_details (
 			tid int(10) unsigned NOT NULL,
@@ -738,8 +788,8 @@ function upload_autofill_external_ratings(array $design)
 		}
 
 		$rating = $key === 'imdb'
-			? upload_fetch_imdb_rating($design[$key]['url'])
-			: upload_fetch_kinopoisk_rating($design[$key]['url']);
+			? upload_fetch_imdb_rating($design[$key]['url'], 2)
+			: upload_fetch_kinopoisk_rating($design[$key]['url'], 2);
 		if ($rating !== '') {
 			$design[$key]['rating'] = $rating;
 		}
@@ -748,20 +798,21 @@ function upload_autofill_external_ratings(array $design)
 	return $design;
 }
 
-function upload_fetch_rating_url($url, $timeout = 4)
+function upload_fetch_rating_url($url, $timeout = 2)
 {
 	$url = trim((string)$url);
 	if ($url === '' || !preg_match('#^https?://#i', $url)) {
 		return '';
 	}
+	$timeout = max(1, min(4, (int)$timeout));
 
 	if (function_exists('curl_init')) {
 		$ch = curl_init($url);
 		curl_setopt_array($ch, array(
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_CONNECTTIMEOUT => min(2, (int)$timeout),
-			CURLOPT_TIMEOUT => (int)$timeout,
+			CURLOPT_CONNECTTIMEOUT => min(1, $timeout),
+			CURLOPT_TIMEOUT => $timeout,
 			CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
 			CURLOPT_HTTPHEADER => array(
 				'Accept: text/html,application/json,image/*,*/*',
@@ -777,7 +828,7 @@ function upload_fetch_rating_url($url, $timeout = 4)
 	}
 
 	$context = stream_context_create(array('http' => array(
-		'timeout' => (int)$timeout,
+		'timeout' => $timeout,
 		'header' => "User-Agent: Mozilla/5.0\r\nAccept-Language: ru-RU,ru;q=0.9,en;q=0.8\r\n",
 	)));
 	$body = @file_get_contents($url, false, $context);
@@ -852,7 +903,7 @@ function upload_normalize_external_rating($value)
 	return number_format($rating, 1, '.', '');
 }
 
-function upload_fetch_imdb_rating($url)
+function upload_fetch_imdb_rating($url, $timeout = 2)
 {
 	if (!preg_match('#imdb\.com/title/(tt[0-9]+)#i', (string)$url, $m)) {
 		return '';
@@ -867,7 +918,7 @@ function upload_fetch_imdb_rating($url)
 	}
 
 	$json_url = 'https://p.media-imdb.com/static-content/documents/v1/title/' . rawurlencode($id) . '/ratings%3Fjsonp=imdb.rating.run:imdb.api.title.ratings/data.json';
-	$body = upload_fetch_rating_url($json_url);
+	$body = upload_fetch_rating_url($json_url, $timeout);
 	if (substr($body, 0, 2) === "\x1f\x8b") {
 		$decoded = @gzdecode($body);
 		if (is_string($decoded)) {
@@ -885,7 +936,7 @@ function upload_fetch_imdb_rating($url)
 	return '';
 }
 
-function upload_fetch_kinopoisk_rating($url)
+function upload_fetch_kinopoisk_rating($url, $timeout = 2)
 {
 	if (!preg_match('#kinopoisk\.ru/(?:film|series)/(?:[a-z0-9_-]+-)?([0-9]+)#i', (string)$url, $m)) {
 		return '';
@@ -899,7 +950,7 @@ function upload_fetch_kinopoisk_rating($url)
 		return '';
 	}
 
-	$xml = upload_fetch_rating_url('https://rating.kinopoisk.ru/' . rawurlencode($id) . '.xml');
+	$xml = upload_fetch_rating_url('https://rating.kinopoisk.ru/' . rawurlencode($id) . '.xml', $timeout);
 	if (substr($xml, 0, 2) === "\x1f\x8b") {
 		$decoded = @gzdecode($xml);
 		if (is_string($decoded)) {
@@ -912,14 +963,14 @@ function upload_fetch_kinopoisk_rating($url)
 		return $rating;
 	}
 
-	$gif = upload_fetch_rating_url('https://rating.kinopoisk.ru/' . rawurlencode($id) . '.gif');
+	$gif = upload_fetch_rating_url('https://rating.kinopoisk.ru/' . rawurlencode($id) . '.gif', 1);
 	$rating = upload_kinopoisk_rating_from_gif($gif);
 	if ($rating !== '') {
 		upload_rating_cache_set('kinopoisk', $id, $rating);
 		return $rating;
 	}
 
-	$body = upload_fetch_rating_url('https://widgets.kinopoisk.ru/discovery/api/trailer?filmId=' . rawurlencode($id));
+	$body = upload_fetch_rating_url('https://widgets.kinopoisk.ru/discovery/api/trailer?filmId=' . rawurlencode($id), 1);
 	if (preg_match('/"ratingValue"\s*:\s*"?([0-9]+(?:[.,][0-9]+)?)/iu', $body, $rm)
 		|| preg_match('/rating[^0-9]{0,80}([0-9]+[.,][0-9]+)/iu', $body, $rm)
 		|| preg_match('/' . preg_quote($id, '/') . '.{0,500}?([0-9]+[.,][0-9]+)/u', $body, $rm)) {

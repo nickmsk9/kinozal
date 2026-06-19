@@ -11,21 +11,34 @@ foreach (array('passkey','info_hash','peer_id','event','ip','ipv6','localip') as
 		$GLOBALS[$x] = '' . $_GET[$x];
 }
 
-foreach (array('port','downloaded','uploaded','left') as $x)
-	$GLOBALS[$x] = intval($_GET[$x]);
-
-if (get_magic_quotes_gpc()) {
-    $info_hash = stripslashes($info_hash);
-    $peer_id = stripslashes($peer_id);
+foreach (array('port','downloaded','uploaded','left') as $x) {
+	if (isset($_GET[$x])) {
+		$GLOBALS[$x] = intval($_GET[$x]);
+	}
 }
 
-foreach (array('passkey','info_hash','peer_id','port','downloaded','uploaded','left') as $x)
-	if (!isset($GLOBALS[$x])) err('Missing key: '.$x);
-		foreach (array('info_hash','peer_id') as $x)
-			if (strlen($GLOBALS[$x]) != 20)
-				err('Invalid '.$x.' (' . strlen($GLOBALS[$x]) . ' - ' . urlencode($GLOBALS[$x]) . ')');
-			if (!tracker_valid_passkey($passkey))
-				err('Invalid passkey (' . strlen($passkey) . ' - ' . $passkey . ')');
+if (get_magic_quotes_gpc()) {
+	if (isset($info_hash)) {
+		$info_hash = stripslashes($info_hash);
+	}
+	if (isset($peer_id)) {
+		$peer_id = stripslashes($peer_id);
+	}
+}
+
+foreach (array('passkey','info_hash','peer_id','port','downloaded','uploaded','left') as $x) {
+	if (!isset($GLOBALS[$x])) {
+		err('Missing key: '.$x);
+	}
+}
+foreach (array('info_hash','peer_id') as $x) {
+	if (strlen($GLOBALS[$x]) != 20) {
+		err('Invalid '.$x.' (' . strlen($GLOBALS[$x]) . ' - ' . urlencode($GLOBALS[$x]) . ')');
+	}
+}
+if (!tracker_valid_passkey($passkey)) {
+	err('Invalid passkey (' . strlen($passkey) . ' - ' . $passkey . ')');
+}
 $ip = getip();
 if (!empty($ipv6) && tracker_ip_version($ipv6) === 6) {
 	$ip = $ipv6;
@@ -71,72 +84,27 @@ $res = mysql_query('SELECT id, visible, banned, free, seeders, leechers, times_c
 $torrent = mysqli_fetch_array($res);
 if (!$torrent)
 	err('Torrent not registered with this tracker.');
-$torrentid = $torrent['id'];
-$fields = 'seeder, peer_id, ip, port, uploaded, downloaded, userid, passkey, last_action, UNIX_TIMESTAMP(NOW()) AS nowts, UNIX_TIMESTAMP(prev_action) AS prevts';
-$numpeers = $torrent['numpeers'];
+$torrentid = (int)$torrent['id'];
+$numpeers = (int)$torrent['numpeers'];
 $selfwhere = 'torrent = '.$torrentid.' AND peer_id = '.sqlesc($peer_id).' AND passkey = '.sqlesc($passkey);
 $selfexpr = 'peer_id = '.sqlesc($peer_id).' AND passkey = '.sqlesc($passkey);
-if ($numpeers > $rsize) {
-	$peer_offset_max = max(0, (int)$numpeers - $rsize - 1);
-	$peer_offset = $peer_offset_max > 0 ? mt_rand(0, $peer_offset_max) : 0;
-	$res = mysql_query('(SELECT '.$fields.', 1 AS is_self FROM peers WHERE '.$selfwhere.' LIMIT 1) UNION ALL (SELECT '.$fields.', 0 AS is_self FROM peers WHERE torrent = '.$torrentid.' AND NOT ('.$selfexpr.') ORDER BY id ASC LIMIT '.$peer_offset.', '.$rsize.')') or err('Peers error 1 (select)');
-} else {
-	$res = mysql_query('SELECT '.$fields.', IF('.$selfexpr.', 1, 0) AS is_self FROM peers WHERE torrent = '.$torrentid) or err('Peers error 1 (select)');
-}
-$compact = (isset($_GET['compact']) && $_GET['compact'] == 1);
-$resp = 'd'
-	. benc_str('interval') . 'i' . $announce_interval . 'e'
-	. benc_str('min interval') . 'i' . max(60, (int)($announce_interval / 2)) . 'e'
-	. benc_str('complete') . 'i' . (int)$torrent['seeders'] . 'e'
-	. benc_str('incomplete') . 'i' . (int)$torrent['leechers'] . 'e'
-	. benc_str('downloaded') . 'i' . (int)$torrent['times_completed'] . 'e'
-	. benc_str('private') . 'i1e';
-$no_peer_id = (isset($_GET['no_peer_id']) && $_GET['no_peer_id'] == 1);
-$plist4 = '';
-$plist6 = '';
-$peerlist = '';
-unset($self);
-while ($row = mysqli_fetch_array($res)) {
-	if (!empty($row['is_self'])) {
-		$userid = $row['userid'];
-		$self = $row;
-		continue;
-	}
-	if($compact) {
-		$packed_ip = @inet_pton($row["ip"]);
-		if ($packed_ip === false) {
-			continue;
-		}
-		if (strlen($packed_ip) === 4) {
-			$plist4 .= $packed_ip . pack("n", (int)$row["port"]);
-		} elseif (strlen($packed_ip) === 16) {
-			$plist6 .= $packed_ip . pack("n", (int)$row["port"]);
-		}
-	} else {
-		$peerlist .= 'd' .
-			benc_str('ip') . benc_str($row['ip']) .
-			(!$no_peer_id ? benc_str("peer id") . benc_str($row["peer_id"]) : '') .
-			benc_str('port') . 'i' . $row['port'] . 'e' . 'e';
-	}
-}
-if ($compact) {
-	$resp .= benc_str('peers') . benc_str($plist4);
-	if ($plist6 !== '') {
-		$resp .= benc_str('peers6') . benc_str($plist6);
-	}
-} else {
-	$resp .= benc_str('peers') . 'l' . $peerlist . 'e';
-}
-$resp .= 'e';
 
 $announce_wait = 10;
+$self = null;
+$self_fields = 'seeder, peer_id, ip, port, uploaded, downloaded, userid, passkey, last_action, UNIX_TIMESTAMP(NOW()) AS nowts, UNIX_TIMESTAMP(prev_action) AS prevts';
+$self_res = mysql_query('SELECT '.$self_fields.' FROM peers WHERE '.$selfwhere.' LIMIT 1') or err('Peers error 1 (select)');
+if ($self_res && ($self_row = mysqli_fetch_array($self_res))) {
+	$self = $self_row;
+	$userid = (int)$self['userid'];
+}
+if (isset($self) && ((int)$self['prevts'] > ((int)$self['nowts'] - $announce_wait)))
+	err('There is a minimum announce time of ' . $announce_wait . ' seconds');
+
 $dt = sqlesc(date('Y-m-d H:i:s', time()));
 $updateset = array();
 $snatch_updateset = array();
-
-if (isset($self) && ($self['prevts'] > ($self['nowts'] - $announce_wait )) )
-	err('There is a minimum announce time of ' . $announce_wait . ' seconds');
-if (!isset($self)) {
+$stopped_without_self = (!isset($self) && $event == 'stopped');
+if (!isset($self) && !$stopped_without_self) {
 	if ($az['enabled'] == 'no')
 		err('This account is disabled.');
 	$userid = $az['id'];
@@ -167,7 +135,8 @@ if (!isset($self)) {
     if (portblacklisted($port))
         err('Port '.$port.' is blacklisted.');
     else {
-        $sockres = check_port($ip, $port, 5);
+        $connect_timeout = ($nc == 'yes') ? 3 : 1;
+        $sockres = check_port($ip, $port, $connect_timeout);
         if (!$sockres) {
             $connectable = 'no';
             if ($nc == 'yes')
@@ -186,7 +155,7 @@ if (!isset($self)) {
         else
             $updateset[] = 'leechers = leechers + 1';
     }
-} else {
+} elseif (isset($self)) {
 	$upthis = max(0, $uploaded - $self['uploaded']);
 	$downthis = max(0, $downloaded - $self['downloaded']);
 	if ($upthis > 0 || $downthis > 0)
@@ -229,14 +198,14 @@ if (!isset($self)) {
 
 }
 
-if ($event == 'completed') {
+if (!$stopped_without_self && $event == 'completed') {
     $snatch_updateset[] = "finished = 'yes'";
     $snatch_updateset[] = "completedat = $dt";
     $snatch_updateset[] = "seeder = 'yes'";
     $updateset[] = 'times_completed = times_completed + 1';
 }
 
-if ($seeder == 'yes') {
+if (!$stopped_without_self && $seeder == 'yes') {
 	if ($torrent['banned'] != 'yes' && $torrent['visible'] != 'yes')
 		$updateset[] = 'visible = \'yes\'';
 	$updateset[] = 'last_action = NOW()';
@@ -246,6 +215,56 @@ if (count($updateset))
 
 if (count($snatch_updateset))
 	mysql_query('UPDATE LOW_PRIORITY snatched SET ' . join(", ", $snatch_updateset) . ' WHERE torrent = '.$torrentid.' AND userid = '.$userid) or err('Snatched error 2 (update)');
+
+$compact = (isset($_GET['compact']) && $_GET['compact'] == 1);
+$resp = 'd'
+	. benc_str('interval') . 'i' . $announce_interval . 'e'
+	. benc_str('min interval') . 'i' . max(60, (int)($announce_interval / 2)) . 'e'
+	. benc_str('complete') . 'i' . (int)$torrent['seeders'] . 'e'
+	. benc_str('incomplete') . 'i' . (int)$torrent['leechers'] . 'e'
+	. benc_str('downloaded') . 'i' . (int)$torrent['times_completed'] . 'e'
+	. benc_str('private') . 'i1e';
+$no_peer_id = (isset($_GET['no_peer_id']) && $_GET['no_peer_id'] == 1);
+$plist4 = '';
+$plist6 = '';
+$peerlist = '';
+if ($event != 'stopped' && $rsize > 0) {
+	$peer_fields = 'peer_id, ip, port';
+	if ($numpeers > $rsize) {
+		$peer_offset_max = max(0, $numpeers - $rsize - 1);
+		$peer_offset = $peer_offset_max > 0 ? mt_rand(0, $peer_offset_max) : 0;
+		$res = mysql_query('SELECT '.$peer_fields.' FROM peers WHERE torrent = '.$torrentid.' AND NOT ('.$selfexpr.') ORDER BY id ASC LIMIT '.$peer_offset.', '.$rsize) or err('Peers error 5 (select)');
+	} else {
+		$res = mysql_query('SELECT '.$peer_fields.' FROM peers WHERE torrent = '.$torrentid.' AND NOT ('.$selfexpr.')') or err('Peers error 5 (select)');
+	}
+	while ($row = mysqli_fetch_array($res)) {
+		if ($compact) {
+			$packed_ip = @inet_pton($row['ip']);
+			if ($packed_ip === false) {
+				continue;
+			}
+			if (strlen($packed_ip) === 4) {
+				$plist4 .= $packed_ip . pack('n', (int)$row['port']);
+			} elseif (strlen($packed_ip) === 16) {
+				$plist6 .= $packed_ip . pack('n', (int)$row['port']);
+			}
+		} else {
+			$peerlist .= 'd' .
+				benc_str('ip') . benc_str($row['ip']) .
+				(!$no_peer_id ? benc_str('peer id') . benc_str($row['peer_id']) : '') .
+				benc_str('port') . 'i' . (int)$row['port'] . 'e' . 'e';
+		}
+	}
+}
+if ($compact) {
+	$resp .= benc_str('peers') . benc_str($plist4);
+	if ($plist6 !== '') {
+		$resp .= benc_str('peers6') . benc_str($plist6);
+	}
+} else {
+	$resp .= benc_str('peers') . 'l' . $peerlist . 'e';
+}
+$resp .= 'e';
 
 benc_resp_raw($resp);
 

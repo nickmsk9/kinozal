@@ -243,6 +243,10 @@ function multitracker_ensure_schema()
 	}
 	$done = true;
 
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+		return;
+	}
+
 	sql_query("
 		CREATE TABLE IF NOT EXISTS torrent_trackers (
 			id int(10) unsigned NOT NULL auto_increment,
@@ -526,6 +530,10 @@ function multitracker_sync_local_peer_counts($torrentid)
 	if ($torrentid <= 0) {
 		return false;
 	}
+	$cache_key = 'mtlocal:sync:' . $torrentid;
+	if (function_exists('tracker_cache_get') && tracker_cache_get($cache_key, false)) {
+		return true;
+	}
 
 	$res = sql_query("
 		SELECT
@@ -548,6 +556,9 @@ function multitracker_sync_local_peer_counts($torrentid)
 	$leechers = (int)$row['leechers'];
 	sql_query("UPDATE torrents SET seeders = $seeders, leechers = $leechers WHERE id = $torrentid AND (seeders <> $seeders OR leechers <> $leechers)") or sqlerr(__FILE__, __LINE__);
 	multitracker_sync_local_tracker($torrentid, $seeders, $leechers, (int)$row['times_completed']);
+	if (function_exists('tracker_cache_set')) {
+		tracker_cache_set($cache_key, 1, 15);
+	}
 	return true;
 }
 

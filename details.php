@@ -337,12 +337,8 @@ function details_apply_external_rating_fallbacks(array $design, array $row)
 		if ($current_url === '' && $fallback['url'] !== '') {
 			$current_url = $fallback['url'];
 		}
-		if ($current_rating === '' && $current_url !== '') {
-			if ($key === 'imdb' && function_exists('upload_fetch_imdb_rating')) {
-				$current_rating = upload_fetch_imdb_rating($current_url);
-			} elseif ($key === 'kinopoisk' && function_exists('upload_fetch_kinopoisk_rating')) {
-				$current_rating = upload_fetch_kinopoisk_rating($current_url);
-			}
+		if ($current_rating === '' && $fallback['rating'] !== '') {
+			$current_rating = $fallback['rating'];
 		}
 		if ($current_url === '' && $fallback['url'] === '' && $current_rating === '' && $fallback['rating'] === '') {
 			continue;

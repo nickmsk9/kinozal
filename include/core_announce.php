@@ -7,7 +7,7 @@ if(!defined("IN_ANNOUNCE"))
 
 @error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT);
 @ini_set('error_reporting', E_ALL & ~E_NOTICE & ~E_STRICT);
-@ini_set('display_errors', '1');
+@ini_set('display_errors', '0');
 @ini_set('display_startup_errors', '0');
 @ini_set('ignore_repeated_errors', '1');
 @ignore_user_abort(1);
@@ -15,6 +15,14 @@ if(!defined("IN_ANNOUNCE"))
 if (function_exists('set_magic_quotes_runtime')) {
   @set_magic_quotes_runtime(0);
 }
+
+if (!defined('ROOT_PATH')) {
+  define('ROOT_PATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
+}
+if (empty($rootpath)) {
+  $rootpath = ROOT_PATH;
+}
+
 include_once($rootpath . 'include/benc.php');
 include_once($rootpath . 'include/init.php');
 include_once($rootpath . 'include/functions_announce.php');
