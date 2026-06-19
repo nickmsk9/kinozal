@@ -131,6 +131,23 @@ function top_poster_src(array $row)
     return '/pic/default_avatar.gif';
 }
 
+function top_remember($key, $ttl, callable $loader)
+{
+    return function_exists('tracker_cache_remember')
+        ? tracker_cache_remember($key, $ttl, $loader)
+        : $loader();
+}
+
+function top_query_rows($sql)
+{
+    $res = sql_query($sql) or sqlerr(__FILE__, __LINE__);
+    $rows = array();
+    while ($row = mysqli_fetch_assoc($res)) {
+        $rows[] = $row;
+    }
+    return $rows;
+}
+
 $selectedTop = top_get_int('t', 0);
 $selectedYear = top_get_int('d', 0);
 $selectedFormat = top_get_int('f', 0);
@@ -199,9 +216,11 @@ if ($selectedSort === 1) {
 
 $whereSql = 'WHERE ' . implode(' AND ', $where);
 
-$res = sql_query("SELECT COUNT(*) FROM torrents AS t $whereSql") or sqlerr(__FILE__, __LINE__);
-$row = mysqli_fetch_row($res);
-$count = (int)($row[0] ?? 0);
+$count = top_remember('top:count:' . md5($whereSql), 60, function () use ($whereSql) {
+    $res = sql_query("SELECT COUNT(*) FROM torrents AS t $whereSql") or sqlerr(__FILE__, __LINE__);
+    $row = mysqli_fetch_row($res);
+    return (int)($row[0] ?? 0);
+});
 
 $perPage = !empty($CURUSER['torrentsperpage']) ? (int)$CURUSER['torrentsperpage'] : 50;
 if ($perPage < 1) {
@@ -210,9 +229,9 @@ if ($perPage < 1) {
 
 list($pagertop, $pagerbottom, $limit) = pager($perPage, $count, 'top.php?' . top_build_query($pagerParams) . '&amp;');
 
-$res = false;
+$torrents = array();
 if ($count > 0) {
-    $res = sql_query("
+    $rows_sql = "
 		SELECT
 			t.id,
 			t.name,
@@ -232,7 +251,10 @@ if ($count > 0) {
 		$whereSql
 		$orderBy
 		$limit
-	") or sqlerr(__FILE__, __LINE__);
+	";
+    $torrents = top_remember('top:rows:' . md5($rows_sql), 60, function () use ($rows_sql) {
+        return top_query_rows($rows_sql);
+    });
 }
 
 stdhead("Топ раздач");
@@ -377,8 +399,8 @@ stdhead("Топ раздач");
         <?php } ?>
 
         <div class="bx1 top_poster_grid">
-            <?php if ($res) { ?>
-                <?php while ($torrent = mysqli_fetch_assoc($res)) { ?>
+            <?php if ($torrents) { ?>
+                <?php foreach ($torrents as $torrent) { ?>
                     <?php
                     $id = (int)$torrent['id'];
                     $title = top_h($torrent['name']);

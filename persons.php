@@ -51,19 +51,33 @@ $poster = trim((string)$person['poster_url']);
 if ($poster === '') {
 	$poster = '/pic/default_avatar.gif';
 }
-$photos = persons_photos($pid, 4);
+$photos_all = persons_photos($pid);
+$photos = array_slice($photos_all, 0, 4);
 $can_edit = persons_can_edit($person);
 $hash = $CURUSER ? persons_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? '')) : '';
 
 $creator = null;
-if (!empty($person['created_by'])) {
-	$r = sql_query("SELECT id, username, class, donor, gender, birthday, warned, enabled, uploaded, downloaded FROM users WHERE id = " . (int)$person['created_by'] . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
-	$creator = mysqli_fetch_assoc($r);
-}
 $editor = null;
-if (!empty($person['updated_by'])) {
-	$r = sql_query("SELECT id, username, class, donor, gender, birthday, warned, enabled, uploaded, downloaded FROM users WHERE id = " . (int)$person['updated_by'] . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
-	$editor = mysqli_fetch_assoc($r);
+$person_user_ids = array();
+foreach (array('created_by', 'updated_by') as $field) {
+	$uid = (int)($person[$field] ?? 0);
+	if ($uid > 0) {
+		$person_user_ids[$uid] = true;
+	}
+}
+if ($person_user_ids) {
+	$users_by_id = array();
+	$r = sql_query("
+		SELECT u.id, u.username, u.class, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
+		       (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys
+		FROM users AS u
+		WHERE u.id IN (" . implode(',', array_keys($person_user_ids)) . ")
+	") or sqlerr(__FILE__, __LINE__);
+	while ($user = mysqli_fetch_assoc($r)) {
+		$users_by_id[(int)$user['id']] = $user;
+	}
+	$creator = $users_by_id[(int)($person['created_by'] ?? 0)] ?? null;
+	$editor = $users_by_id[(int)($person['updated_by'] ?? 0)] ?? null;
 }
 
 $hide_right_blocks = true;
@@ -132,7 +146,7 @@ function persons_torrent_top_posters($person)
 		<?php if ($can_edit) { ?><li><span class="bulet"></span><a href="/personedit.php<?= $pid > 0 ? '?id=' . $pid : '?s=' . rawurlencode($name) ?>">Редактировать</a></li><?php } ?>
 		<li class="tp">Опубликовать ссылку</li>
 		<li><div class="share b"><a class="vkontakte" href="https://vk.com/share.php?url=<?= rawurlencode($DEFAULTBASEURL . '/persons.php?pid=' . $pid) ?>" title="Опубликовать ссылку во ВКонтакте" onclick="window.open(this.href, 'Опубликовать ссылку во Вконтакте', 'width=800,height=300'); return false"></a><a class="facebook" href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($DEFAULTBASEURL . '/persons.php?pid=' . $pid) ?>" title="Опубликовать ссылку в Facebook" onclick="window.open(this.href, 'Опубликовать ссылку в Facebook', 'width=640,height=436,toolbar=0,status=0'); return false"></a><a class="twitter" href="https://twitter.com/intent/tweet?text=<?= rawurlencode($name . ' ' . $DEFAULTBASEURL . '/persons.php?pid=' . $pid) ?>" title="Опубликовать ссылку в Twitter" onclick="window.open(this.href, 'Опубликовать ссылку в Twitter', 'width=800,height=300'); return false" target="_blank"></a></div><div class="clear"></div></li>
-		<?php if ($photos) { ?><li class="tp">Фотографии <span class="floatright"><?= count(persons_photos($pid)) ?></span></li><?php foreach ($photos as $photo) { ?><li class="img"><img src="<?= persons_h(trim($photo['image_url'])) ?>" class="p200" alt=""></li><?php }} ?>
+		<?php if ($photos) { ?><li class="tp">Фотографии <span class="floatright"><?= count($photos_all) ?></span></li><?php foreach ($photos as $photo) { ?><li class="img"><img src="<?= persons_h(trim($photo['image_url'])) ?>" class="p200" alt=""></li><?php }} ?>
 		<?php if ($creator) { ?><li class="tp">Создал<span class="floatright"><?= persons_h(persons_date($person['created_at'])) ?></span></li><li><span class="bulet"></span><?= persons_user_link((int)$creator['id'], $creator['username'], (int)$creator['class'], $creator) ?></li><?php } ?>
 		<?php if ($editor) { ?><li class="tp">Ред.<span class="floatright"><?= persons_h(persons_date($person['updated_at'])) ?></span></li><li><span class="bulet"></span><?= persons_user_link((int)$editor['id'], $editor['username'], (int)$editor['class'], $editor) ?></li><?php } ?>
 		<li class="tp">Информация</li>

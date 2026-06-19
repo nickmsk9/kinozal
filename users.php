@@ -100,6 +100,23 @@ function users_build_url($params)
     return 'users.php' . ($query ? '?' . http_build_query($query) : '');
 }
 
+function users_remember($key, $ttl, callable $loader)
+{
+    return function_exists('tracker_cache_remember')
+        ? tracker_cache_remember($key, $ttl, $loader)
+        : $loader();
+}
+
+function users_query_rows($sql)
+{
+    $res = sql_query($sql) or sqlerr(__FILE__, __LINE__);
+    $rows = array();
+    while ($row = mysqli_fetch_assoc($res)) {
+        $rows[] = $row;
+    }
+    return $rows;
+}
+
 function users_paginator($count, $perpage, $page)
 {
     $pages = (int)ceil($count / $perpage);
@@ -231,9 +248,11 @@ $perpage = 30;
 $page = isset($_GET['page']) ? max(0, (int)$_GET['page']) : 0;
 $needs_count_sort = ($sort === '1' || $sort === '3');
 
-$count_res = sql_query("SELECT COUNT(*) FROM users AS u WHERE $where_sql") or sqlerr(__FILE__, __LINE__);
-$count_row = mysqli_fetch_row($count_res);
-$count = (int)($count_row[0] ?? 0);
+$count = users_remember('users:count:' . md5($where_sql), 60, function () use ($where_sql) {
+    $count_res = sql_query("SELECT COUNT(*) FROM users AS u WHERE $where_sql") or sqlerr(__FILE__, __LINE__);
+    $count_row = mysqli_fetch_row($count_res);
+    return (int)($count_row[0] ?? 0);
+});
 $pages = max(1, (int)ceil($count / $perpage));
 if ($page >= $pages) {
     $page = $pages - 1;
@@ -259,28 +278,34 @@ $count_join_sql = $needs_count_sort
     ) AS cc ON cc.userid = u.id"
     : "";
 
-$res = sql_query("
+$users_query = "
     SELECT
         u.*,
         c.name AS country_name,
         c.flagpic,
+        (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys,
+        COALESCE(rc.reputation_count, 0) AS reputation_count,
         $count_select_sql
     FROM users AS u
     LEFT JOIN countries AS c ON c.id = u.country
+    LEFT JOIN (
+        SELECT touserid, COUNT(*) AS reputation_count
+        FROM simpaty
+        GROUP BY touserid
+    ) AS rc ON rc.touserid = u.id
     $count_join_sql
     WHERE $where_sql
     ORDER BY $sort_sql $order_sql, u.id DESC
     LIMIT $offset, $perpage
-") or sqlerr(__FILE__, __LINE__);
+";
 
-$users = array();
-while ($row = mysqli_fetch_assoc($res)) {
-    $users[] = $row;
-}
-
-if (!$needs_count_sort && function_exists('tracker_attach_user_content_counts')) {
-    $users = tracker_attach_user_content_counts($users);
-}
+$users = users_remember('users:rows:' . md5($users_query . '|' . (int)$needs_count_sort), 60, function () use ($users_query, $needs_count_sort) {
+    $rows = users_query_rows($users_query);
+    if (!$needs_count_sort && function_exists('tracker_attach_user_content_counts')) {
+        $rows = tracker_attach_user_content_counts($rows);
+    }
+    return $rows;
+});
 
 $countries = function_exists('tracker_cache_remember')
     ? tracker_cache_remember('countries:list', 3600, function () {

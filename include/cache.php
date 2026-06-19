@@ -375,6 +375,18 @@ function tracker_cache_invalidate_for_query($query)
 		return;
 	}
 
+	if (preg_match('/^\s*update\s+users\s+set\s+(.+?)\s+where\s+id\s*=/is', $sql, $match)) {
+		$fields = array();
+		foreach (preg_split('/\s*,\s*/', trim($match[1])) as $assignment) {
+			if (preg_match('/^`?([a-z0-9_]+)`?\s*=/i', $assignment, $field_match)) {
+				$fields[] = $field_match[1];
+			}
+		}
+		if ($fields && !array_diff($fields, array('ip', 'last_access'))) {
+			return;
+		}
+	}
+
 	if (!preg_match('/\b(site_settings|orbital_blocks|categories|torrents|torrent_details|torrents_descr|torrent_trackers|ratings|comments|snatched|pay_transactions|pay_settings|cups|user_cups|user_status_assignments|countries|uarch_smiles|users|news|readtorrents)\b/', $sql)) {
 		return;
 	}

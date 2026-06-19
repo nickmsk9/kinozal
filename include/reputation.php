@@ -22,6 +22,14 @@ function reputation_table_exists($table)
 		return $exists_cache[$table];
 	}
 
+	if (function_exists('tracker_cache_remember')) {
+		$exists_cache[$table] = (bool)tracker_cache_remember('schema:table-exists:' . $table, 3600, function () use ($table) {
+			$res = sql_query("SHOW TABLES LIKE " . sqlesc($table, true)) or sqlerr(__FILE__, __LINE__);
+			return mysqli_num_rows($res) > 0 ? 1 : 0;
+		});
+		return $exists_cache[$table];
+	}
+
 	$res = sql_query("SHOW TABLES LIKE " . sqlesc($table, true)) or sqlerr(__FILE__, __LINE__);
 	$exists_cache[$table] = mysqli_num_rows($res) > 0;
 	return $exists_cache[$table];
@@ -116,8 +124,8 @@ function reputation_value($user)
 	}
 
 	$value = isset($user['simpaty']) ? (int)$user['simpaty'] : 0;
-	if ($value === 1 && !empty($user['id']) && reputation_count((int)$user['id'], 1) === 0) {
-		return 0;
+	if ($value === 1) {
+		return !empty($user['reputation_count']) ? 1 : 0;
 	}
 
 	return max(0, $value);

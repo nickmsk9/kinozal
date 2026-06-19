@@ -188,10 +188,7 @@ function sql_query($query)
      * Файл и строку собираем только в debug-режиме,
      * чтобы не грузить сайт лишним backtrace на production.
      */
-    $debug_enabled = (
-        (defined('DEBUG_MODE') && DEBUG_MODE)
-        || isset($_GET['yuna'])
-    );
+    $debug_enabled = tracker_debug_mode_enabled();
 
     $debug_file = '';
     $debug_line = '';
@@ -252,11 +249,28 @@ function sql_query($query)
         );
     }
 
-    if (function_exists('tracker_cache_invalidate_for_query')) {
+    $query_start = ltrim((string)$query);
+    $query_first = $query_start !== '' ? strtolower($query_start[0]) : '';
+    if ($query_first !== '' && strpos('iudrtac', $query_first) !== false
+        && preg_match('/^(insert|update|delete|replace|truncate|alter|drop|create)\b/i', $query_start)
+        && function_exists('tracker_cache_invalidate_for_query')) {
         tracker_cache_invalidate_for_query($query);
     }
 
     return $result;
+}
+
+function tracker_debug_mode_enabled()
+{
+	global $CURUSER;
+
+	if (defined('DEBUG_MODE') && DEBUG_MODE) {
+		return true;
+	}
+
+	return defined('UC_SYSOP')
+		&& is_array($CURUSER)
+		&& (int)($CURUSER['class'] ?? 0) >= UC_SYSOP;
 }
 
 function tracker_user_content_counts(array $user_ids)
@@ -350,7 +364,7 @@ function dbconn($autoclean = false, $lightmode = false)
         site_settings_apply_runtime_overrides();
     }
 
-    if (function_exists('tracker_upgrade_legacy_passkeys')) {
+    if (defined('KZ_AUTO_MIGRATIONS') && KZ_AUTO_MIGRATIONS === true && function_exists('tracker_upgrade_legacy_passkeys')) {
         tracker_upgrade_legacy_passkeys();
     }
 
@@ -683,36 +697,54 @@ function gzip(): void
 }
 
 function validip($ip) {
+	static $cache = array();
+	static $reserved_ranges = null;
+
+	$ip = (string)$ip;
+	if (array_key_exists($ip, $cache)) {
+		return $cache[$ip];
+	}
+
     // Базовая проверка формата (корректный IPv4)
     if (empty($ip) || !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        $cache[$ip] = false;
         return false;
     }
 
     // Резервные диапазоны IANA (IPv4)
-    $reserved_ranges = [
-        ['0.0.0.0',    '2.255.255.255'],   // 0.0.0.0/8, 1.0.0.0/8? на самом деле 0/8 и 1/8? IANA: 0.0.0.0/8, 1.0.0.0/8? нет, 1.0.0.0/8 выделен. Но оставим как в оригинале.
-        ['10.0.0.0',   '10.255.255.255'],  // 10.0.0.0/8
-        ['127.0.0.0',  '127.255.255.255'], // 127.0.0.0/8
-        ['169.254.0.0','169.254.255.255'], // 169.254.0.0/16
-        ['172.16.0.0', '172.31.255.255'],  // 172.16.0.0/12
-        ['192.0.2.0',  '192.0.2.255'],     // 192.0.2.0/24 (TEST-NET)
-        ['192.168.0.0','192.168.255.255'], // 192.168.0.0/16
-        ['255.255.255.0','255.255.255.255'] // 255.255.255.0/24? Это широковещательный? Оригинал так и оставим.
-    ];
+    if ($reserved_ranges === null) {
+        $reserved_ranges = array(
+            array(ip2long('0.0.0.0'), ip2long('2.255.255.255')),
+            array(ip2long('10.0.0.0'), ip2long('10.255.255.255')),
+            array(ip2long('127.0.0.0'), ip2long('127.255.255.255')),
+            array(ip2long('169.254.0.0'), ip2long('169.254.255.255')),
+            array(ip2long('172.16.0.0'), ip2long('172.31.255.255')),
+            array(ip2long('192.0.2.0'), ip2long('192.0.2.255')),
+            array(ip2long('192.168.0.0'), ip2long('192.168.255.255')),
+            array(ip2long('255.255.255.0'), ip2long('255.255.255.255')),
+        );
+    }
 
     $ipLong = ip2long($ip);
     foreach ($reserved_ranges as $range) {
-        $min = ip2long($range[0]);
-        $max = ip2long($range[1]);
-        if ($ipLong >= $min && $ipLong <= $max) {
+        if ($ipLong >= $range[0] && $ipLong <= $range[1]) {
+            $cache[$ip] = false;
             return false;
         }
     }
 
+    $cache[$ip] = true;
     return true;
 }
 
 function getip($trust_proxy_headers = false) {
+	static $cache = array();
+
+	$cache_key = $trust_proxy_headers ? 'trusted' : 'direct';
+	if (array_key_exists($cache_key, $cache)) {
+		return $cache[$cache_key];
+	}
+
     $ip = null;
 
     // Опциональное доверие заголовкам прокси (только если явно включено)
@@ -735,6 +767,7 @@ function getip($trust_proxy_headers = false) {
         }
     }
 
+    $cache[$cache_key] = $ip;
     return $ip;
 }
 
@@ -990,7 +1023,7 @@ function stdfoot() {
 	require_once('themes/' . $ss_uri . '/template.php');
 	require_once('themes/' . $ss_uri . '/stdfoot.php');
 
-	if ((DEBUG_MODE || isset($_GET['yuna'])) && !empty($query_stat) && is_array($query_stat)) {
+	if (tracker_debug_mode_enabled() && !empty($query_stat) && is_array($query_stat)) {
 		$total_time = 0.0;
 		$slow_count = 0;
 
@@ -1195,6 +1228,10 @@ function tracker_ensure_user_passkey(&$user)
 
 function tracker_upgrade_legacy_passkeys($limit = 200)
 {
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+		return;
+	}
+
 	$limit = max(1, min(1000, (int)$limit));
 
 	if (function_exists('tracker_cache_get') && tracker_cache_get('schema:passkeys_v2_done', false)) {

@@ -9,6 +9,17 @@ if (!function_exists('uarch_h')) {
 
 function uarch_ensure_schema()
 {
+	static $checked = false;
+
+	if ($checked) {
+		return;
+	}
+	$checked = true;
+
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+		return;
+	}
+
 	sql_query("
 		CREATE TABLE IF NOT EXISTS uarch_smiles (
 			id int unsigned NOT NULL AUTO_INCREMENT,
@@ -94,7 +105,9 @@ function uarch_smiles($active_only = true, $limit = 60)
 function uarch_smiles_query($where, $limit)
 {
 	$res = sql_query("
-		SELECT s.*, u.username AS real_username, u.class AS real_class, u.country, u.gender, u.donor, u.warned, u.enabled, u.birthday
+		SELECT s.*, u.username AS real_username, u.class AS real_class, u.country, u.gender, u.donor, u.warned, u.enabled, u.birthday,
+		       u.uploaded, u.downloaded,
+		       (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys
 		FROM uarch_smiles AS s
 		LEFT JOIN users AS u ON u.id = s.userid
 		$where
@@ -142,7 +155,8 @@ function uarch_user_line(array $smile)
 	}
 
 	if (function_exists('get_user_icons')) {
-		$html .= get_user_icons($smile);
+		$icon_user = array_merge($smile, array('id' => $userid, 'username' => $username, 'class' => $userclass));
+		$html .= get_user_icons($icon_user);
 	} elseif ((string)($smile['gender'] ?? '') === '2') {
 		$html .= '<i class="i1 s_dv"></i>';
 	}

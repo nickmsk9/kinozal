@@ -279,7 +279,22 @@ if (!is_valid_id($id)) {
 	bark($tracker_lang['invalid_id']);
 }
 
-$r = sql_query("SELECT * FROM users WHERE id = $id") or sqlerr(__FILE__, __LINE__);
+$r = sql_query("
+	SELECT u.*,
+	       c.name AS country_name,
+	       c.flagpic AS country_flagpic,
+	       (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys,
+	       COALESCE(rc.reputation_count, 0) AS reputation_count
+	FROM users AS u
+	LEFT JOIN countries AS c ON c.id = u.country
+	LEFT JOIN (
+		SELECT touserid, COUNT(*) AS reputation_count
+		FROM simpaty
+		GROUP BY touserid
+	) AS rc ON rc.touserid = u.id
+	WHERE u.id = $id
+	LIMIT 1
+") or sqlerr(__FILE__, __LINE__);
 $user = mysqli_fetch_assoc($r) or bark("Нет пользователя с таким ID $id.");
 
 if ($user["status"] == "pending") {
@@ -300,7 +315,6 @@ $rank_name = ud_h(ud_rank_name($user));
 $user_class_css = 'u' . (int)$user["class"];
 $user_icons = function_exists('get_user_icons') ? get_user_icons($user) : '';
 $daily_limit = function_exists('user_effective_torrent_limit') ? user_effective_torrent_limit($user) : 20;
-$daily_downloaded = function_exists('torrent_downloads_today') ? torrent_downloads_today($id) : 0;
 $is_own_profile = !empty($CURUSER["id"]) && (int)$CURUSER["id"] === $id;
 $donor_status = ($user["donor"] ?? "no") === "yes" ? ud_pay_until($user["pay_donor_until"] ?? "") : "";
 $vip_status = (!empty($user["pay_vip_until"]) && ($user["pay_vip_until"] ?? "0000-00-00 00:00:00") !== "0000-00-00 00:00:00") ? ud_pay_until($user["pay_vip_until"]) : "";
@@ -308,37 +322,41 @@ $vip_status = (!empty($user["pay_vip_until"]) && ($user["pay_vip_until"] ?? "000
 $country_name = "не указано";
 $country_flag = "";
 $country_id = (int)($user["country"] ?? 0);
-if ($country_id > 0) {
-	$res_country = sql_query("SELECT name, flagpic FROM countries WHERE id = $country_id LIMIT 1") or sqlerr(__FILE__, __LINE__);
-	if ($country_row = mysqli_fetch_assoc($res_country)) {
-		$country_name = ud_h($country_row["name"]);
-		$country_flag = ud_h($country_row["flagpic"]);
-	}
+if ($country_id > 0 && !empty($user['country_name'])) {
+	$country_name = ud_h($user["country_name"]);
+	$country_flag = ud_h($user["country_flagpic"] ?? "");
 }
 
 $profile_stats_loader = function () use ($id) {
-	$stats = array('torrent_count' => 0, 'comment_count' => 0, 'last_torrent' => 0);
-
-	if (function_exists('tracker_user_content_counts')) {
-		$counts = tracker_user_content_counts(array($id));
-		$stats['torrent_count'] = isset($counts[$id]) ? (int)$counts[$id]['torrents_count'] : 0;
-		$stats['comment_count'] = isset($counts[$id]) ? (int)$counts[$id]['comments_count'] : 0;
-	} else {
-		$res = sql_query("SELECT COUNT(*) FROM torrents WHERE owner = $id") or sqlerr(__FILE__, __LINE__);
-		$row = mysqli_fetch_row($res);
-		$stats['torrent_count'] = (int)($row[0] ?? 0);
-
-		$res = sql_query("SELECT COUNT(*) FROM comments WHERE user = $id") or sqlerr(__FILE__, __LINE__);
-		$row = mysqli_fetch_row($res);
-		$stats['comment_count'] = (int)($row[0] ?? 0);
+	if (function_exists('torrent_downloads_ensure_schema')) {
+		torrent_downloads_ensure_schema();
 	}
 
-	$res = sql_query("SELECT torrent FROM snatched WHERE userid = $id ORDER BY completedat DESC, last_action DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
-	if ($last = mysqli_fetch_assoc($res)) {
-		$stats['last_torrent'] = (int)$last["torrent"];
-	}
+	$res = sql_query("
+		SELECT
+			(SELECT COUNT(*) FROM torrents WHERE owner = $id) AS torrent_count,
+			(SELECT COUNT(*) FROM comments WHERE user = $id) AS comment_count,
+			(
+				SELECT torrent
+				FROM snatched
+				WHERE userid = $id
+				ORDER BY completedat DESC, last_action DESC
+				LIMIT 1
+			) AS last_torrent,
+			(
+				SELECT COUNT(*)
+				FROM user_torrent_downloads
+				WHERE userid = $id AND download_date = CURDATE()
+			) AS daily_downloaded
+	") or sqlerr(__FILE__, __LINE__);
+	$row = mysqli_fetch_assoc($res);
 
-	return $stats;
+	return array(
+		'torrent_count' => (int)($row['torrent_count'] ?? 0),
+		'comment_count' => (int)($row['comment_count'] ?? 0),
+		'last_torrent' => (int)($row['last_torrent'] ?? 0),
+		'daily_downloaded' => (int)($row['daily_downloaded'] ?? 0),
+	);
 };
 
 $profile_stats = function_exists('tracker_cache_remember')
@@ -347,6 +365,7 @@ $profile_stats = function_exists('tracker_cache_remember')
 
 $torrent_count = (int)($profile_stats['torrent_count'] ?? 0);
 $comment_count = (int)($profile_stats['comment_count'] ?? 0);
+$daily_downloaded = (int)($profile_stats['daily_downloaded'] ?? 0);
 $last_torrent_link = '<a href="/browse.php" class="' . $user_class_css . '">здесь</a>';
 if (!empty($profile_stats['last_torrent'])) {
 	$last_torrent_link = '<a href="/details.php?id=' . (int)$profile_stats['last_torrent'] . '" class="' . $user_class_css . '">здесь</a>';

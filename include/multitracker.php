@@ -658,7 +658,6 @@ function multitracker_render_details_block($torrentid)
 
 function multitracker_render_details_block_from_rows($torrentid, array $rows)
 {
-	multitracker_prune_unsupported_trackers($torrentid);
 	foreach ($rows as $idx => $row) {
 		if (($row['enabled'] ?? 'yes') !== 'yes') {
 			unset($rows[$idx]);

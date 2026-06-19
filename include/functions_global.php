@@ -552,8 +552,6 @@ function textbbcode($form, $name, $content = "") {
 
 function get_row_count($table, $suffix = "")
 {
-    global $mysqli;
-
     $table = trim((string)$table);
     $suffix = trim((string)$suffix);
 
@@ -567,19 +565,11 @@ function get_row_count($table, $suffix = "")
 
     $query = "SELECT COUNT(*) FROM {$table}{$suffix}";
 
-    $res = sql_query($query);
-
-    if (!$res) {
-        die('MySQL error in get_row_count(): ' . mysqli_error($GLOBALS['___mysqli_ston']));
-    }
+    $res = sql_query($query) or sqlerr(__FILE__, __LINE__);
 
     $row = mysqli_fetch_row($res);
 
-    if (!$row) {
-        die('MySQL fetch error in get_row_count(): ' . mysqli_error($GLOBALS['___mysqli_ston']));
-    }
-
-    return (int)$row[0];
+    return $row ? (int)$row[0] : 0;
 }
 
 
@@ -881,84 +871,117 @@ function code_nobb($matches) {
 
 function format_comment($text, $strip_html = true) {
 	global $smilies, $privatesmilies, $pic_base_url;
-	$smiliese = $smilies;
-	$s = $text;
+	static $bb = null;
+	static $html = null;
+	static $smilie_key = null;
+	static $smilie_search = array();
+	static $smilie_replace = array();
 
-	$s = str_replace(";)", ":wink:", $s);
+	$s = (string)$text;
+	if ($s === '') {
+		return '';
+	}
 
-	$s = preg_replace_callback("#\[code\](.*?)\[/code\]#si", "code_nobb", $s);
+	if (strpos($s, ';)') !== false) {
+		$s = str_replace(";)", ":wink:", $s);
+	}
+
+	if (stripos($s, '[code]') !== false) {
+		$s = preg_replace_callback("#\[code\](.*?)\[/code\]#si", "code_nobb", $s);
+	}
 
 	if ($strip_html)
 		$s = htmlspecialchars_uni($s);
 
-	$bb[] = "#\[img\](?!javascript:)([^?](?:[^\[]+|\[(?!url))*?)\[/img\]#i";
-	$html[] = "<img class=\"linked-image\" src=\"\\1\" border=\"0\" alt=\"\\1\" title=\"\\1\" />";
-	$bb[] = "#\[img=([a-zA-Z]+)\](?!javascript:)([^?](?:[^\[]+|\[(?!url))*?)\[/img\]#is";
-	$html[] = "<img class=\"linked-image\" src=\"\\2\" align=\"\\1\" border=\"0\" alt=\"\\2\" title=\"\\2\" />";
-	$bb[] = "#\[img\ alt=([a-zA-Zа-яА-Я0-9\_\-\. ]+)\](?!javascript:)([^?](?:[^\[]+|\[(?!url))*?)\[/img\]#is";
-	$html[] = "<img class=\"linked-image\" src=\"\\2\" align=\"\\1\" border=\"0\" alt=\"\\1\" title=\"\\1\" />";
-	$bb[] = "#\[img=([a-zA-Z]+) alt=([a-zA-Zа-яА-Я0-9\_\-\. ]+)\](?!javascript:)([^?](?:[^\[]+|\[(?!url))*?)\[/img\]#is";
-	$html[] = "<img class=\"linked-image\" src=\"\\3\" align=\"\\1\" border=\"0\" alt=\"\\2\" title=\"\\2\" />";
-	$bb[] = "#\[kp=([0-9]+)\]#is";
-	$html[] = "<a href=\"http://www.kinopoisk.ru/level/1/film/\\1/\" rel=\"nofollow\"><img src=\"http://www.kinopoisk.ru/rating/\\1.gif/\" alt=\"Кинопоиск\" title=\"Кинопоиск\" border=\"0\" /></a>";
-	$bb[] = "#\[url\]([\w]+?://([\w\#$%&~/.\-;:=,?@\]+]+|\[(?!url=))*?)\[/url\]#is";
-	$html[] = "<a href=\"\\1\" title=\"\\1\">\\1</a>";
-	$bb[] = "#\[url\]((www|ftp)\.([\w\#$%&~/.\-;:=,?@\]+]+|\[(?!url=))*?)\[/url\]#is";
-	$html[] = "<a href=\"http://\\1\" title=\"\\1\">\\1</a>";
-	$bb[] = "#\[url=([\w]+?://[\w\#$%&~/.\-;:=,?@\[\]+]*?)\]([^?\n\r\t].*?)\[/url\]#is";
-	$html[] = "<a href=\"\\1\" title=\"\\1\">\\2</a>";
-	$bb[] = "#\[url=((www|ftp)\.[\w\#$%&~/.\-;:=,?@\[\]+]*?)\]([^?\n\r\t].*?)\[/url\]#is";
-	$html[] = "<a href=\"http://\\1\" title=\"\\1\">\\3</a>";
-	$bb[] = "/\[url=([^()<>\s]+?)\]((\s|.)+?)\[\/url\]/i";
-	$html[] = "<a href=\"\\1\">\\2</a>";
-	$bb[] = "/\[url\]([^()<>\s]+?)\[\/url\]/i";
-	$html[] = "<a href=\"\\1\">\\1</a>";
-	$bb[] = "#\[mail\](\S+?)\[/mail\]#i";
-	$html[] = "<a href=\"mailto:\\1\">\\1</a>";
-	$bb[] = "#\[mail\s*=\s*([\.\w\-]+\@[\.\w\-]+\.[\w\-]+)\s*\](.*?)\[\/mail\]#i";
-	$html[] = "<a href=\"mailto:\\1\">\\2</a>";
-	$bb[] = "#\[color=(\#[0-9A-F]{6}|[a-z]+)\](.*?)\[/color\]#si";
-	$html[] = "<span style=\"color: \\1\">\\2</span>";
-	$bb[] = "#\[(font|family)=([A-Za-z ]+)\](.*?)\[/\\1\]#si";
-	$html[] = "<span style=\"font-family: \\2\">\\3</span>";
-	$bb[] = "#\[size=([0-9]+)\](.*?)\[/size\]#si";
-	$html[] = "<span style=\"font-size: \\1\">\\2</span>";
-	$bb[] = "#\[(left|right|center|justify)\](.*?)\[/\\1\]#is";
-	$html[] = "<div align=\"\\1\">\\2</div>";
-	$bb[] = "#\[b\](.*?)\[/b\]#si";
-	$html[] = "<b>\\1</b>";
-	$bb[] = "#\[i\](.*?)\[/i\]#si";
-	$html[] = "<i>\\1</i>";
-	$bb[] = "#\[u\](.*?)\[/u\]#si";
-	$html[] = "<u>\\1</u>";
-	$bb[] = "#\[s\](.*?)\[/s\]#si";
-	$html[] = "<s>\\1</s>";
-	$bb[] = "#\[li\]#si";
-	$html[] = "<li>";
-	$bb[] = "#\[hr\]#si";
-	$html[] = "<hr>";
-	$bb[] = "#\[youtube=([[:alnum:]]+)\]#si";
-	$html[] = '<iframe width="640" height="360" src="//www.youtube.com/embed/\\1?rel=0" frameborder="0" allowfullscreen></iframe>';
+	if ($bb === null || $html === null) {
+		$bb = array();
+		$html = array();
+		$bb[] = "#\[img\](?!javascript:)([^?](?:[^\[]+|\[(?!url))*?)\[/img\]#i";
+		$html[] = "<img class=\"linked-image\" src=\"\\1\" border=\"0\" alt=\"\\1\" title=\"\\1\" />";
+		$bb[] = "#\[img=([a-zA-Z]+)\](?!javascript:)([^?](?:[^\[]+|\[(?!url))*?)\[/img\]#is";
+		$html[] = "<img class=\"linked-image\" src=\"\\2\" align=\"\\1\" border=\"0\" alt=\"\\2\" title=\"\\2\" />";
+		$bb[] = "#\[img\ alt=([a-zA-Zа-яА-Я0-9\_\-\. ]+)\](?!javascript:)([^?](?:[^\[]+|\[(?!url))*?)\[/img\]#is";
+		$html[] = "<img class=\"linked-image\" src=\"\\2\" align=\"\\1\" border=\"0\" alt=\"\\1\" title=\"\\1\" />";
+		$bb[] = "#\[img=([a-zA-Z]+) alt=([a-zA-Zа-яА-Я0-9\_\-\. ]+)\](?!javascript:)([^?](?:[^\[]+|\[(?!url))*?)\[/img\]#is";
+		$html[] = "<img class=\"linked-image\" src=\"\\3\" align=\"\\1\" border=\"0\" alt=\"\\2\" title=\"\\2\" />";
+		$bb[] = "#\[kp=([0-9]+)\]#is";
+		$html[] = "<a href=\"http://www.kinopoisk.ru/level/1/film/\\1/\" rel=\"nofollow\"><img src=\"http://www.kinopoisk.ru/rating/\\1.gif/\" alt=\"Кинопоиск\" title=\"Кинопоиск\" border=\"0\" /></a>";
+		$bb[] = "#\[url\]([\w]+?://([\w\#$%&~/.\-;:=,?@\]+]+|\[(?!url=))*?)\[/url\]#is";
+		$html[] = "<a href=\"\\1\" title=\"\\1\">\\1</a>";
+		$bb[] = "#\[url\]((www|ftp)\.([\w\#$%&~/.\-;:=,?@\]+]+|\[(?!url=))*?)\[/url\]#is";
+		$html[] = "<a href=\"http://\\1\" title=\"\\1\">\\1</a>";
+		$bb[] = "#\[url=([\w]+?://[\w\#$%&~/.\-;:=,?@\[\]+]*?)\]([^?\n\r\t].*?)\[/url\]#is";
+		$html[] = "<a href=\"\\1\" title=\"\\1\">\\2</a>";
+		$bb[] = "#\[url=((www|ftp)\.[\w\#$%&~/.\-;:=,?@\[\]+]*?)\]([^?\n\r\t].*?)\[/url\]#is";
+		$html[] = "<a href=\"http://\\1\" title=\"\\1\">\\3</a>";
+		$bb[] = "/\[url=([^()<>\s]+?)\]((\s|.)+?)\[\/url\]/i";
+		$html[] = "<a href=\"\\1\">\\2</a>";
+		$bb[] = "/\[url\]([^()<>\s]+?)\[\/url\]/i";
+		$html[] = "<a href=\"\\1\">\\1</a>";
+		$bb[] = "#\[mail\](\S+?)\[/mail\]#i";
+		$html[] = "<a href=\"mailto:\\1\">\\1</a>";
+		$bb[] = "#\[mail\s*=\s*([\.\w\-]+\@[\.\w\-]+\.[\w\-]+)\s*\](.*?)\[\/mail\]#i";
+		$html[] = "<a href=\"mailto:\\1\">\\2</a>";
+		$bb[] = "#\[color=(\#[0-9A-F]{6}|[a-z]+)\](.*?)\[/color\]#si";
+		$html[] = "<span style=\"color: \\1\">\\2</span>";
+		$bb[] = "#\[(font|family)=([A-Za-z ]+)\](.*?)\[/\\1\]#si";
+		$html[] = "<span style=\"font-family: \\2\">\\3</span>";
+		$bb[] = "#\[size=([0-9]+)\](.*?)\[/size\]#si";
+		$html[] = "<span style=\"font-size: \\1\">\\2</span>";
+		$bb[] = "#\[(left|right|center|justify)\](.*?)\[/\\1\]#is";
+		$html[] = "<div align=\"\\1\">\\2</div>";
+		$bb[] = "#\[b\](.*?)\[/b\]#si";
+		$html[] = "<b>\\1</b>";
+		$bb[] = "#\[i\](.*?)\[/i\]#si";
+		$html[] = "<i>\\1</i>";
+		$bb[] = "#\[u\](.*?)\[/u\]#si";
+		$html[] = "<u>\\1</u>";
+		$bb[] = "#\[s\](.*?)\[/s\]#si";
+		$html[] = "<s>\\1</s>";
+		$bb[] = "#\[li\]#si";
+		$html[] = "<li>";
+		$bb[] = "#\[hr\]#si";
+		$html[] = "<hr>";
+		$bb[] = "#\[youtube=([[:alnum:]]+)\]#si";
+		$html[] = '<iframe width="640" height="360" src="//www.youtube.com/embed/\\1?rel=0" frameborder="0" allowfullscreen></iframe>';
+	}
 
-	$s = preg_replace($bb, $html, $s);
-	$s = format_quote_fieldsets($s);
+	if (strpos($s, '[') !== false) {
+		$s = preg_replace($bb, $html, $s);
+		if (stripos($s, '[/quote]') !== false) {
+			$s = format_quote_fieldsets($s);
+		}
+	}
 
 	// Linebreaks
 	$s = nl2br($s);
 
 	// URLs
-	$s = format_urls($s);
+	if (strpos($s, '://') !== false) {
+		$s = format_urls($s);
+	}
 	//$s = format_local_urls($s);
 
 	// Maintain spacing
 	//$s = str_replace("  ", " &nbsp;", $s);
 
-	foreach ($smiliese as $code => $url)
-		$s = str_replace($code,
-						 "<img border=\"0\" src=\"$pic_base_url/smilies/$url\">", $s);
-
-	foreach ($privatesmilies as $code => $url)
-		$s = str_replace($code, "<img border=\"0\" src=\"$pic_base_url/smilies/$url\">", $s);
+	$current_smilie_key = (string)$pic_base_url . ':' . count((array)$smilies) . ':' . count((array)$privatesmilies);
+	if ($current_smilie_key !== $smilie_key) {
+		$smilie_key = $current_smilie_key;
+		$smilie_search = array();
+		$smilie_replace = array();
+		foreach ((array)$smilies as $code => $url) {
+			$smilie_search[] = $code;
+			$smilie_replace[] = "<img border=\"0\" src=\"$pic_base_url/smilies/$url\">";
+		}
+		foreach ((array)$privatesmilies as $code => $url) {
+			$smilie_search[] = $code;
+			$smilie_replace[] = "<img border=\"0\" src=\"$pic_base_url/smilies/$url\">";
+		}
+	}
+	if ($smilie_search) {
+		$s = str_replace($smilie_search, $smilie_replace, $s);
+	}
 
 	while (preg_match("#\[hide\](.*?)\[/hide\]#si", $s)) {
 		$s = encode_spoiler($s);
@@ -985,42 +1008,36 @@ function get_user_class(): int
 
 function get_user_class_name($class) {
 	global $tracker_lang;
-	switch ((int)$class) {
-		case UC_USER:
-			return $tracker_lang['class_user'] ?? 'Зритель';
+	static $fallbacks = null;
 
-		case UC_POWER_USER:
-			return $tracker_lang['class_power_user'] ?? 'Опытный Зритель';
-
-		case UC_HONOR_USER:
-			return $tracker_lang['class_honor_user'] ?? 'Заслуженный Зритель';
-
-		case UC_VIP:
-			return $tracker_lang['class_vip'] ?? 'ВИП';
-
-		case UC_UPLOADER:
-			return $tracker_lang['class_uploader'] ?? 'Кинооператор';
-
-		case UC_SENIOR_UPLOADER:
-			return $tracker_lang['class_senior_uploader'] ?? 'Главный Кинооператор';
-
-		case UC_MANAGER:
-			return $tracker_lang['class_manager'] ?? 'Менеджер';
-
-		case UC_MODERATOR:
-			return $tracker_lang['class_moderator'] ?? 'Редактор';
-
-		case UC_ADMINISTRATOR:
-			return $tracker_lang['class_administrator'] ?? 'Администратор';
-
-		case UC_SYSOP:
-			return $tracker_lang['class_sysop'] ?? 'Директор';
+	if ($fallbacks === null) {
+		$fallbacks = array(
+			UC_USER => array('class_user', 'Зритель'),
+			UC_POWER_USER => array('class_power_user', 'Опытный Зритель'),
+			UC_HONOR_USER => array('class_honor_user', 'Заслуженный Зритель'),
+			UC_VIP => array('class_vip', 'ВИП'),
+			UC_UPLOADER => array('class_uploader', 'Кинооператор'),
+			UC_SENIOR_UPLOADER => array('class_senior_uploader', 'Главный Кинооператор'),
+			UC_MANAGER => array('class_manager', 'Менеджер'),
+			UC_MODERATOR => array('class_moderator', 'Редактор'),
+			UC_ADMINISTRATOR => array('class_administrator', 'Администратор'),
+			UC_SYSOP => array('class_sysop', 'Директор'),
+		);
 	}
-	return "";
+
+	$class = (int)$class;
+	if (!isset($fallbacks[$class])) {
+		return '';
+	}
+
+	$key = $fallbacks[$class][0];
+	return $tracker_lang[$key] ?? $fallbacks[$class][1];
 }
 
 function is_valid_user_class($class) {
-	return is_numeric($class) && floor($class) == $class && $class >= UC_USER && $class <= UC_SYSOP;
+	return is_int($class) || ctype_digit((string)$class)
+		? (int)$class >= UC_USER && (int)$class <= UC_SYSOP
+		: false;
 }
 
 function user_daily_torrent_limit($class)
@@ -1097,6 +1114,11 @@ function torrent_downloads_ensure_schema()
 	if ($ready) {
 		return;
 	}
+	$ready = true;
+
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+		return;
+	}
 
 	sql_query("
 		CREATE TABLE IF NOT EXISTS user_torrent_downloads (
@@ -1109,8 +1131,6 @@ function torrent_downloads_ensure_schema()
 			KEY torrent (torrent)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
-
-	$ready = true;
 }
 
 function torrent_downloads_today($userid)
@@ -1228,8 +1248,23 @@ function sql_ts_to_ut($s) {
 }
 
 function sql_timestamp_to_unix_timestamp($s) {
-	return mktime(substr($s, 11, 2), substr($s, 14, 2), substr($s, 17, 2), substr($s, 5, 2), substr($s, 8, 2),
+	static $cache = array();
+
+	$s = (string)$s;
+	if (isset($cache[$s])) {
+		return $cache[$s];
+	}
+	if (strlen($s) < 19) {
+		return 0;
+	}
+
+	$ts = mktime(substr($s, 11, 2), substr($s, 14, 2), substr($s, 17, 2), substr($s, 5, 2), substr($s, 8, 2),
 				  substr($s, 0, 4));
+	if (count($cache) < 1024) {
+		$cache[$s] = $ts;
+	}
+
+	return $ts;
 }
 
 function get_ratio_color($ratio) {

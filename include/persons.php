@@ -11,6 +11,17 @@ function persons_h($value)
 
 function persons_ensure_schema()
 {
+	static $checked = false;
+
+	if ($checked) {
+		return;
+	}
+	$checked = true;
+
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+		return;
+	}
+
 	sql_query("
 		CREATE TABLE IF NOT EXISTS persons (
 			id int(10) unsigned NOT NULL auto_increment,
@@ -269,7 +280,14 @@ function persons_torrent_like_conditions(array $person)
 
 function persons_torrent_count(array $person)
 {
+	static $cache = array();
+
 	$where = persons_torrent_like_conditions($person);
+	$cache_key = md5($where);
+	if (array_key_exists($cache_key, $cache)) {
+		return $cache[$cache_key];
+	}
+
 	$res = sql_query("
 		SELECT COUNT(*) AS c
 		FROM torrents AS t
@@ -277,7 +295,8 @@ function persons_torrent_count(array $person)
 		WHERE t.visible = 'yes' AND t.banned = 'no' AND $where
 	") or sqlerr(__FILE__, __LINE__);
 	$row = mysqli_fetch_assoc($res);
-	return (int)($row['c'] ?? 0);
+	$cache[$cache_key] = (int)($row['c'] ?? 0);
+	return $cache[$cache_key];
 }
 
 function persons_torrents(array $person, $sort = 'date', $offset = 0, $limit = 50)

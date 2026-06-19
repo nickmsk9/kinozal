@@ -599,33 +599,7 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 	$offset = $page * $perpage;
 	$pager = details_paginator('/details.php?id=' . (int)$torrentid . '&amp;', $page, $pages);
 
-	$rows = function_exists('tracker_cache_remember')
-		? tracker_cache_remember('details:comments:v2:' . (int)$torrentid . ':' . (int)$comment_count . ':' . $page, 60, function () use ($torrentid, $offset, $perpage) {
-			$res = sql_query("
-				SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
-				       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
-				       (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys,
-				       co.name AS country_name, co.flagpic AS country_flagpic,
-				       e.username AS editedbyname
-				FROM comments AS c
-				LEFT JOIN users AS u ON u.id = c.user
-				LEFT JOIN countries AS co ON co.id = u.country
-				LEFT JOIN users AS e ON e.id = c.editedby
-				WHERE c.torrent = " . (int)$torrentid . "
-				ORDER BY c.id DESC
-				LIMIT $offset, $perpage
-			") or sqlerr(__FILE__, __LINE__);
-
-			$cached_rows = array();
-			while ($row = mysqli_fetch_assoc($res)) {
-				$cached_rows[] = $row;
-			}
-
-			return $cached_rows;
-		})
-		: null;
-
-	if ($rows === null) {
+	$load_comments = function () use ($torrentid, $offset, $perpage) {
 		$res = sql_query("
 			SELECT c.id, c.ip, c.text, c.user, c.added, c.editedby, c.editedat,
 			       u.username, u.class, u.avatar, u.country, u.donor, u.gender, u.birthday, u.warned, u.enabled, u.uploaded, u.downloaded,
@@ -645,6 +619,16 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 		while ($row = mysqli_fetch_assoc($res)) {
 			$rows[] = $row;
 		}
+
+		return $rows;
+	};
+
+	if ((int)$comment_count <= 0) {
+		$rows = array();
+	} elseif (function_exists('tracker_cache_remember')) {
+		$rows = tracker_cache_remember('details:comments:v2:' . (int)$torrentid . ':' . (int)$comment_count . ':' . $page, 60, $load_comments);
+	} else {
+		$rows = $load_comments();
 	}
 
 	$html = '<div class="bx2_0" id="startcomments">';
@@ -740,8 +724,6 @@ if (!is_valid_id($id)) {
 $CURUSER = $CURUSER ?? null;
 $viewer_id = $CURUSER ? (int)$CURUSER['id'] : 0;
 
-multitracker_sync_local_peer_counts($id);
-
 $res = sql_query("
 	SELECT t.*, td.descr_hash, td.descr_parsed, c.name AS cat_name, c.image AS cat_pic,
 	       u.username AS owner_username, u.class AS owner_class, u.donor AS owner_donor, u.gender AS owner_gender,
@@ -766,10 +748,10 @@ $res = sql_query("
 	       		'announce_url', tt.announce_url,
 	       		'external_info_hash', tt.external_info_hash,
 	       		'is_primary', tt.is_primary,
-	       		'seeders', tt.seeders,
-	       		'leechers', tt.leechers,
-	       		'completed', tt.completed,
-	       		'last_checked', tt.last_checked,
+	       		'seeders', IF(tt.is_primary = 'yes', t.seeders, tt.seeders),
+	       		'leechers', IF(tt.is_primary = 'yes', t.leechers, tt.leechers),
+	       		'completed', IF(tt.is_primary = 'yes', t.times_completed, tt.completed),
+	       		'last_checked', IF(tt.is_primary = 'yes', COALESCE(tt.last_checked, t.last_action), tt.last_checked),
 	       		'last_error', tt.last_error,
 	       		'enabled', tt.enabled
 	       	)), JSON_ARRAY())
