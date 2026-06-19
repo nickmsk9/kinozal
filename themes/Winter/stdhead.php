@@ -135,8 +135,6 @@ $page_title = $title !== '' ? $title : $site_name;
     <?php } ?>
 
     <script type="text/javascript" src="js/jquery.js"></script>
-    <script type="text/javascript" src="js/jquery.migrate.js"></script>
-    <script type="text/javascript" src="js/jquery.cookies.js"></script>
     <script type="text/javascript" src="js/resizer.js"></script>
     <script type="text/javascript" src="js/blocks.js"></script>
     <script type="text/javascript" src="js/use.js"></script>
@@ -198,10 +196,6 @@ $page_title = $title !== '' ? $title : $site_name;
 
         $(document).ready(function() {
             initSpoilers('body');
-
-            if ($.fn.lightBox) {
-                $('a[rel*=lightbox]').lightBox();
-            }
         });
     </script>
 </head>

@@ -1,4 +1,5 @@
 function block_switch(id) {
+    id = String(id);
     const klappText = document.getElementById('sb' + id);
     const klappBild = document.getElementById('picb' + id);
 
@@ -11,21 +12,44 @@ function block_switch(id) {
         klappBild.src = 'pic/minus.gif';
     }
 
-    // Работа с кукой hb (оставляем serialize / unserialize для совместимости)
-    let hb = unserialize(getCookie('hb')) || [];
+    // Cookie hb читает PHP через unserialize(), поэтому оставляем PHP-serialized формат.
+    let hb = parseHiddenBlockIds(getCookie('hb'));
 
-    if (!Array.isArray(hb)) hb = []; // на случай, если unserialize вернул не массив
-
-    if (hb.includes(id)) {
+    if (hb.indexOf(id) !== -1) {
         hb.splice(hb.indexOf(id), 1);
     } else {
         hb.push(id);
     }
 
-    setCookie('hb', serialize(hb));
+    setCookie('hb', serializeHiddenBlockIds(hb));
 
     // Анимация скольжения (jQuery остается для slideToggle)
     jQuery('#sb' + id).slideToggle('medium');
+}
+
+function parseHiddenBlockIds(value) {
+    if (!value || value.indexOf('a:') !== 0) return [];
+
+    const ids = [];
+    const re = /i:\d+;(?:s:\d+:"([^"]*)";|i:(-?\d+);)/g;
+    let match;
+
+    while ((match = re.exec(value)) !== null) {
+        ids.push(String(match[1] !== undefined ? match[1] : match[2]));
+    }
+
+    return ids;
+}
+
+function serializeHiddenBlockIds(ids) {
+    const parts = [];
+
+    ids.forEach((id, index) => {
+        id = String(id);
+        parts.push('i:' + index + ';s:' + id.length + ':"' + id + '";');
+    });
+
+    return 'a:' + ids.length + ':{' + parts.join('') + '}';
 }
 
 /* ----- Вспомогательные функции для работы с cookie (без jQuery) ----- */

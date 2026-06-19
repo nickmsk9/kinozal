@@ -1,19 +1,19 @@
 <?php
 
 if (!defined('UC_SYSOP'))
-	die('Direct access denied.');
+    die('Direct access denied.');
 
 global $hide_right_blocks;
 
-	show_blocks('d');
+show_blocks('d');
 ?>
 </td>
 <?php if (empty($hide_right_blocks)) { ?>
-<td valign="top" width="155">
-<?php
-	show_blocks('r');
-?>
-</td>
+    <td valign="top" width="170">
+        <?php
+        show_blocks('r');
+        ?>
+    </td>
 <?php } ?>
 <?php
 
@@ -51,8 +51,8 @@ print("
         <br />
         Страничка сгенерирована за {$secondsView} секунд (gzip {$gzipStatus}, cache showing)
         <br />
-        <b>{$queries}</b>, <b>{$sqlPercent}%</b> 
-        (queries, {$sqlTimeView} -> sql, {$cachedQueries} -> cached) - 
+        <b>{$queries}</b>, <b>{$sqlPercent}%</b>
+        (queries, {$sqlTimeView} -> sql, {$cachedQueries} -> cached) -
         <b>{$phpPercent}%</b> ({$phpTimeView} -> php, {$delayedTime} -> delayed)
     </td>
 </tr>

@@ -242,7 +242,7 @@
             const plainText = $testcomm.html()
                 .replace(/<br[^>]*>/gi, "\n")
                 .replace(/(\r\n|\r|\n)+/g, "\n");
-            const trimmed = $.trim($testcomm.text() || plainText);
+            const trimmed = ($testcomm.text() || plainText).trim();
             $('#text').val('\n\n[quote=' + name + ']' + trimmed + '[/quote]');
             showcomm(1);
             return false;
@@ -297,7 +297,13 @@
         const $retio = $('#user_retio');
         if (!$retio.html()) {
             $retio.html('<div class="pad5x5 b">Загрузка...</div>');
-            $retio.load('/get_srv_user_retio.php');
+            $.get('/get_srv_user_retio.php')
+                .done(function (html) {
+                    $retio.html(html);
+                })
+                .fail(function () {
+                    $retio.html('Ошибка загрузки данных.');
+                });
         } else {
             $retio.html('');
         }
