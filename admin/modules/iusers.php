@@ -61,7 +61,7 @@ function iUsers(): void
                     } else {
                         $secret = mksecret();
                         $updates[] = 'secret = ' . sqlesc($secret);
-                        $updates[] = 'passhash = ' . sqlesc(md5($secret . $password . $secret));
+                        $updates[] = 'passhash = ' . sqlesc(tracker_password_hash($password));
                         $updates[] = 'passkey = ' . sqlesc(tracker_generate_passkey());
                         $success[] = 'пароль';
                     }

@@ -11,7 +11,7 @@ function bark($msg) {
 
 function profile_check_password($password) {
 	global $CURUSER;
-	return md5($CURUSER["secret"] . $password . $CURUSER["secret"]) === $CURUSER["passhash"];
+	return tracker_password_verify($password, $CURUSER["secret"], $CURUSER["passhash"]);
 }
 
 function profile_require_password($password) {
@@ -115,7 +115,7 @@ if ($act === 1) {
 	}
 
 	$sec = mksecret();
-	$passhash = md5($sec . $newpassword . $sec);
+	$passhash = tracker_password_hash($newpassword);
 	$updateset[] = "secret = " . sqlesc($sec);
 	$updateset[] = "passhash = " . sqlesc($passhash);
 	logincookie($CURUSER["id"], $passhash);

@@ -18,14 +18,15 @@ if (!defined('IN_TRACKER')) {
 
     /*
      * PHP environment.
-     * На production лучше display_errors = 0,
-     * но оставлено 1, если проект сейчас в режиме отладки.
+     * Ошибки показываем только при явном KZ_DEBUG=1/TRACKER_DEBUG=1.
      */
+    $debug_errors = in_array(strtolower((string)(getenv('KZ_DEBUG') ?: getenv('TRACKER_DEBUG') ?: '0')), array('1', 'true', 'yes', 'on'), true);
     error_reporting(E_ALL);
     ini_set('error_reporting', (string) E_ALL);
-    ini_set('display_errors', '1');
+    ini_set('display_errors', $debug_errors ? '1' : '0');
     ini_set('display_startup_errors', '0');
     ini_set('ignore_repeated_errors', '1');
+    ini_set('log_errors', '1');
 
     ignore_user_abort(true);
     set_time_limit(0);

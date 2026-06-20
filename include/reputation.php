@@ -362,8 +362,8 @@ function profile_menu_html($user, $viewer)
 	} else {
 		$html .= '<li class="tp">&#1044;&#1077;&#1081;&#1089;&#1090;&#1074;&#1080;&#1103;</li>';
 		$html .= '<li><span class="bulet"></span><a href="/bookmarks.php?type=3&amp;add=' . $id . '&amp;hash4u=' . $hash . '">&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1079;&#1072;&#1082;&#1083;&#1072;&#1076;&#1082;&#1080;</a></li>';
-		$html .= '<li><span class="bulet"></span><a href="/friends.php?action=add&amp;type=friend&amp;targetid=' . $id . '">&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1076;&#1088;&#1091;&#1079;&#1100;&#1103;</a></li>';
-		$html .= '<li><span class="bulet"></span><a href="/friends.php?action=add&amp;type=block&amp;targetid=' . $id . '">&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1080;&#1075;&#1085;&#1086;&#1088;</a></li>';
+			$html .= '<li><span class="bulet"></span><a href="/friends.php?action=add&amp;type=friend&amp;targetid=' . $id . '&amp;hash4u=' . $hash . '">&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1076;&#1088;&#1091;&#1079;&#1100;&#1103;</a></li>';
+			$html .= '<li><span class="bulet"></span><a href="/friends.php?action=add&amp;type=block&amp;targetid=' . $id . '&amp;hash4u=' . $hash . '">&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1080;&#1075;&#1085;&#1086;&#1088;</a></li>';
 		$html .= '<li class="tp">&#1043;&#1086;&#1083;&#1086;&#1089;&#1072;</li>';
 		$html .= '<li><span class="bulet"></span><a href="/pay_mode_b.php?userid=' . $id . '">&#1059;&#1087;&#1088;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; &#1075;&#1086;&#1083;&#1086;&#1089;&#1072;&#1084;&#1080;</a></li>';
 		$html .= '<li><span class="bulet"></span><a href="/pay_mode_b.php?userid=' . $id . '&amp;vote=plus">&#1055;&#1086;&#1076;&#1072;&#1088;&#1080;&#1090;&#1100; &#1088;&#1077;&#1081;&#1090;&#1080;&#1085;&#1075;</a></li>';

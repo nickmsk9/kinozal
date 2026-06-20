@@ -6,14 +6,11 @@ require_once("include/messages.php");
 dbconn(false);
 loggedinorreturn();
 parked();
+tracker_require_form_token('POST');
 
 $receiver_id = (int)($_POST['receiver'] ?? 0);
 if (!is_valid_id($receiver_id)) {
 	stderr($tracker_lang['error'], 'Неверный ID получателя.');
-}
-
-if (isset($_POST['hash4u']) && $_POST['hash4u'] !== '' && isset($CURUSER['hash4u']) && $_POST['hash4u'] !== $CURUSER['hash4u']) {
-	stderr($tracker_lang['error'], 'Неверный ключ формы.');
 }
 
 $subject = trim((string)($_POST['subject'] ?? ''));
@@ -43,9 +40,7 @@ sql_query("
 ") or sqlerr(__FILE__, __LINE__);
 
 $returnto = trim((string)($_POST['returnto'] ?? ''));
-if ($returnto === '' || !preg_match('#^https?://|^/#i', $returnto)) {
-	$returnto = '/inbox.php?out=1';
-}
+$returnto = tracker_safe_local_redirect($returnto, '/inbox.php?out=1');
 header('Location: ' . $returnto);
 exit;
 

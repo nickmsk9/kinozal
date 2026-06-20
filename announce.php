@@ -78,6 +78,7 @@ $user_res = mysql_query('SELECT id, uploaded, downloaded, enabled, parked, class
 $az = mysqli_fetch_array($user_res);
 if (!$az)
 	err('Invalid passkey! Re-download the .torrent from '.$DEFAULTBASEURL);
+$userid = (int)$az['id'];
 $hash = bin2hex($info_hash);
 // Announce works with local peers only; external tracker stats live outside `peers`.
 $res = mysql_query('SELECT id, visible, banned, free, seeders, leechers, times_completed, seeders + leechers AS numpeers, UNIX_TIMESTAMP(added) AS ts FROM torrents WHERE info_hash = "'.$hash.'"') or err('Torrents error 1 (select)');
@@ -86,8 +87,8 @@ if (!$torrent)
 	err('Torrent not registered with this tracker.');
 $torrentid = (int)$torrent['id'];
 $numpeers = (int)$torrent['numpeers'];
-$selfwhere = 'torrent = '.$torrentid.' AND peer_id = '.sqlesc($peer_id).' AND passkey = '.sqlesc($passkey);
-$selfexpr = 'peer_id = '.sqlesc($peer_id).' AND passkey = '.sqlesc($passkey);
+$selfwhere = 'torrent = '.$torrentid.' AND userid = '.$userid.' AND peer_id = '.sqlesc($peer_id);
+$selfexpr = 'userid = '.$userid.' AND peer_id = '.sqlesc($peer_id);
 
 $announce_wait = 10;
 $self = null;
@@ -107,7 +108,7 @@ $stopped_without_self = (!isset($self) && $event == 'stopped');
 if (!isset($self) && !$stopped_without_self) {
 	if ($az['enabled'] == 'no')
 		err('This account is disabled.');
-	$userid = $az['id'];
+	$userid = (int)$az['id'];
 	if ($az['class'] < UC_VIP) {
 		if ($use_wait) {
 			$gigs = $az['uploaded'] / (1024*1024*1024);
@@ -130,24 +131,28 @@ if (!isset($self) && !$stopped_without_self) {
 	$passkey_ip = $az['passkey_ip'];
 	if ($passkey_ip != '' && getip() != $passkey_ip)
 		err('Unauthorized IP for this passkey!');
-    if ($az['parked'] == 'yes')
-        err('Error, your account is parked!');
-    if (portblacklisted($port))
-        err('Port '.$port.' is blacklisted.');
-    else {
-        $connect_timeout = ($nc == 'yes') ? 3 : 1;
-        $sockres = check_port($ip, $port, $connect_timeout);
-        if (!$sockres) {
-            $connectable = 'no';
-            if ($nc == 'yes')
-                err('Your client is not connectable! Check your Port-configuration or search on forums.');
-        }else {
-            $connectable = 'yes';
-            @fclose($sockres);
-        }
-    }
+	if ($az['parked'] == 'yes')
+		err('Error, your account is parked!');
+	if (portblacklisted($port))
+		err('Port '.$port.' is blacklisted.');
+	else {
+		$connectable = 'yes';
+		$should_check_connectable = !empty($announce_check_connectable) || $nc == 'yes';
+		if ($should_check_connectable) {
+			$connect_timeout = ($nc == 'yes') ? 3 : 1;
+			$sockres = check_port($ip, $port, $connect_timeout);
+			if (!$sockres) {
+				$connectable = 'no';
+				if ($nc == 'yes')
+					err('Your client is not connectable! Check your Port-configuration or search on forums.');
+			} else {
+				$connectable = 'yes';
+				@fclose($sockres);
+			}
+		}
+	}
 
-    mysql_query("INSERT LOW_PRIORITY INTO snatched (torrent, userid, port, startdat, last_action, connectable) SELECT $torrentid, $userid, $port, $dt, $dt, '$connectable' WHERE NOT EXISTS (SELECT 1 FROM snatched WHERE torrent = $torrentid AND userid = $userid LIMIT 1)") or err('Snatched error 1 (insert)');
+    mysql_query("INSERT LOW_PRIORITY INTO snatched (torrent, userid, port, startdat, last_action, connectable) VALUES ($torrentid, $userid, $port, $dt, $dt, '$connectable') ON DUPLICATE KEY UPDATE port = VALUES(port), startdat = COALESCE(startdat, VALUES(startdat)), last_action = VALUES(last_action), connectable = VALUES(connectable)") or err('Snatched error 1 (insert)');
     $ret = mysql_query("INSERT LOW_PRIORITY INTO peers (connectable, torrent, peer_id, ip, port, uploaded, downloaded, to_go, started, last_action, seeder, userid, agent, uploadoffset, downloadoffset, passkey) VALUES ('$connectable', $torrentid, " . sqlesc($peer_id) . ", " . sqlesc($ip) . ", $port, $uploaded, $downloaded, $left, NOW(), NOW(), '$seeder', $userid, " . sqlesc($agent) . ", $uploaded, $downloaded, " . sqlesc($passkey) . ")") or err('Peers error 4 (insert)');
     if ($ret && mysql_affected_rows()) {
         if ($seeder == 'yes')

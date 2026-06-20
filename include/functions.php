@@ -342,6 +342,164 @@ function tracker_attach_user_content_counts(array $rows, $id_field = 'id')
     return $rows;
 }
 
+function tracker_password_hash($password): string
+{
+    $hash = password_hash((string)$password, PASSWORD_DEFAULT);
+    if (!is_string($hash) || $hash === '') {
+        throw new RuntimeException('Unable to hash password.');
+    }
+
+    return $hash;
+}
+
+function tracker_password_is_modern($hash): bool
+{
+    $info = password_get_info((string)$hash);
+
+    return isset($info['algoName']) && $info['algoName'] !== 'unknown';
+}
+
+function tracker_legacy_password_hash($password, $secret): string
+{
+    return md5((string)$secret . (string)$password . (string)$secret);
+}
+
+function tracker_password_verify($password, $secret, $hash): bool
+{
+    $password = (string)$password;
+    $hash = (string)$hash;
+
+    if (tracker_password_is_modern($hash)) {
+        return password_verify($password, $hash);
+    }
+
+    if (hash_equals($hash, tracker_legacy_password_hash($password, $secret))) {
+        return true;
+    }
+
+    $trimmed = trim($password);
+    return $trimmed !== $password && hash_equals($hash, tracker_legacy_password_hash($trimmed, $secret));
+}
+
+function tracker_password_needs_rehash($hash): bool
+{
+    $hash = (string)$hash;
+
+    if (!tracker_password_is_modern($hash)) {
+        return true;
+    }
+
+    return password_needs_rehash($hash, PASSWORD_DEFAULT);
+}
+
+function tracker_user_form_token(?array $user = null): string
+{
+    if ($user === null) {
+        $user = isset($GLOBALS['CURUSER']) && is_array($GLOBALS['CURUSER']) ? $GLOBALS['CURUSER'] : array();
+    }
+
+    $id = (int)($user['id'] ?? 0);
+    $passhash = (string)($user['passhash'] ?? '');
+    $secret = (string)($user['secret'] ?? '');
+
+    if ($id <= 0 || $passhash === '') {
+        return '';
+    }
+
+    $salt = defined('COOKIE_SALT') ? COOKIE_SALT : ($GLOBALS['_COOKIE_SALT'] ?? 'tracker-cookie-salt');
+
+    return hash_hmac('sha256', $id . '|' . $passhash . '|' . $secret, (string)$salt);
+}
+
+function tracker_request_token($method = null): string
+{
+    $method = strtoupper((string)($method ?: ($_SERVER['REQUEST_METHOD'] ?? 'GET')));
+
+    if ($method === 'POST') {
+        return (string)($_POST['hash4u'] ?? $_POST['csrf_token'] ?? '');
+    }
+
+    if ($method === 'GET') {
+        return (string)($_GET['hash4u'] ?? $_GET['csrf_token'] ?? '');
+    }
+
+    return (string)($_REQUEST['hash4u'] ?? $_REQUEST['csrf_token'] ?? '');
+}
+
+function tracker_verify_form_token($token = null, ?array $user = null): bool
+{
+    $expected = tracker_user_form_token($user);
+    $token = (string)($token ?? tracker_request_token());
+
+    return $expected !== '' && $token !== '' && hash_equals($expected, $token);
+}
+
+function tracker_require_form_token($method = null): void
+{
+    if (tracker_verify_form_token(tracker_request_token($method))) {
+        return;
+    }
+
+    http_response_code(403);
+
+    if (function_exists('stderr')) {
+        $lang = $GLOBALS['tracker_lang'] ?? array();
+        stderr($lang['error'] ?? 'Ошибка', 'Неверный ключ формы. Обновите страницу и повторите действие.');
+    }
+
+    exit('Invalid form token.');
+}
+
+function tracker_token_query(?array $user = null): string
+{
+    $token = tracker_user_form_token($user);
+
+    return $token !== '' ? 'hash4u=' . rawurlencode($token) : '';
+}
+
+function tracker_cookie_secure(): bool
+{
+    if (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') {
+        return true;
+    }
+
+    return ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443);
+}
+
+function tracker_setcookie($name, $value, $expires = 0): bool
+{
+    return setcookie((string)$name, (string)$value, array(
+        'expires' => (int)$expires,
+        'path' => '/',
+        'secure' => tracker_cookie_secure(),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ));
+}
+
+function tracker_safe_local_redirect($returnto, $fallback = '/'): string
+{
+    $returnto = trim((string)$returnto);
+
+    if ($returnto === '' || preg_match('/[\r\n]/', $returnto)) {
+        return $fallback;
+    }
+
+    if (preg_match('#^https?://#i', $returnto)) {
+        return $fallback;
+    }
+
+    if ($returnto[0] !== '/') {
+        $returnto = '/' . ltrim($returnto, '/');
+    }
+
+    if (strpos($returnto, '//') === 0) {
+        return $fallback;
+    }
+
+    return $returnto;
+}
+
 function dbconn($autoclean = false, $lightmode = false)
 {
     global $mysql_host, $mysql_user, $mysql_pass, $mysql_db, $mysql_charset, $link;
@@ -511,9 +669,11 @@ function userlogin($lightmode = false): void
         $row['class'] = $row['override_class'];
     }
 
-    $GLOBALS['CURUSER'] = $row;
+	$GLOBALS['CURUSER'] = $row;
+	$GLOBALS['CURUSER']['hash4u'] = tracker_user_form_token($GLOBALS['CURUSER']);
+	$GLOBALS['CURUSER']['logout_hash'] = $GLOBALS['CURUSER']['hash4u'];
 
-    if ($use_lang) {
+	if ($use_lang) {
         $language = !empty($row['language']) ? $row['language'] : $default_language;
         include_once('languages/lang_' . $language . '/lang_main.php');
     }
@@ -1186,12 +1346,13 @@ function tracker_random_base62($length = 10)
 
 function tracker_valid_passkey($passkey)
 {
-	return (bool)preg_match('/^[A-Za-z0-9]{10}$/', (string)$passkey);
+	return (bool)preg_match('/^[A-Za-z0-9]{10,64}$/', (string)$passkey);
 }
 
-function tracker_generate_passkey($user_id = 0, $length = 10)
+function tracker_generate_passkey($user_id = 0, $length = 32)
 {
 	$user_id = (int)$user_id;
+	$length = max(32, min(64, (int)$length));
 
 	for ($i = 0; $i < 20; $i++) {
 		$passkey = tracker_random_base62($length);
@@ -1206,7 +1367,7 @@ function tracker_generate_passkey($user_id = 0, $length = 10)
 		}
 	}
 
-	return tracker_random_base62(max(16, (int)$length));
+	return tracker_random_base62($length);
 }
 
 function tracker_ensure_user_passkey(&$user)
@@ -1234,15 +1395,15 @@ function tracker_upgrade_legacy_passkeys($limit = 200)
 
 	$limit = max(1, min(1000, (int)$limit));
 
-	if (function_exists('tracker_cache_get') && tracker_cache_get('schema:passkeys_v2_done', false)) {
+	if (function_exists('tracker_cache_get') && tracker_cache_get('schema:passkeys_v3_done', false)) {
 		return;
 	}
 
-	$marker = sql_query("SELECT value_u FROM avps WHERE arg = 'passkeys_v2_done' LIMIT 1");
+	$marker = sql_query("SELECT value_u FROM avps WHERE arg = 'passkeys_v3_done' LIMIT 1");
 	$row = $marker ? mysqli_fetch_assoc($marker) : null;
 	if ($row && (int)$row['value_u'] === 1) {
 		if (function_exists('tracker_cache_set')) {
-			tracker_cache_set('schema:passkeys_v2_done', true, 3600);
+			tracker_cache_set('schema:passkeys_v3_done', true, 3600);
 		}
 		return;
 	}
@@ -1250,7 +1411,7 @@ function tracker_upgrade_legacy_passkeys($limit = 200)
 	$res = sql_query("
 		SELECT id
 		FROM users
-		WHERE passkey NOT REGEXP '^[A-Za-z0-9]{10}$'
+		WHERE passkey NOT REGEXP '^[A-Za-z0-9]{10,64}$'
 		ORDER BY id ASC
 		LIMIT $limit
 	") or sqlerr(__FILE__, __LINE__);
@@ -1269,45 +1430,42 @@ function tracker_upgrade_legacy_passkeys($limit = 200)
 
 	if ($count === 0) {
 		tracker_passkey_schema_upgrade();
-		sql_query("
-			INSERT INTO avps (arg, value_u, value_s)
-			VALUES ('passkeys_v2_done', 1, '')
-			ON DUPLICATE KEY UPDATE value_u = 1, value_s = ''
-		") or sqlerr(__FILE__, __LINE__);
+			sql_query("
+				INSERT INTO avps (arg, value_u, value_s)
+				VALUES ('passkeys_v3_done', 1, '')
+				ON DUPLICATE KEY UPDATE value_u = 1, value_s = ''
+			") or sqlerr(__FILE__, __LINE__);
 
-		if (function_exists('tracker_cache_set')) {
-			tracker_cache_set('schema:passkeys_v2_done', true, 3600);
+			if (function_exists('tracker_cache_set')) {
+				tracker_cache_set('schema:passkeys_v3_done', true, 3600);
+			}
 		}
 	}
-}
 
-function tracker_passkey_schema_upgrade()
-{
-	$marker = sql_query("SELECT value_u FROM avps WHERE arg = 'passkeys_v2_schema' LIMIT 1");
-	$row = $marker ? mysqli_fetch_assoc($marker) : null;
-	if ($row && (int)$row['value_u'] === 1) {
-		return;
+	function tracker_passkey_schema_upgrade()
+	{
+		$marker = sql_query("SELECT value_u FROM avps WHERE arg = 'passkeys_v3_schema' LIMIT 1");
+		$row = $marker ? mysqli_fetch_assoc($marker) : null;
+		if ($row && (int)$row['value_u'] === 1) {
+			return;
 	}
 
 	$tables = array('users', 'peers');
 	foreach ($tables as $table) {
-		$res = sql_query("SHOW COLUMNS FROM `$table` LIKE 'passkey'") or sqlerr(__FILE__, __LINE__);
-		$column = mysqli_fetch_assoc($res);
-		$type = isset($column['Type']) ? strtolower((string)$column['Type']) : '';
-		if (preg_match('/varchar\((\d+)\)/', $type, $m) && (int)$m[1] !== 10) {
-			if ($table === 'peers') {
-				sql_query("DELETE FROM peers WHERE passkey NOT REGEXP '^[A-Za-z0-9]{10}$'") or sqlerr(__FILE__, __LINE__);
+			$res = sql_query("SHOW COLUMNS FROM `$table` LIKE 'passkey'") or sqlerr(__FILE__, __LINE__);
+			$column = mysqli_fetch_assoc($res);
+			$type = isset($column['Type']) ? strtolower((string)$column['Type']) : '';
+			if (preg_match('/varchar\((\d+)\)/', $type, $m) && (int)$m[1] < 64) {
+				sql_query("ALTER TABLE `$table` MODIFY `passkey` varchar(64) NOT NULL DEFAULT ''") or sqlerr(__FILE__, __LINE__);
 			}
-			sql_query("ALTER TABLE `$table` MODIFY `passkey` varchar(10) NOT NULL DEFAULT ''") or sqlerr(__FILE__, __LINE__);
 		}
-	}
 
-	sql_query("
-		INSERT INTO avps (arg, value_u, value_s)
-		VALUES ('passkeys_v2_schema', 1, '')
-		ON DUPLICATE KEY UPDATE value_u = 1, value_s = ''
-	") or sqlerr(__FILE__, __LINE__);
-}
+		sql_query("
+			INSERT INTO avps (arg, value_u, value_s)
+			VALUES ('passkeys_v3_schema', 1, '')
+			ON DUPLICATE KEY UPDATE value_u = 1, value_s = ''
+		") or sqlerr(__FILE__, __LINE__);
+	}
 
 function httperr($code = 404) {
 	$sapi_name = php_sapi_name();
@@ -1334,8 +1492,8 @@ function logincookie($id, $passhash, $updatedb = 1, $expires = 0x7fffffff) {
 		$subnet = $ip;
 	}
 
-	setcookie(COOKIE_UID, $id, $expires, '/');
-	setcookie(COOKIE_PASSHASH, md5($passhash.COOKIE_SALT.$subnet), $expires, '/');
+	tracker_setcookie(COOKIE_UID, (string)$id, $expires);
+	tracker_setcookie(COOKIE_PASSHASH, md5($passhash.COOKIE_SALT.$subnet), $expires);
 
 	if ($updatedb)
 		sql_query('UPDATE users SET last_login = NOW() WHERE id = '.$id);
@@ -1343,7 +1501,7 @@ function logincookie($id, $passhash, $updatedb = 1, $expires = 0x7fffffff) {
 
 function logoutcookie() {
 //	setcookie(COOKIE_UID, '', 0x7fffffff, '/'); // Не стоит убирать комментирование т.к небудет работать система анти-двойной реги
-	setcookie(COOKIE_PASSHASH, '', 0x7fffffff, '/');
+	tracker_setcookie(COOKIE_PASSHASH, '', time() - 3600);
 }
 
 function loggedinorreturn($nowarn = false) {

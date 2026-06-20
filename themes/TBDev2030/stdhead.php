@@ -9,6 +9,9 @@ $DEFAULTBASEURL = $GLOBALS['DEFAULTBASEURL'] ?? '';
 $pic_base_url = $GLOBALS['pic_base_url'] ?? './pic';
 $theme_uri = htmlspecialchars((string)($ss_uri ?? 'TBDev2030'), ENT_QUOTES, 'UTF-8');
 $site_name = htmlspecialchars((string)($SITENAME ?? ''), ENT_QUOTES, 'UTF-8');
+$form_hash = !empty($CURUSER['hash4u']) ? urlencode((string)$CURUSER['hash4u']) : '';
+$logout_url = $form_hash !== '' ? '/logout.php?hash4u=' . $form_hash : '/logout.php';
+$restoreclass_url = $form_hash !== '' ? '/restoreclass.php?hash4u=' . $form_hash : '/restoreclass.php';
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html lang="ru">
@@ -175,7 +178,7 @@ $site_name = htmlspecialchars((string)($SITENAME ?? ''), ENT_QUOTES, 'UTF-8');
                             <td class="bottom" align="left"><span class="smallfont"><?= $tracker_lang['welcome_back']; ?><b><a
                                             href="userdetails.php?id=<?= $CURUSER['id'] ?>"><?= get_user_class_color($CURUSER['class'], $CURUSER['username']) ?></a></b><?= $medaldon ?><?= $warn ?>
                                     &nbsp; [<a href="bookmarks.php">Закладки</a>] [<a href="pay.php">Голоса и рейтинг</a>] [<a
-                                        href="logout.php">Выйти</a>]<br />
+	                                        href="<?= htmlspecialchars($logout_url, ENT_QUOTES, 'UTF-8') ?>">Выйти</a>]<br />
                                     <font color=1900D1><?= $tracker_lang['ratio']; ?>:</font> <?= $ratio ?>&nbsp;&nbsp;<font
                                         color=green><?= $tracker_lang['uploaded']; ?>:</font>
                                     <font
@@ -350,7 +353,7 @@ refrClock2();
 <!-- / clock hack --><br />
 	<font color=\"#FF6600\">" . $tracker_lang['your_ip'] . ": " . $remoteAddr . "</font><br />
 	<br />
-	<center><img src=\"{$pic_base_url}/disabled.gif\" border=\"0\" />&nbsp;[<a href=\"logout.php\">{$tracker_lang['logout']}</a>]</center>
+	<center><img src=\"{$pic_base_url}/disabled.gif\" border=\"0\" />&nbsp;[<a href=\"{$logout_url}\">{$tracker_lang['logout']}</a>]</center>
 	";
                     } else {
                         $userbar = '<center><form method="post" action="takelogin.php">
@@ -395,7 +398,7 @@ refrClock2();
                             . "<a class=\"menu\" href=\"/users.php\">Пользователи</a>"
                             . "<a class=\"menu\" href=\"/friends.php\">Друзья и враги</a>"
                             . "<a class=\"menu\" href=\"/mytorrents.php\">Мои раздачи</a>"
-                            . "<a class=\"menu\" href=\"/logout.php\">Выйти</a>";
+                            . "<a class=\"menu\" href=\"{$logout_url}\">Выйти</a>";
 
                         blok_menu($tracker_lang['user_menu'], $usermenu, "155");
 
@@ -439,7 +442,7 @@ refrClock2();
 
                     if ($CURUSER && $CURUSER['override_class'] != 255) { // Second condition needed so that this box isn't displayed for non members/logged out members.
                         print("<p><table border=0 cellspacing=0 cellpadding=10 bgcolor=green><tr><td style='padding: 10px; background: green'>\n");
-                        print("<b><a href=\"$DEFAULTBASEURL/restoreclass.php\"><font color=white>{$tracker_lang['lower_class']}</font></a></b>");
+                        print("<b><a href=\"$DEFAULTBASEURL{$restoreclass_url}\"><font color=white>{$tracker_lang['lower_class']}</font></a></b>");
                         print("</td></tr></table></p>\n");
                     }
 

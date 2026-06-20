@@ -38,6 +38,7 @@ $points_per_hour = 1; // Сколько добавлять бонусов в ч�
 $points_per_cleanup = $points_per_hour*($autoclean_interval/3600); // Don't change it!
 $default_theme = 'TBDev'; // Тема по умолчанию.
 $nc = 'no'; // Не пропускать на трекер пиров с закрытыми портами.
+$announce_check_connectable = false; // Проверять порт пира синхронно в announce. Включайте только если реально нужен connectable-status.
 $default_language = 'russian'; // Язык трекера по умолчанию.
 $deny_signup = 0; // Запретить регистрацию. 1 = регистрация отключена, 0 = регистрация включена.
 $ctracker = 1; // Use CrackerTracker - anti-cracking system. I personaly think it's un-needed...

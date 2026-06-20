@@ -36,7 +36,7 @@ RUN echo "short_open_tag=On" > /usr/local/etc/php/conf.d/legacy.ini && \
     echo "upload_max_filesize=512M" >> /usr/local/etc/php/conf.d/legacy.ini && \
     echo "post_max_size=512M" >> /usr/local/etc/php/conf.d/legacy.ini && \
     echo "max_execution_time=300" >> /usr/local/etc/php/conf.d/legacy.ini && \
-    echo "display_errors=On" >> /usr/local/etc/php/conf.d/legacy.ini && \
+    echo "display_errors=Off" >> /usr/local/etc/php/conf.d/legacy.ini && \
     echo "error_reporting=E_ALL" >> /usr/local/etc/php/conf.d/legacy.ini
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html

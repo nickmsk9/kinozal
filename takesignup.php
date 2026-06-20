@@ -7,6 +7,12 @@ require_once("include/bittorrent.php");
 
 dbconn();
 
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    http_response_code(405);
+    header('Allow: POST');
+    exit('Method Not Allowed');
+}
+
 if (isset($_POST['wusername']) && !isset($_POST['wantusername'])) {
     $_POST['wantusername'] = $_POST['wusername'];
 }
@@ -46,10 +52,10 @@ if ($maxusers > 0 && $users >= $maxusers) {
     stderr($tracker_lang['error'], sprintf($tracker_lang['signup_users_limit'], number_format($maxusers)));
 }
 
-$wantusername = isset($_GET['wantusername']) ? trim((string)$_GET['wantusername']) : (isset($_POST['wantusername']) ? trim((string)$_POST['wantusername']) : null);
-$wantpassword = isset($_GET['wantpassword']) ? (string)$_GET['wantpassword'] : (isset($_POST['wantpassword']) ? (string)$_POST['wantpassword'] : null);
-$passagain = isset($_GET['passagain']) ? (string)$_GET['passagain'] : (isset($_POST['passagain']) ? (string)$_POST['passagain'] : null);
-$email = isset($_GET['email']) ? trim((string)$_GET['email']) : (isset($_POST['email']) ? trim((string)$_POST['email']) : null);
+$wantusername = isset($_POST['wantusername']) ? trim((string)$_POST['wantusername']) : null;
+$wantpassword = isset($_POST['wantpassword']) ? (string)$_POST['wantpassword'] : null;
+$passagain = isset($_POST['passagain']) ? (string)$_POST['passagain'] : null;
+$email = isset($_POST['email']) ? trim((string)$_POST['email']) : null;
 
 if ($wantusername === null || $wantpassword === null || $passagain === null || $email === null) {
     stderr($tracker_lang['error'], $tracker_lang['dad']);
@@ -189,15 +195,15 @@ if (isset($_COOKIE[COOKIE_UID]) && is_numeric($_COOKIE[COOKIE_UID]) && $users &&
     if ($b && $b[0] === 'no') {
         $banned_id = (int)$b[1];
 
-        setcookie(COOKIE_UID, (string)$banned_id, time() + 31536000, "/");
+        tracker_setcookie(COOKIE_UID, (string)$banned_id, time() + 31536000);
 
         bark("Ваш IP забанен на этом трекере. Регистрация невозможна.");
     }
 }
 
 $secret = mksecret();
-$wantpasshash = md5($secret . $wantpassword . $secret);
-$editsecret = "";
+$wantpasshash = tracker_password_hash($wantpassword);
+$editsecret = ($use_email_act && $users) ? mksecret() : "";
 
 $status = 'confirmed';
 $theme = select_theme();
@@ -273,7 +279,7 @@ $id = mysqli_insert_id($link);
 
 write_log("Зарегистрирован новый пользователь " . $wantusername, "FFFFFF", "tracker");
 
-$psecret = md5($editsecret);
+$psecret = md5(hash_pad($editsecret));
 
 $remote_addr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
 

@@ -35,18 +35,20 @@ exit;
 }
 dbconn();
 loggedinorreturn();
+tracker_require_form_token('POST');
 
-if (!isset($_POST[delbookmark]))
+if (!isset($_POST['delbookmark']) || !is_array($_POST['delbookmark']))
        bark("Ничего не выбрано");
 
-$res2 = sql_query("SELECT id, userid FROM bookmarks WHERE id IN (" . implode(", ", array_map("sqlesc", $_POST[delbookmark])) . ")") or sqlerr(__FILE__, __LINE__);
+$res2 = sql_query("SELECT id, userid FROM bookmarks WHERE id IN (" . implode(", ", array_map("sqlesc", $_POST['delbookmark'])) . ")") or sqlerr(__FILE__, __LINE__);
 
 while ($arr = mysql_fetch_assoc($res2)) {
-       if (($arr[userid] == $CURUSER[id]) || (get_user_class() > 3))
-sql_query("DELETE FROM bookmarks WHERE id = $arr[id]") or sqlerr(__FILE__, __LINE__);
+       if (((int)$arr['userid'] === (int)$CURUSER['id']) || (get_user_class() > 3))
+sql_query("DELETE FROM bookmarks WHERE id = " . (int)$arr['id']) or sqlerr(__FILE__, __LINE__);
        else
 bark("Вы пытаетесь удалить не свою закладку!");
 }
 
-header("Refresh: 0; url=" . $_SERVER['HTTP_REFERER']);
+$returnto = tracker_safe_local_redirect($_SERVER['HTTP_REFERER'] ?? '/bookmarks.php', '/bookmarks.php');
+header("Refresh: 0; url=" . $returnto);
 ?>

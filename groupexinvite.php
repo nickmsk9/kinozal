@@ -18,6 +18,10 @@ $userid = (int)$CURUSER['id'];
 $targetid = (int)($_GET['userid'] ?? 0);
 $redirect = '/groupex.php?id=' . $id;
 
+if ($action !== '') {
+	tracker_require_form_token('GET');
+}
+
 if ($action === 'join') {
 	$member = groups_member($id, $userid);
 	if ($member && $member['status'] === 'member') {

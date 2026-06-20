@@ -34,15 +34,16 @@
 // delete items older than a week
   $secs = 7 * 86400;
   stdhead("Логи");
-  $type = htmlspecialchars_uni((string)$_GET["type"]);
-   if(!$type || $type == 'simp') $type = "tracker";
+  $type = (string)($_GET["type"] ?? '');
+  $allowed_types = array('tracker', 'bans', 'release', 'exchange', 'torrent', 'error', 'announce', 'speed');
+   if($type === '' || $type === 'simp' || !in_array($type, $allowed_types, true)) $type = "tracker";
  	print("<p align=center>"  .
-		($type == tracker || !$type ? "<b>Трекер</b>" : "<a href=log.php?type=tracker>Трекер</a>") . " | " .
- 		($type == bans ? "<b>Баны</b>" : "<a href=log.php?type=bans>Баны</a>") . " | " .
- 		($type == release ? "<b>Релизы</b>" : "<a href=log.php?type=release>Релизы</a>") . " | " .
- 		($type == exchange ? "<b>Обменник</b>" : "<a href=log.php?type=exchange>Обменник</a>") . " | " .
-		($type == torrent ? "<b>Торренты</b>" : "<a href=log.php?type=torrent>Торренты</a>") . " | " .
-		($type == error ? "<b>Ошибки</b>" : "<a href=log.php?type=error>Ошибки</a>") . "</p>\n");
+		($type == 'tracker' ? "<b>Трекер</b>" : "<a href=log.php?type=tracker>Трекер</a>") . " | " .
+		($type == 'bans' ? "<b>Баны</b>" : "<a href=log.php?type=bans>Баны</a>") . " | " .
+		($type == 'release' ? "<b>Релизы</b>" : "<a href=log.php?type=release>Релизы</a>") . " | " .
+		($type == 'exchange' ? "<b>Обменник</b>" : "<a href=log.php?type=exchange>Обменник</a>") . " | " .
+		($type == 'torrent' ? "<b>Торренты</b>" : "<a href=log.php?type=torrent>Торренты</a>") . " | " .
+		($type == 'error' ? "<b>Ошибки</b>" : "<a href=log.php?type=error>Ошибки</a>") . "</p>\n");
 
    if (($type == 'speed' || $type == 'error') && $CURUSER['class'] < 4) {
 	stdmsg("Ошибка","Доступ в этот раздел закрыт.");

@@ -205,7 +205,10 @@ function install_create_admin(mysqli $db, $username, $password, $email)
 	}
 
 	$secret = install_random_string(20);
-	$passhash = md5($secret . $password . $secret);
+	$passhash = password_hash($password, PASSWORD_DEFAULT);
+	if (!is_string($passhash) || $passhash === '') {
+		throw new RuntimeException('Не удалось создать хэш пароля администратора.');
+	}
 	$passkey = install_random_string(10);
 	$now = date('Y-m-d H:i:s');
 

@@ -14,6 +14,8 @@ if (!$group) {
 
 $member = !empty($CURUSER) ? groups_member($id, (int)$CURUSER['id']) : null;
 $can_manage = groups_can_manage($group, 0, $member);
+$hash = !empty($CURUSER['hash4u']) ? groups_h($CURUSER['hash4u']) : '';
+$hash_param = $hash !== '' ? '&amp;hash4u=' . $hash : '';
 
 $count = (int)($group['members_count'] ?? 0);
 list($pagertop, $pagerbottom, $limit) = pager(50, $count, '/groupexmembers.php?id=' . $id . '&amp;');
@@ -65,7 +67,7 @@ stdhead('Участники группы :: ' . $group['name']);
 					while ($row = mysqli_fetch_assoc($pending_res)) {
 						$pending_found = true;
 						echo '<tr><td>' . groups_user_link((int)$row['userid'], $row['username'], (int)$row['class'], $row) . '</td>';
-						echo '<td class="right"><a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=approve&amp;userid=' . (int)$row['userid'] . '">Принять</a> :: <a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=decline&amp;userid=' . (int)$row['userid'] . '">Отклонить</a></td></tr>';
+							echo '<td class="right"><a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=approve&amp;userid=' . (int)$row['userid'] . $hash_param . '">Принять</a> :: <a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=decline&amp;userid=' . (int)$row['userid'] . $hash_param . '">Отклонить</a></td></tr>';
 					}
 					if (!$pending_found) {
 						echo '<tr><td class="center">Новых заявок нет.</td></tr>';
@@ -101,11 +103,11 @@ stdhead('Участники группы :: ' . $group['name']);
 						echo '<td class="right">';
 						if ($row['role'] !== 'owner') {
 							if ($row['role'] === 'moderator') {
-								echo '<a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=make_member&amp;userid=' . (int)$row['userid'] . '">Снять модератора</a> :: ';
-							} else {
-								echo '<a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=make_moderator&amp;userid=' . (int)$row['userid'] . '">Назначить модератором</a> :: ';
-							}
-							echo '<a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=kick&amp;userid=' . (int)$row['userid'] . '">Исключить</a>';
+									echo '<a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=make_member&amp;userid=' . (int)$row['userid'] . $hash_param . '">Снять модератора</a> :: ';
+								} else {
+									echo '<a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=make_moderator&amp;userid=' . (int)$row['userid'] . $hash_param . '">Назначить модератором</a> :: ';
+								}
+								echo '<a class="sba" href="/groupexinvite.php?id=' . $id . '&amp;action=kick&amp;userid=' . (int)$row['userid'] . $hash_param . '">Исключить</a>';
 						} else {
 							echo '&nbsp;';
 						}

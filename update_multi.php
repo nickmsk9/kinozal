@@ -9,6 +9,7 @@ dbconn();
 $use_sessions = $old_sessions;
 
 loggedinorreturn();
+tracker_require_form_token('GET');
 
 $tid = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($tid <= 0) {

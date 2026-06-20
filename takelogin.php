@@ -28,8 +28,14 @@
 
 require_once("include/bittorrent.php");
 
-$username = isset($_GET['username']) ? trim((string)$_GET['username']) : (isset($_POST['username']) ? trim((string)$_POST['username']) : null);
-$password = isset($_GET['password']) ? (string)$_GET['password'] : (isset($_POST['password']) ? (string)$_POST['password'] : null);
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+	http_response_code(405);
+	header('Allow: POST');
+	exit('Method Not Allowed');
+}
+
+$username = isset($_POST['username']) ? trim((string)$_POST['username']) : null;
+$password = isset($_POST['password']) ? (string)$_POST['password'] : null;
 
 if ($username === null || $password === null)
 	die();
@@ -41,10 +47,6 @@ function bark($text = "Имя пользователя или пароль не�
   stderr("Ошибка входа", $text);
 }
 
-function is_password_correct($password, $secret, $hash) {
-	return ($hash == md5($secret . $password . $secret) || $hash == md5($secret . trim($password) . $secret)); // А нахуя вторая часть? Дебилы вводят из писем пароли с пробелом в конце/начале
-}
-
 $res = sql_query("SELECT id, passhash, secret, enabled, status, ip FROM users WHERE username = " . sqlesc($username) . " LIMIT 1");
 $row = mysqli_fetch_array($res);
 
@@ -54,11 +56,21 @@ if (!$row)
 if ($row["status"] == 'pending')
 	bark("Вы еще не активировали свой аккаунт! Активируйте ваш аккаунт и попробуйте снова.");
 
-if (!is_password_correct($password, $row['secret'], $row['passhash']))
+if (!tracker_password_verify($password, $row['secret'], $row['passhash']))
 	bark();
 
 if ($row["enabled"] == "no")
 	bark("Этот аккаунт отключен.");
+
+if (tracker_password_needs_rehash($row["passhash"])) {
+	$row["passhash"] = tracker_password_hash($password);
+	sql_query("
+		UPDATE users
+		SET passhash = " . sqlesc($row["passhash"]) . "
+		WHERE id = " . (int)$row["id"] . "
+		LIMIT 1
+	") or sqlerr(__FILE__, __LINE__);
+}
 
 $peers = sql_query("SELECT 1 FROM peers WHERE userid = " . (int)$row["id"] . " LIMIT 1");
 $ip = getip();
@@ -68,11 +80,9 @@ if (mysqli_num_rows($peers) > 0 && ($row["ip"] ?? '') != $ip && !empty($row["ip"
 logincookie($row["id"], $row["passhash"]);
 
 if (!empty($_POST["returnto"])) {
-	$returnto = ltrim((string)$_POST["returnto"], '/');
-	if (strpos($returnto, '://') === false && strpos($returnto, "\n") === false && strpos($returnto, "\r") === false) {
-		header("Location: $DEFAULTBASEURL/" . $returnto);
-		exit;
-	}
+	$returnto = tracker_safe_local_redirect($_POST["returnto"], '/');
+	header("Location: $DEFAULTBASEURL" . $returnto);
+	exit;
 }
 header("Location: $DEFAULTBASEURL/");
 exit;

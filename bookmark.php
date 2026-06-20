@@ -4,6 +4,7 @@ require_once __DIR__ . '/include/bittorrent.php';
 
 dbconn();
 loggedinorreturn();
+tracker_require_form_token('GET');
 
 if (!function_exists('bookmarks_h')) {
     function bookmarks_h($value): string

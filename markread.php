@@ -29,6 +29,7 @@
 require_once("include/bittorrent.php");
 dbconn(false);
 loggedinorreturn();
+tracker_require_form_token('GET');
 stdhead();
 
 $userid = (int)$CURUSER["id"];

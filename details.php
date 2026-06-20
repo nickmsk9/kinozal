@@ -666,7 +666,7 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 			? ' | <a class="sba" href="/comment.php?action=edit&amp;cid=' . (int)$row['id'] . '">Изменить</a>'
 			: '';
 		$delete = (get_user_class() >= UC_MODERATOR)
-			? ' | <a class="sba" href="/comment.php?action=delete&amp;cid=' . (int)$row['id'] . '">Удалить</a>'
+			? ' | <a class="sba" href="/comment.php?action=delete&amp;cid=' . (int)$row['id'] . ($CURUSER ? '&amp;hash4u=' . details_h($CURUSER['hash4u'] ?? '') : '') . '">Удалить</a>'
 			: '';
 
 		$text = details_comment_format($row['text']);
@@ -868,7 +868,7 @@ stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['
 		<li class="img"><a href="/details.php?id=<?= $id ?>" title="<?= details_h($row['name']) ?>"><img src="<?= $poster ?>" class="p200" alt=""></a></li>
 		<li class="tp">Меню раздачи</li>
 		<li><span class="bulet"></span><a href="/browse.php?s=<?= rawurlencode($search_title) ?>" target="_blank">Подобные раздачи</a></li>
-		<li><span class="bulet"></span><a href="/bookmarks.php?torrent=<?= $id . $book_hash ?>" onclick="return mess_out('Добавить раздачу в закладки ?')">Добавить в закладки</a></li>
+		<li><span class="bulet"></span><a href="/bookmark.php?torrent=<?= $id . $book_hash ?>" onclick="return mess_out('Добавить раздачу в закладки ?')">Добавить в закладки</a></li>
 		<?php if ($owned) { ?><li><span class="bulet"></span><a href="/edit.php?id=<?= $id ?>">Редактировать</a></li><?php } ?>
 		<li class="tp">Участники</li>
 		<li><span class="bulet"></span><a href="#"><?= $total_seeders ? 'Раздают' : 'Раздают' ?><span class="floatright"><?= $total_seeders ?></span></a></li>

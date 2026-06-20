@@ -1,9 +1,10 @@
 <?php
 
 
+$debug_errors = in_array(strtolower((string)(getenv('KZ_DEBUG') ?: getenv('TRACKER_DEBUG') ?: '0')), array('1', 'true', 'yes', 'on'), true);
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', $debug_errors ? '1' : '0');
+ini_set('display_startup_errors', $debug_errors ? '1' : '0');
 ini_set('log_errors', '1');
 ini_set('error_log', __DIR__ . '/php_errors.log');
 

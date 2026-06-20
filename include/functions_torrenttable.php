@@ -121,10 +121,19 @@ function torrenttable($res, $variant = 'index')
 
     $out = array();
 
+    $token_query = function_exists('tracker_token_query') ? tracker_token_query() : '';
+    $token_html = $token_query !== '' ? htmlspecialchars_uni($token_query) : '';
+
     if ($is_moderator && $is_index) {
         $out[] = '<form method="post" action="deltorrent.php?mode=delete">';
+        if ($token_html !== '') {
+            $out[] = '<input type="hidden" name="hash4u" value="' . htmlspecialchars_uni(tracker_user_form_token()) . '">';
+        }
     } elseif ($is_bookmarks) {
         $out[] = '<form method="post" action="takedelbookmark.php">';
+        if ($token_html !== '') {
+            $out[] = '<input type="hidden" name="hash4u" value="' . htmlspecialchars_uni(tracker_user_form_token()) . '">';
+        }
     }
 
     $out[] = '<tr>';
@@ -221,7 +230,8 @@ function torrenttable($res, $variant = 'index')
         }
 
         if (!$is_bookmarks && $is_logged) {
-            $name_html[] = '<a href="bookmark.php?torrent=' . $id . '">' . $img('bookmark.gif', $lang('bookmark_this', 'Добавить в закладки')) . '</a>';
+            $token_suffix = $token_html !== '' ? '&amp;' . $token_html : '';
+            $name_html[] = '<a href="bookmark.php?torrent=' . $id . $token_suffix . '">' . $img('bookmark.gif', $lang('bookmark_this', 'Добавить в закладки')) . '</a>';
         }
 
         $name_html[] = '<a href="download.php?id=' . $id . '">' . $img('download.gif', $lang('download', 'Скачать')) . '</a>';
@@ -244,7 +254,7 @@ function torrenttable($res, $variant = 'index')
             $multi_image = $img('multitracker.png', $external_title);
 
             $name_html[] = $allow_update
-                ? '<a href="update_multi.php?id=' . $id . '">' . $multi_image . '</a>'
+                ? '<a href="update_multi.php?id=' . $id . ($token_html !== '' ? '&amp;' . $token_html : '') . '">' . $multi_image . '</a>'
                 : $multi_image;
         }
 
@@ -384,7 +394,7 @@ function torrenttable($res, $variant = 'index')
     $out[] = '</tbody>';
 
     if ($is_index && $is_logged) {
-        $out[] = '<tr><td class="colhead center" colspan="' . $cols . '"><a href="markread.php" class="altlink_white">Все торренты прочитаны</a></td></tr>';
+        $out[] = '<tr><td class="colhead center" colspan="' . $cols . '"><a href="markread.php' . ($token_html !== '' ? '?' . $token_html : '') . '" class="altlink_white">Все торренты прочитаны</a></td></tr>';
     }
 
     if ($is_index && $is_moderator) {

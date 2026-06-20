@@ -79,13 +79,15 @@ function bookmarks_user_card($row, $viewerId)
 	$username = bookmarks_h($row['username'] ?? 'Пользователь');
 	$class = 'u' . (int)($row['class'] ?? UC_USER);
 	$avatar = !empty($row['avatar']) ? bookmarks_h($row['avatar']) : '/pic/default_avatar.gif';
+	$token = tracker_token_query();
+	$token = $token !== '' ? '&amp;' . bookmarks_h($token) : '';
 
 	return '<div class="pad5x0x0x5 mn2">'
 		. '<table class="tables2 w100p"><tr>'
 		. '<td class="w50 top"><img src="' . $avatar . '" class="w50 rot180" alt=""></td>'
 		. '<td class="top"><a href="/userdetails.php?id=' . $id . '" class="' . $class . '">' . $username . '</a>' . get_user_icons($row) . '<br>'
 		. '<a href="/sendmessage.php?receiver=' . $id . '" class="sba">Сообщ.</a> | '
-		. '<a href="/bookmarks.php?type=3&amp;delete=' . $id . '" class="sba" onclick="return confirm(\'Убрать пользователя из закладок?\');">Удалить</a><br>'
+		. '<a href="/bookmarks.php?type=3&amp;delete=' . $id . $token . '" class="sba" onclick="return confirm(\'Убрать пользователя из закладок?\');">Удалить</a><br>'
 		. 'раздач <b>' . (int)($row['torrents_count'] ?? 0) . '</b>, коммент. <b>' . (int)($row['comments_count'] ?? 0) . '</b>'
 		. '</td></tr></table></div>';
 }
@@ -96,12 +98,14 @@ function bookmarks_person_card($row)
 	$name = bookmarks_h($row['name'] ?? '');
 	$poster = !empty($row['poster_url']) ? bookmarks_h($row['poster_url']) : '/pic/default_avatar.gif';
 	$url = persons_url((string)$row['name'], $id);
+	$token = tracker_token_query();
+	$token = $token !== '' ? '&amp;' . bookmarks_h($token) : '';
 
 	return '<div class="pad5x0x0x5 mn2">'
 		. '<table class="tables2 w100p"><tr>'
 		. '<td class="w50 top"><img src="' . $poster . '" class="w50 rot180" alt=""></td>'
 		. '<td class="top"><a href="' . bookmarks_h($url) . '" class="sba">' . $name . '</a><br>'
-		. '<a href="/bookmarks.php?type=4&amp;delete=' . $id . '" class="sba" onclick="return confirm(\'Убрать персону из закладок?\');">Удалить</a><br>'
+		. '<a href="/bookmarks.php?type=4&amp;delete=' . $id . $token . '" class="sba" onclick="return confirm(\'Убрать персону из закладок?\');">Удалить</a><br>'
 		. bookmarks_h($row['career'] ?? '')
 		. '</td></tr></table></div>';
 }
@@ -139,6 +143,10 @@ $userId = (int)$CURUSER['id'];
 $bookmarkType = (int)($_GET['type'] ?? 1);
 if ($bookmarkType < 1 || $bookmarkType > 4) {
 	$bookmarkType = 1;
+}
+
+if (isset($_GET['add']) || isset($_GET['delete'])) {
+	tracker_require_form_token('GET');
 }
 
 if ($bookmarkType === 2) {

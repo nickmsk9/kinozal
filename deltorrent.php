@@ -41,6 +41,7 @@ begin_main_frame();
 $mode = $_GET["mode"];
 
 if ($mode == "delete" && !empty($_POST['delete'])) {
+	tracker_require_form_token('POST');
 	$res = sql_query("SELECT id, name FROM torrents WHERE id IN (" . implode(", ", array_map("sqlesc", $_POST["delete"])) . ")");
 	echo "Следующие торренты удалены:<br><br>";
 	while ($row = mysqli_fetch_array($res)) {

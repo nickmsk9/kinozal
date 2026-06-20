@@ -224,7 +224,7 @@ function gzip() {
 }
 
 function tracker_valid_passkey($passkey) {
-    return (bool)preg_match('/^[A-Za-z0-9]{10}$/', (string)$passkey);
+    return (bool)preg_match('/^[A-Za-z0-9]{10,64}$/', (string)$passkey);
 }
 
 // Check open port, requires --enable-sockets

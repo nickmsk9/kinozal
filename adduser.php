@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $secretRaw = mksecret();
     $secret = sqlesc($secretRaw);
-    $passhash = sqlesc(md5($secretRaw . $password . $secretRaw));
+    $passhash = sqlesc(tracker_password_hash($password));
     $passkey = sqlesc(tracker_generate_passkey());
     $added = sqlesc(get_date_time());
 

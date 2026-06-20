@@ -176,6 +176,7 @@ if ($action === 'delete') {
 	if (get_user_class() < UC_MODERATOR) {
 		stderr($tracker_lang['error'], $tracker_lang['access_denied']);
 	}
+	tracker_require_form_token('GET');
 
 	$commentid = (int)($_GET['cid'] ?? 0);
 	if (!is_valid_id($commentid)) {

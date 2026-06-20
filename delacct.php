@@ -30,6 +30,7 @@ require_once __DIR__ . '/include/bittorrent.php';
 require_once __DIR__ . '/include/account_delete.php';
 
 dbconn();
+loggedinorreturn();
 
 function delacct_h($value): string
 {
@@ -261,6 +262,8 @@ $username = !empty($CURUSER['username']) ? (string)$CURUSER['username'] : '';
 $deleted = false;
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    tracker_require_form_token('POST');
+
     $username = trim((string)($_POST['username'] ?? ''));
     $password = (string)($_POST['password'] ?? '');
     $confirmed = (string)($_POST['confirm_delete'] ?? '') === 'yes';
@@ -273,16 +276,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         stderr($tracker_lang['error'], 'Подтвердите безвозвратное удаление аккаунта.');
     }
 
+    if (strcasecmp($username, (string)$CURUSER['username']) !== 0) {
+        stderr($tracker_lang['error'], 'Можно удалить только текущий аккаунт.');
+    }
+
     $res = sql_query("
-        SELECT id, username, class
+        SELECT id, username, class, secret, passhash
         FROM users
-        WHERE username = " . sqlesc($username) . "
-          AND passhash = MD5(CONCAT(secret, " . sqlesc($password) . ", secret))
+        WHERE id = " . (int)$CURUSER['id'] . "
         LIMIT 1
     ") or sqlerr(__FILE__, __LINE__);
     $user = mysqli_fetch_assoc($res);
 
-    if (!$user) {
+    if (!$user || !tracker_password_verify($password, $user['secret'], $user['passhash'])) {
         stderr($tracker_lang['error'], 'Неверное имя пользователя или пароль.');
     }
 
@@ -341,6 +347,7 @@ stdhead('Удалить аккаунт');
                     </div>
 
                     <form method="post" action="/delacct.php" autocomplete="off">
+                        <input type="hidden" name="hash4u" value="<?=delacct_h($CURUSER['hash4u'] ?? tracker_user_form_token());?>">
                         <table class="tables1 w100p">
                             <tr>
                                 <td class="rowhead w150"><label for="delacct-username">Пользователь</label></td>

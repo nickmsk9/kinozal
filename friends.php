@@ -150,6 +150,7 @@ $res = sql_query("SELECT * FROM users WHERE id = $userid LIMIT 1") or sqlerr(__F
 $user = mysqli_fetch_assoc($res) or stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
 
 if ($action === 'add') {
+	tracker_require_form_token('GET');
 	$targetid = (int)($_GET['targetid'] ?? 0);
 	$type = (string)($_GET['type'] ?? '');
 
@@ -180,6 +181,7 @@ if ($action === 'add') {
 }
 
 if ($action === 'delete') {
+	tracker_require_form_token('GET');
 	$targetid = (int)($_GET['targetid'] ?? 0);
 	$type = (string)($_GET['type'] ?? '');
 

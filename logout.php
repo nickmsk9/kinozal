@@ -28,6 +28,8 @@
 
 require_once("include/bittorrent.php");
 dbconn();
+loggedinorreturn();
+tracker_require_form_token('GET');
 
 logoutcookie();
 
