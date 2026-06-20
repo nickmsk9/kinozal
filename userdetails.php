@@ -113,6 +113,30 @@ function ud_search_links($value, $param, $link_class, $split = false) {
 	return $links ? implode(', ', $links) : '<a href="/users.php" class="' . ud_h($link_class) . '">не указано</a>';
 }
 
+function ud_yes_no_radios($name, $current) {
+	$current = ((string)$current === "yes") ? "yes" : "no";
+	return "<label><input type=\"radio\" name=\"" . ud_h($name) . "\" value=\"yes\"" . ($current === "yes" ? " checked" : "") . "> Да</label> " .
+		"<label><input type=\"radio\" name=\"" . ud_h($name) . "\" value=\"no\"" . ($current === "no" ? " checked" : "") . "> Нет</label>";
+}
+
+function ud_select($name, $options, $selected, $class = "w190 styled") {
+	$html = "<span class=\"sw190\"><select name=\"" . ud_h($name) . "\" class=\"" . ud_h($class) . "\">";
+	foreach ($options as $value => $label) {
+		$html .= "<option value=\"" . ud_h($value) . "\"" . ((string)$selected === (string)$value ? " selected" : "") . ">" . ud_h($label) . "</option>";
+	}
+	return $html . "</select></span>";
+}
+
+function ud_country_select($selected) {
+	$html = "<span class=\"sw190\"><select name=\"country\" class=\"w190 styled\"><option value=\"0\">не указано</option>";
+	$res = sql_query("SELECT id, name FROM countries ORDER BY name ASC") or sqlerr(__FILE__, __LINE__);
+	while ($row = mysqli_fetch_assoc($res)) {
+		$country_id = (int)$row["id"];
+		$html .= "<option value=\"$country_id\"" . ((int)$selected === $country_id ? " selected" : "") . ">" . ud_h($row["name"]) . "</option>";
+	}
+	return $html . "</select></span>";
+}
+
 function ud_cup_history_modcomment($userid, $modcomment) {
 	$userid = (int)$userid;
 	$modcomment = (string)$modcomment;
@@ -156,13 +180,17 @@ function ud_cup_history_modcomment($userid, $modcomment) {
 function ud_print_moderator_block($user, $id, $enabled) {
 	global $CURUSER, $DEFAULTBASEURL, $tracker_lang;
 
-	if (get_user_class() < UC_MODERATOR || (int)$user["class"] >= get_user_class()) {
+	$viewer_class = get_user_class();
+	$is_self_edit = !empty($CURUSER["id"]) && (int)$CURUSER["id"] === (int)$id;
+
+	if ($viewer_class < UC_MODERATOR || (!$is_self_edit && (int)$user["class"] >= $viewer_class)) {
 		return;
 	}
 
-	begin_frame("Редактирование пользователя", false, 5);
-	print("<div class=\"pad0x0x5x0\"><a href=\"#\" id=\"modEditToggle\" class=\"sba\" onclick=\"return toggleUserEditBlock();\">Показать редактирование пользователя</a></div>\n");
-	print("<div id=\"modEditBlock\" class=\"pad5x5\" style=\"display: none;\">\n");
+	print("<div class=\"bx2_0\">\n");
+	print("<ul class=\"men\">\n");
+	print("<li id=\"modEditToggle\" class=\"tp2 center\" onclick=\"return toggleUserEditBlock();\" title=\"Открыть / закрыть редактирование пользователя\">Редактирование пользователя</li>\n");
+	print("<li><div id=\"modEditBlock\" class=\"pad5x5\" style=\"display: none;\">\n");
 	print("<form method=\"post\" action=\"modtask.php\">\n");
 	print("<input type=\"hidden\" name=\"action\" value=\"edituser\">\n");
 	print("<input type=\"hidden\" name=\"userid\" value=\"" . (int)$id . "\">\n");
@@ -183,20 +211,37 @@ function ud_print_moderator_block($user, $id, $enabled) {
 	</script>
 	<?
 	print("<table class=\"tables1 w100p\">\n");
+	if ($is_self_edit) {
+		print("<tr><td colspan=\"3\">Саморедактирование: класс, предупреждения, отключение, удаление и изменение объема раздачи/скачки недоступны для собственного аккаунта.</td></tr>\n");
+	}
+	print("<tr><td colspan=\"3\" class=\"colhead\">Профиль</td></tr>\n");
 	print("<tr><td class=\"rowhead w175\">Заголовок</td><td colspan=\"2\"><input type=\"text\" class=\"w100p\" name=\"title\" value=\"" . ud_h($user["title"] ?? "") . "\"></td></tr>\n");
 	print("<tr><td class=\"rowhead w175\">Аватар</td><td colspan=\"2\"><input type=\"text\" class=\"w100p\" name=\"avatar\" value=\"" . ud_h($user["avatar"] ?? "") . "\"></td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Место жительства</td><td colspan=\"2\">" . ud_country_select($user["country"] ?? 0) . "</td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Пол</td><td colspan=\"2\"><label><input type=\"radio\" name=\"gender\" value=\"1\"" . (($user["gender"] ?? "1") == "1" ? " checked" : "") . "> Мужской</label> <label><input type=\"radio\" name=\"gender\" value=\"2\"" . (($user["gender"] ?? "1") == "2" ? " checked" : "") . "> Женский</label> <label><input type=\"radio\" name=\"gender\" value=\"3\"" . (($user["gender"] ?? "1") == "3" ? " checked" : "") . "> Не указан</label></td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Города</td><td colspan=\"2\"><input type=\"text\" class=\"w100p\" name=\"city\" value=\"" . ud_h($user["city"] ?? "") . "\"></td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Любимый фильм</td><td colspan=\"2\"><input type=\"text\" class=\"w100p\" name=\"favorite_movie\" value=\"" . ud_h($user["favorite_movie"] ?? "") . "\"></td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Любимые персоны</td><td colspan=\"2\"><input type=\"text\" class=\"w100p\" name=\"favorite_persons\" value=\"" . ud_h($user["favorite_persons"] ?? "") . "\"></td></tr>\n");
 
 	if ($CURUSER["class"] < UC_ADMINISTRATOR) {
 		print("<input type=\"hidden\" name=\"donor\" value=\"" . ud_h($user["donor"] ?? "no") . "\">\n");
 	} else {
+		print("<tr><td colspan=\"3\" class=\"colhead\">Права и отметки</td></tr>\n");
 		print("<tr><td class=\"rowhead w175\">Донор</td><td colspan=\"2\"><label><input type=\"radio\" name=\"donor\" value=\"yes\"" . (($user["donor"] ?? "no") == "yes" ? " checked" : "") . "> Да</label> <label><input type=\"radio\" name=\"donor\" value=\"no\"" . (($user["donor"] ?? "no") == "no" ? " checked" : "") . "> Нет</label></td></tr>\n");
 	}
 
-	if (get_user_class() == UC_MODERATOR && (int)$user["class"] > UC_VIP) {
+	if ($CURUSER["class"] < UC_ADMINISTRATOR) {
+		print("<tr><td colspan=\"3\" class=\"colhead\">Права и отметки</td></tr>\n");
+	}
+
+	if ($is_self_edit) {
+		print("<input type=\"hidden\" name=\"class\" value=\"" . (int)$user["class"] . "\">\n");
+		print("<tr><td class=\"rowhead w175\">Класс</td><td colspan=\"2\">" . ud_h(get_user_class_name((int)$user["class"])) . "</td></tr>\n");
+	} elseif ($viewer_class == UC_MODERATOR && (int)$user["class"] > UC_VIP) {
 		print("<input type=\"hidden\" name=\"class\" value=\"" . (int)$user["class"] . "\">\n");
 	} else {
 		print("<tr><td class=\"rowhead w175\">Класс</td><td colspan=\"2\"><span class=\"sw190\"><select name=\"class\" class=\"w190 styled\">\n");
-		$maxclass = (get_user_class() == UC_SYSOP) ? UC_SYSOP : ((get_user_class() == UC_MODERATOR) ? UC_VIP : get_user_class() - 1);
+		$maxclass = ($viewer_class == UC_MODERATOR) ? UC_VIP : ($viewer_class - 1);
 		for ($i = 0; $i <= $maxclass; ++$i) {
 			print("<option value=\"$i\"" . ((int)$user["class"] == $i ? " selected" : "") . ">" . get_user_class_name($i) . "</option>\n");
 		}
@@ -218,59 +263,87 @@ function ud_print_moderator_block($user, $id, $enabled) {
 	print("<tr><td class=\"rowhead w175\">Сбросить день рождения</td><td colspan=\"2\"><label><input type=\"radio\" name=\"resetb\" value=\"yes\"> Да</label> <label><input type=\"radio\" name=\"resetb\" value=\"no\" checked> Нет</label></td></tr>\n");
 	print("<tr><td class=\"rowhead w175\">Поддержка</td><td colspan=\"2\"><label><input type=\"radio\" name=\"support\" value=\"yes\"" . (($user["support"] ?? "no") == "yes" ? " checked" : "") . "> Да</label> <label><input type=\"radio\" name=\"support\" value=\"no\"" . (($user["support"] ?? "no") == "no" ? " checked" : "") . "> Нет</label></td></tr>\n");
 	print("<tr><td class=\"rowhead w175\">Поддержка для:</td><td colspan=\"2\"><textarea rows=\"6\" class=\"w100p\" name=\"supportfor\">" . ud_h($user["supportfor"] ?? "") . "</textarea></td></tr>\n");
+	print("<tr><td colspan=\"3\" class=\"colhead\">Настройки аккаунта</td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Профиль припаркован</td><td colspan=\"2\">" . ud_yes_no_radios("parked", $user["parked"] ?? "no") . "</td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Показывать аватары</td><td colspan=\"2\">" . ud_yes_no_radios("avatars", $user["avatars"] ?? "yes") . "</td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Личные сообщения</td><td colspan=\"2\">" . ud_select("acceptpms", array("yes" => "принимать от всех", "friends" => "только от друзей", "no" => "не принимать"), $user["acceptpms"] ?? "yes") . "</td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Удалять исходящие ЛС</td><td colspan=\"2\">" . ud_yes_no_radios("deletepms", $user["deletepms"] ?? "yes") . "</td></tr>\n");
+	print("<tr><td class=\"rowhead w175\">Сохранять исходящие ЛС</td><td colspan=\"2\">" . ud_yes_no_radios("savepms", $user["savepms"] ?? "no") . "</td></tr>\n");
+	print("<tr><td colspan=\"3\" class=\"colhead\">История и модерация</td></tr>\n");
 	$history_modcomment = ud_cup_history_modcomment((int)$id, $user["modcomment"] ?? "");
 	print("<tr><td class=\"rowhead w175\">История пользователя</td><td colspan=\"2\"><textarea rows=\"6\" class=\"w100p\"" . (get_user_class() < UC_SYSOP ? " readonly" : " name=\"modcomment\"") . ">" . ud_h($history_modcomment) . "</textarea></td></tr>\n");
 	print("<tr><td class=\"rowhead w175\">Добавить заметку</td><td colspan=\"2\"><textarea rows=\"3\" class=\"w100p\" name=\"modcomm\"></textarea></td></tr>\n");
 
-	$warned = ($user["warned"] ?? "no") == "yes";
-	print("<tr><td class=\"rowhead w175\">Предупреждение</td><td colspan=\"2\">" . ($warned ? "<span class=\"red b\">Пользователь предупреждён</span>" : "<span class=\"green b\">Предупреждения нет</span>") . "</td></tr>");
-	if ($warned) {
-		print("<tr><td class=\"rowhead w175\">Оставить предупреждённым?</td><td><label><input name=\"warned\" value=\"yes\" type=\"radio\" checked> Да</label> <label><input name=\"warned\" value=\"no\" type=\"radio\"> Нет</label></td><td>");
-		$warneduntil = $user["warneduntil"] ?? "";
-		print((empty($warneduntil) || $warneduntil == "0000-00-00 00:00:00") ? "Предупреждение на неограниченный срок" : "Предупреждение действует до<br>" . date("d.m.Y H:i:s", strtotime($warneduntil)) . " (осталось " . get_lt(strtotime($warneduntil)) . ")");
-		print("</td></tr>\n");
+	if ($is_self_edit) {
+		print("<input type=\"hidden\" name=\"warned\" value=\"" . ud_h($user["warned"] ?? "no") . "\">\n");
+		print("<input type=\"hidden\" name=\"enabled\" value=\"" . ud_h($user["enabled"] ?? "yes") . "\">\n");
 	} else {
-		print("<input type=\"hidden\" name=\"warned\" value=\"no\">\n");
-		print("<tr><td class=\"rowhead w175\"></td><td>Предупредить на:<br><span class=\"sw190\"><select name=\"warnlength\" class=\"w190 styled\"><option value=\"0\">------</option><option value=\"1\">1 неделю</option><option value=\"2\">2 недели</option><option value=\"4\">4 недели</option><option value=\"8\">8 недель</option><option value=\"255\">Неограничено</option></select></span></td><td>Причина предупреждения:<br><input type=\"text\" class=\"w100p\" name=\"warnpm\"></td></tr>");
-	}
+		$warned = ($user["warned"] ?? "no") == "yes";
+		print("<tr><td class=\"rowhead w175\">Предупреждение</td><td colspan=\"2\">" . ($warned ? "<span class=\"red b\">Пользователь предупреждён</span>" : "<span class=\"green b\">Предупреждения нет</span>") . "</td></tr>");
+		if ($warned) {
+			print("<tr><td class=\"rowhead w175\">Оставить предупреждённым?</td><td><label><input name=\"warned\" value=\"yes\" type=\"radio\" checked> Да</label> <label><input name=\"warned\" value=\"no\" type=\"radio\"> Нет</label></td><td>");
+			$warneduntil = $user["warneduntil"] ?? "";
+			print((empty($warneduntil) || $warneduntil == "0000-00-00 00:00:00") ? "Предупреждение на неограниченный срок" : "Предупреждение действует до<br>" . date("d.m.Y H:i:s", strtotime($warneduntil)) . " (осталось " . get_lt(strtotime($warneduntil)) . ")");
+			print("</td></tr>\n");
+		} else {
+			print("<input type=\"hidden\" name=\"warned\" value=\"no\">\n");
+			print("<tr><td class=\"rowhead w175\"></td><td>Предупредить на:<br><span class=\"sw190\"><select name=\"warnlength\" class=\"w190 styled\"><option value=\"0\">------</option><option value=\"1\">1 неделю</option><option value=\"2\">2 недели</option><option value=\"4\">4 недели</option><option value=\"8\">8 недель</option><option value=\"255\">Неограничено</option></select></span></td><td>Причина предупреждения:<br><input type=\"text\" class=\"w100p\" name=\"warnpm\"></td></tr>");
+		}
 
-	print("<tr><td class=\"rowhead w175\">Включен</td><td colspan=\"2\">" . ($enabled ? "<span class=\"green b\">Пользователь включен</span>" : "<span class=\"red b\">Пользователь отключен</span>") . "</td></tr>");
-	$disabler = "<span class=\"sw190\"><select name=\"dislength\" class=\"w190 styled\"><option value=\"0\">------</option><option value=\"1\">1 неделю</option><option value=\"2\">2 недели</option><option value=\"4\">4 недели</option><option value=\"8\">8 недель</option><option value=\"255\">Неограничено</option></select></span>";
-	if ($enabled) {
-		print("<input type=\"hidden\" name=\"enabled\" value=\"yes\">\n");
-		print("<tr><td class=\"rowhead w175\"></td><td>Отключить на:<br>$disabler</td><td>Причина отключения:<br><input type=\"text\" class=\"w100p\" name=\"disreason\"></td></tr>");
-	} else {
-		print("<tr><td class=\"rowhead w175\">Включить?</td><td><label><input name=\"enabled\" value=\"yes\" type=\"radio\"> Да</label> <label><input name=\"enabled\" value=\"no\" type=\"radio\" checked> Нет</label></td><td>Причина включения:<br><input type=\"text\" class=\"w100p\" name=\"enareason\"></td></tr>");
+		print("<tr><td class=\"rowhead w175\">Включен</td><td colspan=\"2\">" . ($enabled ? "<span class=\"green b\">Пользователь включен</span>" : "<span class=\"red b\">Пользователь отключен</span>") . "</td></tr>");
+		$disabler = "<span class=\"sw190\"><select name=\"dislength\" class=\"w190 styled\"><option value=\"0\">------</option><option value=\"1\">1 неделю</option><option value=\"2\">2 недели</option><option value=\"4\">4 недели</option><option value=\"8\">8 недель</option><option value=\"255\">Неограничено</option></select></span>";
+		if ($enabled) {
+			print("<input type=\"hidden\" name=\"enabled\" value=\"yes\">\n");
+			print("<tr><td class=\"rowhead w175\"></td><td>Отключить на:<br>$disabler</td><td>Причина отключения:<br><input type=\"text\" class=\"w100p\" name=\"disreason\"></td></tr>");
+		} else {
+			print("<tr><td class=\"rowhead w175\">Включить?</td><td><label><input name=\"enabled\" value=\"yes\" type=\"radio\"> Да</label> <label><input name=\"enabled\" value=\"no\" type=\"radio\" checked> Нет</label></td><td>Причина включения:<br><input type=\"text\" class=\"w100p\" name=\"enareason\"></td></tr>");
+		}
+		print("<tr><td class=\"rowhead w175\">Изменить раздачу</td><td><img src=\"pic/plus.gif\" id=\"uppic\" onclick=\"togglepic('$DEFAULTBASEURL','uppic','upchange')\" class=\"pointer\" alt=\"\"> <input type=\"text\" name=\"amountup\" class=\"w90\"></td><td><span class=\"sw90\"><select name=\"formatup\" class=\"w90 styled\"><option value=\"mb\">MB</option><option value=\"gb\">GB</option></select></span></td></tr>");
+		print("<tr><td class=\"rowhead w175\">Изменить скачку</td><td><img src=\"pic/plus.gif\" id=\"downpic\" onclick=\"togglepic('$DEFAULTBASEURL','downpic','downchange')\" class=\"pointer\" alt=\"\"> <input type=\"text\" name=\"amountdown\" class=\"w90\"></td><td><span class=\"sw90\"><select name=\"formatdown\" class=\"w90 styled\"><option value=\"mb\">MB</option><option value=\"gb\">GB</option></select></span></td></tr>");
 	}
-	print("<tr><td class=\"rowhead w175\">Изменить раздачу</td><td><img src=\"pic/plus.gif\" id=\"uppic\" onclick=\"togglepic('$DEFAULTBASEURL','uppic','upchange')\" class=\"pointer\" alt=\"\"> <input type=\"text\" name=\"amountup\" class=\"w90\"></td><td><span class=\"sw90\"><select name=\"formatup\" class=\"w90 styled\"><option value=\"mb\">MB</option><option value=\"gb\">GB</option></select></span></td></tr>");
-	print("<tr><td class=\"rowhead w175\">Изменить скачку</td><td><img src=\"pic/plus.gif\" id=\"downpic\" onclick=\"togglepic('$DEFAULTBASEURL','downpic','downchange')\" class=\"pointer\" alt=\"\"> <input type=\"text\" name=\"amountdown\" class=\"w90\"></td><td><span class=\"sw90\"><select name=\"formatdown\" class=\"w90 styled\"><option value=\"mb\">MB</option><option value=\"gb\">GB</option></select></span></td></tr>");
 	print("<tr><td class=\"rowhead w175\">Сбросить passkey</td><td colspan=\"2\"><input name=\"resetkey\" value=\"1\" type=\"checkbox\"></td></tr>\n");
-	print($CURUSER["class"] < UC_ADMINISTRATOR ? "<input type=\"hidden\" name=\"deluser\" value=\"\">" : "<tr><td class=\"rowhead w175\">Удалить</td><td colspan=\"2\"><input type=\"checkbox\" name=\"deluser\" value=\"1\"></td></tr>");
+	print(($CURUSER["class"] < UC_ADMINISTRATOR || $is_self_edit) ? "<input type=\"hidden\" name=\"deluser\" value=\"\">" : "<tr><td class=\"rowhead w175\">Удалить</td><td colspan=\"2\"><input type=\"checkbox\" name=\"deluser\" value=\"1\"></td></tr>");
 	print("<tr><td colspan=\"3\" class=\"center\"><input type=\"submit\" class=\"buttonS\" value=\"ОК\"></td></tr>\n");
 	print("</table>\n");
 	print("<input type=\"hidden\" id=\"upchange\" name=\"upchange\" value=\"plus\"><input type=\"hidden\" id=\"downchange\" name=\"downchange\" value=\"plus\">\n");
 	print("</form>\n");
+	print("</div></li>\n");
+	print("</ul>\n");
 	print("</div>\n");
 	?>
 	<script type="text/javascript">
-	function toggleUserEditBlock() {
+	(function() {
+	function setUserEditBlockState(open) {
 		var block = document.getElementById('modEditBlock');
 		var toggle = document.getElementById('modEditToggle');
 		if (!block || !toggle) {
 			return false;
 		}
-		if (block.style.display === 'none' || block.style.display === '') {
+		if (open) {
 			block.style.display = 'block';
-			toggle.innerHTML = 'Скрыть редактирование пользователя';
+			toggle.innerHTML = 'Редактирование пользователя - скрыть';
 		} else {
 			block.style.display = 'none';
-			toggle.innerHTML = 'Показать редактирование пользователя';
+			toggle.innerHTML = 'Редактирование пользователя';
 		}
 		return false;
 	}
+	window.toggleUserEditBlock = function(e) {
+		if (e && e.preventDefault) {
+			e.preventDefault();
+		}
+		var block = document.getElementById('modEditBlock');
+		var isOpen = block && block.style.display !== 'none' && block.style.display !== '';
+		return setUserEditBlockState(!isOpen);
+	};
+	var toggle = document.getElementById('modEditToggle');
+	if (toggle) {
+		toggle.onclick = window.toggleUserEditBlock;
+		toggle.title = 'Открыть / закрыть редактирование пользователя';
+	}
+	})();
 	</script>
 	<?
-	end_frame();
 }
 
 $id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
