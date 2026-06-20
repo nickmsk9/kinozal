@@ -356,6 +356,7 @@ function msg_render_box(array $rows, $box)
 	$type = $box === 'out' ? 'out' : ($box === 'arch' ? 'arch' : 'in');
 	$html = '<form action="/deletemessage.php" method="post" name="deletemessage" id="deletemessage">';
 	$html .= '<input name="type" type="hidden" value="' . $type . '"><input name="toarch" type="hidden" value="">';
+	$html .= '<input name="hash4u" type="hidden" value="' . msg_h($GLOBALS['CURUSER']['hash4u'] ?? tracker_user_form_token()) . '">';
 	$html .= '<div class="bx1_0"><table class="tables1 floatright"><tr><td class="line20"><label for="checkall1">Выделить все сообщения</label><input id="checkall1" class="styled" type="checkbox" onclick="check_all(this);" value=""></td><td><input class="buttonS w150" value="удалить выбранные" type="button" onclick="expSubm()"></td>';
 	if ($box !== 'arch') {
 		$html .= '<td><input class="buttonS w100" value="в архив" type="button" onclick="exp2Subm()"></td>';

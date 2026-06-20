@@ -5,6 +5,14 @@ require_once("include/bittorrent.php");
 dbconn();
 loggedinorreturn();
 
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+	http_response_code(405);
+	header('Allow: POST');
+	exit('Method Not Allowed');
+}
+
+tracker_require_form_token('POST');
+
 function bark($msg) {
 	stderr("Произошла ошибка", $msg);
 }

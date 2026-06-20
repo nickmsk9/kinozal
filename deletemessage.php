@@ -6,6 +6,7 @@ require_once("include/messages.php");
 dbconn(false);
 loggedinorreturn();
 parked();
+tracker_require_form_token('POST');
 
 $ids = msg_selected_ids($_POST['cbox'] ?? array());
 $type = (string)($_POST['type'] ?? 'in');

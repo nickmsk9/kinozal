@@ -4,10 +4,10 @@
 require_once("include/bittorrent.php");
 
 
-$id = intval($_GET["id"]);
-$md5 = strval($_GET["secret"]);
+$id = (int)($_GET["id"] ?? 0);
+$md5 = (string)($_GET["secret"] ?? '');
 
-if (!$id)
+if (!$id || $md5 === '')
 	httperr();
 
 dbconn();
@@ -25,7 +25,7 @@ if ($row["status"] != "pending") {
 }
 
 $sec = hash_pad($row["editsecret"]);
-if ($md5 != md5($sec))
+if (preg_match('/^ *$/s', $sec) || !hash_equals(md5($sec), $md5))
 	httperr();
 
 sql_query("UPDATE users SET status='confirmed', editsecret='' WHERE id = $id AND status = 'pending'");

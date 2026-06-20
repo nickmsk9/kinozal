@@ -19,6 +19,8 @@ $username = '';
 $deletedUser = '';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    tracker_require_form_token('POST');
+
     $username = trim((string)($_POST['username'] ?? ''));
     $confirmed = (string)($_POST['confirm_delete'] ?? '') === 'yes';
 
@@ -104,6 +106,7 @@ stdhead('Удаление аккаунта администратором');
                 </div>
 
                 <form method="post" action="/delacctadmin.php" autocomplete="off">
+                    <input type="hidden" name="hash4u" value="<?=delacctadmin_h($CURUSER['hash4u'] ?? tracker_user_form_token());?>">
                     <table class="tables1 w100p">
                         <tr>
                             <td class="rowhead w150">

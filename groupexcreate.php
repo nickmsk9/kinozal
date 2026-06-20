@@ -13,6 +13,8 @@ function groupex_create_bark($message)
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'create') {
+	tracker_require_form_token('POST');
+
 	$name = groups_request_text($_POST['name'] ?? '');
 	$avatar = trim((string)($_POST['avatar'] ?? ''));
 	$private = ($_POST['private'] ?? 'no') === 'yes' ? 'yes' : 'no';
@@ -109,6 +111,7 @@ function checkform()
 	<?php groups_search_sidebar('На этой странице Вы можете создать новую группу.', false); ?>
 	<div class="mn3_content">
 		<form name="cmt" id="cmt" method="post" action="/groupexcreate.php" onsubmit="return checkform();">
+			<input type="hidden" name="hash4u" value="<?= groups_h($CURUSER['hash4u'] ?? tracker_user_form_token()) ?>">
 			<div class="bx1">
 				<table class="tables1 w100p">
 					<tr>

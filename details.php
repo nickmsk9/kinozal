@@ -644,6 +644,7 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 		$html .= '</ul><div class="clr"></div></div>';
 		$html .= '<div class="cmet_e_inp"><textarea id="text" name="text" cols="70" rows="5" class="w98p"></textarea></div>';
 		$html .= '<input type="hidden" name="tid" value="' . (int)$torrentid . '">';
+		$html .= '<input type="hidden" name="hash4u" value="' . details_h($CURUSER['hash4u'] ?? tracker_user_form_token()) . '">';
 		$html .= '<input type="submit" value="Добавить Комментарий" class="buts">';
 		$html .= '</div></form>';
 	}

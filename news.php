@@ -27,6 +27,7 @@ function news_form($action_url, $title, $subject = '', $body = '', $button = 'С
 {
 	?>
 	<form name="news" method="post" action="<?php echo news_h($action_url); ?>">
+		<input type="hidden" name="hash4u" value="<?php echo news_h(tracker_user_form_token()); ?>" />
 		<?php if ((int)$newsid > 0) { ?>
 			<input type="hidden" name="newsid" value="<?php echo (int)$newsid; ?>" />
 		<?php } ?>
@@ -76,13 +77,15 @@ if ($action === 'delete') {
 	$sure = isset($_GET['sure']) ? (int)$_GET['sure'] : 0;
 
 	if (!$sure) {
+		$token = news_h(tracker_user_form_token());
 		stderr(
 			'Удаление новости',
 			'Вы действительно хотите удалить эту новость?<br /><br />
-			<a href="?action=delete&amp;newsid=' . $newsid . '&amp;sure=1"><b>Да, удалить</b></a>'
+			<a href="?action=delete&amp;newsid=' . $newsid . '&amp;sure=1&amp;hash4u=' . $token . '"><b>Да, удалить</b></a>'
 		);
 	}
 
+	tracker_require_form_token('GET');
 	sql_query('DELETE FROM news WHERE id = ' . $newsid . ' LIMIT 1') or sqlerr(__FILE__, __LINE__);
 
 	$warning = 'Новость успешно удалена.';
@@ -95,6 +98,7 @@ if ($action === 'add') {
 	if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 		stderr($tracker_lang['error'], 'Неверный метод запроса.');
 	}
+	tracker_require_form_token('POST');
 
 	$subject = isset($_POST['subject']) ? trim((string)$_POST['subject']) : '';
 	$body = isset($_POST['body']) ? trim((string)$_POST['body']) : '';
@@ -141,6 +145,8 @@ if ($action === 'edit') {
 	$arr = mysqli_fetch_assoc($res);
 
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		tracker_require_form_token('POST');
+
 		$subject = isset($_POST['subject']) ? trim((string)$_POST['subject']) : '';
 		$body = isset($_POST['body']) ? trim((string)$_POST['body']) : '';
 
@@ -161,8 +167,8 @@ if ($action === 'edit') {
 			LIMIT 1
 		") or sqlerr(__FILE__, __LINE__);
 
-		if ($returnto !== '' && strpos($returnto, "\n") === false && strpos($returnto, "\r") === false && preg_match('#^/[A-Za-z0-9_./?=&%+-]*$#', $returnto)) {
-			header('Location: ' . $returnto);
+		if ($returnto !== '') {
+			header('Location: ' . tracker_safe_local_redirect($returnto, '/news.php'));
 			exit;
 		}
 

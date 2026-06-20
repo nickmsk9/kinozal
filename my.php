@@ -69,7 +69,8 @@ function my_country_select($selected) {
 }
 
 function my_theme_select($selected) {
-	$html = '<select name="theme" class="styled w200" onchange="document.location.href=\'/changetheme.php?theme=\'+this.options[this.options.selectedIndex].value;">';
+	$hash = rawurlencode(tracker_user_form_token());
+	$html = '<select name="theme" class="styled w200" onchange="document.location.href=\'/changetheme.php?hash4u=' . $hash . '&amp;theme=\'+encodeURIComponent(this.options[this.options.selectedIndex].value);">';
 	$selectedResolved = theme_resolve_name($selected);
 	foreach (get_themes() as $theme) {
 		$label = theme_display_name($theme);
@@ -88,6 +89,7 @@ $birthday = (!empty($CURUSER["birthday"]) && $CURUSER["birthday"] !== "0000-00-0
 list($b_year, $b_month, $b_day) = explode('-', date('Y-m-d', strtotime($birthday)));
 
 tracker_ensure_user_passkey($CURUSER);
+$form_hash = my_h($CURUSER['hash4u'] ?? tracker_user_form_token());
 $hide_right_blocks = true;
 stdhead($tracker_lang['my_my'] ?? 'Мой профиль');
 
@@ -104,6 +106,7 @@ if (isset($_GET["mailsent"])) {
 		<div class="bx1 <?= $profile_class_css ?>"><a href="/userdetails.php?id=<?= $id ?>" class="<?= $profile_class_css ?>"><?= $profile_name ?></a></div>
 
 		<form name="myc" method="post" action="/takeprofedit.php?act=1">
+			<input type="hidden" name="hash4u" value="<?= $form_hash ?>">
 			<div class="bx1_0">
 				<div class="pad5x5 u2"><span class="bulet"></span>Основные настройки</div>
 				<table class="tables4 w100p">
@@ -121,6 +124,7 @@ if (isset($_GET["mailsent"])) {
 		</form>
 
 		<form name="mycphpto" method="post" action="/takeprofedit.php?act=2">
+			<input type="hidden" name="hash4u" value="<?= $form_hash ?>">
 			<div class="bx1_0">
 				<div class="pad5x5 u2"><span class="bulet"></span>Ваша фотография</div>
 				<div class="w200 nw floatleft"><img src="<?= $avatar ?>" class="w200 block pad5x5" alt=""></div>
@@ -133,6 +137,7 @@ if (isset($_GET["mailsent"])) {
 		</form>
 
 		<form name="mypassk" method="post" action="/takeprofedit.php?act=10" onsubmit="return confirm('Внимание, после смены пасскей Вам необходимо будет заново скачать все активные торренты!')">
+			<input type="hidden" name="hash4u" value="<?= $form_hash ?>">
 			<div class="bx1"><table class="tables4">
 				<tr><td class="w100 right nw">Ваш пасскей:</td><td class="b"><?= my_h($CURUSER["passkey"]) ?></td></tr>
 				<tr><td class="right nw">Пароль</td><td><ul class="men"><li><input type="password" name="psw" size="28" value=""> Требуется для смены данных</li></ul></td></tr>
@@ -144,6 +149,7 @@ if (isset($_GET["mailsent"])) {
 		<div class="bx1"><div class="w200 nw floatleft"><input type="button" value="Редактировать информацию" onclick="document.location.href='my_info.php'" class="buttonS w200"></div><div style="padding: 0 0 0 220px;"><b class="u2">Информация пользователя</b> - Вы можете разместить интересную и познавательную информацию здесь</div></div>
 
 		<form name="mypark" method="post" action="/takeprofedit.php?act=11">
+			<input type="hidden" name="hash4u" value="<?= $form_hash ?>">
 			<div class="bx1"><div class="pad5x5 u2"><span class="bulet"></span>Припарковать профиль</div><table class="tables4">
 				<tr><td class="w120 right nw">Профиль припаркован</td><td class="line20"><input class="styled" type="radio" id="prk1" name="parked" value="yes"<?= ($CURUSER["parked"] == "yes" ? " checked" : "") ?>><label for="prk1" class="label_lf">Да</label> <input class="styled" type="radio" id="prk2" name="parked" value="no"<?= ($CURUSER["parked"] == "no" ? " checked" : "") ?>><label for="prk2" class="label_lf">Нет</label></td></tr>
 				<tr><td class="right nw">Пароль</td><td><ul class="men"><li><input type="password" name="psw" size="28" value=""> Требуется для смены данных</li></ul></td></tr>
@@ -152,6 +158,7 @@ if (isset($_GET["mailsent"])) {
 		</form>
 
 		<form name="mypass" method="post" action="/takeprofedit.php?act=12">
+			<input type="hidden" name="hash4u" value="<?= $form_hash ?>">
 			<div class="bx1"><div class="pad5x5 u2"><span class="bulet"></span>Сменить пароль</div><table class="tables4">
 				<tr><td class="w120 right nw">Старый пароль</td><td><input type="password" name="pass" value="" size="28" autocomplete="off"></td><td><a href="/recover.php" class="sba">Забыли пароль ?</a></td></tr>
 				<tr><td class="w120 right nw">Новый пароль</td><td><input type="password" name="chpass" value="" size="28" autocomplete="off"></td><td></td></tr>
@@ -161,6 +168,7 @@ if (isset($_GET["mailsent"])) {
 		</form>
 
 		<form name="mymail" method="post" action="/takeprofedit.php?act=13">
+			<input type="hidden" name="hash4u" value="<?= $form_hash ?>">
 			<div class="bx1"><div class="pad5x5 u2"><span class="bulet"></span>Сменить почтовый ящик</div><table class="tables4">
 				<tr><td class="w120 right nw">Ваша почта</td><td colspan="2"><b><?= my_h($CURUSER["email"]) ?></b> ( При смене адреса письмо для подтверждения высылается на новый адрес )</td></tr>
 					<tr><td class="w120 right nw">Новая почта</td><td><input type="text" name="mail" value="" size="28" autocomplete="off"></td><td><a class="sba" href="/pay_help.php">Для смены почты обратитесь в техподдержку</a></td></tr>

@@ -17,6 +17,7 @@ $can_manage = groups_can_manage($group, 0, $member);
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'addtorrent') {
 	loggedinorreturn();
+	tracker_require_form_token('POST');
 	if (!$can_manage) {
 		stderr('Группа', 'У Вас нет прав добавлять раздачи в эту группу.');
 	}
@@ -40,6 +41,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') ==
 }
 
 if (($_GET['action'] ?? '') === 'remove' && $can_manage) {
+	tracker_require_form_token('GET');
+
 	$torrent_id = (int)($_GET['torrent_id'] ?? 0);
 	if ($torrent_id > 0) {
 		sql_query("DELETE FROM groupex_torrents WHERE group_id = $id AND torrent_id = $torrent_id") or sqlerr(__FILE__, __LINE__);
@@ -74,6 +77,7 @@ stdhead('Галерея раздач :: ' . $group['name']);
 		<?php if ($can_manage) { ?>
 			<div class="bx1" id="addtorrent">
 				<form method="post" action="/groupextorrents.php?id=<?= $id ?>">
+					<input type="hidden" name="hash4u" value="<?= groups_h($CURUSER['hash4u'] ?? tracker_user_form_token()) ?>">
 					<table class="tables1 w100p">
 						<tr>
 							<td class="w150"><b>Добавить раздачу:</b></td>

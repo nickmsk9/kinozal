@@ -16,6 +16,7 @@ $member = !empty($CURUSER) ? groups_member($id, (int)$CURUSER['id']) : null;
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_GET['zaboraction'] ?? '') === 'addcomment') {
 	loggedinorreturn();
+	tracker_require_form_token('POST');
 	$member = groups_member($id, (int)$CURUSER['id']);
 	if (!$member || $member['status'] !== 'member') {
 		stderr('Забор группы', 'Писать на заборе могут только участники группы.');
@@ -148,6 +149,7 @@ $zabor_res = sql_query("
 			</div>
 			<?php if ($member && $member['status'] === 'member') { ?>
 				<form id="cmt" method="post" action="/groupex.php?id=<?= $id ?>&amp;zaboraction=addcomment">
+					<input type="hidden" name="hash4u" value="<?= groups_h($CURUSER['hash4u'] ?? tracker_user_form_token()) ?>">
 					<div class="pad10x10 displaynone" id="cmtcomm">
 						<div class="cmet_e_but">
 							<ul>

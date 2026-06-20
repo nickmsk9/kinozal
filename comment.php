@@ -23,20 +23,18 @@ function comment_back_url($torrentid, $commentid = 0)
 
 function comment_safe_return($url, $fallback)
 {
-	$url = (string)$url;
-	if ($url === '' || preg_match('/[\r\n]/', $url) || preg_match('#^[a-z]+://#i', $url)) {
-		return $fallback;
-	}
-	return $url;
+	return tracker_safe_local_redirect($url, '/' . ltrim((string)$fallback, '/'));
 }
 
 function comment_form($title, $action_url, $torrentid, $text, $submit, $returnto = '')
 {
 	$hidden_return = $returnto !== '' ? '<input type="hidden" name="returnto" value="' . comment_h($returnto) . '">' : '';
+	$token = tracker_user_form_token();
 	stdhead($title);
 	print '<div class="bx1">';
 	print '<form method="post" name="comment" action="' . comment_h($action_url) . '">';
-	print '<input type="hidden" name="tid" value="' . (int)$torrentid . '">' . $hidden_return;
+	print '<input type="hidden" name="tid" value="' . (int)$torrentid . '">';
+	print '<input type="hidden" name="hash4u" value="' . comment_h($token) . '">' . $hidden_return;
 	print '<div class="pad5x5"><b>' . comment_h($title) . '</b></div>';
 	print '<div class="pad10x10"><textarea id="text" name="text" cols="70" rows="8" class="w98p">' . comment_h($text) . '</textarea></div>';
 	print '<div class="pad5x5"><input type="submit" value="' . comment_h($submit) . '" class="buts"></div>';
@@ -70,6 +68,8 @@ if ($action === 'add') {
 		}
 		comment_form('Добавление комментария к "' . $torrent['name'] . '"', 'comment.php?action=add', $torrentid, '', 'Добавить');
 	}
+
+	tracker_require_form_token('POST');
 
 	$torrentid = (int)($_POST['tid'] ?? 0);
 	if (!is_valid_id($torrentid)) {
@@ -146,6 +146,8 @@ if ($action === 'edit') {
 	}
 
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		tracker_require_form_token('POST');
+
 		$text = trim((string)($_POST['text'] ?? ''));
 		if ($text === '') {
 			stderr($tracker_lang['error'], $tracker_lang['comment_cant_be_empty']);

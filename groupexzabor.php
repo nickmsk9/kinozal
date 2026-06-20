@@ -16,6 +16,7 @@ $member = !empty($CURUSER) ? groups_member($id, (int)$CURUSER['id']) : null;
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'addcomment') {
 	loggedinorreturn();
+	tracker_require_form_token('POST');
 	$member = groups_member($id, (int)$CURUSER['id']);
 	if (!$member || $member['status'] !== 'member') {
 		stderr('Забор группы', 'Писать на заборе могут только участники группы.');
@@ -69,6 +70,7 @@ groups_subcat_script();
 		</div>
 		<?php if ($member && $member['status'] === 'member') { ?>
 			<form method="post" action="/groupexzabor.php?id=<?= $id ?>">
+				<input type="hidden" name="hash4u" value="<?= groups_h($CURUSER['hash4u'] ?? tracker_user_form_token()) ?>">
 				<div class="bx1">
 					<div class="cmet_e_but">
 						<ul>
