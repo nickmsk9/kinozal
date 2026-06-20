@@ -18,6 +18,13 @@ $res = sql_query("
 	  AND g.visible = 'yes'
 	ORDER BY FIELD(gm.status, 'member', 'invited', 'pending'), g.name
 ") or sqlerr(__FILE__, __LINE__);
+$groups = array();
+while ($group = mysqli_fetch_assoc($res)) {
+	$groups[] = $group;
+}
+if ($groups) {
+	groups_prefetch_bookmarks(array_column($groups, 'id'), $userid);
+}
 
 $hide_right_blocks = true;
 stdhead('Мои группы');
@@ -40,12 +47,10 @@ stdhead('Мои группы');
 		</div>
 		<div class="bx2_0">
 			<?php
-			$found = false;
-			while ($group = mysqli_fetch_assoc($res)) {
-				$found = true;
+			foreach ($groups as $group) {
 				groups_group_card($group, 'mine');
 			}
-			if (!$found) {
+			if (!$groups) {
 				echo '<div class="pad10x10 center">Вы пока не состоите ни в одной группе.</div>';
 			}
 			?>

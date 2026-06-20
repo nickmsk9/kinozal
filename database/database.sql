@@ -281,6 +281,192 @@ CREATE TABLE `messages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
+# Structure for the `groupex_categories` table :
+#
+
+DROP TABLE IF EXISTS `groupex_categories`;
+
+CREATE TABLE `groupex_categories` (
+  `id` tinyint(3) unsigned NOT NULL,
+  `name` varchar(120) NOT NULL default '',
+  `sort` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY (`id`),
+  KEY `sort` (`sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `groupex_subcategories` table :
+#
+
+DROP TABLE IF EXISTS `groupex_subcategories`;
+
+CREATE TABLE `groupex_subcategories` (
+  `id` int(10) unsigned NOT NULL,
+  `category_id` tinyint(3) unsigned NOT NULL default '0',
+  `name` varchar(160) NOT NULL default '',
+  `sort` int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY (`id`),
+  KEY `category_sort` (`category_id`,`sort`),
+  KEY `category_id` (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `groupex_groups` table :
+#
+
+DROP TABLE IF EXISTS `groupex_groups`;
+
+CREATE TABLE `groupex_groups` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `name` varchar(160) NOT NULL default '',
+  `avatar` text NOT NULL,
+  `private` enum('no','yes') NOT NULL default 'no',
+  `type` tinyint(3) unsigned NOT NULL default '1',
+  `cat` tinyint(3) unsigned NOT NULL default '0',
+  `subcat` int(10) unsigned NOT NULL default '0',
+  `description` mediumtext NOT NULL,
+  `owner_id` int(10) unsigned NOT NULL default '0',
+  `members_count` int(10) unsigned NOT NULL default '0',
+  `torrents_count` int(10) unsigned NOT NULL default '0',
+  `zabor_count` int(10) unsigned NOT NULL default '0',
+  `visible` enum('yes','no') NOT NULL default 'yes',
+  `created_at` datetime NULL DEFAULT NULL,
+  `updated_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `name` (`name`),
+  KEY `type` (`type`),
+  KEY `cat` (`cat`),
+  KEY `subcat` (`subcat`),
+  KEY `owner_id` (`owner_id`),
+  KEY `visible_created` (`visible`,`created_at`),
+  KEY `visible_members_created` (`visible`,`members_count`,`created_at`,`id`),
+  KEY `visible_torrents_created` (`visible`,`torrents_count`,`created_at`,`id`),
+  KEY `visible_zabor_created` (`visible`,`zabor_count`,`created_at`,`id`),
+  KEY `visible_type_created` (`visible`,`type`,`created_at`,`id`),
+  KEY `visible_cat_created` (`visible`,`cat`,`created_at`,`id`),
+  KEY `visible_subcat_created` (`visible`,`subcat`,`created_at`,`id`),
+  KEY `owner_visible_created` (`owner_id`,`visible`,`created_at`,`id`),
+  KEY `members_count` (`members_count`),
+  KEY `torrents_count` (`torrents_count`),
+  KEY `zabor_count` (`zabor_count`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `groupex_members` table :
+#
+
+DROP TABLE IF EXISTS `groupex_members`;
+
+CREATE TABLE `groupex_members` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `group_id` int(10) unsigned NOT NULL default '0',
+  `userid` int(10) unsigned NOT NULL default '0',
+  `role` enum('owner','moderator','member') NOT NULL default 'member',
+  `status` enum('member','pending','invited','blocked') NOT NULL default 'member',
+  `added_at` datetime NULL DEFAULT NULL,
+  `updated_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `group_user` (`group_id`,`userid`),
+  KEY `userid` (`userid`),
+  KEY `status` (`status`),
+  KEY `role` (`role`),
+  KEY `group_status_role_added` (`group_id`,`status`,`role`,`added_at`,`userid`),
+  KEY `userid_status_group` (`userid`,`status`,`group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `groupex_torrents` table :
+#
+
+DROP TABLE IF EXISTS `groupex_torrents`;
+
+CREATE TABLE `groupex_torrents` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `group_id` int(10) unsigned NOT NULL default '0',
+  `torrent_id` int(10) unsigned NOT NULL default '0',
+  `added_by` int(10) unsigned NOT NULL default '0',
+  `added_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `group_torrent` (`group_id`,`torrent_id`),
+  KEY `torrent_id` (`torrent_id`),
+  KEY `added_at` (`added_at`),
+  KEY `group_added_id` (`group_id`,`added_at`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `groupex_bookmarks` table :
+#
+
+DROP TABLE IF EXISTS `groupex_bookmarks`;
+
+CREATE TABLE `groupex_bookmarks` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `userid` int(10) unsigned NOT NULL default '0',
+  `group_id` int(10) unsigned NOT NULL default '0',
+  `added_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_group` (`userid`,`group_id`),
+  KEY `group_id` (`group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `groupex_zabor` table :
+#
+
+DROP TABLE IF EXISTS `groupex_zabor`;
+
+CREATE TABLE `groupex_zabor` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `group_id` int(10) unsigned NOT NULL default '0',
+  `userid` int(10) unsigned NOT NULL default '0',
+  `text` mediumtext NOT NULL,
+  `ori_text` mediumtext NOT NULL,
+  `added_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `group_added` (`group_id`,`added_at`),
+  KEY `group_added_id` (`group_id`,`added_at`,`id`),
+  KEY `userid` (`userid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `groupex_log` table :
+#
+
+DROP TABLE IF EXISTS `groupex_log`;
+
+CREATE TABLE `groupex_log` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `group_id` int(10) unsigned NOT NULL default '0',
+  `userid` int(10) unsigned NOT NULL default '0',
+  `action` varchar(40) NOT NULL default '',
+  `text` varchar(255) NOT NULL default '',
+  `added_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `group_added` (`group_id`,`added_at`),
+  KEY `group_added_id` (`group_id`,`added_at`,`id`),
+  KEY `userid` (`userid`),
+  KEY `action` (`action`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `group_page_items` table :
+#
+
+DROP TABLE IF EXISTS `group_page_items`;
+
+CREATE TABLE `group_page_items` (
+  `id` int(10) unsigned NOT NULL auto_increment,
+  `group_id` int(10) unsigned NOT NULL default '0',
+  `sort` int(10) unsigned NOT NULL default '0',
+  `active` enum('yes','no') NOT NULL default 'yes',
+  `added_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `group_id` (`group_id`),
+  KEY `active_sort` (`active`,`sort`),
+  KEY `active_sort_group` (`active`,`sort`,`group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
 # Structure for the `news` table :
 #
 

@@ -34,9 +34,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') ==
 	exit;
 }
 
-$count_res = sql_query("SELECT COUNT(*) FROM groupex_zabor WHERE group_id = $id") or sqlerr(__FILE__, __LINE__);
-$count_row = mysqli_fetch_row($count_res);
-$count = (int)($count_row[0] ?? 0);
+$count = (int)($group['zabor_count'] ?? 0);
 list($pagertop, $pagerbottom, $limit) = pager(20, $count, '/groupexzabor.php?id=' . $id . '&amp;');
 
 $zabor_res = sql_query("

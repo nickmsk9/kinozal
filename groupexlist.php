@@ -61,6 +61,13 @@ $groups_res = sql_query("
 	ORDER BY $order_sql
 	$limit
 ") or sqlerr(__FILE__, __LINE__);
+$groups = array();
+while ($group = mysqli_fetch_assoc($groups_res)) {
+    $groups[] = $group;
+}
+if (!empty($CURUSER) && $groups) {
+    groups_prefetch_bookmarks(array_column($groups, 'id'), (int)$CURUSER['id']);
+}
 
 $hide_right_blocks = true;
 stdhead('Список групп');
@@ -88,7 +95,7 @@ groups_subcat_script(array('gsearch_subcatsel' => $subcat));
             <?php if ($count < 1) { ?>
                 <div class="pad10x10 center">По заданным параметрам группы не найдены.</div>
             <?php } else { ?>
-                <?php while ($group = mysqli_fetch_assoc($groups_res)) { ?>
+                <?php foreach ($groups as $group) { ?>
                     <?php groups_group_card($group); ?>
                 <?php } ?>
             <?php } ?>

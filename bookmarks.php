@@ -288,6 +288,9 @@ stdhead('Закладки');
 			while ($group = mysqli_fetch_assoc($res)) {
 				$groups[] = $group;
 			}
+			if ($groups) {
+				groups_prefetch_bookmarks(array_column($groups, 'id'), $userId, true);
+			}
 			if (!$groups) {
 				echo '<div class="bx1 justify b">Нет сделанных закладок</div>';
 			} else {

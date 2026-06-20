@@ -3,9 +3,6 @@
 require_once __DIR__ . '/include/bittorrent.php';
 require_once __DIR__ . '/include/groupex.php';
 
-dbconn(false);
-groups_ensure_schema();
-
 header('Content-Type: application/json; charset=UTF-8');
 
 $q = (string)($_POST['q'] ?? $_GET['q'] ?? '');

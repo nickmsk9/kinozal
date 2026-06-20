@@ -13,11 +13,9 @@ if (!$group) {
 }
 
 $member = !empty($CURUSER) ? groups_member($id, (int)$CURUSER['id']) : null;
-$can_manage = groups_can_manage($group);
+$can_manage = groups_can_manage($group, 0, $member);
 
-$count_res = sql_query("SELECT COUNT(*) FROM groupex_members WHERE group_id = $id AND status = 'member'") or sqlerr(__FILE__, __LINE__);
-$count_row = mysqli_fetch_row($count_res);
-$count = (int)($count_row[0] ?? 0);
+$count = (int)($group['members_count'] ?? 0);
 list($pagertop, $pagerbottom, $limit) = pager(50, $count, '/groupexmembers.php?id=' . $id . '&amp;');
 
 $members_res = sql_query("

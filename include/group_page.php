@@ -8,7 +8,19 @@ require_once __DIR__ . '/groupex.php';
 
 function group_page_ensure_schema()
 {
+	static $done = false;
+
+	if ($done) {
+		return;
+	}
+
+	$done = true;
+
 	groups_ensure_schema();
+
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+		return;
+	}
 
 	sql_query("
 		CREATE TABLE IF NOT EXISTS group_page_items (
@@ -22,6 +34,10 @@ function group_page_ensure_schema()
 			KEY active_sort (active, sort)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	") or sqlerr(__FILE__, __LINE__);
+
+	if (function_exists('groups_index_exists') && !groups_index_exists('group_page_items', 'active_sort_group')) {
+		sql_query("ALTER TABLE group_page_items ADD KEY active_sort_group (active, sort, group_id)") or sqlerr(__FILE__, __LINE__);
+	}
 }
 
 function group_page_h($value)
@@ -29,17 +45,25 @@ function group_page_h($value)
 	return htmlspecialchars_uni((string)$value);
 }
 
-function group_page_rows($active_only = true)
+function group_page_limit_sql($limit_sql)
+{
+	$limit_sql = trim((string)$limit_sql);
+	return preg_match('/^LIMIT\s+\d+\s*,\s*\d+$/i', $limit_sql) ? $limit_sql : '';
+}
+
+function group_page_rows($active_only = true, $limit_sql = '')
 {
 	group_page_ensure_schema();
 
 	$where = $active_only ? "WHERE i.active = 'yes' AND g.visible = 'yes'" : '';
+	$limit_sql = group_page_limit_sql($limit_sql);
 	$res = sql_query("
 		SELECT i.id AS item_id, i.sort AS page_sort, i.active AS page_active, g.*
 		FROM group_page_items AS i
 		INNER JOIN groupex_groups AS g ON g.id = i.group_id
 		$where
 		ORDER BY i.sort ASC, g.name ASC
+		$limit_sql
 	") or sqlerr(__FILE__, __LINE__);
 
 	$rows = array();
@@ -50,10 +74,11 @@ function group_page_rows($active_only = true)
 	return $rows;
 }
 
-function group_page_public_rows($limit_sql = '')
+function group_page_public_rows($limit_sql = '', $fallback_to_items = true)
 {
-	$rows = group_page_rows(true);
-	if ($rows) {
+	$limit_sql = group_page_limit_sql($limit_sql);
+	$rows = $fallback_to_items ? group_page_rows(true, $limit_sql) : array();
+	if ($fallback_to_items && $rows) {
 		return $rows;
 	}
 
@@ -124,6 +149,17 @@ function group_page_card(array $group)
 	echo '</tr>';
 	echo '</table>';
 	echo '</div>';
+}
+
+function group_page_prefetch_bookmarks(array $groups)
+{
+	global $CURUSER;
+
+	if (!$CURUSER || !$groups) {
+		return;
+	}
+
+	groups_prefetch_bookmarks(array_column($groups, 'id'), (int)$CURUSER['id']);
 }
 
 ?>

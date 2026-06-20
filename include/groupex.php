@@ -4,6 +4,10 @@ if (!defined('IN_TRACKER')) {
     die('Direct access denied.');
 }
 
+if (!defined('KZ_AUTO_MIGRATIONS')) {
+    define('KZ_AUTO_MIGRATIONS', false);
+}
+
 function groups_h($value)
 {
     return htmlspecialchars_uni((string)$value);
@@ -75,6 +79,18 @@ function groups_subcategories()
 
 function groups_ensure_schema()
 {
+    static $done = false;
+
+    if ($done) {
+        return;
+    }
+
+    $done = true;
+
+    if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+        return;
+    }
+
     sql_query("
 		CREATE TABLE IF NOT EXISTS groupex_categories (
 			id tinyint(3) unsigned NOT NULL,
@@ -217,6 +233,38 @@ function groups_ensure_schema()
     if ($sub_values) {
         sql_query('INSERT IGNORE INTO groupex_subcategories (id, category_id, name, sort) VALUES ' . implode(',', $sub_values)) or sqlerr(__FILE__, __LINE__);
     }
+
+    $indexes = array(
+        array('groupex_groups', 'visible_members_created', 'ALTER TABLE groupex_groups ADD KEY visible_members_created (visible, members_count, created_at, id)'),
+        array('groupex_groups', 'visible_torrents_created', 'ALTER TABLE groupex_groups ADD KEY visible_torrents_created (visible, torrents_count, created_at, id)'),
+        array('groupex_groups', 'visible_zabor_created', 'ALTER TABLE groupex_groups ADD KEY visible_zabor_created (visible, zabor_count, created_at, id)'),
+        array('groupex_groups', 'visible_type_created', 'ALTER TABLE groupex_groups ADD KEY visible_type_created (visible, type, created_at, id)'),
+        array('groupex_groups', 'visible_cat_created', 'ALTER TABLE groupex_groups ADD KEY visible_cat_created (visible, cat, created_at, id)'),
+        array('groupex_groups', 'visible_subcat_created', 'ALTER TABLE groupex_groups ADD KEY visible_subcat_created (visible, subcat, created_at, id)'),
+        array('groupex_groups', 'owner_visible_created', 'ALTER TABLE groupex_groups ADD KEY owner_visible_created (owner_id, visible, created_at, id)'),
+        array('groupex_members', 'group_status_role_added', 'ALTER TABLE groupex_members ADD KEY group_status_role_added (group_id, status, role, added_at, userid)'),
+        array('groupex_members', 'userid_status_group', 'ALTER TABLE groupex_members ADD KEY userid_status_group (userid, status, group_id)'),
+        array('groupex_torrents', 'group_added_id', 'ALTER TABLE groupex_torrents ADD KEY group_added_id (group_id, added_at, id)'),
+        array('groupex_zabor', 'group_added_id', 'ALTER TABLE groupex_zabor ADD KEY group_added_id (group_id, added_at, id)'),
+        array('groupex_log', 'group_added_id', 'ALTER TABLE groupex_log ADD KEY group_added_id (group_id, added_at, id)'),
+    );
+
+    foreach ($indexes as $index) {
+        if (!groups_index_exists($index[0], $index[1])) {
+            sql_query($index[2]) or sqlerr(__FILE__, __LINE__);
+        }
+    }
+}
+
+function groups_index_exists($table, $index)
+{
+    $table = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$table);
+    if ($table === '') {
+        return false;
+    }
+
+    $res = sql_query("SHOW INDEX FROM `$table` WHERE Key_name = " . sqlesc($index));
+    return $res && mysqli_num_rows($res) > 0;
 }
 
 function groups_type_name($id)
@@ -425,7 +473,7 @@ function groups_is_member($group_id, $userid = 0)
     return $member && $member['status'] === 'member';
 }
 
-function groups_can_manage(array $group, $userid = 0)
+function groups_can_manage(array $group, $userid = 0, $member = null)
 {
     global $CURUSER;
     if (!$CURUSER) {
@@ -440,7 +488,9 @@ function groups_can_manage(array $group, $userid = 0)
     if ((int)$group['owner_id'] === $userid) {
         return true;
     }
-    $member = groups_member((int)$group['id'], $userid);
+    if (!$member || (int)($member['userid'] ?? 0) !== $userid || (int)($member['group_id'] ?? 0) !== (int)$group['id']) {
+        $member = groups_member((int)$group['id'], $userid);
+    }
     return $member && $member['status'] === 'member' && in_array($member['role'], array('owner', 'moderator'), true);
 }
 
@@ -489,6 +539,7 @@ function groups_add_bookmark($group_id, $userid)
 		INSERT IGNORE INTO groupex_bookmarks (userid, group_id, added_at)
 		VALUES ($userid, $group_id, NOW())
 	") or sqlerr(__FILE__, __LINE__);
+    groups_prefetch_bookmarks(array($group_id), $userid, true);
     return true;
 }
 
@@ -503,7 +554,61 @@ function groups_remove_bookmark($group_id, $userid)
     }
 
     sql_query("DELETE FROM groupex_bookmarks WHERE userid = $userid AND group_id = $group_id") or sqlerr(__FILE__, __LINE__);
+    groups_prefetch_bookmarks(array($group_id), $userid, false);
     return true;
+}
+
+function groups_prefetch_bookmarks(array $group_ids, $userid, $known_bookmarked = null)
+{
+    global $groups_bookmark_cache;
+
+    $userid = (int)$userid;
+    if ($userid <= 0) {
+        return;
+    }
+
+    $ids = array();
+    foreach ($group_ids as $group_id) {
+        $group_id = (int)$group_id;
+        if ($group_id > 0) {
+            $ids[$group_id] = $group_id;
+        }
+    }
+
+    if (!$ids) {
+        return;
+    }
+
+    if (!isset($groups_bookmark_cache) || !is_array($groups_bookmark_cache)) {
+        $groups_bookmark_cache = array();
+    }
+    if (!isset($groups_bookmark_cache[$userid]) || !is_array($groups_bookmark_cache[$userid])) {
+        $groups_bookmark_cache[$userid] = array();
+    }
+
+    if ($known_bookmarked !== null) {
+        foreach ($ids as $id) {
+            $groups_bookmark_cache[$userid][$id] = (bool)$known_bookmarked;
+        }
+        return;
+    }
+
+    $missing = array();
+    foreach ($ids as $id) {
+        if (!array_key_exists($id, $groups_bookmark_cache[$userid])) {
+            $groups_bookmark_cache[$userid][$id] = false;
+            $missing[] = $id;
+        }
+    }
+
+    if (!$missing) {
+        return;
+    }
+
+    $res = sql_query("SELECT group_id FROM groupex_bookmarks WHERE userid = $userid AND group_id IN (" . implode(',', $missing) . ")") or sqlerr(__FILE__, __LINE__);
+    while ($row = mysqli_fetch_assoc($res)) {
+        $groups_bookmark_cache[$userid][(int)$row['group_id']] = true;
+    }
 }
 
 function groups_is_bookmarked($group_id, $userid)
@@ -516,8 +621,21 @@ function groups_is_bookmarked($group_id, $userid)
         return false;
     }
 
+    global $groups_bookmark_cache;
+    if (
+        isset($groups_bookmark_cache)
+        && is_array($groups_bookmark_cache)
+        && isset($groups_bookmark_cache[$userid])
+        && is_array($groups_bookmark_cache[$userid])
+        && array_key_exists($group_id, $groups_bookmark_cache[$userid])
+    ) {
+        return (bool)$groups_bookmark_cache[$userid][$group_id];
+    }
+
     $res = sql_query("SELECT id FROM groupex_bookmarks WHERE userid = $userid AND group_id = $group_id LIMIT 1") or sqlerr(__FILE__, __LINE__);
-    return (bool)mysqli_fetch_assoc($res);
+    $bookmarked = (bool)mysqli_fetch_assoc($res);
+    groups_prefetch_bookmarks(array($group_id), $userid, $bookmarked);
+    return $bookmarked;
 }
 
 function groups_search_href($field, $value)
@@ -693,7 +811,7 @@ function groups_group_sidebar(array $group, $member = null)
 
     $id = (int)$group['id'];
     $hash = groups_hash();
-    $can_manage = groups_can_manage($group);
+    $can_manage = groups_can_manage($group, 0, $member);
     $is_member = $member && $member['status'] === 'member';
 
     echo '<div class="mn3_menu"><ul class="men w200">';

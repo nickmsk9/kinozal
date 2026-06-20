@@ -13,7 +13,7 @@ if (!$group) {
 }
 
 $member = !empty($CURUSER) ? groups_member($id, (int)$CURUSER['id']) : null;
-$can_manage = groups_can_manage($group);
+$can_manage = groups_can_manage($group, 0, $member);
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'addtorrent') {
 	loggedinorreturn();

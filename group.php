@@ -13,22 +13,19 @@ $res = sql_query("
 	INNER JOIN groupex_groups AS g ON g.id = i.group_id
 	WHERE i.active = 'yes' AND g.visible = 'yes'
 ") or sqlerr(__FILE__, __LINE__);
-$has_items = (int)(mysqli_fetch_row($res)[0] ?? 0) > 0;
+$item_count = (int)(mysqli_fetch_row($res)[0] ?? 0);
+$has_items = $item_count > 0;
 
 if ($has_items) {
-	$count = get_row_count('group_page_items AS i INNER JOIN groupex_groups AS g ON g.id = i.group_id', "WHERE i.active = 'yes' AND g.visible = 'yes'");
+	$count = $item_count;
 } else {
 	$count = get_row_count('groupex_groups', "WHERE visible = 'yes'");
 }
 
 $perpage = 30;
 list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, '/group.php?');
-$groups = $has_items ? group_page_rows(true) : group_page_public_rows($limit);
-
-if ($has_items && $limit) {
-	$page = isset($_GET['page']) ? max(0, (int)$_GET['page']) : 0;
-	$groups = array_slice($groups, $page * $perpage, $perpage);
-}
+$groups = $has_items ? group_page_rows(true, $limit) : group_page_public_rows($limit, false);
+group_page_prefetch_bookmarks($groups);
 
 $hide_right_blocks = true;
 stdhead('Группы');
