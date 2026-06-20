@@ -8,8 +8,9 @@ if (!defined("IN_TRACKER")) {
 
 // INCLUDE/REQUIRE BACK-END
 require_once($rootpath . 'include/init.php');
-require_once($rootpath . 'include/global.php');
+require_once($rootpath . 'include/secrets.php');
 require_once($rootpath . 'include/config.php');
+require_once($rootpath . 'include/cache.php');
 require_once($rootpath . 'include/functions.php');
 require_once($rootpath . 'include/site_settings.php');
 require_once($rootpath . 'include/cups.php');
@@ -18,8 +19,6 @@ require_once($rootpath . 'include/reputation.php');
 require_once($rootpath . 'include/pay.php');
 require_once($rootpath . 'include/blocks.php');
 require_once($rootpath . 'include/flags.php');
-require_once($rootpath . 'include/secrets.php');
-require_once($rootpath . 'include/cache.php');
 
 // INCLUDE SECURITY BACK-END
 if ($ctracker) {

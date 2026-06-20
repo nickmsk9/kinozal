@@ -67,13 +67,17 @@
   {
     global $smilies, $DEFAULTBASEURL;
 
+    if ((!isset($smilies) || !is_array($smilies)) && defined('ROOT_PATH')) {
+      require_once ROOT_PATH . 'include/global.php';
+    }
+
     begin_frame("Смайлы", true);
 
     begin_table(false, 5);
 
     print("<tr><td class=\"colhead\">Написание</td><td class=\"colhead\">Смайл</td></tr>\n");
 
-    foreach ($smilies as $code => $url)
+    foreach ((array)$smilies as $code => $url)
       print("<tr><td>$code</td><td><img src=\"$DEFAULTBASEURL/pic/smilies/$url\"></td>\n");
 
     end_table();

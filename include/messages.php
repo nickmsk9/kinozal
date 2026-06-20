@@ -5,6 +5,43 @@ if (!defined('KZ_PM_INBOX')) {
 	define('KZ_PM_INBOX', 1);
 }
 
+if (!defined('KZ_AUTO_MIGRATIONS')) {
+	define('KZ_AUTO_MIGRATIONS', false);
+}
+
+function msg_index_exists($index)
+{
+	$res = sql_query("SHOW INDEX FROM messages WHERE Key_name = " . sqlesc($index));
+	return $res && mysqli_num_rows($res) > 0;
+}
+
+function msg_ensure_schema()
+{
+	static $done = false;
+
+	if ($done) {
+		return;
+	}
+
+	$done = true;
+
+	if (!defined('KZ_AUTO_MIGRATIONS') || KZ_AUTO_MIGRATIONS !== true) {
+		return;
+	}
+
+	$indexes = array(
+		array('receiver_location_id', 'ALTER TABLE messages ADD KEY receiver_location_id (receiver, location, id)'),
+		array('receiver_location_unread_id', 'ALTER TABLE messages ADD KEY receiver_location_unread_id (receiver, location, unread, id)'),
+		array('sender_saved_location_id', 'ALTER TABLE messages ADD KEY sender_saved_location_id (sender, saved, location, id)'),
+	);
+
+	foreach ($indexes as $index) {
+		if (!msg_index_exists($index[0])) {
+			sql_query($index[1]) or sqlerr(__FILE__, __LINE__);
+		}
+	}
+}
+
 function msg_h($value)
 {
 	return function_exists('htmlspecialchars_uni') ? htmlspecialchars_uni((string)$value) : htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -45,18 +82,34 @@ function msg_format($text)
 	return function_exists('format_comment') ? format_comment((string)$text) : nl2br(msg_h($text));
 }
 
-function msg_tabs($box)
+function msg_tabs($box, $counts = null)
 {
 	$items = array(
 		'in' => array('/inbox.php', 'Принятые сообщения'),
 		'out' => array('/inbox.php?out=1', 'Отправленные сообщения'),
 		'arch' => array('/inbox.php?arch=1', 'Архив сообщений'),
 	);
+	if (is_array($counts)) {
+		$items['in'][1] .= ' (' . (int)($counts['inbox'] ?? 0) . '/' . (int)($counts['unread'] ?? 0) . ')';
+		$items['out'][1] .= ' (' . (int)($counts['outbox'] ?? 0) . ')';
+		$items['arch'][1] .= ' (' . (int)($counts['archive'] ?? 0) . ')';
+	}
 	$html = '<div class="pad0x0x5x0"><ul class="lis">';
 	foreach ($items as $key => $item) {
 		$html .= '<li' . ($box === $key ? ' class="tp"' : '') . '><a href="' . $item[0] . '">' . $item[1] . '</a>';
 	}
 	return $html . '</ul></div>';
+}
+
+function msg_box_url($box, $pager = false)
+{
+	if ($box === 'out') {
+		return $pager ? '/inbox.php?out=1&amp;' : '/inbox.php?out=1';
+	}
+	if ($box === 'arch') {
+		return $pager ? '/inbox.php?arch=1&amp;' : '/inbox.php?arch=1';
+	}
+	return $pager ? '/inbox.php?' : '/inbox.php';
 }
 
 function msg_profile_menu(array $user, $self = true)
@@ -128,36 +181,95 @@ function msg_box_type()
 	return 'in';
 }
 
-function msg_fetch_box($box, $userid)
+function msg_limit_sql($limit)
+{
+	$limit = trim((string)$limit);
+	return preg_match('/^LIMIT\s+\d+\s*,\s*\d+$/i', $limit) ? $limit : '';
+}
+
+function msg_box_counts($userid)
 {
 	$userid = (int)$userid;
+	$load = function () use ($userid) {
+		$res = sql_query("
+			SELECT
+				(SELECT COUNT(*) FROM messages WHERE receiver = $userid AND location = " . KZ_PM_INBOX . ") AS inbox,
+				(SELECT COUNT(*) FROM messages WHERE receiver = $userid AND location = " . KZ_PM_INBOX . " AND unread = 'yes') AS unread,
+				(SELECT COUNT(*) FROM messages WHERE sender = $userid AND saved = 'yes' AND location <> " . KZ_PM_ARCHIVE . ") AS outbox,
+				(
+					(SELECT COUNT(*) FROM messages WHERE receiver = $userid AND location = " . KZ_PM_ARCHIVE . ")
+					+
+					(SELECT COUNT(*) FROM messages WHERE sender = $userid AND saved = 'yes' AND location = " . KZ_PM_ARCHIVE . " AND receiver <> $userid)
+				) AS archive
+		") or sqlerr(__FILE__, __LINE__);
+		return mysqli_fetch_assoc($res);
+	};
+
+	$row = function_exists('tracker_cache_remember')
+		? tracker_cache_remember('messages:box-counts:' . $userid, 15, $load)
+		: $load();
+
+	return array(
+		'inbox' => (int)($row['inbox'] ?? 0),
+		'unread' => (int)($row['unread'] ?? 0),
+		'outbox' => (int)($row['outbox'] ?? 0),
+		'archive' => (int)($row['archive'] ?? 0),
+	);
+}
+
+function msg_count_box($box, $userid)
+{
+	$counts = msg_box_counts($userid);
+	if ($box === 'out') {
+		return $counts['outbox'];
+	}
+	if ($box === 'arch') {
+		return $counts['archive'];
+	}
+	return $counts['inbox'];
+}
+
+function msg_fetch_box($box, $userid, $limit = '')
+{
+	$userid = (int)$userid;
+	$limit = msg_limit_sql($limit);
 	if ($box === 'out') {
 		$sql = "
-			SELECT m.*, u.id AS user_id, u.username, u.class, u.avatar
+			SELECT m.id, m.sender, m.receiver, m.added, m.subject, m.msg, m.unread, m.poster, m.location, m.saved,
+			       u.id AS user_id, u.username, u.class, u.avatar
 			FROM messages AS m
 			LEFT JOIN users AS u ON u.id = m.receiver
 			WHERE m.sender = $userid AND m.saved = 'yes' AND m.location <> " . KZ_PM_ARCHIVE . "
 			ORDER BY m.id DESC
+			$limit
 		";
 	} elseif ($box === 'arch') {
 		$sql = "
-			SELECT m.*, IF(m.sender = $userid, ru.id, su.id) AS user_id,
-			       IF(m.sender = $userid, ru.username, su.username) AS username,
-			       IF(m.sender = $userid, ru.class, su.class) AS class,
-			       IF(m.sender = $userid, ru.avatar, su.avatar) AS avatar
-			FROM messages AS m
+			SELECT m.id, m.sender, m.receiver, m.added, m.subject, m.msg, m.unread, m.poster, m.location, m.saved,
+			       CASE WHEN m.sender = $userid THEN ru.id ELSE su.id END AS user_id,
+			       CASE WHEN m.sender = $userid THEN ru.username ELSE su.username END AS username,
+			       CASE WHEN m.sender = $userid THEN ru.class ELSE su.class END AS class,
+			       CASE WHEN m.sender = $userid THEN ru.avatar ELSE su.avatar END AS avatar
+			FROM (
+				SELECT id FROM messages WHERE receiver = $userid AND location = " . KZ_PM_ARCHIVE . "
+				UNION
+				SELECT id FROM messages WHERE sender = $userid AND saved = 'yes' AND location = " . KZ_PM_ARCHIVE . "
+			) AS ids
+			INNER JOIN messages AS m ON m.id = ids.id
 			LEFT JOIN users AS su ON su.id = m.sender
 			LEFT JOIN users AS ru ON ru.id = m.receiver
-			WHERE (m.receiver = $userid OR (m.sender = $userid AND m.saved = 'yes')) AND m.location = " . KZ_PM_ARCHIVE . "
 			ORDER BY m.id DESC
+			$limit
 		";
 	} else {
 		$sql = "
-			SELECT m.*, u.id AS user_id, u.username, u.class, u.avatar
+			SELECT m.id, m.sender, m.receiver, m.added, m.subject, m.msg, m.unread, m.poster, m.location, m.saved,
+			       u.id AS user_id, u.username, u.class, u.avatar
 			FROM messages AS m
 			LEFT JOIN users AS u ON u.id = m.sender
 			WHERE m.receiver = $userid AND m.location = " . KZ_PM_INBOX . "
 			ORDER BY m.id DESC
+			$limit
 		";
 	}
 	$res = sql_query($sql) or sqlerr(__FILE__, __LINE__);
@@ -166,6 +278,67 @@ function msg_fetch_box($box, $userid)
 		$rows[] = $row;
 	}
 	return $rows;
+}
+
+function msg_mark_rows_read(array $rows, $userid)
+{
+	$userid = (int)$userid;
+	$ids = array();
+
+	foreach ($rows as $row) {
+		if (
+			($row['unread'] ?? 'no') === 'yes'
+			&& (int)($row['receiver'] ?? 0) === $userid
+			&& (int)($row['location'] ?? 0) === KZ_PM_INBOX
+		) {
+			$ids[] = (int)$row['id'];
+		}
+	}
+
+	$ids = array_values(array_unique(array_filter($ids)));
+	if (!$ids) {
+		return 0;
+	}
+
+	sql_query("UPDATE messages SET unread = 'no' WHERE id IN (" . implode(',', $ids) . ") AND receiver = $userid AND location = " . KZ_PM_INBOX . " AND unread = 'yes'") or sqlerr(__FILE__, __LINE__);
+	return count($ids);
+}
+
+function msg_selected_ids($value, $max = 500)
+{
+	if (!is_array($value)) {
+		return array();
+	}
+
+	$ids = array_values(array_unique(array_filter(array_map('intval', $value), function ($id) {
+		return $id > 0;
+	})));
+	if ($max > 0 && count($ids) > $max) {
+		$ids = array_slice($ids, 0, $max);
+	}
+	return $ids;
+}
+
+function msg_apply_bulk_action(array $ids, $toarch, $userid)
+{
+	$userid = (int)$userid;
+	$ids = msg_selected_ids($ids);
+
+	if (!$ids || $userid <= 0) {
+		return 0;
+	}
+
+	$in = implode(',', $ids);
+	if ($toarch) {
+		sql_query("UPDATE messages SET location = " . KZ_PM_ARCHIVE . ", saved = 'yes', unread = 'no' WHERE id IN ($in) AND (receiver = $userid OR sender = $userid)") or sqlerr(__FILE__, __LINE__);
+		return count($ids);
+	}
+
+	sql_query("DELETE FROM messages WHERE id IN ($in) AND ((receiver = $userid AND sender = $userid) OR (receiver = $userid AND saved = 'no'))") or sqlerr(__FILE__, __LINE__);
+	sql_query("UPDATE messages SET saved = 'no' WHERE id IN ($in) AND sender = $userid AND receiver <> $userid") or sqlerr(__FILE__, __LINE__);
+	sql_query("UPDATE messages SET location = " . KZ_PM_ARCHIVE . ", unread = 'no' WHERE id IN ($in) AND receiver = $userid") or sqlerr(__FILE__, __LINE__);
+
+	return count($ids);
 }
 
 function msg_render_empty($box)

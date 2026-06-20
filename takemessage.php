@@ -25,7 +25,7 @@ if ($msg === '') {
 	stderr($tracker_lang['error'], 'Пожалуйста, введите сообщение.');
 }
 
-$res = sql_query("SELECT * FROM users WHERE id = $receiver_id LIMIT 1") or sqlerr(__FILE__, __LINE__);
+$res = sql_query("SELECT id, username, class, parked, acceptpms FROM users WHERE id = $receiver_id LIMIT 1") or sqlerr(__FILE__, __LINE__);
 $receiver = mysqli_fetch_assoc($res);
 if (!$receiver) {
 	stderr($tracker_lang['error'], 'Пользователь не найден.');

@@ -119,34 +119,47 @@ $site_name = htmlspecialchars((string)($SITENAME ?? ''), ENT_QUOTES, 'UTF-8');
 
         //// check for messages //////////////////
         $uid = (int)$CURUSER["id"];
-        $res1 = sql_query("
+        $load_header_stats = function () use ($uid) {
+            $res = sql_query("
                 SELECT
-                        SUM(receiver = $uid AND location = 1) AS messages,
-                        SUM(receiver = $uid AND location = 1 AND unread = 'yes') AS unread,
-                        SUM(sender = $uid AND saved = 'yes') AS outmessages
-                FROM messages
-                WHERE (receiver = $uid AND location = 1)
-                   OR (sender = $uid AND saved = 'yes')
-        ") or sqlerr(__FILE__, __LINE__);
-        $arr1 = mysqli_fetch_assoc($res1);
+                    m.messages,
+                    m.unread,
+                    m.outmessages,
+                    p.activeseed,
+                    p.activeleech
+                FROM (
+                    SELECT
+                        COALESCE(SUM(receiver = $uid AND location = 1), 0) AS messages,
+                        COALESCE(SUM(receiver = $uid AND location = 1 AND unread = 'yes'), 0) AS unread,
+                        COALESCE(SUM(sender = $uid AND saved = 'yes'), 0) AS outmessages
+                    FROM messages
+                    WHERE receiver = $uid OR sender = $uid
+                ) AS m
+                CROSS JOIN (
+                    SELECT
+                        COALESCE(SUM(seeder = 'yes'), 0) AS activeseed,
+                        COALESCE(SUM(seeder = 'no'), 0) AS activeleech
+                    FROM peers
+                    WHERE userid = $uid
+                ) AS p
+            ");
+
+            return $res ? mysqli_fetch_assoc($res) : null;
+        };
+
+        $arr1 = function_exists('tracker_cache_remember')
+            ? tracker_cache_remember('stdhead:user-stats:' . $uid, 15, $load_header_stats)
+            : $load_header_stats();
+
         $messages = (int)($arr1['messages'] ?? 0);
         $unread = (int)($arr1['unread'] ?? 0);
         $outmessages = (int)($arr1['outmessages'] ?? 0);
+        $activeseed = (int)($arr1['activeseed'] ?? 0);
+        $activeleech = (int)($arr1['activeleech'] ?? 0);
         if ($unread)
             $inboxpic = "<img height=\"16px\" style=\"border:none\" alt=\"inbox\" title=\"Есть новые сообщения\" src=\"{$pic_base_url}/pn_inboxnew.gif\">";
         else
             $inboxpic = "<img height=\"16px\" style=\"border:none\" alt=\"inbox\" title=\"Нет новых сообщений\" src=\"{$pic_base_url}/pn_inbox.gif\">";
-
-        $res2 = sql_query("
-        SELECT
-                SUM(seeder = 'yes') AS activeseed,
-                SUM(seeder = 'no') AS activeleech
-        FROM peers
-        WHERE userid = $uid
-") or sqlerr(__FILE__, __LINE__);
-        $row = mysqli_fetch_assoc($res2);
-        $activeseed = (int)($row['activeseed'] ?? 0);
-        $activeleech = (int)($row['activeleech'] ?? 0);
 
         //// end
 

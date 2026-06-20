@@ -882,6 +882,10 @@ function format_comment($text, $strip_html = true) {
 		return '';
 	}
 
+	if ((!isset($smilies) || !is_array($smilies) || !isset($privatesmilies) || !is_array($privatesmilies)) && defined('ROOT_PATH')) {
+		require_once ROOT_PATH . 'include/global.php';
+	}
+
 	if (strpos($s, ';)') !== false) {
 		$s = str_replace(";)", ":wink:", $s);
 	}

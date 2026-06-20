@@ -387,7 +387,7 @@ function tracker_cache_invalidate_for_query($query)
 		}
 	}
 
-	if (!preg_match('/\b(site_settings|orbital_blocks|categories|torrents|torrent_details|torrents_descr|torrent_trackers|ratings|comments|snatched|pay_transactions|pay_settings|cups|user_cups|user_status_assignments|countries|uarch_smiles|users|news|readtorrents)\b/', $sql)) {
+	if (!preg_match('/\b(site_settings|orbital_blocks|categories|torrents|torrent_details|torrents_descr|torrent_trackers|ratings|comments|snatched|pay_transactions|pay_settings|cups|user_cups|user_status_assignments|countries|uarch_smiles|users|news|readtorrents|messages)\b/', $sql)) {
 		return;
 	}
 
@@ -425,6 +425,11 @@ function tracker_cache_invalidate_for_query($query)
 
 	if ($has('readtorrents')) {
 		$patterns[] = 'browse:*';
+	}
+
+	if ($has('messages')) {
+		$patterns[] = 'messages:*';
+		$patterns[] = 'stdhead:*';
 	}
 
 	if ($has('comments')) {

@@ -45,6 +45,8 @@ if (!function_exists('SiteSettingsAdmin')) {
 		site_admin_card($admin_file, 'SiteAppearanceAdmin', 'Внешний вид', 'Тема, язык и блоки интерфейса.');
 		site_admin_card($admin_file, 'SiteTorrentsAdmin', 'Торренты и медиа', 'Размеры файлов, TTL, бонусы, аватары.');
 		site_admin_card($admin_file, 'SiteSystemAdmin', 'Система', 'Сессии, IP-баны и служебные переключатели.');
+		echo '</tr><tr>';
+		site_admin_card($admin_file, 'TestTorrentsAdmin', 'Проверка раздач', 'Очередь тестовых раздач, решения проверки и уведомления авторам.');
 		echo '</tr></table>';
 		echo '</div></div>';
 	}

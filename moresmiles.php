@@ -31,6 +31,12 @@ dbconn(false);
 loggedinorreturn();
 
 $ss_uri = select_theme();
+$form = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($_GET['form'] ?? ''));
+$text = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($_GET['text'] ?? ''));
+
+if (!isset($smilies) || !is_array($smilies)) {
+    require_once ROOT_PATH . 'include/global.php';
+}
 
 ?><html>
 <head>
@@ -49,12 +55,11 @@ function SmileIT(smile,form,text){
 <h2>Смайлики</h2>
 <tr align="center">
 <?
-$ctr=0;
-global $smilies;
-while ((list($code, $url) = each($smilies))) {
+$count = 0;
+foreach ((array)$smilies as $code => $url) {
    if ($count % 3==0)
       print("\n<tr>");
-      print("<td align=\"center\"><a href=\"javascript: SmileIT('".str_replace("'","\'",$code)."','".htmlentities($_GET["form"])."','".htmlentities($_GET["text"])."')\"><img border=\"0\" src=\"pic/smilies/".$url."\"></a></td>");
+      print("<td align=\"center\"><a href=\"javascript: SmileIT('".str_replace("'","\'",$code)."','".htmlspecialchars($form, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')."','".htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')."')\"><img border=\"0\" src=\"pic/smilies/".htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')."\"></a></td>");
       $count++;
 
    if ($count % 3==0)

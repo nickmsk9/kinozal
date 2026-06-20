@@ -273,7 +273,10 @@ CREATE TABLE `messages` (
   `saved` enum('no','yes') NOT NULL default 'no',
   PRIMARY KEY  (`id`),
   KEY `receiver` (`receiver`),
+  KEY `receiver_location_id` (`receiver`,`location`,`id`),
+  KEY `receiver_location_unread_id` (`receiver`,`location`,`unread`,`id`),
   KEY `sender` (`sender`),
+  KEY `sender_saved_location_id` (`sender`,`saved`,`location`,`id`),
   KEY `poster` (`poster`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -692,8 +695,12 @@ CREATE TABLE `torrents` (
   `moderatedby` int(10) unsigned default '0',
   `multitracker` enum('yes','no') NOT NULL DEFAULT 'no',
   `is_test` enum('yes','no') NOT NULL DEFAULT 'no',
+  `test_status` enum('pending','checking','changes','approved','rejected') NOT NULL DEFAULT 'pending',
   `test_approved_at` datetime NULL DEFAULT NULL,
   `test_approved_by` int(10) unsigned NOT NULL DEFAULT '0',
+  `test_checked_at` datetime NULL DEFAULT NULL,
+  `test_checked_by` int(10) unsigned NOT NULL DEFAULT '0',
+  `test_check_comment` text NULL,
   `test_helper_user_id` int(10) unsigned NOT NULL DEFAULT '0',
   `test_helper_until` datetime NULL DEFAULT NULL,
   PRIMARY KEY  (`id`),
@@ -706,6 +713,8 @@ CREATE TABLE `torrents` (
   KEY `browse_category` (`category`,`visible`,`banned`,`is_test`,`not_sticky`,`added`,`id`),
   KEY `vnsi` (`visible`, `not_sticky`, `id`),
   KEY `is_test_visible` (`is_test`, `visible`, `banned`, `added`),
+  KEY `test_status_visible` (`is_test`, `test_status`, `visible`, `banned`, `added`),
+  KEY `test_status` (`test_status`, `id`),
   KEY `test_helper_until` (`test_helper_until`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

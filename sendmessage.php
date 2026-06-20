@@ -12,7 +12,7 @@ if (!is_valid_id($receiver_id)) {
 	stderr($tracker_lang['error'], 'Неверный ID получателя.');
 }
 
-$res = sql_query("SELECT * FROM users WHERE id = $receiver_id LIMIT 1") or sqlerr(__FILE__, __LINE__);
+$res = sql_query("SELECT id, username, class, avatar, parked, acceptpms, simpaty, bonus, pay_votes FROM users WHERE id = $receiver_id LIMIT 1") or sqlerr(__FILE__, __LINE__);
 $receiver = mysqli_fetch_assoc($res);
 if (!$receiver) {
 	stderr($tracker_lang['error'], 'Пользователь не найден.');
@@ -22,11 +22,15 @@ $subject = '';
 $body = '';
 $replyto = isset($_GET['replyto']) ? (int)$_GET['replyto'] : 0;
 if ($replyto > 0) {
-	$res = sql_query("SELECT * FROM messages WHERE id = $replyto AND receiver = " . (int)$CURUSER['id'] . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
+	$res = sql_query("SELECT id, sender, receiver, subject, msg FROM messages WHERE id = $replyto AND receiver = " . (int)$CURUSER['id'] . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
 	$orig = mysqli_fetch_assoc($res);
 	if ($orig) {
 		$subject = preg_match('/^Re:/i', (string)$orig['subject']) ? (string)$orig['subject'] : 'Re: ' . (string)$orig['subject'];
-		$body = "\n\n[quote]" . (string)$orig['msg'] . "[/quote]";
+		$quote = (string)$orig['msg'];
+		if (strlen($quote) > 12000) {
+			$quote = (function_exists('mb_substr') ? mb_substr($quote, 0, 12000, 'UTF-8') : substr($quote, 0, 12000)) . "\n\n[цитата сокращена]";
+		}
+		$body = "\n\n[quote]" . $quote . "[/quote]";
 	}
 }
 
