@@ -18,7 +18,7 @@ $site_name = htmlspecialchars((string)($SITENAME ?? ''), ENT_QUOTES, 'UTF-8');
     <title><?= htmlspecialchars((string)$title, ENT_QUOTES, 'UTF-8') ?></title>
     <meta name="engine-copyright" content="<?= engine_copyright_notice('attr') ?>">
     <link rel="stylesheet" href="./themes/<?= $theme_uri ?>/TBDev.css?v=20260617-1" type="text/css">
-    <link rel="stylesheet" href="./themes/<?= $theme_uri ?>/engine.css?v=20260617-1" type="text/css">
+    <link rel="stylesheet" href="./themes/<?= $theme_uri ?>/engine.css?v=20260620-1" type="text/css">
     <?php if (in_array(basename($_SERVER['PHP_SELF'] ?? ''), array('upload.php', 'edit.php'), true)) { ?>
         <link rel="stylesheet" href="./themes/<?= $theme_uri ?>/upload.css?v=20260617-1" type="text/css">
     <?php } ?>
