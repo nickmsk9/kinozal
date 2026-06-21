@@ -119,7 +119,6 @@ function group_page_card(array $group)
 	$type = (int)($group['type'] ?? 1);
 	$members = (int)($group['members_count'] ?? 0);
 	$torrents = (int)($group['torrents_count'] ?? 0);
-	$hash = function_exists('groups_hash') ? groups_hash() : '';
 	$bookmarked = $CURUSER ? groups_is_bookmarked($id, (int)$CURUSER['id']) : false;
 	$bookmark_action = $bookmarked ? 'delete' : 'add';
 	$bookmark_text = $bookmarked ? 'Убрать из закладок' : 'Добавить в закладки';
@@ -143,7 +142,7 @@ function group_page_card(array $group)
 		echo ' | <a class="sba" href="/groupextorrentlist.php?id=' . $id . '">Раздачи</a>';
 	}
 	if ($CURUSER) {
-		echo '<br><a class="sba" href="/bookmarks.php?type=2&amp;' . $bookmark_action . '=' . $id . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '">' . $bookmark_text . '</a>';
+		echo '<br>' . tracker_post_action_link('/bookmarks.php', array('type' => 2, 'bookmark_action' => $bookmark_action, 'target_id' => $id), $bookmark_text);
 	}
 	echo '</td>';
 	echo '</tr>';

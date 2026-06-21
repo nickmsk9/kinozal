@@ -118,8 +118,6 @@ function msg_profile_menu(array $user, $self = true)
 	$avatar = msg_h(msg_avatar($user));
 	$rep = function_exists('reputation_value') ? reputation_value($user) : max(0, (int)($user['simpaty'] ?? 0));
 	$bonus = function_exists('pay_user_votes_from_array') ? number_format(pay_user_votes_from_array($user), 0, '.', ' ') : number_format((float)($user['bonus'] ?? 0), 0, '.', ' ');
-	$hash = msg_h($user['hash4u'] ?? ($user['logout_hash'] ?? ''));
-
 	if (!$self) {
 		return '<div class="mn1_menu"><ul class="men u2 w200">'
 			. '<li class="img"><a href="/userdetails.php?id=' . $id . '"><img src="' . $avatar . '" class="p200" alt=""></a></li>'
@@ -135,9 +133,9 @@ function msg_profile_menu(array $user, $self = true)
 			. '<li><span class="bulet"></span><a href="/userhistory.php?id=' . $id . '">Комментариев</a></li>'
 			. '<li class="sf"><span class="bulet"></span><a href="/uservotes.php?id=' . $id . '">Голосований</a></li>'
 			. '<li class="tp">Действия</li>'
-			. '<li><span class="bulet"></span><a href="/bookmarks.php?type=3&amp;add=' . $id . '&amp;hash4u=' . $hash . '">Внести в закладки</a></li>'
-			. '<li><span class="bulet"></span><a href="/friends.php?action=add&amp;type=friend&amp;targetid=' . $id . '&amp;hash4u=' . $hash . '">Внести в друзья</a></li>'
-			. '<li><span class="bulet"></span><a href="/friends.php?action=add&amp;type=block&amp;targetid=' . $id . '&amp;hash4u=' . $hash . '">Внести в игнор</a></li>'
+			. '<li><span class="bulet"></span>' . tracker_post_action_link('/bookmarks.php', array('type' => 3, 'bookmark_action' => 'add', 'target_id' => $id), 'Внести в закладки') . '</li>'
+			. '<li><span class="bulet"></span>' . tracker_post_action_link('/friends.php', array('friends_action' => 'add', 'type' => 'friend', 'targetid' => $id), 'Внести в друзья') . '</li>'
+			. '<li><span class="bulet"></span>' . tracker_post_action_link('/friends.php', array('friends_action' => 'add', 'type' => 'block', 'targetid' => $id), 'Внести в игнор') . '</li>'
 			. '</ul></div>';
 	}
 

@@ -69,8 +69,10 @@ function my_country_select($selected) {
 }
 
 function my_theme_select($selected) {
-	$hash = rawurlencode(tracker_user_form_token());
-	$html = '<select name="theme" class="styled w200" onchange="document.location.href=\'/changetheme.php?hash4u=' . $hash . '&amp;theme=\'+encodeURIComponent(this.options[this.options.selectedIndex].value);">';
+	$html = '<form method="post" action="/changetheme.php" class="inlineform" style="display:inline;margin:0;padding:0;">';
+	$html .= '<input type="hidden" name="hash4u" value="' . my_h(tracker_user_form_token()) . '">';
+	$html .= '<input type="hidden" name="returnto" value="' . my_h($_SERVER['REQUEST_URI'] ?? '/my.php') . '">';
+	$html .= '<select name="theme" class="styled w200" onchange="this.form.submit();">';
 	$selectedResolved = theme_resolve_name($selected);
 	foreach (get_themes() as $theme) {
 		$label = theme_display_name($theme);
@@ -78,7 +80,7 @@ function my_theme_select($selected) {
 		$isSelected = (theme_resolve_name($theme) === $selectedResolved);
 		$html .= '<option value="' . my_h($value) . '"' . ($isSelected ? ' selected' : '') . '>' . my_h($label) . '</option>';
 	}
-	return $html . '</select>';
+	return $html . '</select><noscript><input type="submit" class="buttonS" value="Сменить"></noscript></form>';
 }
 
 $id = (int)$CURUSER["id"];

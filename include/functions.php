@@ -700,6 +700,59 @@ function tracker_token_query(?array $user = null): string
     return $token !== '' ? 'hash4u=' . rawurlencode($token) : '';
 }
 
+function tracker_hidden_inputs(array $fields): string
+{
+    $token = tracker_user_form_token();
+    if ($token !== '' && !array_key_exists('hash4u', $fields) && !array_key_exists('csrf_token', $fields)) {
+        $fields['hash4u'] = $token;
+    }
+
+    $html = '';
+
+    foreach ($fields as $name => $value) {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $html .= '<input type="hidden" name="' . htmlspecialchars_uni((string)$name) . '[]" value="' . htmlspecialchars_uni((string)$item) . '">';
+            }
+            continue;
+        }
+
+        $html .= '<input type="hidden" name="' . htmlspecialchars_uni((string)$name) . '" value="' . htmlspecialchars_uni((string)$value) . '">';
+    }
+
+    return $html;
+}
+
+function tracker_post_action_link($action, array $fields, $label, $class = 'sba', $confirm = '', $label_is_html = false): string
+{
+    $token = tracker_user_form_token();
+    if ($token !== '') {
+        $fields['hash4u'] = $token;
+    }
+
+    $confirm_attr = '';
+    if ($confirm !== '') {
+        $confirm_json = json_encode((string)$confirm, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($confirm_json === false) {
+            $confirm_json = '""';
+        }
+        $confirm_attr = ' onsubmit="return confirm(' . htmlspecialchars_uni($confirm_json) . ');"';
+    }
+
+    $label_html = $label_is_html ? (string)$label : htmlspecialchars_uni((string)$label);
+    $form_style = 'display:inline;margin:0;padding:0;';
+    $button_style = 'background:none;border:0;margin:0;padding:0;cursor:pointer;font:inherit;';
+    if (preg_match('/(^|\s)menu(\s|$)/', (string)$class)) {
+        $form_style = 'display:block;margin:0;padding:0;';
+        $button_style = 'margin:0;cursor:pointer;font:inherit;';
+    }
+
+    return '<form method="post" action="' . htmlspecialchars_uni((string)$action) . '" style="' . $form_style . '"' . $confirm_attr . '>'
+        . tracker_hidden_inputs($fields)
+        . '<button type="submit" class="' . htmlspecialchars_uni((string)$class) . '" style="' . $button_style . '">' . $label_html . '</button>'
+        . '</form>';
+}
+
 function tracker_cookie_secure(): bool
 {
     if (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') {

@@ -6,7 +6,7 @@ require_once __DIR__ . '/include/groupex.php';
 dbconn(false);
 groups_ensure_schema();
 
-$id = (int)($_GET['id'] ?? 0);
+$id = (int)($_POST['id'] ?? ($_GET['id'] ?? 0));
 $group = groups_fetch($id);
 if (!$group) {
 	stderr('Группа', 'Группа не найдена.');
@@ -40,10 +40,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') ==
 	exit;
 }
 
-if (($_GET['action'] ?? '') === 'remove' && $can_manage) {
-	tracker_require_form_token('GET');
+if (($_GET['action'] ?? '') === 'remove') {
+	http_response_code(405);
+	header('Allow: POST');
+	exit('Method Not Allowed');
+}
 
-	$torrent_id = (int)($_GET['torrent_id'] ?? 0);
+if (($_POST['action'] ?? '') === 'remove') {
+	if (!$can_manage) {
+		stderr('Группа', 'У Вас нет прав удалять раздачи из этой группы.');
+	}
+	tracker_require_form_token('POST');
+
+	$torrent_id = (int)($_POST['torrent_id'] ?? 0);
 	if ($torrent_id > 0) {
 		sql_query("DELETE FROM groupex_torrents WHERE group_id = $id AND torrent_id = $torrent_id") or sqlerr(__FILE__, __LINE__);
 		groups_log($id, (int)$CURUSER['id'], 'torrent', 'Удалена раздача #' . $torrent_id);
@@ -78,6 +87,7 @@ stdhead('Галерея раздач :: ' . $group['name']);
 			<div class="bx1" id="addtorrent">
 				<form method="post" action="/groupextorrents.php?id=<?= $id ?>">
 					<input type="hidden" name="hash4u" value="<?= groups_h($CURUSER['hash4u'] ?? tracker_user_form_token()) ?>">
+					<input type="hidden" name="id" value="<?= $id ?>">
 					<table class="tables1 w100p">
 						<tr>
 							<td class="w150"><b>Добавить раздачу:</b></td>

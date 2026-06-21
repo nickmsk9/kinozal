@@ -29,7 +29,14 @@
 require_once("include/bittorrent.php");
 dbconn();
 loggedinorreturn();
-tracker_require_form_token('GET');
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+	http_response_code(405);
+	header('Allow: POST');
+	exit('Method Not Allowed');
+}
+
+tracker_require_form_token('POST');
 
 logoutcookie();
 

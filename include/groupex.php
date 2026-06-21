@@ -353,6 +353,20 @@ function groups_hash()
     return groups_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? ''));
 }
 
+function groups_action_link($group_id, $action, $label, $target_userid = 0, $confirm = '')
+{
+    $fields = array(
+        'id' => (int)$group_id,
+        'group_action' => (string)$action,
+    );
+
+    if ((int)$target_userid > 0) {
+        $fields['userid'] = (int)$target_userid;
+    }
+
+    return tracker_post_action_link('/groupexinvite.php', $fields, $label, 'sba', $confirm);
+}
+
 function groups_avatar(array $group)
 {
     $avatar = trim((string)($group['avatar'] ?? ''));
@@ -648,7 +662,6 @@ function groups_group_card(array $group, $mode = 'list')
     global $CURUSER;
 
     $id = (int)$group['id'];
-    $hash = groups_hash();
     $members = (int)($group['members_count'] ?? 0);
     $torrents = (int)($group['torrents_count'] ?? 0);
     $zabor = (int)($group['zabor_count'] ?? 0);
@@ -666,9 +679,9 @@ function groups_group_card(array $group, $mode = 'list')
     echo '<a href="/groupex.php?id=' . $id . '" class="sba">Просмотреть группу</a><br>';
     if ($CURUSER) {
         if (groups_is_bookmarked($id, (int)$CURUSER['id'])) {
-            echo '<a href="/bookmarks.php?type=2&amp;delete=' . $id . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '" class="sba">Убрать из закладок</a>';
+            echo tracker_post_action_link('/bookmarks.php', array('type' => 2, 'bookmark_action' => 'delete', 'target_id' => $id), 'Убрать из закладок');
         } else {
-            echo '<a href="/bookmarks.php?type=2&amp;add=' . $id . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '" class="sba">Добавить в закладки</a>';
+            echo tracker_post_action_link('/bookmarks.php', array('type' => 2, 'bookmark_action' => 'add', 'target_id' => $id), 'Добавить в закладки');
         }
     }
     echo '</div>';
@@ -810,7 +823,6 @@ function groups_group_sidebar(array $group, $member = null)
     global $CURUSER;
 
     $id = (int)$group['id'];
-    $hash = groups_hash();
     $can_manage = groups_can_manage($group, 0, $member);
     $is_member = $member && $member['status'] === 'member';
 
@@ -823,16 +835,16 @@ function groups_group_sidebar(array $group, $member = null)
     echo '<li><span class="bulet"></span><a href="/groupexlog.php?id=' . $id . '">Журнал группы</a></li>';
     if ($CURUSER) {
         if ($is_member) {
-            echo '<li><span class="bulet"></span><a href="/groupexinvite.php?id=' . $id . '&amp;action=leavegroup' . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '">Покинуть группу</a></li>';
+            echo '<li><span class="bulet"></span>' . groups_action_link($id, 'leavegroup', 'Покинуть группу') . '</li>';
         } elseif ($member && $member['status'] === 'pending') {
-            echo '<li><span class="bulet"></span><a href="/groupexinvite.php?id=' . $id . '&amp;action=leavegroup' . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '">Отменить заявку</a></li>';
+            echo '<li><span class="bulet"></span>' . groups_action_link($id, 'leavegroup', 'Отменить заявку') . '</li>';
         } else {
-            echo '<li><span class="bulet"></span><a href="/groupexinvite.php?id=' . $id . '&amp;action=join' . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '">Вступить в группу</a></li>';
+            echo '<li><span class="bulet"></span>' . groups_action_link($id, 'join', 'Вступить в группу') . '</li>';
         }
         if (groups_is_bookmarked($id, (int)$CURUSER['id'])) {
-            echo '<li><span class="bulet"></span><a href="/bookmarks.php?type=2&amp;delete=' . $id . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '">Убрать из закладок</a></li>';
+            echo '<li><span class="bulet"></span>' . tracker_post_action_link('/bookmarks.php', array('type' => 2, 'bookmark_action' => 'delete', 'target_id' => $id), 'Убрать из закладок') . '</li>';
         } else {
-            echo '<li><span class="bulet"></span><a href="/bookmarks.php?type=2&amp;add=' . $id . ($hash !== '' ? '&amp;hash4u=' . $hash : '') . '">Добавить в закладки</a></li>';
+            echo '<li><span class="bulet"></span>' . tracker_post_action_link('/bookmarks.php', array('type' => 2, 'bookmark_action' => 'add', 'target_id' => $id), 'Добавить в закладки') . '</li>';
         }
     }
     if ($can_manage) {

@@ -73,21 +73,28 @@ function bookmarks_intro($type, $profileClass)
 	return '<div class="bx1 justify"><span class="' . bookmarks_h($profileClass) . '">' . bookmarks_h($titles[$type]) . '</span> - ' . bookmarks_h($text[$type]) . '</div>';
 }
 
+function bookmarks_action_link($type, $action, $targetId, $label, $confirm = '')
+{
+	return tracker_post_action_link('/bookmarks.php', array(
+		'type' => (int)$type,
+		'bookmark_action' => (string)$action,
+		'target_id' => (int)$targetId,
+	), $label, 'sba', $confirm);
+}
+
 function bookmarks_user_card($row, $viewerId)
 {
 	$id = (int)$row['id'];
 	$username = bookmarks_h($row['username'] ?? 'Пользователь');
 	$class = 'u' . (int)($row['class'] ?? UC_USER);
 	$avatar = !empty($row['avatar']) ? bookmarks_h($row['avatar']) : '/pic/default_avatar.gif';
-	$token = tracker_token_query();
-	$token = $token !== '' ? '&amp;' . bookmarks_h($token) : '';
 
 	return '<div class="pad5x0x0x5 mn2">'
 		. '<table class="tables2 w100p"><tr>'
 		. '<td class="w50 top"><img src="' . $avatar . '" class="w50 rot180" alt=""></td>'
 		. '<td class="top"><a href="/userdetails.php?id=' . $id . '" class="' . $class . '">' . $username . '</a>' . get_user_icons($row) . '<br>'
 		. '<a href="/sendmessage.php?receiver=' . $id . '" class="sba">Сообщ.</a> | '
-		. '<a href="/bookmarks.php?type=3&amp;delete=' . $id . $token . '" class="sba" onclick="return confirm(\'Убрать пользователя из закладок?\');">Удалить</a><br>'
+		. bookmarks_action_link(3, 'delete', $id, 'Удалить', 'Убрать пользователя из закладок?') . '<br>'
 		. 'раздач <b>' . (int)($row['torrents_count'] ?? 0) . '</b>, коммент. <b>' . (int)($row['comments_count'] ?? 0) . '</b>'
 		. '</td></tr></table></div>';
 }
@@ -98,14 +105,12 @@ function bookmarks_person_card($row)
 	$name = bookmarks_h($row['name'] ?? '');
 	$poster = !empty($row['poster_url']) ? bookmarks_h($row['poster_url']) : '/pic/default_avatar.gif';
 	$url = persons_url((string)$row['name'], $id);
-	$token = tracker_token_query();
-	$token = $token !== '' ? '&amp;' . bookmarks_h($token) : '';
 
 	return '<div class="pad5x0x0x5 mn2">'
 		. '<table class="tables2 w100p"><tr>'
 		. '<td class="w50 top"><img src="' . $poster . '" class="w50 rot180" alt=""></td>'
 		. '<td class="top"><a href="' . bookmarks_h($url) . '" class="sba">' . $name . '</a><br>'
-		. '<a href="/bookmarks.php?type=4&amp;delete=' . $id . $token . '" class="sba" onclick="return confirm(\'Убрать персону из закладок?\');">Удалить</a><br>'
+		. bookmarks_action_link(4, 'delete', $id, 'Удалить', 'Убрать персону из закладок?') . '<br>'
 		. bookmarks_h($row['career'] ?? '')
 		. '</td></tr></table></div>';
 }
@@ -140,69 +145,75 @@ groups_ensure_schema();
 persons_ensure_schema();
 
 $userId = (int)$CURUSER['id'];
-$bookmarkType = (int)($_GET['type'] ?? 1);
+$requestMethod = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$bookmarkType = (int)($requestMethod === 'POST' ? ($_POST['type'] ?? 1) : ($_GET['type'] ?? 1));
 if ($bookmarkType < 1 || $bookmarkType > 4) {
 	$bookmarkType = 1;
 }
 
-if (isset($_GET['add']) || isset($_GET['delete'])) {
-	tracker_require_form_token('GET');
+if ($requestMethod !== 'POST' && (isset($_GET['add']) || isset($_GET['delete']))) {
+	http_response_code(405);
+	header('Allow: POST');
+	exit('Method Not Allowed');
 }
 
-if ($bookmarkType === 2) {
-	if (isset($_GET['add'])) {
-		$groupId = (int)$_GET['add'];
-		if (groups_fetch($groupId)) {
-			groups_add_bookmark($groupId, $userId);
-		}
-		header('Location: /bookmarks.php?type=2');
-		exit;
-	}
+if ($requestMethod === 'POST') {
+	tracker_require_form_token('POST');
+	$bookmarkAction = (string)($_POST['bookmark_action'] ?? '');
+	$targetId = (int)($_POST['target_id'] ?? 0);
 
-	if (isset($_GET['delete'])) {
-		groups_remove_bookmark((int)$_GET['delete'], $userId);
-		header('Location: /bookmarks.php?type=2');
-		exit;
-	}
-}
-
-if ($bookmarkType === 3) {
-	if (isset($_GET['add'])) {
-		$targetId = (int)$_GET['add'];
-		if (is_valid_id($targetId) && $targetId !== $userId) {
-			$exists = sql_query("SELECT id FROM users WHERE id = $targetId LIMIT 1") or sqlerr(__FILE__, __LINE__);
-			if (mysqli_num_rows($exists) === 1) {
-				sql_query("INSERT IGNORE INTO user_bookmarks (userid, target_userid, added_at) VALUES ($userId, $targetId, NOW())") or sqlerr(__FILE__, __LINE__);
+	if ($bookmarkType === 2) {
+		if ($bookmarkAction === 'add') {
+			if (groups_fetch($targetId)) {
+				groups_add_bookmark($targetId, $userId);
 			}
+			header('Location: /bookmarks.php?type=2');
+			exit;
 		}
-		header('Location: /bookmarks.php?type=3');
-		exit;
-	}
 
-	if (isset($_GET['delete'])) {
-		$targetId = (int)$_GET['delete'];
-		sql_query("DELETE FROM user_bookmarks WHERE userid = $userId AND target_userid = $targetId") or sqlerr(__FILE__, __LINE__);
-		header('Location: /bookmarks.php?type=3');
-		exit;
-	}
-}
-
-if ($bookmarkType === 4) {
-	if (isset($_GET['add'])) {
-		$personId = (int)$_GET['add'];
-		if (persons_find($personId, '')) {
-			sql_query("INSERT IGNORE INTO person_bookmarks (userid, person_id, added_at) VALUES ($userId, $personId, NOW())") or sqlerr(__FILE__, __LINE__);
+		if ($bookmarkAction === 'delete') {
+			groups_remove_bookmark($targetId, $userId);
+			header('Location: /bookmarks.php?type=2');
+			exit;
 		}
-		header('Location: /bookmarks.php?type=4');
-		exit;
 	}
 
-	if (isset($_GET['delete'])) {
-		$personId = (int)$_GET['delete'];
-		sql_query("DELETE FROM person_bookmarks WHERE userid = $userId AND person_id = $personId") or sqlerr(__FILE__, __LINE__);
-		header('Location: /bookmarks.php?type=4');
-		exit;
+	if ($bookmarkType === 3) {
+		if ($bookmarkAction === 'add') {
+			if (is_valid_id($targetId) && $targetId !== $userId) {
+				$exists = sql_query("SELECT id FROM users WHERE id = $targetId LIMIT 1") or sqlerr(__FILE__, __LINE__);
+				if (mysqli_num_rows($exists) === 1) {
+					sql_query("INSERT IGNORE INTO user_bookmarks (userid, target_userid, added_at) VALUES ($userId, $targetId, NOW())") or sqlerr(__FILE__, __LINE__);
+				}
+			}
+			header('Location: /bookmarks.php?type=3');
+			exit;
+		}
+
+		if ($bookmarkAction === 'delete') {
+			sql_query("DELETE FROM user_bookmarks WHERE userid = $userId AND target_userid = $targetId") or sqlerr(__FILE__, __LINE__);
+			header('Location: /bookmarks.php?type=3');
+			exit;
+		}
 	}
+
+	if ($bookmarkType === 4) {
+		if ($bookmarkAction === 'add') {
+			if (persons_find($targetId, '')) {
+				sql_query("INSERT IGNORE INTO person_bookmarks (userid, person_id, added_at) VALUES ($userId, $targetId, NOW())") or sqlerr(__FILE__, __LINE__);
+			}
+			header('Location: /bookmarks.php?type=4');
+			exit;
+		}
+
+		if ($bookmarkAction === 'delete') {
+			sql_query("DELETE FROM person_bookmarks WHERE userid = $userId AND person_id = $targetId") or sqlerr(__FILE__, __LINE__);
+			header('Location: /bookmarks.php?type=4');
+			exit;
+		}
+	}
+
+	stderr($tracker_lang['error'], 'Неизвестное действие закладки.');
 }
 
 $profileClass = 'u' . (int)($CURUSER['class'] ?? UC_USER);

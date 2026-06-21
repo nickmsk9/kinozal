@@ -484,7 +484,7 @@ stdhead('Список пользователей - Поиск пользоват
                         <div class="ptable_r">
                             <a href="/sendmessage.php?receiver=<?= $uid ?>" class="sba">Отправить сообщение</a>
                             <br>
-                            <a href="/bookmarks.php?type=3&amp;add=<?= $uid ?>&amp;hash4u=<?= users_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? '')) ?>" class="sba">Добавить в закладки</a>
+                            <?= tracker_post_action_link('/bookmarks.php', array('type' => 3, 'bookmark_action' => 'add', 'target_id' => $uid), 'Добавить в закладки') ?>
                         </div>
                         <div class="ptable">
                             <ul>

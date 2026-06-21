@@ -4,7 +4,14 @@ require_once __DIR__ . '/include/bittorrent.php';
 
 dbconn();
 loggedinorreturn();
-tracker_require_form_token('GET');
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    http_response_code(405);
+    header('Allow: POST');
+    exit('Method Not Allowed');
+}
+
+tracker_require_form_token('POST');
 
 if (!function_exists('bookmarks_h')) {
     function bookmarks_h($value): string
@@ -46,7 +53,7 @@ if (!function_exists('bookmarks_redirect')) {
     }
 }
 
-$id = isset($_GET['torrent']) ? (int)$_GET['torrent'] : 0;
+$id = isset($_POST['torrent']) ? (int)$_POST['torrent'] : 0;
 
 if (!is_valid_id($id)) {
     bookmarks_message($tracker_lang['torrent_not_selected'] ?? 'Торрент не выбран.');

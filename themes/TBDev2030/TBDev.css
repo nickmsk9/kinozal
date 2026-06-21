@@ -444,29 +444,33 @@ a.online:link, a.online:visited {
         text-decoration: underline;
 }*/
 
-a.menu:link, a.menu:visited {
+a.menu:link, a.menu:visited, button.menu {
         font-weight: normal;
 }
 
-a.menu:active {
+a.menu:active, button.menu:active {
         color: #516A88;
 }
 
-a.menu:hover {
+a.menu:hover, button.menu:hover {
         border-left-width: 7px;
         border-left-style: solid;
         border-left-color: #516A88;
 		color: #CF4343;
 }
 
-a.menu {
+a.menu, button.menu {
         display:block;
+        width:100%;
         padding:3px;
         text-align:left;
         text-decoration:none;
         background-color: #FAFAFA;
         font-weight: normal;
         border-top: 1px solid #516A88;
+        border-right: 0;
+        border-bottom: 0;
+        border-left: 0;
 }
 
 a.altlink_white:link, a.altlink_white:visited {

@@ -71,8 +71,7 @@ function commenttable($rows, $redaktor = "comment")
 			$actions[] = '<a href="/' . commenttable_h($redaktor) . '.php?action=edit&amp;cid=' . $commentid . '" class="sba">Изменить</a>';
 		}
 		if (get_user_class() >= UC_MODERATOR) {
-			$token = ($CURUSER && !empty($CURUSER['hash4u'])) ? '&amp;hash4u=' . commenttable_h($CURUSER['hash4u']) : '';
-			$actions[] = '<a href="/' . commenttable_h($redaktor) . '.php?action=delete&amp;cid=' . $commentid . $token . '" class="sba">Удалить</a>';
+			$actions[] = tracker_post_action_link('/' . $redaktor . '.php?action=delete', array('action' => 'delete', 'cid' => $commentid), 'Удалить', 'sba', 'Удалить комментарий?');
 			if (!empty($row['editedby'])) {
 				$actions[] = '<a href="/' . commenttable_h($redaktor) . '.php?action=vieworiginal&amp;cid=' . $commentid . '" class="sba">Оригинал</a>';
 			}

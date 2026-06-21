@@ -68,24 +68,20 @@ if ($action === 'delete') {
 		stderr($tracker_lang['error'], 'РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°.');
 	}
 
-	$newsid = isset($_GET['newsid']) ? (int)$_GET['newsid'] : 0;
+	if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+		http_response_code(405);
+		header('Allow: POST');
+		exit('Method Not Allowed');
+	}
+
+	tracker_require_form_token('POST');
+
+	$newsid = isset($_POST['newsid']) ? (int)$_POST['newsid'] : 0;
 
 	if (!is_valid_id($newsid)) {
 		stderr($tracker_lang['error'], 'Неверный идентификатор новости.');
 	}
 
-	$sure = isset($_GET['sure']) ? (int)$_GET['sure'] : 0;
-
-	if (!$sure) {
-		$token = news_h(tracker_user_form_token());
-		stderr(
-			'Удаление новости',
-			'Вы действительно хотите удалить эту новость?<br /><br />
-			<a href="?action=delete&amp;newsid=' . $newsid . '&amp;sure=1&amp;hash4u=' . $token . '"><b>Да, удалить</b></a>'
-		);
-	}
-
-	tracker_require_form_token('GET');
 	sql_query('DELETE FROM news WHERE id = ' . $newsid . ' LIMIT 1') or sqlerr(__FILE__, __LINE__);
 
 	$warning = 'Новость успешно удалена.';
@@ -251,7 +247,7 @@ if (mysqli_num_rows($query) > 0) {
 		echo 'Добавлена ' . $added . ' - ' . $by;
 		if ($can_manage_news) {
 			echo ' - [<a href="?action=edit&amp;newsid=' . $newsid . '"><b>Редактировать</b></a>]';
-			echo ' - [<a href="?action=delete&amp;newsid=' . $newsid . '"><b>Удалить</b></a>]';
+			echo ' - [' . tracker_post_action_link('/news.php?action=delete', array('newsid' => $newsid), '<b>Удалить</b>', 'sba', 'Вы действительно хотите удалить эту новость?', true) . ']';
 		}
 		echo '</td>';
 		echo '</tr>';

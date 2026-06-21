@@ -667,7 +667,7 @@ function details_comments_html($torrentid, $comment_count, $page = 0)
 			? ' | <a class="sba" href="/comment.php?action=edit&amp;cid=' . (int)$row['id'] . '">Изменить</a>'
 			: '';
 		$delete = (get_user_class() >= UC_MODERATOR)
-			? ' | <a class="sba" href="/comment.php?action=delete&amp;cid=' . (int)$row['id'] . ($CURUSER ? '&amp;hash4u=' . details_h($CURUSER['hash4u'] ?? '') : '') . '">Удалить</a>'
+			? ' | ' . tracker_post_action_link('/comment.php?action=delete', array('action' => 'delete', 'cid' => (int)$row['id']), 'Удалить', 'sba', 'Удалить комментарий?')
 			: '';
 
 		$text = details_comment_format($row['text']);
@@ -835,7 +835,6 @@ $related = details_related_groups($row, $video);
 $tracker_rows = details_tracker_rows_from_json($row['tracker_rows_json'] ?? '[]');
 $external_ratings = details_external_ratings($design);
 $comment_page = isset($_GET['page']) ? (int)$_GET['page'] : 0;
-$book_hash = $CURUSER ? '&amp;hash4u=' . details_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? '')) : '';
 
 $tech_tab = details_line('Качество', $video['quality'] ?? '') .
 	details_line('Видео', $video['video'] ?? '') .
@@ -869,7 +868,7 @@ stdhead($tracker_lang['torrent_details'] . ' "' . htmlspecialchars_decode($row['
 		<li class="img"><a href="/details.php?id=<?= $id ?>" title="<?= details_h($row['name']) ?>"><img src="<?= $poster ?>" class="p200" alt=""></a></li>
 		<li class="tp">Меню раздачи</li>
 		<li><span class="bulet"></span><a href="/browse.php?s=<?= rawurlencode($search_title) ?>" target="_blank">Подобные раздачи</a></li>
-		<li><span class="bulet"></span><a href="/bookmark.php?torrent=<?= $id . $book_hash ?>" onclick="return mess_out('Добавить раздачу в закладки ?')">Добавить в закладки</a></li>
+		<li><span class="bulet"></span><?= tracker_post_action_link('/bookmark.php', array('torrent' => $id), 'Добавить в закладки', 'sba', 'Добавить раздачу в закладки ?') ?></li>
 		<?php if ($owned) { ?><li><span class="bulet"></span><a href="/edit.php?id=<?= $id ?>">Редактировать</a></li><?php } ?>
 		<li class="tp">Участники</li>
 		<li><span class="bulet"></span><a href="#"><?= $total_seeders ? 'Раздают' : 'Раздают' ?><span class="floatright"><?= $total_seeders ?></span></a></li>

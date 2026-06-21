@@ -7,19 +7,25 @@ dbconn(false);
 loggedinorreturn();
 groups_ensure_schema();
 
-$id = (int)($_GET['id'] ?? 0);
+$requestMethod = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$id = (int)($requestMethod === 'POST' ? ($_POST['id'] ?? 0) : ($_GET['id'] ?? 0));
 $group = groups_fetch($id);
 if (!$group) {
 	stderr('Группа', 'Группа не найдена.');
 }
 
-$action = (string)($_GET['action'] ?? '');
+$action = (string)($requestMethod === 'POST' ? ($_POST['group_action'] ?? '') : ($_GET['action'] ?? ''));
 $userid = (int)$CURUSER['id'];
-$targetid = (int)($_GET['userid'] ?? 0);
+$targetid = (int)($requestMethod === 'POST' ? ($_POST['userid'] ?? 0) : ($_GET['userid'] ?? 0));
 $redirect = '/groupex.php?id=' . $id;
 
 if ($action !== '') {
-	tracker_require_form_token('GET');
+	if ($requestMethod !== 'POST') {
+		http_response_code(405);
+		header('Allow: POST');
+		exit('Method Not Allowed');
+	}
+	tracker_require_form_token('POST');
 }
 
 if ($action === 'join') {

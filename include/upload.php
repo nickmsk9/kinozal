@@ -2780,7 +2780,7 @@ function upload_render_details_panel(array $row, array $details, $descr_html, $o
 				<?php } ?>
 				<li class="tp2 center">Раздача</li>
 				<li><span class="bulet"></span><a href="download.php?id=<?= $id ?>" class="sba">Скачать торрент</a></li>
-					<li><span class="bulet"></span><a href="bookmark.php?torrent=<?= $id ?><?= !empty($CURUSER['hash4u']) ? '&amp;hash4u=' . h($CURUSER['hash4u']) : '' ?>" class="sba"><?= h($tracker_lang['bookmark'] ?? 'Закладка') ?></a></li>
+				<li><span class="bulet"></span><?= tracker_post_action_link('/bookmark.php', array('torrent' => $id), h($tracker_lang['bookmark'] ?? 'Закладка'), 'sba', '', true) ?></li>
 				<?php if ($owned) { ?><li><span class="bulet"></span><a href="<?= h($edit_url) ?>" class="sba"><?= h($tracker_lang['edit'] ?? 'Редактировать') ?></a></li><?php } ?>
 				<?php if ($rgroup_title !== '' || $rbutton !== '') { ?>
 					<li class="tp2 center">Релиз-группа</li>

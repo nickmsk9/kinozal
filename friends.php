@@ -56,16 +56,13 @@ function friends_ago($timestamp) {
 	return get_et(sql_ts_to_ut($timestamp)) . ' назад';
 }
 
-function friends_delete_url($userid, $type, $targetid) {
-	global $CURUSER;
-
-	$hash = friends_h($CURUSER['hash4u'] ?? ($CURUSER['logout_hash'] ?? ''));
-	$url = '/friends.php?id=' . (int)$userid . '&amp;action=delete&amp;type=' . friends_h($type) . '&amp;targetid=' . (int)$targetid;
-	if ($hash !== '') {
-		$url .= '&amp;hash4u=' . $hash;
-	}
-
-	return $url;
+function friends_action_link($userid, $type, $targetid, $action, $label, $confirm = '') {
+	return tracker_post_action_link('/friends.php', array(
+		'id' => (int)$userid,
+		'friends_action' => (string)$action,
+		'type' => (string)$type,
+		'targetid' => (int)$targetid,
+	), $label, 'sba', $confirm);
 }
 
 function friends_render_user_card($row, $userid, $type) {
@@ -78,7 +75,6 @@ function friends_render_user_card($row, $userid, $type) {
 	$torrents = (int)($row['torrents_count'] ?? 0);
 	$comments = (int)($row['comments_count'] ?? 0);
 	$deleteText = $type === 'friend' ? 'Удалить' : 'Убрать';
-	$deleteUrl = friends_delete_url($userid, $type, $targetid);
 
 	if ($username === '') {
 		$username = 'Пользователь удален';
@@ -93,7 +89,7 @@ function friends_render_user_card($row, $userid, $type) {
 					<a href=\"/userdetails.php?id=" . $targetid . "\" class=\"u" . $userclass . "\">" . friends_h($username) . "</a>" . get_user_icons($row) . "<br>
 					<a href=\"/sendmessage.php?receiver=" . $targetid . "\" class=\"sba\">Сообщ.</a>
 					|
-					<a href=\"" . $deleteUrl . "\" class=\"sba\" onclick=\"return confirm('Удалить пользователя из списка?');\">" . $deleteText . "</a><br>
+					" . friends_action_link($userid, $type, $targetid, 'delete', $deleteText, 'Удалить пользователя из списка?') . "<br>
 					" . friends_ago($row['last_access'] ?? '') . "<br>
 					раздач <b>" . $torrents . "</b>, коммент. <b>" . $comments . "</b>
 				</td>
@@ -131,8 +127,9 @@ function friends_render_grid($rows, $userid, $type, $emptyText) {
 	return $html . '</table>';
 }
 
-$userid = (int)($_GET['id'] ?? $CURUSER['id']);
-$action = (string)($_GET['action'] ?? '');
+$requestMethod = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$userid = (int)($requestMethod === 'POST' ? ($_POST['id'] ?? $CURUSER['id']) : ($_GET['id'] ?? $CURUSER['id']));
+$action = (string)($requestMethod === 'POST' ? ($_POST['friends_action'] ?? '') : ($_GET['action'] ?? ''));
 
 if (!$userid) {
 	$userid = (int)$CURUSER['id'];
@@ -150,9 +147,14 @@ $res = sql_query("SELECT * FROM users WHERE id = $userid LIMIT 1") or sqlerr(__F
 $user = mysqli_fetch_assoc($res) or stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
 
 if ($action === 'add') {
-	tracker_require_form_token('GET');
-	$targetid = (int)($_GET['targetid'] ?? 0);
-	$type = (string)($_GET['type'] ?? '');
+	if ($requestMethod !== 'POST') {
+		http_response_code(405);
+		header('Allow: POST');
+		exit('Method Not Allowed');
+	}
+	tracker_require_form_token('POST');
+	$targetid = (int)($_POST['targetid'] ?? 0);
+	$type = (string)($_POST['type'] ?? '');
 
 	if (!is_valid_id($targetid) || $targetid === $userid) {
 		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
@@ -181,9 +183,14 @@ if ($action === 'add') {
 }
 
 if ($action === 'delete') {
-	tracker_require_form_token('GET');
-	$targetid = (int)($_GET['targetid'] ?? 0);
-	$type = (string)($_GET['type'] ?? '');
+	if ($requestMethod !== 'POST') {
+		http_response_code(405);
+		header('Allow: POST');
+		exit('Method Not Allowed');
+	}
+	tracker_require_form_token('POST');
+	$targetid = (int)($_POST['targetid'] ?? 0);
+	$type = (string)($_POST['type'] ?? '');
 
 	if (!is_valid_id($targetid)) {
 		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);

@@ -102,16 +102,6 @@ if ($unread % 10 === 1 && $unread % 100 !== 11) {
     $pm_new_word = 'новое';
 }
 
-$logout_url = '/logout.php';
-
-if ($is_logged) {
-    if (!empty($CURUSER['logout_hash'])) {
-        $logout_url = '/logout.php?hash4u=' . urlencode((string)$CURUSER['logout_hash']);
-    } elseif (!empty($CURUSER['hash4u'])) {
-        $logout_url = '/logout.php?hash4u=' . urlencode((string)$CURUSER['hash4u']);
-    }
-}
-
 $page_title = $title !== '' ? $title : $site_name;
 ?>
 <!DOCTYPE html>
@@ -281,7 +271,7 @@ $page_title = $title !== '' ? $title : $site_name;
                             <li class="tp2 center b">
                                 <a href="/userdetails.php?id=<?= $user_id ?>" class="<?= h($user_class_css) ?>"><?= h($username) ?></a>
                                 (
-                                <a onclick="return mess_out('Вы действительно хотите выйти?')" href="<?= h($logout_url) ?>">Выход</a>
+                                <?= tracker_post_action_link('/logout.php', array(), 'Выход', 'sba', 'Вы действительно хотите выйти?') ?>
                                 )
                             </li>
 

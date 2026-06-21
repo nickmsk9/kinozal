@@ -9,9 +9,16 @@ dbconn();
 $use_sessions = $old_sessions;
 
 loggedinorreturn();
-tracker_require_form_token('GET');
 
-$tid = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+	http_response_code(405);
+	header('Allow: POST');
+	exit('Method Not Allowed');
+}
+
+tracker_require_form_token('POST');
+
+$tid = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 if ($tid <= 0) {
 	stderr($tracker_lang['error'], $tracker_lang['invalid_id'] ?? 'Неверный ID.');
 }
@@ -28,7 +35,7 @@ if (!$is_moderator && $last_update > 0 && $last_update > (TIMENOW - 600)) {
 }
 
 $result = multitracker_update_torrent_trackers($tid, $is_moderator);
-$ajax = (string)($_GET['ajax'] ?? '') === 'yes';
+$ajax = (string)($_POST['ajax'] ?? '') === 'yes';
 
 if (!$ajax) {
 	header('Location: details.php?id=' . $tid . '&mtupdated=1&mts=' . (int)$result['success'] . '&mte=' . (int)$result['errors'] . '&mtc=' . (int)$result['client_only'] . '&mtk=' . (int)$result['skipped']);

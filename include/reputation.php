@@ -310,8 +310,6 @@ function profile_menu_html($user, $viewer)
 		? number_format(pay_user_votes_from_array($viewer), 0, '.', ' ')
 		: (isset($viewer['bonus']) ? number_format((float)$viewer['bonus'], 0, '.', ' ') : 0);
 	$isOwn = !empty($viewer['id']) && (int)$viewer['id'] === $id;
-	$hash = reputation_h($viewer['hash4u'] ?? ($viewer['logout_hash'] ?? ''));
-
 	$html = '<ul class="men ' . $class . ' w200">';
 	$html .= '<li class="img profile-menu-avatar"><a href="/userdetails.php?id=' . $id . '"><img src="' . $avatar . '" class="p200" alt=""></a></li>';
 	$html .= '<li class="tp">&#1052;&#1077;&#1085;&#1102; &#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1103;</li>';
@@ -361,9 +359,9 @@ function profile_menu_html($user, $viewer)
 		$html .= '<li><span class="bulet"></span><a href="/pay_mode.php">&#1054;&#1073;&#1085;&#1091;&#1083;&#1080;&#1090;&#1100; &#1089;&#1095;&#1077;&#1090;&#1095;&#1080;&#1082; &#1089;&#1082;&#1072;&#1095;&#1080;&#1074;&#1072;&#1085;&#1080;&#1081;</a></li>';
 	} else {
 		$html .= '<li class="tp">&#1044;&#1077;&#1081;&#1089;&#1090;&#1074;&#1080;&#1103;</li>';
-		$html .= '<li><span class="bulet"></span><a href="/bookmarks.php?type=3&amp;add=' . $id . '&amp;hash4u=' . $hash . '">&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1079;&#1072;&#1082;&#1083;&#1072;&#1076;&#1082;&#1080;</a></li>';
-			$html .= '<li><span class="bulet"></span><a href="/friends.php?action=add&amp;type=friend&amp;targetid=' . $id . '&amp;hash4u=' . $hash . '">&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1076;&#1088;&#1091;&#1079;&#1100;&#1103;</a></li>';
-			$html .= '<li><span class="bulet"></span><a href="/friends.php?action=add&amp;type=block&amp;targetid=' . $id . '&amp;hash4u=' . $hash . '">&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1080;&#1075;&#1085;&#1086;&#1088;</a></li>';
+		$html .= '<li><span class="bulet"></span>' . tracker_post_action_link('/bookmarks.php', array('type' => 3, 'bookmark_action' => 'add', 'target_id' => $id), '&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1079;&#1072;&#1082;&#1083;&#1072;&#1076;&#1082;&#1080;', 'sba', '', true) . '</li>';
+			$html .= '<li><span class="bulet"></span>' . tracker_post_action_link('/friends.php', array('friends_action' => 'add', 'type' => 'friend', 'targetid' => $id), '&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1076;&#1088;&#1091;&#1079;&#1100;&#1103;', 'sba', '', true) . '</li>';
+			$html .= '<li><span class="bulet"></span>' . tracker_post_action_link('/friends.php', array('friends_action' => 'add', 'type' => 'block', 'targetid' => $id), '&#1042;&#1085;&#1077;&#1089;&#1090;&#1080; &#1074; &#1080;&#1075;&#1085;&#1086;&#1088;', 'sba', '', true) . '</li>';
 		$html .= '<li class="tp">&#1043;&#1086;&#1083;&#1086;&#1089;&#1072;</li>';
 		$html .= '<li><span class="bulet"></span><a href="/pay_mode_b.php?userid=' . $id . '">&#1059;&#1087;&#1088;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; &#1075;&#1086;&#1083;&#1086;&#1089;&#1072;&#1084;&#1080;</a></li>';
 		$html .= '<li><span class="bulet"></span><a href="/pay_mode_b.php?userid=' . $id . '&amp;vote=plus">&#1055;&#1086;&#1076;&#1072;&#1088;&#1080;&#1090;&#1100; &#1088;&#1077;&#1081;&#1090;&#1080;&#1085;&#1075;</a></li>';

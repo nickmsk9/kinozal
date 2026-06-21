@@ -4,7 +4,7 @@ require_once("include/bittorrent.php");
 
 dbconn(false);
 
-$action = $_GET['action'] ?? '';
+$action = $_POST['action'] ?? ($_GET['action'] ?? '');
 
 function comment_h($value)
 {
@@ -178,9 +178,14 @@ if ($action === 'delete') {
 	if (get_user_class() < UC_MODERATOR) {
 		stderr($tracker_lang['error'], $tracker_lang['access_denied']);
 	}
-	tracker_require_form_token('GET');
+	if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+		http_response_code(405);
+		header('Allow: POST');
+		exit('Method Not Allowed');
+	}
+	tracker_require_form_token('POST');
 
-	$commentid = (int)($_GET['cid'] ?? 0);
+	$commentid = (int)($_POST['cid'] ?? 0);
 	if (!is_valid_id($commentid)) {
 		stderr($tracker_lang['error'], $tracker_lang['invalid_id']);
 	}

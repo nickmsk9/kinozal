@@ -120,24 +120,42 @@ function torrenttable($res, $variant = 'index')
     $cols += $is_bookmarks ? 1 : 0;
 
     $out = array();
+    $post_action_index = 0;
+    $bulk_form_id = '';
+    $bulk_form_html = '';
 
-    $token_query = function_exists('tracker_token_query') ? tracker_token_query() : '';
-    $token_html = $token_query !== '' ? htmlspecialchars_uni($token_query) : '';
+    $post_button = function ($action, array $fields, $label_html, $class = '', $title = '', $confirm = '') use (&$post_action_index, $e) {
+        $form_id = 'tt-post-action-' . (++$post_action_index);
+        $confirm_attr = '';
+
+        if ($confirm !== '') {
+            $confirm_attr = ' onsubmit="return confirm(' . htmlspecialchars_uni(json_encode((string)$confirm, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) . ')"';
+        }
+
+        $attrs = ' type="submit"';
+        if ($class !== '') {
+            $attrs .= ' class="' . $e($class) . '"';
+        }
+        if ($title !== '') {
+            $attrs .= ' title="' . $e($title) . '"';
+        }
+
+        return '<form id="' . $e($form_id) . '" method="post" action="' . $e($action) . '" style="display:inline;margin:0;padding:0"' . $confirm_attr . '>'
+            . tracker_hidden_inputs($fields)
+            . '<button' . $attrs . ' style="border:0;background:transparent;padding:0;margin:0;cursor:pointer;vertical-align:middle;">' . $label_html . '</button>'
+            . '</form>';
+    };
 
     if ($is_moderator && $is_index) {
-        $out[] = '<form method="post" action="deltorrent.php?mode=delete">';
-        if ($token_html !== '') {
-            $out[] = '<input type="hidden" name="hash4u" value="' . htmlspecialchars_uni(tracker_user_form_token()) . '">';
-        }
+        $bulk_form_id = 'tt-bulk-action-' . (++$post_action_index);
+        $bulk_form_html = '<form id="' . $e($bulk_form_id) . '" method="post" action="deltorrent.php?mode=delete" style="display:none">' . tracker_hidden_inputs(array()) . '</form>';
     } elseif ($is_bookmarks) {
-        $out[] = '<form method="post" action="takedelbookmark.php">';
-        if ($token_html !== '') {
-            $out[] = '<input type="hidden" name="hash4u" value="' . htmlspecialchars_uni(tracker_user_form_token()) . '">';
-        }
+        $bulk_form_id = 'tt-bulk-action-' . (++$post_action_index);
+        $bulk_form_html = '<form id="' . $e($bulk_form_id) . '" method="post" action="takedelbookmark.php" style="display:none">' . tracker_hidden_inputs(array()) . '</form>';
     }
 
     $out[] = '<tr>';
-    $out[] = '<td class="colhead center">' . $e($lang('type', 'Тип')) . '</td>';
+    $out[] = '<td class="colhead center">' . $bulk_form_html . $e($lang('type', 'Тип')) . '</td>';
     $out[] = '<td class="colhead left">' . $sort_link(1, $lang('name', 'Название')) . ' / ' . $sort_link(4, $lang('added', 'Добавлено')) . '</td>';
 
     if ($wait > 0) {
@@ -230,8 +248,13 @@ function torrenttable($res, $variant = 'index')
         }
 
         if (!$is_bookmarks && $is_logged) {
-            $token_suffix = $token_html !== '' ? '&amp;' . $token_html : '';
-            $name_html[] = '<a href="bookmark.php?torrent=' . $id . $token_suffix . '">' . $img('bookmark.gif', $lang('bookmark_this', 'Добавить в закладки')) . '</a>';
+            $name_html[] = $post_button(
+                'bookmark.php',
+                array('torrent' => $id),
+                $img('bookmark.gif', $lang('bookmark_this', 'Добавить в закладки')),
+                '',
+                $lang('bookmark_this', 'Добавить в закладки')
+            );
         }
 
         $name_html[] = '<a href="download.php?id=' . $id . '">' . $img('download.gif', $lang('download', 'Скачать')) . '</a>';
@@ -254,7 +277,13 @@ function torrenttable($res, $variant = 'index')
             $multi_image = $img('multitracker.png', $external_title);
 
             $name_html[] = $allow_update
-                ? '<a href="update_multi.php?id=' . $id . ($token_html !== '' ? '&amp;' . $token_html : '') . '">' . $multi_image . '</a>'
+                ? $post_button(
+                    'update_multi.php',
+                    array('id' => $id),
+                    $multi_image,
+                    '',
+                    $external_title
+                )
                 : $multi_image;
         }
 
@@ -379,13 +408,15 @@ function torrenttable($res, $variant = 'index')
                 }
             }
 
+            $bulk_form_attr = $bulk_form_id !== '' ? ' form="' . $e($bulk_form_id) . '"' : '';
             $out[] = '<td class="center">' . $moderated_html . '</td>';
-            $out[] = '<td class="center"><input type="checkbox" name="delete[]" value="' . $id . '" /></td>';
+            $out[] = '<td class="center"><input type="checkbox" name="delete[]" value="' . $id . '"' . $bulk_form_attr . ' /></td>';
         }
 
         if ($is_bookmarks) {
             $bookmark_id = isset($row['bookmarkid']) ? (int)$row['bookmarkid'] : 0;
-            $out[] = '<td class="center"><input type="checkbox" name="delbookmark[]" value="' . $bookmark_id . '" /></td>';
+            $bulk_form_attr = $bulk_form_id !== '' ? ' form="' . $e($bulk_form_id) . '"' : '';
+            $out[] = '<td class="center"><input type="checkbox" name="delbookmark[]" value="' . $bookmark_id . '"' . $bulk_form_attr . ' /></td>';
         }
 
         $out[] = '</tr>';
@@ -394,19 +425,17 @@ function torrenttable($res, $variant = 'index')
     $out[] = '</tbody>';
 
     if ($is_index && $is_logged) {
-        $out[] = '<tr><td class="colhead center" colspan="' . $cols . '"><a href="markread.php' . ($token_html !== '' ? '?' . $token_html : '') . '" class="altlink_white">Все торренты прочитаны</a></td></tr>';
+        $out[] = '<tr><td class="colhead center" colspan="' . $cols . '">' . $post_button('markread.php', array(), 'Все торренты прочитаны', 'altlink_white') . '</td></tr>';
     }
 
     if ($is_index && $is_moderator) {
-        $out[] = '<tr><td class="right" colspan="' . $cols . '"><input type="submit" class="buttonS" value="Удалить выбранные" /></td></tr>';
+        $bulk_form_attr = $bulk_form_id !== '' ? ' form="' . $e($bulk_form_id) . '"' : '';
+        $out[] = '<tr><td class="right" colspan="' . $cols . '"><input type="submit" class="buttonS" value="Удалить выбранные"' . $bulk_form_attr . ' /></td></tr>';
     }
 
     if ($is_bookmarks) {
-        $out[] = '<tr><td class="right" colspan="' . $cols . '"><input type="submit" class="buttonS" value="' . $e($lang('delete', 'Удалить')) . '" /></td></tr>';
-    }
-
-    if (($is_index && $is_moderator) || $is_bookmarks) {
-        $out[] = '</form>';
+        $bulk_form_attr = $bulk_form_id !== '' ? ' form="' . $e($bulk_form_id) . '"' : '';
+        $out[] = '<tr><td class="right" colspan="' . $cols . '"><input type="submit" class="buttonS" value="' . $e($lang('delete', 'Удалить')) . '"' . $bulk_form_attr . ' /></td></tr>';
     }
 
     print implode("\n", $out) . "\n";
