@@ -284,7 +284,7 @@ function reputation_table_html($rows, $profile_class, $type = 1, $latest = false
 		? '&#1055;&#1086;&#1089;&#1083;&#1077;&#1076;&#1085;&#1080;&#1077; &#1086;&#1090;&#1079;&#1099;&#1074;&#1099; &#1082; &#1088;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1080;'
 		: '&#1054;&#1090;&#1079;&#1099;&#1074; &#1082; &#1088;&#1077;&#1087;&#1091;&#1090;&#1072;&#1094;&#1080;&#1080;';
 
-	$html = "<div class='bx2_0'><table class='w100p brd'>\n";
+	$html = "<div class='bx2_0'><table class='w100p brd reputation-table'>\n";
 	$html .= "<tr><th class='w150 " . reputation_h($profile_class) . "'>$fromTitle</th><th class='" . reputation_h($profile_class) . "'>$reviewTitle</th><th class='w150 " . reputation_h($profile_class) . "'>&#1058;&#1077;&#1084;&#1072;</th></tr>";
 
 	foreach ($rows as $row) {

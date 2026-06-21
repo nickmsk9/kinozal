@@ -9,7 +9,7 @@ show_blocks('d');
 ?>
 </td>
 <?php if (empty($hide_right_blocks)) { ?>
-    <td valign="top" width="170">
+    <td valign="top" width="180" class="kz-sidebar kz-sidebar-right">
         <?php
         show_blocks('r');
         ?>

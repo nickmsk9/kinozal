@@ -9,6 +9,10 @@ $DEFAULTBASEURL = $GLOBALS['DEFAULTBASEURL'] ?? '';
 $pic_base_url = $GLOBALS['pic_base_url'] ?? './pic';
 $theme_uri = htmlspecialchars((string)($ss_uri ?? 'TBDev2030'), ENT_QUOTES, 'UTF-8');
 $site_name = htmlspecialchars((string)($SITENAME ?? ''), ENT_QUOTES, 'UTF-8');
+$current_module = basename($_SERVER['PHP_SELF'] ?? 'index.php');
+$page_slug = preg_replace('/[^a-z0-9_-]+/i', '-', preg_replace('/\.php$/i', '', $current_module));
+$body_class = htmlspecialchars('tbdev2030 page-' . strtolower((string)$page_slug), ENT_QUOTES, 'UTF-8');
+$has_right_blocks = empty($GLOBALS['hide_right_blocks']);
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html lang="ru">
@@ -17,8 +21,8 @@ $site_name = htmlspecialchars((string)($SITENAME ?? ''), ENT_QUOTES, 'UTF-8');
     <meta charset="UTF-8">
     <title><?= htmlspecialchars((string)$title, ENT_QUOTES, 'UTF-8') ?></title>
     <meta name="engine-copyright" content="<?= engine_copyright_notice('attr') ?>">
-    <link rel="stylesheet" href="./themes/<?= $theme_uri ?>/TBDev.css?v=20260617-1" type="text/css">
-    <link rel="stylesheet" href="./themes/<?= $theme_uri ?>/engine.css?v=20260620-1" type="text/css">
+    <link rel="stylesheet" href="./themes/<?= $theme_uri ?>/TBDev.css?v=20260621-1" type="text/css">
+    <link rel="stylesheet" href="./themes/<?= $theme_uri ?>/engine.css?v=20260621-1" type="text/css">
     <?php if (in_array(basename($_SERVER['PHP_SELF'] ?? ''), array('upload.php', 'edit.php'), true)) { ?>
         <link rel="stylesheet" href="./themes/<?= $theme_uri ?>/upload.css?v=20260617-1" type="text/css">
     <?php } ?>
@@ -62,7 +66,7 @@ $site_name = htmlspecialchars((string)($SITENAME ?? ''), ENT_QUOTES, 'UTF-8');
     <link rel="shortcut icon" href="<?= $DEFAULTBASEURL; ?>/favicon.ico" type="image/x-icon" />
 </head>
 
-<body>
+<body class="<?= $body_class ?>">
 
     <table width="90%" class="clear" align="center" border="0" cellspacing="0" cellpadding="0" style="background: transparent;">
         <tr>
@@ -269,14 +273,19 @@ $site_name = htmlspecialchars((string)($SITENAME ?? ''), ENT_QUOTES, 'UTF-8');
         //if ($_SERVER["REMOTE_ADDR"] == $_SERVER["SERVER_ADDR"]) $w = "width=984";
 
         ?>
-        <table class="mainouter" align="center" <?= $w; ?> border="1" cellspacing="0" cellpadding="5">
+        <table class="mainouter kz-layout" align="center" <?= $w; ?> border="1" cellspacing="0" cellpadding="5">
+            <colgroup>
+                <col class="kz-layout-sidebar-col">
+                <col class="kz-layout-main-col">
+                <?php if ($has_right_blocks) { ?><col class="kz-layout-sidebar-col"><?php } ?>
+            </colgroup>
             <tr>
 
                 <!------------- MENU ------------------------------------------------------------------------>
 
                 <?php $fn = substr($_SERVER['PHP_SELF'], strrpos($_SERVER['PHP_SELF'], "/") + 1); ?>
 
-                <td valign="top" width="170">
+                <td valign="top" width="180" class="kz-sidebar kz-sidebar-left">
                     <?php
 
                     $messages = $messages ?? 0;
@@ -405,7 +414,7 @@ refrClock2();
                     ?>
                 </td>
 
-                <td align="left" valign="top" class="outer" style="padding-top: 5px; padding-bottom: 5px">
+                <td align="left" valign="top" class="outer kz-main" style="padding-top: 5px; padding-bottom: 5px">
                     <?php
 
                     if ($CURUSER) {
@@ -422,7 +431,6 @@ refrClock2();
                         print("</td></tr></table></p>\n");
                     }
 
-                    $current_module = basename($_SERVER['PHP_SELF'] ?? '');
                     if ($current_module !== 'radio.php') {
                         show_blocks('c');
                     }
