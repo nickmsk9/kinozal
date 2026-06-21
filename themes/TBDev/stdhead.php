@@ -313,16 +313,7 @@ $page_title = $title !== '' ? $title : $site_name;
                                 время: <?= date('H:i') ?>
                             </li>
                         <?php } else { ?>
-                            <form method="post" action="/takelogin.php">
-                                <li class="tp2 center"><a href="/signup.php" class="sbab">Гость! ( Зарегистрируйтесь )</a></li>
-                                <li class="right b">Логин: <input type="text" name="username" class="w90" value=""></li>
-                                <li class="right b">Пароль: <input type="password" name="password" class="w90" value=""></li>
-                                <li class="right b">
-                                    <a href="/recover.php" class="sbab">Восстановление!</a>
-                                    <input type="hidden" name="returnto" value="<?= h($_SERVER['REQUEST_URI'] ?? '') ?>">
-                                    <input class="buttonS" type="submit" value="Вход">
-                                </li>
-                            </form>
+                            <?= tracker_login_form_html(array('variant' => 'sidebar_li', 'returnto' => $_SERVER['REQUEST_URI'] ?? '/')) ?>
                         <?php } ?>
                     </ul>
 

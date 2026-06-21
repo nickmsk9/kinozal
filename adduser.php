@@ -30,6 +30,7 @@ require_once __DIR__ . '/include/bittorrent.php';
 
 dbconn();
 loggedinorreturn();
+tracker_auth_schema_upgrade();
 
 if (get_user_class() < UC_ADMINISTRATOR) {
     stderr($tracker_lang['error'], $tracker_lang['access_denied']);

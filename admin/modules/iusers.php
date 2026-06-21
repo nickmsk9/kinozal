@@ -18,6 +18,10 @@ function iUsers(): void
     $success = array();
 
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+        if (function_exists('tracker_auth_schema_upgrade')) {
+            tracker_auth_schema_upgrade();
+        }
+
         $username = trim((string)($_POST['iname'] ?? ''));
         $password = (string)($_POST['ipass'] ?? '');
         $email = trim((string)($_POST['imail'] ?? ''));

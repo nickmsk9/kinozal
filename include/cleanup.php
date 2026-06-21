@@ -609,6 +609,10 @@ function docleanup()
         }
     }
 
+    if (function_exists('tracker_auth_schema_upgrade')) {
+        tracker_auth_schema_upgrade();
+    }
+
     sql_query("
         UPDATE users
         SET editsecret = '',

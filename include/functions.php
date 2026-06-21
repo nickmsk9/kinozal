@@ -403,6 +403,198 @@ function tracker_password_hash($password): string
     return $hash;
 }
 
+function tracker_schema_column($table, $column)
+{
+    $table = (string)$table;
+    $column = (string)$column;
+
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $table) || !preg_match('/^[A-Za-z0-9_]+$/', $column)) {
+        return null;
+    }
+
+    $res = sql_query("SHOW COLUMNS FROM `$table` LIKE " . sqlesc($column)) or sqlerr(__FILE__, __LINE__);
+    $row = mysqli_fetch_assoc($res);
+
+    return $row ?: null;
+}
+
+function tracker_schema_table_exists($table): bool
+{
+    $table = (string)$table;
+
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $table)) {
+        return false;
+    }
+
+    $res = sql_query('SHOW TABLES LIKE ' . sqlesc($table)) or sqlerr(__FILE__, __LINE__);
+
+    return (bool)mysqli_fetch_row($res);
+}
+
+function tracker_schema_varchar_length($table, $column): int
+{
+    $row = tracker_schema_column($table, $column);
+    $type = strtolower((string)($row['Type'] ?? ''));
+
+    if (preg_match('/^(?:var)?char\((\d+)\)/', $type, $m)) {
+        return (int)$m[1];
+    }
+
+    return 0;
+}
+
+function tracker_auth_schema_upgrade(): void
+{
+    static $done = false;
+
+    if ($done) {
+        return;
+    }
+
+    $done = true;
+
+    if (tracker_schema_varchar_length('users', 'passhash') < 255) {
+        sql_query("ALTER TABLE users MODIFY passhash varchar(255) NOT NULL DEFAULT ''") or sqlerr(__FILE__, __LINE__);
+    }
+
+    if (tracker_schema_varchar_length('users', 'editsecret') < 64) {
+        sql_query("ALTER TABLE users MODIFY editsecret varchar(64) NOT NULL DEFAULT ''") or sqlerr(__FILE__, __LINE__);
+    }
+
+    if (!tracker_schema_column('users', 'editsecret_expires')) {
+        sql_query("ALTER TABLE users ADD COLUMN editsecret_expires datetime NULL DEFAULT NULL AFTER editsecret") or sqlerr(__FILE__, __LINE__);
+    }
+
+    if (tracker_schema_varchar_length('users', 'passkey') < 64) {
+        sql_query("ALTER TABLE users MODIFY passkey varchar(64) NOT NULL DEFAULT ''") or sqlerr(__FILE__, __LINE__);
+    }
+
+    if (tracker_schema_varchar_length('users', 'ip') < 45) {
+        sql_query("ALTER TABLE users MODIFY ip varchar(45) NOT NULL DEFAULT ''") or sqlerr(__FILE__, __LINE__);
+    }
+
+    if (tracker_schema_varchar_length('users', 'passkey_ip') < 45) {
+        sql_query("ALTER TABLE users MODIFY passkey_ip varchar(45) NOT NULL DEFAULT ''") or sqlerr(__FILE__, __LINE__);
+    }
+
+    if (tracker_schema_column('peers', 'passkey') && tracker_schema_varchar_length('peers', 'passkey') < 64) {
+        sql_query("ALTER TABLE peers MODIFY passkey varchar(64) NOT NULL DEFAULT ''") or sqlerr(__FILE__, __LINE__);
+    }
+
+    sql_query("
+        CREATE TABLE IF NOT EXISTS user_passkeys (
+          id bigint unsigned NOT NULL auto_increment,
+          userid int unsigned NOT NULL,
+          token_hash char(64) NOT NULL,
+          created_at datetime NOT NULL,
+          last_used datetime NULL DEFAULT NULL,
+          last_ip varchar(45) NOT NULL default '',
+          revoked_at datetime NULL DEFAULT NULL,
+          PRIMARY KEY (id),
+          UNIQUE KEY token_hash (token_hash),
+          KEY userid_active (userid, revoked_at, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ") or sqlerr(__FILE__, __LINE__);
+
+    if (function_exists('tracker_user_passkeys_available')) {
+        tracker_user_passkeys_available(true);
+    }
+}
+
+function tracker_login_token(): string
+{
+    $sid = session_id();
+    if ($sid === '') {
+        return '';
+    }
+
+    $salt = defined('COOKIE_SALT') ? COOKIE_SALT : ($GLOBALS['_COOKIE_SALT'] ?? 'tracker-cookie-salt');
+    $bucket = (int)floor(time() / 3600);
+
+    return hash_hmac('sha256', $sid . '|login|' . $bucket, (string)$salt);
+}
+
+function tracker_verify_login_token($token): bool
+{
+    $sid = session_id();
+    if ($sid === '') {
+        return false;
+    }
+
+    $token = (string)$token;
+    $salt = defined('COOKIE_SALT') ? COOKIE_SALT : ($GLOBALS['_COOKIE_SALT'] ?? 'tracker-cookie-salt');
+    $bucket = (int)floor(time() / 3600);
+
+    foreach (array($bucket, $bucket - 1) as $candidate) {
+        $expected = hash_hmac('sha256', $sid . '|login|' . $candidate, (string)$salt);
+        if ($token !== '' && hash_equals($expected, $token)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function tracker_login_returnto($returnto = null): string
+{
+    $returnto = $returnto === null ? ($_SERVER['REQUEST_URI'] ?? '/') : $returnto;
+
+    return tracker_safe_local_redirect((string)$returnto, '/');
+}
+
+function tracker_login_form_html(array $options = array()): string
+{
+    global $tracker_lang;
+
+    $variant = (string)($options['variant'] ?? 'sidebar_li');
+    $returnto = tracker_login_returnto($options['returnto'] ?? null);
+    $token = tracker_login_token();
+
+    $username_label = htmlspecialchars_uni($tracker_lang['username'] ?? 'Логин');
+    $password_label = htmlspecialchars_uni($tracker_lang['password'] ?? 'Пароль');
+    $login_label = htmlspecialchars_uni($tracker_lang['login'] ?? 'Вход');
+    $returnto_html = htmlspecialchars_uni($returnto);
+    $token_html = htmlspecialchars_uni($token);
+
+    $hidden = '<input type="hidden" name="touser" value="1">'
+        . '<input type="hidden" name="login_token" value="' . $token_html . '">'
+        . '<input type="hidden" name="returnto" value="' . $returnto_html . '">';
+
+    if ($variant === 'full') {
+        return '<form method="post" action="/takelogin.php" name="upt" autocomplete="off">'
+            . $hidden
+            . '<div class="bx1_0"><div class="pad10x10 floatleft"><table class="tables1">'
+            . '<tr><td class="w150 nw b">' . $username_label . '</td><td><input type="text" size="35" id="username" name="username" value="" autocomplete="username"></td></tr>'
+            . '<tr><td class="w150 nw b">' . $password_label . '</td><td><input type="password" size="35" id="password" name="password" value="" autocomplete="current-password"></td></tr>'
+            . '<tr><td colspan="2" class="right"><input class="buttonS" type="submit" value=" ' . $login_label . ' "></td></tr>'
+            . '</table></div><div class="pad10x10" style="margin: 0 5px 0 380px;">'
+            . 'Рады Вас приветствовать в Кинозал.ТВ<br>Для входа на сайт введите логин и пароль<br>'
+            . 'Не зарегистрированы в Кинозал.ТВ? <a href="/signup.php" class="sba">Присоединиться</a><br>'
+            . '</div></div></form>';
+    }
+
+    if ($variant === 'legacy_center') {
+        return '<center><form method="post" action="/takelogin.php" autocomplete="off">'
+            . $hidden
+            . '<br />' . $username_label . ': <br />'
+            . '<input type="text" size="20" name="username" autocomplete="username" /><br />'
+            . $password_label . ': <br />'
+            . '<input type="password" size="20" name="password" autocomplete="current-password" /><br />'
+            . '<input type="submit" value="' . $login_label . '!" class="btn"><br /><br />'
+            . '</form></center>'
+            . '<a class="menu" href="/signup.php"><center>' . htmlspecialchars_uni($tracker_lang['signup'] ?? 'Регистрация') . '</center></a>';
+    }
+
+    return '<form method="post" action="/takelogin.php" autocomplete="off">'
+        . $hidden
+        . '<li class="tp2 center"><a href="/signup.php" class="sbab">Гость! ( Зарегистрируйтесь )</a></li>'
+        . '<li class="right b">Логин: <input type="text" name="username" class="w90" value="" autocomplete="username"></li>'
+        . '<li class="right b">Пароль: <input type="password" name="password" class="w90" value="" autocomplete="current-password"></li>'
+        . '<li class="right b"><a href="/recover.php" class="sbab">Восстановление!</a> '
+        . '<input class="buttonS" type="submit" value="Вход"></li>'
+        . '</form>';
+}
+
 function tracker_password_is_modern($hash): bool
 {
     $info = password_get_info((string)$hash);
@@ -1491,9 +1683,13 @@ function tracker_passkey_hash($passkey)
 	return hash_hmac('sha256', (string)$passkey, (string)$salt);
 }
 
-function tracker_user_passkeys_available()
+function tracker_user_passkeys_available($refresh = false)
 {
 	static $available = null;
+
+	if ($refresh) {
+		$available = null;
+	}
 
 	if ($available !== null) {
 		return $available;

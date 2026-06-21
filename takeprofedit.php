@@ -4,6 +4,7 @@ require_once("include/bittorrent.php");
 
 dbconn();
 loggedinorreturn();
+tracker_auth_schema_upgrade();
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 	http_response_code(405);

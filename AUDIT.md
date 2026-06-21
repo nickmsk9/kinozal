@@ -25,6 +25,8 @@ php -d short_open_tag=1 -l
 - Закрыто: PHP 8 fatal в `log.php`, отключение `display_errors` по умолчанию в Docker/runtime.
 - Закрыто: announce-коллизии `peer_id`, уникальность `snatched`, индексы горячего пути announce, отключение синхронного TCP connectability check по умолчанию.
 - Закрыто: переход новых паролей на `password_hash()`, совместимая проверка старых MD5-хэшей, lazy rehash при логине, запрет логина/регистрации через GET credentials.
+- Закрыто дополнительно: auth-flow получил idempotent upgrade старой live-схемы (`users.passhash/editsecret/editsecret_expires/passkey/ip/passkey_ip`, `user_passkeys`) в точках записи новых паролей/reset-token/passkey; старые Docker volumes больше не валят логин на `Data too long for column 'passhash'`.
+- Закрыто дополнительно: формы входа централизованы через общий renderer и подключены во всех шаблонах (`login.php`, `themes/TBDev`, `themes/Winter`, `themes/TBDev2030`); все формы используют POST на `/takelogin.php`, безопасный `returnto` и login CSRF-token.
 - Закрыто: восстановление пароля больше не генерирует пароль и не отправляет его письмом; вместо этого используется одноразовый reset-token и форма установки нового пароля.
 - Частично закрыто: новые и ротируемые passkey теперь 32 base62-символа, схема расширена до `varchar(64)`, старые 10-символьные passkey остаются валидными для совместимости.
 - Закрыто: reset-token получил отдельный TTL в `users.editsecret_expires`, проверку срока при открытии/сбросе и cleanup просроченных токенов.

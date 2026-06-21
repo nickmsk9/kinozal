@@ -11,6 +11,7 @@ if (!$id || $md5 === '' || $email === '' || !validemail($email))
 	httperr();
 
 dbconn();
+tracker_auth_schema_upgrade();
 
 $res = sql_query("SELECT editsecret FROM users WHERE id = $id");
 $row = mysqli_fetch_array($res);

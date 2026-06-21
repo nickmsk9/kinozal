@@ -28,10 +28,21 @@
 
 require_once("include/bittorrent.php");
 
-if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+if ($method !== 'POST') {
+	if ($method === 'GET' || $method === 'HEAD') {
+		header('Location: ' . $DEFAULTBASEURL . '/login.php');
+		exit;
+	}
+
 	http_response_code(405);
 	header('Allow: POST');
 	exit('Method Not Allowed');
+}
+
+if (!tracker_verify_login_token($_POST['login_token'] ?? '')) {
+	http_response_code(403);
+	exit('Invalid login form token.');
 }
 
 $username = isset($_POST['username']) ? trim((string)$_POST['username']) : null;
@@ -41,6 +52,7 @@ if ($username === null || $password === null)
 	die();
 
 dbconn();
+tracker_auth_schema_upgrade();
 
 function bark($text = "Имя пользователя или пароль неверны")
 {

@@ -11,6 +11,7 @@ if (!$id || $md5 === '')
 	httperr();
 
 dbconn();
+tracker_auth_schema_upgrade();
 
 
 $res = sql_query("SELECT passhash, editsecret, status FROM users WHERE id = $id");

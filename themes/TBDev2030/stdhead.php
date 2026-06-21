@@ -356,16 +356,10 @@ refrClock2();
 	<center><img src=\"{$pic_base_url}/disabled.gif\" border=\"0\" />&nbsp;[<a href=\"{$logout_url}\">{$tracker_lang['logout']}</a>]</center>
 	";
                     } else {
-                        $userbar = '<center><form method="post" action="takelogin.php">
-<br />
-' . $tracker_lang['username'] . ': <br />
-<input type="text" size=20 name="username" /><br />
-' . $tracker_lang['password'] . ': <br />
-
-<input type="password" size=20 name="password" /><br />
-<input type="submit" value="' . $tracker_lang['login'] . '!" class=\"btn\"><br /><br />
-</form></center>
-<a class="menu" href="signup.php"><center>' . $tracker_lang['signup'] . '</center></a>';
+                        $userbar = tracker_login_form_html(array(
+                            'variant' => 'legacy_center',
+                            'returnto' => $_SERVER['REQUEST_URI'] ?? '/',
+                        ));
                     }
 
                     if ($CURUSER && $CURUSER['override_class'] != 255) {

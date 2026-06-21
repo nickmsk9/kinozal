@@ -29,6 +29,7 @@
 require "include/bittorrent.php";
 
 dbconn();
+tracker_auth_schema_upgrade();
 
 if (!defined('RECOVER_TOKEN_TTL_SECONDS')) {
 	define('RECOVER_TOKEN_TTL_SECONDS', 3600);
