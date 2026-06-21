@@ -80,11 +80,11 @@ require_once "include/BDecode.php";
 require_once "include/BEncode.php";
 require_once "include/multitracker.php";
 
-tracker_ensure_user_passkey($CURUSER);
+$download_passkey = tracker_issue_user_passkey($CURUSER);
 
 $dict = bdecode(file_get_contents($fn));
 
-$local_announce = $announce_urls[0] . "?passkey=$CURUSER[passkey]";
+$local_announce = $announce_urls[0] . "?passkey=$download_passkey";
 $external_announces = array();
 $seen_announces = array();
 

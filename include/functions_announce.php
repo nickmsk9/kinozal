@@ -227,6 +227,11 @@ function tracker_valid_passkey($passkey) {
     return (bool)preg_match('/^[A-Za-z0-9]{10,64}$/', (string)$passkey);
 }
 
+function tracker_passkey_hash($passkey) {
+    $salt = defined('COOKIE_SALT') ? COOKIE_SALT : ($GLOBALS['_COOKIE_SALT'] ?? 'tracker-cookie-salt');
+    return hash_hmac('sha256', (string)$passkey, (string)$salt);
+}
+
 // Check open port, requires --enable-sockets
 function check_port($host, $port, $timeout) {
     if (!tracker_ip_version($host)) {

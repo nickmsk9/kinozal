@@ -73,15 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $secretRaw = mksecret();
     $secret = sqlesc($secretRaw);
     $passhash = sqlesc(tracker_password_hash($password));
-    $passkey = sqlesc(tracker_generate_passkey());
     $added = sqlesc(get_date_time());
 
     try {
         sql_query("
             INSERT INTO users
-                (added, last_access, secret, username, passhash, status, email, passkey, simpaty)
+                (added, last_access, secret, username, passhash, status, email, simpaty)
             VALUES
-                ($added, $added, $secret, $username, $passhash, 'confirmed', $email, $passkey, 0)
+                ($added, $added, $secret, $username, $passhash, 'confirmed', $email, 0)
         ");
     } catch (mysqli_sql_exception $e) {
         if ((int)$e->getCode() === 1062) {

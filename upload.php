@@ -10,8 +10,6 @@ dbconn(false);
 loggedinorreturn();
 parked();
 
-tracker_ensure_user_passkey($CURUSER);
-
 upload_ensure_schema();
 test_torrents_ensure_schema();
 multitracker_ensure_schema();

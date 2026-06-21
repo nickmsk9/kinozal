@@ -30,6 +30,10 @@ require "include/bittorrent.php";
 
 dbconn();
 
+if (!defined('RECOVER_TOKEN_TTL_SECONDS')) {
+	define('RECOVER_TOKEN_TTL_SECONDS', 3600);
+}
+
 function recover_h($value): string
 {
 	return htmlspecialchars_uni((string)$value);
@@ -72,9 +76,11 @@ function recover_send_reset_link($email): void
 	}
 
 	$token = mksecret(40);
+	$ttl = (int)RECOVER_TOKEN_TTL_SECONDS;
 	sql_query("
 		UPDATE users
-		SET editsecret = " . sqlesc($token) . "
+		SET editsecret = " . sqlesc($token) . ",
+		    editsecret_expires = DATE_ADD(NOW(), INTERVAL $ttl SECOND)
 		WHERE id = " . (int)$arr["id"] . "
 		LIMIT 1
 	") or sqlerr(__FILE__, __LINE__);
@@ -93,6 +99,8 @@ function recover_send_reset_link($email): void
 Чтобы установить новый пароль, перейдите по ссылке:
 
 $link
+
+Ссылка действительна 1 час.
 
 --
 $SITENAME
@@ -115,7 +123,8 @@ function recover_fetch_user($id, $secret)
 	}
 
 	$res = sql_query("
-		SELECT id, username, editsecret
+		SELECT id, username, editsecret, editsecret_expires,
+		       (editsecret_expires IS NOT NULL AND editsecret_expires >= NOW()) AS editsecret_valid
 		FROM users
 		WHERE id = $id
 		LIMIT 1
@@ -123,6 +132,17 @@ function recover_fetch_user($id, $secret)
 	$user = mysqli_fetch_assoc($res);
 
 	if (!$user || (string)$user['editsecret'] === '' || !hash_equals((string)$user['editsecret'], $secret)) {
+		httperr();
+	}
+	if ((int)$user['editsecret_valid'] !== 1) {
+		sql_query("
+			UPDATE users
+			SET editsecret = '',
+			    editsecret_expires = NULL
+			WHERE id = $id
+			  AND editsecret = " . sqlesc($secret) . "
+			LIMIT 1
+		") or sqlerr(__FILE__, __LINE__);
 		httperr();
 	}
 
@@ -154,11 +174,17 @@ function recover_complete_reset($id, $secret, $password, $passagain): void
 		UPDATE users
 		SET secret = " . sqlesc($secret_new) . ",
 		    editsecret = '',
+		    editsecret_expires = NULL,
 		    passhash = " . sqlesc($passhash) . "
 		WHERE id = " . (int)$user['id'] . "
 		  AND editsecret = " . sqlesc($secret) . "
+		  AND editsecret_expires IS NOT NULL
+		  AND editsecret_expires >= NOW()
 		LIMIT 1
 	") or sqlerr(__FILE__, __LINE__);
+	if (!mysql_affected_rows()) {
+		httperr();
+	}
 
 	stderr(
 		$tracker_lang['success'],

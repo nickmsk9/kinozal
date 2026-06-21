@@ -54,6 +54,7 @@ function iUsers(): void
                 );
             } else {
                 $updates = array();
+                $revoke_passkeys = false;
 
                 if ($password !== '') {
                     if (strlen($password) > 40) {
@@ -62,7 +63,7 @@ function iUsers(): void
                         $secret = mksecret();
                         $updates[] = 'secret = ' . sqlesc($secret);
                         $updates[] = 'passhash = ' . sqlesc(tracker_password_hash($password));
-                        $updates[] = 'passkey = ' . sqlesc(tracker_generate_passkey());
+                        $revoke_passkeys = true;
                         $success[] = 'пароль';
                     }
                 }
@@ -101,6 +102,10 @@ function iUsers(): void
                     ") or sqlerr(__FILE__, __LINE__);
 
                     if (mysqli_affected_rows($link) > 0) {
+                        if ($revoke_passkeys) {
+                            tracker_revoke_user_passkeys((int)$user['id']);
+                        }
+
                         write_log(
                             'Администратор ' . $CURUSER['username']
                             . ' изменил учётные данные пользователя ' . $user['username']
@@ -131,7 +136,7 @@ function iUsers(): void
                     <div class="bx1_0">
                         <div class="pad10x10">
                             Можно изменить пароль, E-mail или оба поля сразу.
-                            После смены пароля пасскей пользователя будет обновлён.
+                            После смены пароля активные passkey пользователя будут отозваны.
                         </div>
                     </div>
 

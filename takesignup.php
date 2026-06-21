@@ -211,7 +211,6 @@ if (theme_resolve_name($theme) === 'TBDev') {
     $theme = 'Основная';
 }
 $added = get_date_time();
-$passkey = tracker_generate_passkey();
 
 $fields = array(
     'username',
@@ -226,7 +225,6 @@ $fields = array(
     'birthday',
     'theme',
     'ip',
-    'passkey',
     'simpaty'
 );
 
@@ -243,7 +241,6 @@ $values = array(
     $birthday,
     $theme,
     $ip,
-    $passkey,
     0
 );
 

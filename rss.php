@@ -31,11 +31,29 @@ dbconn();
 
 $passkey = isset($_GET["passkey"]) ? (string) $_GET["passkey"] : '';
 if ($passkey) {
-if (!tracker_valid_passkey($passkey))
-exit();
-$user = mysqli_fetch_row(sql_query("SELECT COUNT(*) FROM users WHERE passkey = ".sqlesc($passkey)));
-if ($user[0] != 1)
-exit();
+	if (!tracker_valid_passkey($passkey)) {
+		exit();
+	}
+
+	$passkey_hash = tracker_passkey_hash($passkey);
+	$user = array(0);
+	if (tracker_user_passkeys_available()) {
+		$res = sql_query("
+			SELECT COUNT(*)
+			FROM user_passkeys
+			WHERE token_hash = " . sqlesc($passkey_hash) . "
+			  AND revoked_at IS NULL
+		");
+		if ($res) {
+			$user = mysqli_fetch_row($res);
+		}
+	}
+	if ((int)$user[0] !== 1) {
+		$user = mysqli_fetch_row(sql_query("SELECT COUNT(*) FROM users WHERE passkey = ".sqlesc($passkey)));
+	}
+	if ((int)$user[0] !== 1) {
+		exit();
+	}
 } else
 loggedinorreturn();
 

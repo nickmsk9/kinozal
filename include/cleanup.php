@@ -492,6 +492,22 @@ function docleanup()
         }
     }
 
+    sql_query("
+        UPDATE users
+        SET editsecret = '',
+            editsecret_expires = NULL
+        WHERE editsecret_expires IS NOT NULL
+          AND editsecret_expires < NOW()
+    ") or sqlerr(__FILE__, __LINE__);
+
+    if (function_exists('tracker_user_passkeys_available') && tracker_user_passkeys_available()) {
+        sql_query("
+            DELETE FROM user_passkeys
+            WHERE revoked_at IS NOT NULL
+              AND revoked_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
+        ") or sqlerr(__FILE__, __LINE__);
+    }
+
     $session_deadtime = time() - 3600;
     sql_query("DELETE FROM sessions WHERE time < $session_deadtime") or sqlerr(__FILE__, __LINE__);
 

@@ -1049,6 +1049,7 @@ CREATE TABLE `users` (
   `last_login` datetime NULL DEFAULT NULL,
   `last_access` datetime NULL DEFAULT NULL,
   `editsecret` varchar(64) NOT NULL default '',
+  `editsecret_expires` datetime NULL DEFAULT NULL,
   `privacy` enum('strong','normal','low') NOT NULL default 'normal',
   `theme` varchar(40) NOT NULL default '',
   `info` text,
@@ -1138,6 +1139,25 @@ CREATE TABLE `user_status_assignments` (
   PRIMARY KEY (`userid`,`status_key`),
   KEY `status_key` (`status_key`),
   KEY `assigned_at` (`assigned_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+#
+# Structure for the `user_passkeys` table :
+#
+
+DROP TABLE IF EXISTS `user_passkeys`;
+
+CREATE TABLE `user_passkeys` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `userid` int unsigned NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `last_used` datetime NULL DEFAULT NULL,
+  `last_ip` varchar(45) NOT NULL default '',
+  `revoked_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token_hash` (`token_hash`),
+  KEY `userid_active` (`userid`,`revoked_at`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #

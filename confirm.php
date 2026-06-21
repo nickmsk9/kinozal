@@ -28,7 +28,7 @@ $sec = hash_pad($row["editsecret"]);
 if (preg_match('/^ *$/s', $sec) || !hash_equals(md5($sec), $md5))
 	httperr();
 
-sql_query("UPDATE users SET status='confirmed', editsecret='' WHERE id = $id AND status = 'pending'");
+sql_query("UPDATE users SET status='confirmed', editsecret='', editsecret_expires = NULL WHERE id = $id AND status = 'pending'");
 
 if (!mysql_affected_rows())
 	httperr();

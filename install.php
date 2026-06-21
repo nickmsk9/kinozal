@@ -209,12 +209,11 @@ function install_create_admin(mysqli $db, $username, $password, $email)
 	if (!is_string($passhash) || $passhash === '') {
 		throw new RuntimeException('Не удалось создать хэш пароля администратора.');
 	}
-	$passkey = install_random_string(10);
 	$now = date('Y-m-d H:i:s');
 
 	$sql = "
 		INSERT INTO users
-			(added, last_access, secret, username, passhash, status, email, class, enabled, passkey)
+			(added, last_access, secret, username, passhash, status, email, class, enabled)
 		VALUES
 			('" . $db->real_escape_string($now) . "',
 			 '" . $db->real_escape_string($now) . "',
@@ -224,8 +223,7 @@ function install_create_admin(mysqli $db, $username, $password, $email)
 			 'confirmed',
 			 '" . $db->real_escape_string($email) . "',
 			 9,
-			 'yes',
-			 '" . $db->real_escape_string($passkey) . "')
+			 'yes')
 	";
 
 	if (!$db->query($sql)) {

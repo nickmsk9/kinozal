@@ -74,8 +74,29 @@ if (isset($headers['Cookie']) || isset($headers['Accept-Language']) || isset($he
 	err('Anti-Cheater: You cannot use this agent');
 
 dbconn();
-$user_res = mysql_query('SELECT id, uploaded, downloaded, enabled, parked, class, passkey_ip FROM users WHERE passkey = ' . sqlesc($passkey) . ' LIMIT 1') or err('Users error 1 (select)');
-$az = mysqli_fetch_array($user_res);
+$passkey_hash = tracker_passkey_hash($passkey);
+$user_res = mysql_query('
+	SELECT u.id, u.uploaded, u.downloaded, u.enabled, u.parked, u.class, u.passkey_ip
+	FROM user_passkeys AS up
+	INNER JOIN users AS u ON u.id = up.userid
+	WHERE up.token_hash = ' . sqlesc($passkey_hash) . '
+	  AND up.revoked_at IS NULL
+	LIMIT 1
+');
+$az = $user_res ? mysqli_fetch_array($user_res) : false;
+if ($az) {
+	mysql_query('
+		UPDATE user_passkeys
+		SET last_used = NOW(),
+		    last_ip = ' . sqlesc($ip) . '
+		WHERE token_hash = ' . sqlesc($passkey_hash) . '
+		  AND revoked_at IS NULL
+		LIMIT 1
+	');
+} else {
+	$user_res = mysql_query('SELECT id, uploaded, downloaded, enabled, parked, class, passkey_ip FROM users WHERE passkey = ' . sqlesc($passkey) . ' LIMIT 1') or err('Users error 1 (select)');
+	$az = mysqli_fetch_array($user_res);
+}
 if (!$az)
 	err('Invalid passkey! Re-download the .torrent from '.$DEFAULTBASEURL);
 $userid = (int)$az['id'];

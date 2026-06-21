@@ -88,7 +88,9 @@ $avatar = !empty($CURUSER["avatar"]) ? my_h($CURUSER["avatar"]) : "/pic/default_
 $birthday = (!empty($CURUSER["birthday"]) && $CURUSER["birthday"] !== "0000-00-00") ? $CURUSER["birthday"] : "1990-01-01";
 list($b_year, $b_month, $b_day) = explode('-', date('Y-m-d', strtotime($birthday)));
 
-tracker_ensure_user_passkey($CURUSER);
+$profile_passkey = tracker_valid_passkey($CURUSER["passkey"] ?? '')
+	? my_h($CURUSER["passkey"])
+	: "Новые ключи выдаются при скачивании .torrent и не хранятся в открытом виде";
 $form_hash = my_h($CURUSER['hash4u'] ?? tracker_user_form_token());
 $hide_right_blocks = true;
 stdhead($tracker_lang['my_my'] ?? 'Мой профиль');
@@ -139,7 +141,7 @@ if (isset($_GET["mailsent"])) {
 		<form name="mypassk" method="post" action="/takeprofedit.php?act=10" onsubmit="return confirm('Внимание, после смены пасскей Вам необходимо будет заново скачать все активные торренты!')">
 			<input type="hidden" name="hash4u" value="<?= $form_hash ?>">
 			<div class="bx1"><table class="tables4">
-				<tr><td class="w100 right nw">Ваш пасскей:</td><td class="b"><?= my_h($CURUSER["passkey"]) ?></td></tr>
+				<tr><td class="w100 right nw">Ваш пасскей:</td><td class="b"><?= $profile_passkey ?></td></tr>
 				<tr><td class="right nw">Пароль</td><td><ul class="men"><li><input type="password" name="psw" size="28" value=""> Требуется для смены данных</li></ul></td></tr>
 				<tr><td colspan="2"><input type="submit" value="Сменить пасскей" class="buttonS w200"></td></tr>
 			</table></div>

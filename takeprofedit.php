@@ -100,8 +100,7 @@ if ($act === 1) {
 	$updateset[] = "avatar = " . sqlesc($avatar);
 } elseif ($act === 10) {
 	profile_require_password((string)($_POST["psw"] ?? ""));
-	$passkey = tracker_generate_passkey((int)$CURUSER["id"]);
-	$updateset[] = "passkey = " . sqlesc($passkey);
+	tracker_revoke_user_passkeys((int)$CURUSER["id"]);
 } elseif ($act === 11) {
 	profile_require_password((string)($_POST["psw"] ?? ""));
 	$parked = (($_POST["parked"] ?? "no") === "yes") ? "yes" : "no";
@@ -149,6 +148,7 @@ if ($act === 1) {
 	$sec = mksecret();
 	$hash = md5($sec . $email . $sec);
 	$updateset[] = "editsecret = " . sqlesc($sec);
+	$updateset[] = "editsecret_expires = NULL";
 	$thishost = $_SERVER["HTTP_HOST"];
 	$obemail = urlencode($email);
 	$body = "Для подтверждения смены почты перейдите по ссылке:\n\nhttp://$thishost/confirmemail.php?id=" . (int)$CURUSER["id"] . "&hash=$hash&email=$obemail\n";

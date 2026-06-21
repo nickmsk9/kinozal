@@ -1349,6 +1349,48 @@ function tracker_valid_passkey($passkey)
 	return (bool)preg_match('/^[A-Za-z0-9]{10,64}$/', (string)$passkey);
 }
 
+function tracker_passkey_hash($passkey)
+{
+	$salt = defined('COOKIE_SALT') ? COOKIE_SALT : ($GLOBALS['_COOKIE_SALT'] ?? 'tracker-cookie-salt');
+	return hash_hmac('sha256', (string)$passkey, (string)$salt);
+}
+
+function tracker_user_passkeys_available()
+{
+	static $available = null;
+
+	if ($available !== null) {
+		return $available;
+	}
+
+	$res = sql_query("SHOW TABLES LIKE 'user_passkeys'");
+	$available = $res && mysqli_fetch_row($res) ? true : false;
+
+	return $available;
+}
+
+function tracker_passkey_exists($passkey, $user_id = 0)
+{
+	$user_id = (int)$user_id;
+	$where = 'passkey = ' . sqlesc($passkey);
+	if ($user_id > 0) {
+		$where .= ' AND id <> ' . $user_id;
+	}
+
+	$res = sql_query('SELECT id FROM users WHERE ' . $where . ' LIMIT 1');
+	if ($res && mysqli_fetch_assoc($res)) {
+		return true;
+	}
+
+	if (!tracker_user_passkeys_available()) {
+		return false;
+	}
+
+	$hash = tracker_passkey_hash($passkey);
+	$res = sql_query('SELECT userid FROM user_passkeys WHERE token_hash = ' . sqlesc($hash) . ' LIMIT 1');
+	return $res && mysqli_fetch_assoc($res);
+}
+
 function tracker_generate_passkey($user_id = 0, $length = 32)
 {
 	$user_id = (int)$user_id;
@@ -1356,18 +1398,53 @@ function tracker_generate_passkey($user_id = 0, $length = 32)
 
 	for ($i = 0; $i < 20; $i++) {
 		$passkey = tracker_random_base62($length);
-		$where = 'passkey = ' . sqlesc($passkey);
-		if ($user_id > 0) {
-			$where .= ' AND id <> ' . $user_id;
-		}
-
-		$res = sql_query('SELECT id FROM users WHERE ' . $where . ' LIMIT 1') or sqlerr(__FILE__, __LINE__);
-		if (!mysqli_fetch_assoc($res)) {
+		if (!tracker_passkey_exists($passkey, $user_id)) {
 			return $passkey;
 		}
 	}
 
 	return tracker_random_base62($length);
+}
+
+function tracker_store_user_passkey($user_id, $passkey)
+{
+	$user_id = (int)$user_id;
+	if ($user_id <= 0 || !tracker_valid_passkey($passkey)) {
+		return false;
+	}
+	if (!tracker_user_passkeys_available()) {
+		return false;
+	}
+
+	$ret = sql_query("
+		INSERT IGNORE INTO user_passkeys (userid, token_hash, created_at)
+		VALUES ($user_id, " . sqlesc(tracker_passkey_hash($passkey)) . ", NOW())
+	");
+
+	return $ret && mysql_affected_rows() > 0;
+}
+
+function tracker_issue_user_passkey(&$user)
+{
+	if (!is_array($user) || empty($user['id'])) {
+		return '';
+	}
+
+	if (tracker_user_passkeys_available()) {
+		for ($i = 0; $i < 20; $i++) {
+			$passkey = tracker_generate_passkey((int)$user['id']);
+			if (tracker_store_user_passkey((int)$user['id'], $passkey)) {
+				$user['passkey'] = $passkey;
+				return $passkey;
+			}
+		}
+	}
+
+	$passkey = tracker_generate_passkey((int)$user['id']);
+	sql_query('UPDATE users SET passkey = ' . sqlesc($passkey) . ' WHERE id = ' . (int)$user['id']) or sqlerr(__FILE__, __LINE__);
+	$user['passkey'] = $passkey;
+
+	return $passkey;
 }
 
 function tracker_ensure_user_passkey(&$user)
@@ -1380,11 +1457,20 @@ function tracker_ensure_user_passkey(&$user)
 		return (string)$user['passkey'];
 	}
 
-	$passkey = tracker_generate_passkey((int)$user['id']);
-	sql_query('UPDATE users SET passkey = ' . sqlesc($passkey) . ' WHERE id = ' . (int)$user['id']) or sqlerr(__FILE__, __LINE__);
-	$user['passkey'] = $passkey;
+	return tracker_issue_user_passkey($user);
+}
 
-	return $passkey;
+function tracker_revoke_user_passkeys($user_id)
+{
+	$user_id = (int)$user_id;
+	if ($user_id <= 0) {
+		return;
+	}
+
+	if (tracker_user_passkeys_available()) {
+		sql_query("UPDATE user_passkeys SET revoked_at = NOW() WHERE userid = $user_id AND revoked_at IS NULL");
+	}
+	sql_query("UPDATE users SET passkey = '' WHERE id = $user_id") or sqlerr(__FILE__, __LINE__);
 }
 
 function tracker_upgrade_legacy_passkeys($limit = 200)
@@ -1423,8 +1509,7 @@ function tracker_upgrade_legacy_passkeys($limit = 200)
 			continue;
 		}
 
-		$passkey = tracker_generate_passkey($userid);
-		sql_query('UPDATE users SET passkey = ' . sqlesc($passkey) . ' WHERE id = ' . $userid) or sqlerr(__FILE__, __LINE__);
+		sql_query('UPDATE users SET passkey = "" WHERE id = ' . $userid) or sqlerr(__FILE__, __LINE__);
 		$count++;
 	}
 

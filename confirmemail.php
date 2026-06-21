@@ -24,7 +24,7 @@ if (preg_match('/^ *$/s', $sec))
 if (!hash_equals(md5($sec . $email . $sec), $md5))
 	httperr();
 
-sql_query("UPDATE users SET editsecret='', email=" . sqlesc($email) . " WHERE id = $id AND editsecret = " . sqlesc($row["editsecret"]));
+sql_query("UPDATE users SET editsecret='', editsecret_expires = NULL, email=" . sqlesc($email) . " WHERE id = $id AND editsecret = " . sqlesc($row["editsecret"]));
 
 if (!mysql_affected_rows())
 	httperr();

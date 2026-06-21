@@ -299,8 +299,7 @@ if ($action == "edituser") {
 			$modcomment = date("Y-m-d") . " - Заметка от " . $CURUSER["username"] . ": $modcomm\n" . $modcomment;
 	$updateset[] = "modcomment = " . sqlesc($modcomment);
 	if (!empty($_POST['resetkey'])) {
-		$passkey = tracker_generate_passkey($userid);
-		$updateset[] = "passkey = " . sqlesc($passkey);
+		tracker_revoke_user_passkeys($userid);
 	}
 	sql_query("UPDATE users SET	" . implode(", ", $updateset) . " $birthday WHERE id = $userid") or sqlerr(__FILE__, __LINE__);
 	if (!empty($_POST["deluser"])) {
