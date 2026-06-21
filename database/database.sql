@@ -903,7 +903,10 @@ CREATE TABLE `torrents` (
   KEY `is_test_visible` (`is_test`, `visible`, `banned`, `added`),
   KEY `test_status_visible` (`is_test`, `test_status`, `visible`, `banned`, `added`),
   KEY `test_status` (`test_status`, `id`),
-  KEY `test_helper_until` (`test_helper_until`)
+  KEY `test_helper_until` (`test_helper_until`),
+  FULLTEXT KEY `ft_torrent_name` (`name`),
+  FULLTEXT KEY `ft_torrent_keywords` (`keywords`),
+  FULLTEXT KEY `ft_torrent_search` (`name`, `keywords`, `description`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #

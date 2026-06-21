@@ -257,13 +257,35 @@ $peerlist = '';
 if ($event != 'stopped' && $rsize > 0) {
 	$peer_fields = 'peer_id, ip, port';
 	if ($numpeers > $rsize) {
-		$peer_offset_max = max(0, $numpeers - $rsize - 1);
-		$peer_offset = $peer_offset_max > 0 ? mt_rand(0, $peer_offset_max) : 0;
-		$res = mysql_query('SELECT '.$peer_fields.' FROM peers WHERE torrent = '.$torrentid.' AND NOT ('.$selfexpr.') ORDER BY id ASC LIMIT '.$peer_offset.', '.$rsize) or err('Peers error 5 (select)');
+		$peer_bounds_res = mysql_query('SELECT MIN(id) AS min_id, MAX(id) AS max_id FROM peers WHERE torrent = '.$torrentid) or err('Peers error 5 (bounds)');
+		$peer_bounds = mysqli_fetch_array($peer_bounds_res);
+		$peer_min_id = isset($peer_bounds['min_id']) ? (int)$peer_bounds['min_id'] : 0;
+		$peer_max_id = isset($peer_bounds['max_id']) ? (int)$peer_bounds['max_id'] : 0;
+		$peer_start_id = ($peer_min_id > 0 && $peer_max_id >= $peer_min_id) ? mt_rand($peer_min_id, $peer_max_id) : 0;
+		$peer_rows = array();
+
+		if ($peer_start_id > 0) {
+			$res = mysql_query('SELECT '.$peer_fields.' FROM peers WHERE torrent = '.$torrentid.' AND id >= '.$peer_start_id.' AND NOT ('.$selfexpr.') ORDER BY id ASC LIMIT '.$rsize) or err('Peers error 5 (select-window)');
+			while ($row = mysqli_fetch_array($res)) {
+				$peer_rows[] = $row;
+			}
+
+			$remaining = $rsize - count($peer_rows);
+			if ($remaining > 0) {
+				$res = mysql_query('SELECT '.$peer_fields.' FROM peers WHERE torrent = '.$torrentid.' AND id < '.$peer_start_id.' AND NOT ('.$selfexpr.') ORDER BY id ASC LIMIT '.$remaining) or err('Peers error 5 (select-wrap)');
+				while ($row = mysqli_fetch_array($res)) {
+					$peer_rows[] = $row;
+				}
+			}
+		}
 	} else {
 		$res = mysql_query('SELECT '.$peer_fields.' FROM peers WHERE torrent = '.$torrentid.' AND NOT ('.$selfexpr.')') or err('Peers error 5 (select)');
+		$peer_rows = array();
+		while ($row = mysqli_fetch_array($res)) {
+			$peer_rows[] = $row;
+		}
 	}
-	while ($row = mysqli_fetch_array($res)) {
+	foreach ($peer_rows as $row) {
 		if ($compact) {
 			$packed_ip = @inet_pton($row['ip']);
 			if ($packed_ip === false) {

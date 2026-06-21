@@ -767,6 +767,35 @@ function user_session()
 		return;
 	}
 
+	$last_db_write = isset($_SESSION['_tracker_session_db_write'])
+		? (int)$_SESSION['_tracker_session_db_write']
+		: 0;
+	$last_db_url = isset($_SESSION['_tracker_session_db_url'])
+		? (string)$_SESSION['_tracker_session_db_url']
+		: '';
+	$last_db_uid = isset($_SESSION['_tracker_session_db_uid'])
+		? (int)$_SESSION['_tracker_session_db_uid']
+		: 0;
+	$last_db_agent = isset($_SESSION['_tracker_session_db_agent'])
+		? (string)$_SESSION['_tracker_session_db_agent']
+		: '';
+
+	if (
+		$last_db_write > 0
+		&& ($ctime - $last_db_write) < 60
+		&& $last_db_url === $url
+		&& $last_db_uid === $uid
+		&& $last_db_agent === $agent
+	) {
+		session_write_close();
+		return;
+	}
+
+	$_SESSION['_tracker_session_db_write'] = $ctime;
+	$_SESSION['_tracker_session_db_url'] = $url;
+	$_SESSION['_tracker_session_db_uid'] = $uid;
+	$_SESSION['_tracker_session_db_agent'] = $agent;
+
 	session_write_close();
 
 	$sql = "
@@ -1601,23 +1630,48 @@ function loggedinorreturn($nowarn = false) {
 	}
 }
 
+function torrent_unlink_file_if_exists($path)
+{
+	$path = (string)$path;
+	if ($path !== '' && is_file($path)) {
+		@unlink($path);
+	}
+}
+
 function deletetorrent($id) {
 	global $torrent_dir;
-	$images = mysqli_fetch_array(sql_query('SELECT image1, image2, image3, image4, image5 FROM torrents WHERE id = '.$id));
-	if ($images) { for ($x=1; $x <= 5; $x++) {
-			if ($images['image' . $x] != '' && file_exists('torrents/images/' . $images['image' . $x]))
-				unlink('torrents/images/' . $images['image' . $x]);
+
+	$id = (int)$id;
+	if ($id <= 0) {
+		return;
+	}
+
+	$images = mysqli_fetch_array(sql_query('SELECT image1, image2, image3, image4, image5 FROM torrents WHERE id = '.$id.' LIMIT 1'));
+	if ($images) {
+		for ($x = 1; $x <= 5; $x++) {
+			$image = trim((string)($images['image' . $x] ?? ''));
+			if ($image !== '') {
+				torrent_unlink_file_if_exists('torrents/images/' . basename($image));
+			}
 		}
 	}
-	sql_query('DELETE FROM torrents WHERE id = '.$id);
+
+	sql_query('DELETE cp FROM comments_parsed AS cp INNER JOIN comments AS c ON c.id = cp.cid WHERE c.torrent = '.$id);
 	sql_query('DELETE FROM snatched WHERE torrent = '.$id);
 	sql_query('DELETE FROM bookmarks WHERE torrentid = '.$id);
 	sql_query('DELETE FROM readtorrents WHERE torrentid = '.$id);
+	sql_query('DELETE FROM thanks WHERE torrentid = '.$id);
+	sql_query('DELETE FROM checkcomm WHERE torrent = 1 AND checkid = '.$id);
+	sql_query('DELETE FROM groupex_torrents WHERE torrent_id = '.$id);
+	sql_query('DELETE FROM indexreleases WHERE torrentid = '.$id);
+	sql_query('DELETE FROM user_torrent_downloads WHERE torrent = '.$id);
 	foreach(explode('.','peers.files.comments.ratings') as $x)
 		sql_query('DELETE FROM '.$x.' WHERE torrent = '.$id);
 	sql_query('DELETE FROM torrent_trackers WHERE torrentid = '.$id);
 	sql_query('DELETE FROM torrents_descr WHERE tid = '.$id);
-	unlink($torrent_dir.'/'.$id.'.torrent');
+	sql_query('DELETE FROM torrent_details WHERE tid = '.$id);
+	sql_query('DELETE FROM torrents WHERE id = '.$id);
+	torrent_unlink_file_if_exists($torrent_dir.'/'.$id.'.torrent');
 }
 
 function pager($rpp, $count, $href, $opts = array())

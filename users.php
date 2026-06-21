@@ -284,15 +284,13 @@ $users_query = "
         c.name AS country_name,
         c.flagpic,
         (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys,
-        COALESCE(rc.reputation_count, 0) AS reputation_count,
+        CASE
+            WHEN u.simpaty = 1 THEN (SELECT COUNT(*) FROM simpaty AS s WHERE s.touserid = u.id)
+            ELSE 0
+        END AS reputation_count,
         $count_select_sql
     FROM users AS u
     LEFT JOIN countries AS c ON c.id = u.country
-    LEFT JOIN (
-        SELECT touserid, COUNT(*) AS reputation_count
-        FROM simpaty
-        GROUP BY touserid
-    ) AS rc ON rc.touserid = u.id
     $count_join_sql
     WHERE $where_sql
     ORDER BY $sort_sql $order_sql, u.id DESC

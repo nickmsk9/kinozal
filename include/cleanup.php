@@ -90,10 +90,49 @@ if (!function_exists('cleanup_unlink_file')) {
     }
 }
 
+if (!function_exists('cleanup_acquire_lock')) {
+    function cleanup_acquire_lock(): bool
+    {
+        global $cleanup_lock_held;
+        static $shutdown_registered = false;
+
+        $res = sql_query("SELECT GET_LOCK('kinozal_cleanup', 0) AS locked") or sqlerr(__FILE__, __LINE__);
+        $row = mysqli_fetch_assoc($res);
+        $locked = !empty($row['locked']);
+
+        if ($locked) {
+            $cleanup_lock_held = true;
+
+            if (!$shutdown_registered) {
+                register_shutdown_function('cleanup_release_lock');
+                $shutdown_registered = true;
+            }
+        }
+
+        return $locked;
+    }
+
+    function cleanup_release_lock(): void
+    {
+        global $cleanup_lock_held;
+
+        if (empty($cleanup_lock_held)) {
+            return;
+        }
+
+        $cleanup_lock_held = false;
+        @sql_query("SELECT RELEASE_LOCK('kinozal_cleanup')");
+    }
+}
+
 function docleanup()
 {
     global $torrent_dir, $signup_timeout, $max_dead_torrent_time, $use_ttl, $autoclean_interval;
     global $points_per_cleanup, $ttl_days, $tracker_lang;
+
+    if (!cleanup_acquire_lock()) {
+        return false;
+    }
 
     @set_time_limit(0);
     @ignore_user_abort(true);
@@ -150,7 +189,7 @@ function docleanup()
     }
 
     /*
-     * 2. Удаление хвостов в peers/files.
+     * 2. Удаление хвостов в связанных таблицах.
      * Через LEFT JOIN быстрее и чище, чем SELECT GROUP BY + PHP-цикл.
      */
     sql_query("
@@ -164,6 +203,69 @@ function docleanup()
         DELETE f
         FROM files AS f
         LEFT JOIN torrents AS t ON t.id = f.torrent
+        WHERE t.id IS NULL
+    ") or sqlerr(__FILE__, __LINE__);
+
+    sql_query("
+        DELETE cp
+        FROM comments_parsed AS cp
+        LEFT JOIN comments AS c ON c.id = cp.cid
+        WHERE c.id IS NULL
+    ") or sqlerr(__FILE__, __LINE__);
+
+    sql_query("
+        DELETE td
+        FROM torrent_details AS td
+        LEFT JOIN torrents AS t ON t.id = td.tid
+        WHERE t.id IS NULL
+    ") or sqlerr(__FILE__, __LINE__);
+
+    sql_query("
+        DELETE td
+        FROM torrents_descr AS td
+        LEFT JOIN torrents AS t ON t.id = td.tid
+        WHERE t.id IS NULL
+    ") or sqlerr(__FILE__, __LINE__);
+
+    sql_query("
+        DELETE tt
+        FROM torrent_trackers AS tt
+        LEFT JOIN torrents AS t ON t.id = tt.torrentid
+        WHERE t.id IS NULL
+    ") or sqlerr(__FILE__, __LINE__);
+
+    sql_query("
+        DELETE th
+        FROM thanks AS th
+        LEFT JOIN torrents AS t ON t.id = th.torrentid
+        WHERE t.id IS NULL
+    ") or sqlerr(__FILE__, __LINE__);
+
+    sql_query("
+        DELETE gt
+        FROM groupex_torrents AS gt
+        LEFT JOIN torrents AS t ON t.id = gt.torrent_id
+        WHERE t.id IS NULL
+    ") or sqlerr(__FILE__, __LINE__);
+
+    sql_query("
+        DELETE ir
+        FROM indexreleases AS ir
+        LEFT JOIN torrents AS t ON t.id = ir.torrentid
+        WHERE t.id IS NULL
+    ") or sqlerr(__FILE__, __LINE__);
+
+    sql_query("
+        DELETE utd
+        FROM user_torrent_downloads AS utd
+        LEFT JOIN torrents AS t ON t.id = utd.torrent
+        WHERE t.id IS NULL
+    ") or sqlerr(__FILE__, __LINE__);
+
+    sql_query("
+        DELETE rt
+        FROM readtorrents AS rt
+        LEFT JOIN torrents AS t ON t.id = rt.torrentid
         WHERE t.id IS NULL
     ") or sqlerr(__FILE__, __LINE__);
 
@@ -476,10 +578,25 @@ function docleanup()
 
             cleanup_delete_by_ids('snatched', 'torrent', $ttl_ids);
             cleanup_delete_by_ids('peers', 'torrent', $ttl_ids);
+            foreach (array_chunk($ttl_ids, 500) as $chunk) {
+                $in = cleanup_int_list($chunk);
+
+                if ($in !== '') {
+                    sql_query("DELETE cp FROM comments_parsed AS cp INNER JOIN comments AS c ON c.id = cp.cid WHERE c.torrent IN ($in)") or sqlerr(__FILE__, __LINE__);
+                }
+            }
             cleanup_delete_by_ids('comments', 'torrent', $ttl_ids);
             cleanup_delete_by_ids('files', 'torrent', $ttl_ids);
             cleanup_delete_by_ids('ratings', 'torrent', $ttl_ids);
             cleanup_delete_by_ids('bookmarks', 'torrentid', $ttl_ids);
+            cleanup_delete_by_ids('readtorrents', 'torrentid', $ttl_ids);
+            cleanup_delete_by_ids('thanks', 'torrentid', $ttl_ids);
+            cleanup_delete_by_ids('torrent_trackers', 'torrentid', $ttl_ids);
+            cleanup_delete_by_ids('torrents_descr', 'tid', $ttl_ids);
+            cleanup_delete_by_ids('torrent_details', 'tid', $ttl_ids);
+            cleanup_delete_by_ids('groupex_torrents', 'torrent_id', $ttl_ids);
+            cleanup_delete_by_ids('indexreleases', 'torrentid', $ttl_ids);
+            cleanup_delete_by_ids('user_torrent_downloads', 'torrent', $ttl_ids);
 
             foreach (array_chunk($ttl_ids, 500) as $chunk) {
                 $in = cleanup_int_list($chunk);
@@ -517,6 +634,9 @@ function docleanup()
     if (function_exists('cups_update_auto')) {
         cups_update_auto(false);
     }
+
+    cleanup_release_lock();
+    return true;
 }
 
 ?>

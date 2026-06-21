@@ -123,6 +123,72 @@ function browse_format_rules() {
     );
 }
 
+function browse_fulltext_index_exists($index)
+{
+    static $cache = array();
+
+    $index = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$index);
+    if ($index === '') {
+        return false;
+    }
+
+    if (!array_key_exists($index, $cache)) {
+        $res = sql_query("SHOW INDEX FROM torrents WHERE Key_name = " . sqlesc($index)) or sqlerr(__FILE__, __LINE__);
+        $cache[$index] = mysqli_num_rows($res) > 0;
+    }
+
+    return $cache[$index];
+}
+
+function browse_fulltext_query($text)
+{
+    $terms = array();
+    foreach (preg_split('/[^\p{L}\p{N}]+/u', (string)$text, -1, PREG_SPLIT_NO_EMPTY) as $term) {
+        $term = trim($term);
+        if (function_exists('mb_strlen')) {
+            if (mb_strlen($term, 'UTF-8') < 3) {
+                continue;
+            }
+        } elseif (strlen($term) < 3) {
+            continue;
+        }
+        $terms[] = '+' . preg_replace('/[+\-<>()~*"@]+/', ' ', $term) . '*';
+        if (count($terms) >= 8) {
+            break;
+        }
+    }
+
+    return trim(implode(' ', $terms));
+}
+
+function browse_search_condition($search, $mode)
+{
+    $escapedSearch = sqlwildcardesc($search);
+    $fulltextQuery = browse_fulltext_query($search);
+
+    if ($mode === 2) {
+        if ($fulltextQuery !== '' && browse_fulltext_index_exists('ft_torrent_keywords')) {
+            return "MATCH(t.keywords) AGAINST (" . sqlesc($fulltextQuery) . " IN BOOLEAN MODE)";
+        }
+
+        return "t.keywords LIKE '%" . $escapedSearch . "%'";
+    }
+
+    if ($mode === 1 || $mode === 3) {
+        if ($fulltextQuery !== '' && browse_fulltext_index_exists('ft_torrent_search')) {
+            return "MATCH(t.name, t.keywords, t.description) AGAINST (" . sqlesc($fulltextQuery) . " IN BOOLEAN MODE)";
+        }
+
+        return "(t.name LIKE '%" . $escapedSearch . "%' OR t.description LIKE '%" . $escapedSearch . "%' OR t.keywords LIKE '%" . $escapedSearch . "%')";
+    }
+
+    if ($fulltextQuery !== '' && browse_fulltext_index_exists('ft_torrent_name')) {
+        return "MATCH(t.name) AGAINST (" . sqlesc($fulltextQuery) . " IN BOOLEAN MODE)";
+    }
+
+    return "t.name LIKE '%" . $escapedSearch . "%'";
+}
+
 $cats = genrelist();
 $searchstr = isset($_GET['s']) ? (string)unesc($_GET['s']) : (isset($_GET['search']) ? (string)unesc($_GET["search"]) : '');
 $cleansearchstr = htmlspecialchars_uni($searchstr);
@@ -176,14 +242,7 @@ if ($category > 0) {
 $wherebase = $wherea;
 
 if (isset($cleansearchstr)) {
-    $escapedSearch = sqlwildcardesc($searchstr);
-    if ($searchMode === 2) {
-        $wherea[] = "t.keywords LIKE '%" . $escapedSearch . "%'";
-    } elseif ($searchMode === 1 || $searchMode === 3) {
-        $wherea[] = "(t.name LIKE '%" . $escapedSearch . "%' OR t.description LIKE '%" . $escapedSearch . "%' OR t.keywords LIKE '%" . $escapedSearch . "%')";
-    } else {
-        $wherea[] = "t.name LIKE '%" . $escapedSearch . "%'";
-    }
+    $wherea[] = browse_search_condition($searchstr, $searchMode);
 }
 
 if ($selectedYear >= 1900) {

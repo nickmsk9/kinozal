@@ -37,11 +37,15 @@ if (get_user_class() < UC_SYSOP) {
 require_once($rootpath . 'include/cleanup.php');
 
 $s_s = $queries;
-docleanup();
+$cleanup_done = docleanup();
 $s_e = $queries;
 
 stdhead("Очистка трекера");
-stdmsg("Готово", "Очистка завершена успешно. На очистку использовано ".($s_e - $s_s)." запрос(ов).");
+if ($cleanup_done === false) {
+	stdmsg("Очистка уже выполняется", "Повторный запуск пропущен: другой процесс очистки еще держит lock.", "error");
+} else {
+	stdmsg("Готово", "Очистка завершена успешно. На очистку использовано ".($s_e - $s_s)." запрос(ов).");
+}
 stdfoot();
 
 ?>

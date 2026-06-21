@@ -408,7 +408,7 @@ function details_related_where(array $row, array $video, $mode)
 		$likes = array();
 		foreach ($terms as $term) {
 			$q = sqlesc('%' . $term . '%', true);
-			$likes[] = "(t.name LIKE $q OR t.keywords LIKE $q OR t.description LIKE $q OR t.descr LIKE $q)";
+			$likes[] = "(t.name LIKE $q OR t.keywords LIKE $q OR t.description LIKE $q)";
 		}
 		if ($likes) {
 			$where[] = '(' . implode(' OR ', $likes) . ')';

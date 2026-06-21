@@ -357,14 +357,9 @@ $r = sql_query("
 	       c.name AS country_name,
 	       c.flagpic AS country_flagpic,
 	       (SELECT GROUP_CONCAT(usa.status_key) FROM user_status_assignments AS usa WHERE usa.userid = u.id) AS manual_status_keys,
-	       COALESCE(rc.reputation_count, 0) AS reputation_count
+	       (SELECT COUNT(*) FROM simpaty AS s WHERE s.touserid = u.id) AS reputation_count
 	FROM users AS u
 	LEFT JOIN countries AS c ON c.id = u.country
-	LEFT JOIN (
-		SELECT touserid, COUNT(*) AS reputation_count
-		FROM simpaty
-		GROUP BY touserid
-	) AS rc ON rc.touserid = u.id
 	WHERE u.id = $id
 	LIMIT 1
 ") or sqlerr(__FILE__, __LINE__);
