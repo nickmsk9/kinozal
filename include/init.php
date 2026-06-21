@@ -12,6 +12,31 @@ ini_set('error_log', __DIR__ . '/php_errors.log');
 if(!defined('IN_TRACKER') && !defined('IN_ANNOUNCE'))
   die("Hacking attempt!");
 
+$tracker_timezone = trim((string)(getenv('KZ_TIMEZONE') ?: getenv('TZ') ?: 'Europe/Moscow'));
+if ($tracker_timezone === '' || !@date_default_timezone_set($tracker_timezone)) {
+	date_default_timezone_set('Europe/Moscow');
+}
+
+if (!defined('TRACKER_TIMEZONE')) {
+	define('TRACKER_TIMEZONE', date_default_timezone_get());
+}
+
+if (!function_exists('tracker_mysql_time_zone_offset')) {
+	function tracker_mysql_time_zone_offset()
+	{
+		$offset = date('P');
+
+		return preg_match('/^[+-]\d{2}:\d{2}$/', $offset) ? $offset : '+00:00';
+	}
+
+	function tracker_apply_mysql_timezone($connection)
+	{
+		if ($connection instanceof mysqli) {
+			@mysqli_query($connection, "SET time_zone = '" . tracker_mysql_time_zone_offset() . "'");
+		}
+	}
+}
+
 if (!function_exists("htmlspecialchars_uni")) {
 	function htmlspecialchars_uni($message) {
 		$message = preg_replace("#&(?!\#[0-9]+;)#si", "&amp;", $message); // Fix & but allow unicode

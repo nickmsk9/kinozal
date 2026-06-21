@@ -128,6 +128,10 @@ function dbconn($autoclean = false, $lightmode = false) {
         err('dbconn: mysqli_set_charset: ' . mysqli_error($announce_link));
     }
 
+    if (function_exists('tracker_apply_mysql_timezone')) {
+        tracker_apply_mysql_timezone($announce_link);
+    }
+
     register_shutdown_function(function () {
         global $announce_link;
 

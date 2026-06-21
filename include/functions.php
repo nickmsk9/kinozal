@@ -518,6 +518,10 @@ function dbconn($autoclean = false, $lightmode = false)
         die("[" . mysqli_errno($link) . "] dbconn: mysqli_set_charset: " . mysqli_error($link));
     }
 
+    if (function_exists('tracker_apply_mysql_timezone')) {
+        tracker_apply_mysql_timezone($link);
+    }
+
     if (function_exists('site_settings_apply_runtime_overrides')) {
         site_settings_apply_runtime_overrides();
     }
@@ -1688,7 +1692,7 @@ function pager($rpp, $count, $href, $opts = array())
 
     $html .= '</ul></div>';
 
-    $pagertop = $html . "\n";
+    $pagertop = '';
 
     $pagerbottom =
         '<div class="pager_info">Всего ' . $count .
