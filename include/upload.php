@@ -116,6 +116,8 @@ function upload_quality_options()
 		'WEB-DL (720p)' => 'WEB-DL (720p)',
 		'WEBRip (1080p)' => 'WEBRip (1080p)',
 		'WEBRip (720p)' => 'WEBRip (720p)',
+		'HDTV (1080i)' => 'HDTV (1080i)',
+		'HDTV (720p)' => 'HDTV (720p)',
 		'BDRemux' => 'BDRemux',
 		'Blu-Ray' => 'Blu-Ray',
 		'Blu-Ray 3D' => 'Blu-Ray 3D',
@@ -199,6 +201,7 @@ function upload_default_data()
 		'video' => array(
 			'title' => '',
 			'original_title' => '',
+			'series_info' => '',
 			'year' => '',
 			'genre' => '',
 			'released' => '',
@@ -206,11 +209,13 @@ function upload_default_data()
 			'cast' => '',
 			'about' => '',
 			'quality' => '',
+			'tech_extra' => '',
 			'video' => '',
 			'audio' => '',
 			'size' => '',
 			'duration' => '',
 			'translation' => '',
+			'translation_extra' => '',
 			'language' => '',
 			'subtitles' => '',
 		),
@@ -1308,6 +1313,7 @@ function upload_build_description(array $data, $kind, $torrent_name = '', $torre
 	$normal[0] = upload_section_from_lines(array(
 		upload_line('Название', $video['title'] ?? ''),
 		upload_line('Оригинальное название', $video['original_title'] ?? ''),
+		upload_line('Сезон/серии', $video['series_info'] ?? ''),
 		upload_line('Год выпуска', $video['year'] ?? ''),
 		upload_line('Жанр', $video['genre'] ?? ''),
 		upload_line('Выпущено', $video['released'] ?? ''),
@@ -1319,11 +1325,13 @@ function upload_build_description(array $data, $kind, $torrent_name = '', $torre
 	));
 	$normal[2] = upload_section_from_lines(array(
 		upload_line('Качество', $video['quality'] ?? ''),
+		upload_line('Качество в названии', $video['tech_extra'] ?? ''),
 		upload_line('Видео', $video['video'] ?? ''),
 		upload_line('Аудио', $video['audio'] ?? ''),
 		upload_line('Размер', $video['size'] ?? ''),
 		upload_line('Продолжительность', $video['duration'] ?? ''),
 		upload_line('Перевод', $video['translation'] ?? ''),
+		upload_line('Перевод в названии', $video['translation_extra'] ?? ''),
 		upload_line('Язык', $video['language'] ?? ''),
 		upload_line('Субтитры', $video['subtitles'] ?? ''),
 	));
@@ -1543,6 +1551,96 @@ function upload_release_name_part($value)
 	return trim($value, " \t\n\r\0\x0B/");
 }
 
+function upload_same_release_part($left, $right)
+{
+	$left = upload_release_name_part($left);
+	$right = upload_release_name_part($right);
+	if ($left === '' || $right === '') {
+		return false;
+	}
+
+	if (function_exists('mb_strtolower')) {
+		return mb_strtolower($left, 'UTF-8') === mb_strtolower($right, 'UTF-8');
+	}
+
+	return strtolower($left) === strtolower($right);
+}
+
+function upload_contains_release_part(array $parts, $value)
+{
+	foreach ($parts as $part) {
+		if (upload_same_release_part($part, $value)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function upload_add_release_part(array &$parts, $value)
+{
+	$value = upload_release_name_part($value);
+	if ($value !== '' && !upload_contains_release_part($parts, $value)) {
+		$parts[] = $value;
+	}
+}
+
+function upload_split_release_parts($value)
+{
+	$value = upload_release_name_part($value);
+	if ($value === '') {
+		return array();
+	}
+
+	$out = array();
+	foreach (preg_split('#\s*,\s*#u', $value) as $part) {
+		upload_add_release_part($out, $part);
+	}
+
+	return $out;
+}
+
+function upload_translation_token_short($translation)
+{
+	$translation = upload_release_name_part($translation);
+	if ($translation === '') {
+		return '';
+	}
+
+	if (preg_match('/^(не\s*требуется|нет)$/iu', $translation)) {
+		return '';
+	}
+	if (preg_match('/^(ру|рус|русский)$/iu', $translation)) {
+		return 'РУ';
+	}
+	if (preg_match('/^(дб|дубл|Р”СѓР±Р»)/iu', $translation)) {
+		return 'ДБ';
+	}
+	if (preg_match('/^(пд|двух|РґРІСѓС…)/iu', $translation)) {
+		return 'ПД';
+	}
+	if (preg_match('/^(пм|мног|РјРЅРѕРі)/iu', $translation)) {
+		return 'ПМ';
+	}
+	if (preg_match('/^(по|одног|РѕРґРЅРѕРі)/iu', $translation)) {
+		return 'ПО';
+	}
+	if (preg_match('/^(лм|любител|Р›СЋР±РёС‚)/iu', $translation)) {
+		return 'ЛМ';
+	}
+	if (preg_match('/^(ав|автор|РђРІС‚РѕСЂ)/iu', $translation)) {
+		return 'АВ';
+	}
+	if (preg_match('/^(ор|оригинал|РћСЂРёРі)/iu', $translation)) {
+		return 'ОР';
+	}
+	if (preg_match('/^(ст|суб|субтит)/iu', $translation)) {
+		return 'СТ';
+	}
+
+	return $translation;
+}
+
 function upload_translation_short($translation)
 {
 	$translation = upload_release_name_part($translation);
@@ -1550,29 +1648,98 @@ function upload_translation_short($translation)
 		return '';
 	}
 
-	if (preg_match('/^Дубл|^Р”СѓР±Р»/iu', $translation)) {
-		return 'ДБ';
-	}
-	if (preg_match('/двух|РґРІСѓС…/iu', $translation)) {
-		return 'ПД';
-	}
-	if (preg_match('/мног|РјРЅРѕРі/iu', $translation)) {
-		return 'ПМ';
-	}
-	if (preg_match('/одног|РѕРґРЅРѕРі/iu', $translation)) {
-		return 'ПО';
-	}
-	if (preg_match('/любител|Р›СЋР±РёС‚/iu', $translation)) {
-		return 'ЛМ';
-	}
-	if (preg_match('/автор|РђРІС‚РѕСЂ/iu', $translation)) {
-		return 'АВ';
-	}
-	if (preg_match('/оригинал|РћСЂРёРі/iu', $translation)) {
-		return 'ОР';
+	$parts = array();
+	foreach (preg_split('#\s*,\s*#u', $translation) as $part) {
+		$part = upload_release_name_part($part);
+		if ($part === '') {
+			continue;
+		}
+
+		$prefix = '';
+		if (preg_match('/^(\d+\s*x\s*)(.+)$/iu', $part, $matches)) {
+			$prefix = upload_release_name_part($matches[1]);
+			$part = $matches[2];
+		}
+
+		$short = upload_translation_token_short($part);
+		if ($short !== '') {
+			upload_add_release_part($parts, trim($prefix . ' ' . $short));
+		}
 	}
 
-	return $translation;
+	return implode(', ', $parts);
+}
+
+function upload_video_title_part(array $video)
+{
+	$title = upload_release_name_part($video['title'] ?? '');
+	$series_info = trim(upload_release_name_part($video['series_info'] ?? ''), '() ');
+	if ($title !== '' && $series_info !== '') {
+		$haystack = function_exists('mb_strtolower') ? mb_strtolower($title, 'UTF-8') : strtolower($title);
+		$needle = function_exists('mb_strtolower') ? mb_strtolower($series_info, 'UTF-8') : strtolower($series_info);
+		if (strpos($haystack, $needle) === false) {
+			$title .= ' (' . $series_info . ')';
+		}
+	}
+
+	return $title;
+}
+
+function upload_video_is_russian(array $video)
+{
+	$title = upload_release_name_part($video['title'] ?? '');
+	$original_title = upload_release_name_part($video['original_title'] ?? '');
+	$language = upload_release_name_part($video['language'] ?? '');
+	$released = upload_release_name_part($video['released'] ?? '');
+
+	if ($title !== '' && $original_title === '') {
+		return true;
+	}
+
+	return preg_match('/(русск|росси|рф|ссср|russia|russian)/iu', $language . ' ' . $released) === 1;
+}
+
+function upload_video_subtitles_part($subtitles)
+{
+	$subtitles = upload_release_name_part($subtitles);
+	if ($subtitles === '' || preg_match('/^(нет|no)$/iu', $subtitles)) {
+		return '';
+	}
+
+	return 'СТ';
+}
+
+function upload_video_translation_part(array $video)
+{
+	$parts = array();
+	foreach (array(
+		upload_translation_short($video['translation'] ?? ''),
+		upload_translation_short($video['translation_extra'] ?? ''),
+	) as $value) {
+		foreach (upload_split_release_parts($value) as $part) {
+			upload_add_release_part($parts, $part);
+		}
+	}
+
+	$subtitles = upload_video_subtitles_part($video['subtitles'] ?? '');
+	if ($subtitles !== '') {
+		upload_add_release_part($parts, $subtitles);
+	}
+
+	if (!$parts && upload_video_is_russian($video)) {
+		$parts[] = 'РУ';
+	}
+
+	return implode(', ', $parts);
+}
+
+function upload_video_quality_part(array $video)
+{
+	$parts = array();
+	upload_add_release_part($parts, $video['tech_extra'] ?? '');
+	upload_add_release_part($parts, $video['quality'] ?? '');
+
+	return implode(' / ', $parts);
 }
 
 function upload_generated_name(array $data, $kind)
@@ -1580,12 +1747,15 @@ function upload_generated_name(array $data, $kind)
 	$kind = upload_normalize_kind($kind);
 	if ($kind === 'video') {
 		$video = $data['video'] ?? array();
+		$raw_title = $video['title'] ?? '';
+		$title = upload_video_title_part($video);
+		$original_title = $video['original_title'] ?? '';
 		$fields = array(
-			$video['title'] ?? '',
-			$video['original_title'] ?? '',
+			$title,
+			upload_same_release_part($raw_title, $original_title) ? '' : $original_title,
 			$video['year'] ?? '',
-			upload_translation_short($video['translation'] ?? ''),
-			$video['quality'] ?? '',
+			upload_video_translation_part($video),
+			upload_video_quality_part($video),
 		);
 	} else {
 		$template = $data['templates'][$kind]['fields'] ?? array();
@@ -1713,6 +1883,8 @@ function upload_render_form($action, $submit_label, array $state, $is_edit = fal
 	$mode = (int)($data['mode'] ?? 0);
 	$section_modes = upload_normalize_section_modes($data['section_modes'] ?? array());
 	$allow_file = !empty($state['allow_file']);
+	$torrent_filename = trim((string)($state['torrent_filename'] ?? ''));
+	$torrent_file_exists = !empty($state['torrent_file_exists']);
 	?>
 	<form enctype="multipart/form-data" action="<?= h($action) ?>" method="post" name="upt" id="upt">
 		<?php if ($is_edit) { ?>
@@ -1737,7 +1909,17 @@ function upload_render_form($action, $submit_label, array $state, $is_edit = fal
 					<div class="n">Название формируется автоматически из полей описания.</div>
 				</li>
 				<?php if (!$is_edit || $allow_file) { ?>
-					<li class="hdr">Торрент-файл</li>
+					<li class="hdr"><?= $is_edit ? 'Замена torrent-файла' : 'Торрент-файл' ?></li>
+					<?php if ($is_edit) { ?>
+						<li>
+							<?php if ($torrent_filename !== '') { ?>
+								Текущий torrent-файл: <b><?= h($torrent_filename) ?></b><?= $torrent_file_exists ? '' : ' <span class="red">не найден на диске</span>' ?>
+							<?php } else { ?>
+								<span class="red">В базе не указано имя текущего torrent-файла.</span>
+							<?php } ?>
+							<div class="n">Оставьте поле ниже пустым, если torrent-файл менять не нужно. Браузер всегда показывает пустой выбор файла из соображений безопасности.</div>
+						</li>
+					<?php } ?>
 					<li><input type="file" name="file" size="80" class="w100p styled" accept=".torrent,application/x-bittorrent"></li>
 				<?php } ?>
 				<li class="hdr">Ссылка на постер</li>
@@ -1860,6 +2042,7 @@ function upload_render_video_template(array $data, array $section_modes)
 	<table class="tables1 w100p upl-normal upl-section-0">
 		<tr><td class="w175">Название:</td><td><?= upload_input('video[title]', $video['title'] ?? '', 'Название фильма') ?><div class="n">Для зарубежного видео, на русском языке</div></td></tr>
 		<tr><td>Оригинальное название:</td><td><?= upload_input('video[original_title]', $video['original_title'] ?? '', 'Movie title') ?><div class="n">Название видео на языке оригинала</div></td></tr>
+		<tr><td>Сезон/серии:</td><td><?= upload_input('video[series_info]', $video['series_info'] ?? '', '1 сезон: 1-16 серии из 16') ?><div class="n">Добавляется к названию в скобках, например: Название (1 сезон: 1-16 серии из 16)</div></td></tr>
 		<tr><td>Год выпуска:</td><td><?= upload_input('video[year]', $video['year'] ?? '', '2009') ?></td></tr>
 		<tr><td>Жанр:</td><td><?= upload_input('video[genre]', $video['genre'] ?? '', 'Комедия, приключения') ?></td></tr>
 		<tr><td>Выпущено:</td><td><?= upload_input('video[released]', $video['released'] ?? '', 'Страна, киностудия') ?></td></tr>
@@ -1883,11 +2066,13 @@ function upload_render_video_template(array $data, array $section_modes)
 	?>
 	<table class="tables1 w100p upl-normal upl-section-2">
 		<tr><td class="w175">Качество:</td><td><?= upload_option_select('video[quality]', upload_quality_options(), $video['quality'] ?? '') ?><div class="n">Подробнее о качестве раздаваемого материала здесь</div></td></tr>
+		<tr><td>Качество в названии:</td><td><?= upload_input('video[tech_extra]', $video['tech_extra'] ?? '', '4K, HEVC, HDR, Dolby Vision P8') ?><div class="n">Необязательные пометки перед качеством, например: 4K, HEVC, HDR, Dolby Vision P8</div></td></tr>
 		<tr><td>Видео:</td><td><?= upload_input('video[video]', $video['video'] ?? '', 'MPEG-4 AVC, 9131 Кбит/с, 1920x1080') ?></td></tr>
 		<tr><td>Аудио:</td><td><?= upload_input('video[audio]', $video['audio'] ?? '', 'Русский (AC3, 6 ch, 384 Кбит/с)') ?></td></tr>
 		<tr><td>Размер:</td><td><?= upload_input('video[size]', $video['size'] ?? '', 'Установится автоматически после выбора торрент-файла') ?><div class="n">Если оставить поле пустым, размер будет взят из торрент-файла</div></td></tr>
 		<tr><td>Продолжительность:</td><td><?= upload_input('video[duration]', $video['duration'] ?? '', '01:39:43') ?><div class="n">Точная продолжительность в формате ЧЧ:ММ:СС</div></td></tr>
 		<tr><td>Перевод:</td><td><?= upload_option_select('video[translation]', upload_translation_options(), $video['translation'] ?? '') ?><div class="n">Для зарубежного видео. О видах перевода подробнее здесь</div></td></tr>
+		<tr><td>Перевод в названии:</td><td><?= upload_input('video[translation_extra]', $video['translation_extra'] ?? '', '3 x ПМ, СТ') ?><div class="n">Необязательные дополнительные пометки к переводу для названия раздачи</div></td></tr>
 		<tr><td>Язык:</td><td><?= upload_option_select('video[language]', upload_language_options(), $video['language'] ?? '') ?><div class="n">Для отечественного видео</div></td></tr>
 		<tr><td>Субтитры:</td><td><?= upload_option_select('video[subtitles]', upload_subtitle_options(), $video['subtitles'] ?? '') ?><div class="n">Укажите субтитры, если имеются</div></td></tr>
 	</table>
@@ -2199,6 +2384,7 @@ function upload_render_js($kind, $mode, array $section_modes)
 				if (tmpl) tmpl.style.display = (kinds[j] === kind ? '' : 'none');
 			}
 			this.syncType();
+			this.refreshName();
 		},
 		syncType: function() {
 			var kind = document.getElementById('kind').value;
@@ -2330,15 +2516,173 @@ function upload_render_js($kind, $mode, array $section_modes)
 			if (row && row.parentNode.rows.length > 2) row.parentNode.removeChild(row);
 			return false;
 		},
+		formValue: function(name) {
+			var form = document.getElementById('upt');
+			if (!form || !form.elements[name]) return '';
+			var field = form.elements[name];
+			if (field.length && !field.tagName) field = field[0];
+			return field && typeof field.value !== 'undefined' ? field.value : '';
+		},
+		releasePart: function(value) {
+			value = (value || '').replace(/\s+/g, ' ');
+			value = value.replace(/^[\s\/]+|[\s\/]+$/g, '');
+			return value;
+		},
+		samePart: function(left, right) {
+			left = this.releasePart(left);
+			right = this.releasePart(right);
+			return left !== '' && right !== '' && left.toLowerCase() === right.toLowerCase();
+		},
+		addPart: function(parts, value) {
+			value = this.releasePart(value);
+			if (value === '') return;
+			for (var i = 0; i < parts.length; i++) {
+				if (this.samePart(parts[i], value)) return;
+			}
+			parts.push(value);
+		},
+		splitParts: function(value) {
+			var out = [];
+			value = this.releasePart(value);
+			if (value === '') return out;
+			var parts = value.split(/\s*,\s*/);
+			for (var i = 0; i < parts.length; i++) this.addPart(out, parts[i]);
+			return out;
+		},
+		translationTokenShort: function(value) {
+			value = this.releasePart(value);
+			if (value === '') return '';
+			if (/^(не\s*требуется|нет)$/i.test(value)) return '';
+			if (/^(ру|рус|русский)$/i.test(value)) return 'РУ';
+			if (/^(дб|дубл)/i.test(value)) return 'ДБ';
+			if (/^(пд|двух)/i.test(value)) return 'ПД';
+			if (/^(пм|мног)/i.test(value)) return 'ПМ';
+			if (/^(по|одног)/i.test(value)) return 'ПО';
+			if (/^(лм|любител)/i.test(value)) return 'ЛМ';
+			if (/^(ав|автор)/i.test(value)) return 'АВ';
+			if (/^(ор|оригинал)/i.test(value)) return 'ОР';
+			if (/^(ст|суб|субтит)/i.test(value)) return 'СТ';
+			return value;
+		},
+		translationShort: function(value) {
+			var out = [];
+			var parts = this.splitParts(value);
+			for (var i = 0; i < parts.length; i++) {
+				var part = parts[i];
+				var prefix = '';
+				var match = part.match(/^(\d+\s*x\s*)(.+)$/i);
+				if (match) {
+					prefix = this.releasePart(match[1]);
+					part = match[2];
+				}
+				var short = this.translationTokenShort(part);
+				if (short !== '') this.addPart(out, (prefix ? prefix + ' ' : '') + short);
+			}
+			return out.join(', ');
+		},
+		videoTitlePart: function() {
+			var title = this.releasePart(this.formValue('video[title]'));
+			var series = this.releasePart(this.formValue('video[series_info]')).replace(/^[()\s]+|[()\s]+$/g, '');
+			if (title !== '' && series !== '' && title.toLowerCase().indexOf(series.toLowerCase()) === -1) {
+				title += ' (' + series + ')';
+			}
+			return title;
+		},
+		videoIsRussian: function() {
+			var title = this.releasePart(this.formValue('video[title]'));
+			var original = this.releasePart(this.formValue('video[original_title]'));
+			var haystack = this.releasePart(this.formValue('video[language]') + ' ' + this.formValue('video[released]'));
+			return (title !== '' && original === '') || /(русск|росси|рф|ссср|russia|russian)/i.test(haystack);
+		},
+		videoSubtitlesPart: function() {
+			var subtitles = this.releasePart(this.formValue('video[subtitles]'));
+			if (subtitles === '' || /^(нет|no)$/i.test(subtitles)) return '';
+			return 'СТ';
+		},
+		videoTranslationPart: function() {
+			var out = [];
+			var values = [
+				this.translationShort(this.formValue('video[translation]')),
+				this.translationShort(this.formValue('video[translation_extra]'))
+			];
+			for (var i = 0; i < values.length; i++) {
+				var parts = this.splitParts(values[i]);
+				for (var j = 0; j < parts.length; j++) this.addPart(out, parts[j]);
+			}
+			this.addPart(out, this.videoSubtitlesPart());
+			if (!out.length && this.videoIsRussian()) out.push('РУ');
+			return out.join(', ');
+		},
+		videoQualityPart: function() {
+			var out = [];
+			this.addPart(out, this.formValue('video[tech_extra]'));
+			this.addPart(out, this.formValue('video[quality]'));
+			return out.join(' / ');
+		},
+		generatedName: function() {
+			var kind = this.formValue('kind') || 'video';
+			if (kind === 'video') {
+				var title = this.videoTitlePart();
+				var original = this.formValue('video[original_title]');
+				var fields = [
+					title,
+					this.samePart(this.formValue('video[title]'), original) ? '' : original,
+					this.formValue('video[year]'),
+					this.videoTranslationPart(),
+					this.videoQualityPart()
+				];
+			} else {
+				var prefix = 'templates[' + kind + '][fields]';
+				var fields = [
+					this.formValue(prefix + '[title]') || this.formValue(prefix + '[album]'),
+					this.formValue(prefix + '[original_title]') || this.formValue(prefix + '[artist]'),
+					this.formValue(prefix + '[year]'),
+					this.formValue(prefix + '[quality]') || this.formValue(prefix + '[audio]')
+				];
+			}
+			var out = [];
+			for (var i = 0; i < fields.length; i++) this.addPart(out, fields[i]);
+			return out.join(' / ');
+		},
+		refreshName: function() {
+			var name = this.generatedName();
+			var visible = document.getElementById('generated_name');
+			var hidden = document.getElementById('name');
+			if (name !== '' || (visible && visible.value === '')) {
+				if (visible) visible.value = name;
+				if (hidden) hidden.value = name;
+			}
+		},
+		bindNameRefresh: function() {
+			var form = document.getElementById('upt');
+			if (!form || form._nameRefreshBound) return;
+			form._nameRefreshBound = true;
+			var handler = function() { Upl.refreshName(); };
+			var tags = ['input', 'textarea', 'select'];
+			for (var i = 0; i < tags.length; i++) {
+				var nodes = form.getElementsByTagName(tags[i]);
+				for (var j = 0; j < nodes.length; j++) {
+					if (nodes[j].addEventListener) {
+						nodes[j].addEventListener('keyup', handler, false);
+						nodes[j].addEventListener('change', handler, false);
+					} else if (nodes[j].attachEvent) {
+						nodes[j].attachEvent('onkeyup', handler);
+						nodes[j].attachEvent('onchange', handler);
+					}
+				}
+			}
+		},
 		upload: function() {
 			var form = document.getElementById('upt');
 			this.syncType();
+			this.refreshName();
 			form.action = form.action.replace(/[?&]preview=1/g, '');
 			form.submit();
 		},
 		test: function() {
 			var form = document.getElementById('upt');
 			this.syncType();
+			this.refreshName();
 			form.action = form.action.replace(/[?&]preview=1/g, '') + (form.action.indexOf('?') === -1 ? '?preview=1' : '&preview=1');
 			form.submit();
 		}
@@ -2349,6 +2693,8 @@ function upload_render_js($kind, $mode, array $section_modes)
 	<?php } ?>
 	document.getElementById('mode').value = '<?= (int)$mode ?>';
 	Upl.setModeTabs(<?= (int)$mode ?>);
+	Upl.bindNameRefresh();
+	Upl.refreshName();
 	(function() {
 		var bodies = document.getElementsByClassName('up_bbtabs_body');
 		for (var i = 0; i < bodies.length; i++) {

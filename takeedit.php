@@ -165,7 +165,7 @@ if (!$id) {
 	die();
 }
 
-$res = sql_query("SELECT owner, filename, save_as, size, multitracker FROM torrents WHERE id = $id");
+$res = sql_query("SELECT owner, filename, save_as, size, info_hash, multitracker FROM torrents WHERE id = $id");
 $row = mysqli_fetch_array($res);
 if (!$row) {
 	die();
