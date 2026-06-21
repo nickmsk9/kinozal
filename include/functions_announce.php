@@ -84,22 +84,96 @@ function portblacklisted($port) {
     return false;
 }
 
-function validip($ip) {
-    if (!empty($ip) && $ip == long2ip(ip2long($ip))) {
-        $reserved_ips = array(array('0.0.0.0', '2.255.255.255'), array('10.0.0.0', '10.255.255.255'), array('127.0.0.0', '127.255.255.255'), array('169.254.0.0', '169.254.255.255'), array('172.16.0.0', '172.31.255.255'), array('192.0.2.0', '192.0.2.255'), array('192.168.0.0', '192.168.255.255'), array('255.255.255.0', '255.255.255.255'));
+function announce_normalize_ip($ip) {
+    $ip = trim((string)$ip);
+    if ($ip === '') {
+        return '';
+    }
+    if (preg_match('/^\[([^\]]+)\](?::\d+)?$/', $ip, $m)) {
+        $ip = $m[1];
+    } elseif (preg_match('/^(\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?$/', $ip, $m)) {
+        $ip = $m[1];
+    }
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '';
+}
 
-        foreach ($reserved_ips as $r) {
-            $min = ip2long($r[0]);
-            $max = ip2long($r[1]);
-            if ((ip2long($ip) >= $min) && (ip2long($ip) <= $max))
-                return false;
+function validip($ip) {
+    $ip = announce_normalize_ip($ip);
+    return $ip !== '' && (bool)filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+}
+
+function announce_ip_equals($left, $right) {
+    $left = announce_normalize_ip($left);
+    $right = announce_normalize_ip($right);
+    return $left !== '' && $right !== '' && inet_pton($left) === inet_pton($right);
+}
+
+function announce_ipv4_in_cidr($ip, $cidr) {
+    $ip = announce_normalize_ip($ip);
+    if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || strpos($cidr, '/') === false) {
+        return false;
+    }
+    list($network, $bits) = explode('/', $cidr, 2);
+    $network = announce_normalize_ip($network);
+    $bits = (int)$bits;
+    if (!filter_var($network, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || $bits < 0 || $bits > 32) {
+        return false;
+    }
+    $mask = $bits === 0 ? 0 : (-1 << (32 - $bits));
+    return ((ip2long($ip) & $mask) === (ip2long($network) & $mask));
+}
+
+function announce_trusted_proxy_list() {
+    global $trusted_proxy_ips;
+
+    $list = is_array($trusted_proxy_ips) ? $trusted_proxy_ips : array();
+    $env = (string)(getenv('KZ_TRUSTED_PROXIES') ?: '');
+    if ($env !== '') {
+        $list = array_merge($list, preg_split('/\s*,\s*/', $env, -1, PREG_SPLIT_NO_EMPTY));
+    }
+    return array_values(array_filter(array_map('trim', $list)));
+}
+
+function announce_is_trusted_proxy($ip) {
+    $ip = announce_normalize_ip($ip);
+    if ($ip === '') {
+        return false;
+    }
+    foreach (announce_trusted_proxy_list() as $trusted) {
+        if ($trusted === '*') {
+            return true;
         }
-        return true;
-    } else return false;
+        if (strpos($trusted, '/') !== false && announce_ipv4_in_cidr($ip, $trusted)) {
+            return true;
+        }
+        if (announce_ip_equals($ip, $trusted)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function announce_forwarded_ip_from_header($value) {
+    foreach (preg_split('/\s*,\s*/', (string)$value, -1, PREG_SPLIT_NO_EMPTY) as $part) {
+        $ip = announce_normalize_ip($part);
+        if ($ip !== '') {
+            return $ip;
+        }
+    }
+    return '';
 }
 
 function getip() {
-    return $_SERVER['REMOTE_ADDR'];
+    $remote_ip = announce_normalize_ip($_SERVER['REMOTE_ADDR'] ?? getenv('REMOTE_ADDR') ?: '');
+    if (!empty($GLOBALS['trust_proxy_headers']) && announce_is_trusted_proxy($remote_ip)) {
+        foreach (array('HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP') as $header) {
+            $ip = announce_forwarded_ip_from_header($_SERVER[$header] ?? '');
+            if ($ip !== '') {
+                return $ip;
+            }
+        }
+    }
+    return $remote_ip !== '' ? $remote_ip : '0.0.0.0';
 }
 
 function tracker_ip_version($ip) {

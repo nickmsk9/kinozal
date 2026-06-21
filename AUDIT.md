@@ -30,6 +30,8 @@ php -d short_open_tag=1 -l
 - Закрыто: reset-token получил отдельный TTL в `users.editsecret_expires`, проверку срока при открытии/сбросе и cleanup просроченных токенов.
 - Частично закрыто: новые passkey для скачиваемых `.torrent` сохраняются как HMAC-хеши в `user_passkeys`; announce/RSS сначала проверяют хешированную таблицу и только затем legacy `users.passkey`.
 - Закрыто дополнительно: CSRF-токен обязателен для редактирования профиля, смены темы, комментариев, удаления ЛС, благодарностей, управления новостями и ключевых форм групп.
+- Закрыто: upload/edit lifecycle получил DB transaction, запись `.torrent` во временный файл и atomic rename после успешного commit; добавлена CLI-проверка рассинхрона `bin/repair-torrents.php`.
+- Закрыто: IP handling принимает IPv6/private `REMOTE_ADDR`, поддерживает trusted proxy headers через `KZ_TRUSTED_PROXIES`, а `users.ip/passkey_ip` в схеме уже расширены до `varchar(45)`.
 - Схема обновлена в едином файле `database/database.sql`; отдельные миграционные файлы не используются.
 
 Осталось: полная миграция/отзыв старых plain `users.passkey`, перевод всех GET-мутаций на POST без совместимого режима, EXPLAIN на живой БД, тестовый контур/CI.
@@ -248,6 +250,8 @@ php -d short_open_tag=1 -l
 
 #### 11. Upload/edit не транзакционные
 
+Статус: закрыто для `takeupload.php` и `takeedit.php`: DB-часть обернута в транзакцию, `.torrent` сначала пишется во временный файл и переносится в рабочий путь после commit; добавлена безопасная CLI-проверка `bin/repair-torrents.php`.
+
 Доказательства:
 
 - `takeupload.php:203-253` вставляет `torrents`, trackers, details, parsed descr, checkcomm, files, затем пишет `.torrent` на диск.
@@ -281,6 +285,8 @@ php -d short_open_tag=1 -l
 ### P2. Средний приоритет
 
 #### 13. IP/IPv6/proxy handling
+
+Статус: закрыто: `users.ip` и `users.passkey_ip` уже `varchar(45)`, `getip()` больше не превращает private Docker/reverse-proxy адреса в `0.0.0.0`, IPv6 проходит как валидный `REMOTE_ADDR`, proxy headers читаются только от trusted proxy.
 
 Доказательства:
 

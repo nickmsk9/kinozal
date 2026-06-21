@@ -200,57 +200,76 @@ if (get_user_class() >= UC_ADMINISTRATOR && isset($_POST['not_sticky']) && $_POS
 
 global $link, $torrent_dir;
 
-$ret = sql_query("INSERT INTO torrents (filename, owner, visible, not_sticky, info_hash, name, keywords, description, size, numfiles, type, descr, ori_descr, free, image1, image2, image3, image4, image5, category, save_as, added, last_action, multitracker, is_test) VALUES (" . implode(",", array_map("sqlesc", array(
-	$torrent_data['fname'],
-	$CURUSER["id"],
-	"yes",
-	$not_sticky,
-	$torrent_data['info_hash'],
-	$torrent,
-	$keywords,
-	$meta_description,
-	$torrent_data['size'],
-	$torrent_data['numfiles'],
-	$torrent_data['type'],
-	$descr,
-	$descr,
-	$free,
-	'',
-	'',
-	'',
-	'',
-	'',
-	$catid,
-	$torrent_data['save_as'],
-))) . ", '" . get_date_time() . "', '" . get_date_time() . "', " . sqlesc(count($torrent_data['announces']) > 1 ? 'yes' : 'no') . ", " . sqlesc($is_test_upload ? 'yes' : 'no') . ")");
+$id = 0;
+$tmp_torrent_path = '';
+$committed = false;
 
-if (!$ret) {
+try {
+	tracker_db_transaction_begin();
+
+	sql_query("INSERT INTO torrents (filename, owner, visible, not_sticky, info_hash, name, keywords, description, size, numfiles, type, descr, ori_descr, free, image1, image2, image3, image4, image5, category, save_as, added, last_action, multitracker, is_test) VALUES (" . implode(",", array_map("sqlesc", array(
+		$torrent_data['fname'],
+		$CURUSER["id"],
+		"yes",
+		$not_sticky,
+		$torrent_data['info_hash'],
+		$torrent,
+		$keywords,
+		$meta_description,
+		$torrent_data['size'],
+		$torrent_data['numfiles'],
+		$torrent_data['type'],
+		$descr,
+		$descr,
+		$free,
+		'',
+		'',
+		'',
+		'',
+		'',
+		$catid,
+		$torrent_data['save_as'],
+	))) . ", '" . get_date_time() . "', '" . get_date_time() . "', " . sqlesc(count($torrent_data['announces']) > 1 ? 'yes' : 'no') . ", " . sqlesc($is_test_upload ? 'yes' : 'no') . ")");
+
+	$id = mysqli_insert_id($link);
+	$tmp_torrent_path = upload_write_temp_torrent_file($id, BEncode($torrent_data['dict']));
+
+	multitracker_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
+	upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
+
+	sql_query('INSERT INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES (' . implode(', ', array_map('sqlesc', array($id, md5($descr), format_comment($descr)))) . ')') or sqlerr(__FILE__, __LINE__);
+	sql_query("INSERT INTO checkcomm (checkid, userid, torrent) VALUES ($id, " . (int)$CURUSER['id'] . ", 1)") or sqlerr(__FILE__, __LINE__);
+
+	sql_query("DELETE FROM files WHERE torrent = $id");
+	foreach ($torrent_data['filelist'] as $file_row) {
+		sql_query("INSERT INTO files (torrent, filename, size) VALUES ($id, " . sqlesc($file_row[0]) . ", " . (int)$file_row[1] . ")");
+	}
+
+	tracker_db_transaction_commit();
+	$committed = true;
+
+	upload_finalize_torrent_file($tmp_torrent_path, $id);
+	$tmp_torrent_path = '';
+} catch (Throwable $e) {
+	if (tracker_db_transaction_active()) {
+		tracker_db_transaction_rollback();
+	}
+	if ($tmp_torrent_path !== '') {
+		@unlink($tmp_torrent_path);
+	}
+	if ($committed && $id > 0) {
+		try {
+			tracker_db_transaction_begin();
+			deletetorrent($id);
+			tracker_db_transaction_commit();
+		} catch (Throwable $cleanup_error) {
+			tracker_db_transaction_rollback();
+		}
+	}
 	if (mysqli_errno($link) == 1062) {
 		bark("torrent already uploaded!");
 	}
-	bark("mysql puked: " . mysqli_error($link));
-}
-
-$id = mysqli_insert_id($link);
-multitracker_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
-
-upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
-
-sql_query('INSERT INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES (' . implode(', ', array_map('sqlesc', array($id, md5($descr), format_comment($descr)))) . ')') or sqlerr(__FILE__, __LINE__);
-sql_query("INSERT INTO checkcomm (checkid, userid, torrent) VALUES ($id, " . (int)$CURUSER['id'] . ", 1)") or sqlerr(__FILE__, __LINE__);
-
-sql_query("DELETE FROM files WHERE torrent = $id");
-foreach ($torrent_data['filelist'] as $file_row) {
-	sql_query("INSERT INTO files (torrent, filename, size) VALUES ($id, " . sqlesc($file_row[0]) . ", " . (int)$file_row[1] . ")");
-}
-
-if (!is_dir($torrent_dir) && !@mkdir($torrent_dir, 0777, true)) {
-	bark("Не удалось создать каталог для torrent-файлов.");
-}
-
-$encoded = BEncode($torrent_data['dict']);
-if (file_put_contents("$torrent_dir/$id.torrent", $encoded) === false) {
-	bark("Не удалось сохранить torrent-файл.");
+	bark("Не удалось сохранить раздачу: " . $e->getMessage());
 }
 
 write_log("Торрент номер $id ($torrent) был залит пользователем " . $CURUSER["username"] . ($is_test_upload ? " как тестовая раздача" : ""), "5DDB6E", "torrent");

@@ -688,6 +688,53 @@ function upload_mark_torrent_file_updated($tid)
 	sql_query("UPDATE torrent_details SET torrent_file_updated_at = NOW(), updated_at = NOW() WHERE tid = " . (int)$tid) or sqlerr(__FILE__, __LINE__);
 }
 
+function upload_torrent_file_path($tid)
+{
+	global $torrent_dir;
+	return rtrim((string)$torrent_dir, '/\\') . '/' . (int)$tid . '.torrent';
+}
+
+function upload_write_temp_torrent_file($tid, $contents)
+{
+	global $torrent_dir;
+
+	$dir = rtrim((string)$torrent_dir, '/\\');
+	if ($dir === '') {
+		throw new RuntimeException('Не задан каталог для torrent-файлов.');
+	}
+	if (!is_dir($dir) && !@mkdir($dir, 0777, true)) {
+		throw new RuntimeException('Не удалось создать каталог для torrent-файлов.');
+	}
+	if (!is_writable($dir)) {
+		throw new RuntimeException('Каталог torrent-файлов недоступен для записи.');
+	}
+
+	$tmp = tempnam($dir, '.' . (int)$tid . '.torrent.');
+	if ($tmp === false) {
+		throw new RuntimeException('Не удалось создать временный torrent-файл.');
+	}
+	if (file_put_contents($tmp, $contents, LOCK_EX) === false) {
+		@unlink($tmp);
+		throw new RuntimeException('Не удалось записать временный torrent-файл.');
+	}
+
+	return $tmp;
+}
+
+function upload_finalize_torrent_file($tmp_path, $tid)
+{
+	$tmp_path = (string)$tmp_path;
+	if ($tmp_path === '' || !is_file($tmp_path)) {
+		throw new RuntimeException('Временный torrent-файл не найден.');
+	}
+
+	$final_path = upload_torrent_file_path($tid);
+	if (!@rename($tmp_path, $final_path)) {
+		throw new RuntimeException('Не удалось заменить torrent-файл.');
+	}
+	@chmod($final_path, 0666);
+}
+
 function upload_normalize_kind($kind)
 {
 	$kind = (string)$kind;

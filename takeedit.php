@@ -234,12 +234,10 @@ $updateset[] = "descr = " . sqlesc($descr);
 $updateset[] = "ori_descr = " . sqlesc($descr);
 $updateset[] = "category = " . $catid;
 
+$torrent_file_payload = false;
+$posted_trackers = null;
 if ($torrent_data) {
-	global $torrent_dir;
-	$encoded = BEncode($torrent_data['dict']);
-	if (file_put_contents("$torrent_dir/$id.torrent", $encoded) === false) {
-		bark("Не удалось сохранить torrent-файл.");
-	}
+	$torrent_file_payload = BEncode($torrent_data['dict']);
 
 	$updateset[] = "info_hash = " . sqlesc($torrent_data['info_hash']);
 	$updateset[] = "filename = " . sqlesc($torrent_data['fname']);
@@ -247,13 +245,6 @@ if ($torrent_data) {
 	$updateset[] = "size = " . sqlesc($torrent_data['size']);
 	$updateset[] = "type = " . sqlesc($torrent_data['type']);
 	$updateset[] = "numfiles = " . (int)$torrent_data['numfiles'];
-
-	sql_query("DELETE FROM files WHERE torrent = $id");
-	foreach ($torrent_data['filelist'] as $file_row) {
-		sql_query("INSERT INTO files (torrent, filename, size) VALUES ($id, " . sqlesc($file_row[0]) . ", " . (int)$file_row[1] . ")");
-	}
-
-	multitracker_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
 }
 
 if (get_user_class() >= UC_ADMINISTRATOR) {
@@ -273,20 +264,54 @@ if (get_user_class() >= UC_ADMINISTRATOR) {
 
 if (get_user_class() >= UC_MODERATOR && !$torrent_data && isset($_POST['external_trackers'])) {
 	$posted_trackers = multitracker_parse_posted_urls($_POST['external_trackers']);
-	multitracker_save_trackers($id, $posted_trackers, multitracker_recover_external_info_hash($id, $row['info_hash'] ?? ''));
-	multitracker_rewrite_torrent_file_announces($id, $posted_trackers);
+	$torrent_file_payload = multitracker_rewritten_torrent_file_contents($id, $posted_trackers);
 }
 
 $updateset[] = "visible = " . sqlesc(!empty($_POST["visible"]) ? "yes" : "no");
 $updateset[] = "moderated = 'yes'";
 $updateset[] = "moderatedby = " . sqlesc($CURUSER["id"]);
 
-sql_query("UPDATE torrents SET " . join(", ", $updateset) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
-sql_query('REPLACE INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES (' . implode(', ', array_map('sqlesc', array($id, md5($descr), format_comment($descr)))) . ')') or sqlerr(__FILE__, __LINE__);
+$tmp_torrent_path = '';
+try {
+	tracker_db_transaction_begin();
 
-upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
-if ($torrent_data) {
-	upload_mark_torrent_file_updated($id);
+	if ($torrent_file_payload !== false) {
+		$tmp_torrent_path = upload_write_temp_torrent_file($id, $torrent_file_payload);
+	}
+
+	if ($torrent_data) {
+		sql_query("DELETE FROM files WHERE torrent = $id");
+		foreach ($torrent_data['filelist'] as $file_row) {
+			sql_query("INSERT INTO files (torrent, filename, size) VALUES ($id, " . sqlesc($file_row[0]) . ", " . (int)$file_row[1] . ")");
+		}
+
+		multitracker_save_trackers($id, $torrent_data['announces'], $torrent_data['external_info_hash']);
+	} elseif ($posted_trackers !== null) {
+		multitracker_save_trackers($id, $posted_trackers, multitracker_recover_external_info_hash($id, $row['info_hash'] ?? ''));
+	}
+
+	sql_query("UPDATE torrents SET " . join(", ", $updateset) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
+	sql_query('REPLACE INTO torrents_descr (tid, descr_hash, descr_parsed) VALUES (' . implode(', ', array_map('sqlesc', array($id, md5($descr), format_comment($descr)))) . ')') or sqlerr(__FILE__, __LINE__);
+
+	upload_save_details($id, $kind, $poster_url, $rgroup, $rgroup_button, $details_data);
+	if ($torrent_data) {
+		upload_mark_torrent_file_updated($id);
+	}
+
+	tracker_db_transaction_commit();
+
+	if ($tmp_torrent_path !== '') {
+		upload_finalize_torrent_file($tmp_torrent_path, $id);
+		$tmp_torrent_path = '';
+	}
+} catch (Throwable $e) {
+	if (tracker_db_transaction_active()) {
+		tracker_db_transaction_rollback();
+	}
+	if ($tmp_torrent_path !== '') {
+		@unlink($tmp_torrent_path);
+	}
+	bark("Не удалось сохранить изменения раздачи: " . $e->getMessage());
 }
 
 write_log("Торрент '$safe_name' был отредактирован пользователем {$CURUSER['username']}", "F25B61", "torrent");

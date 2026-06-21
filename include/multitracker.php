@@ -633,7 +633,7 @@ function multitracker_parse_posted_urls($text)
 	return multitracker_extract_announces(array('announce-list' => array($out)));
 }
 
-function multitracker_rewrite_torrent_file_announces($torrentid, array $urls)
+function multitracker_rewritten_torrent_file_contents($torrentid, array $urls)
 {
 	global $torrent_dir;
 	require_once ROOT_PATH . 'include/BDecode.php';
@@ -648,7 +648,20 @@ function multitracker_rewrite_torrent_file_announces($torrentid, array $urls)
 		return false;
 	}
 	$dict = multitracker_apply_announces_to_dict($dict, $urls);
-	return file_put_contents($path, BEncode($dict)) !== false;
+	return BEncode($dict);
+}
+
+function multitracker_rewrite_torrent_file_announces($torrentid, array $urls)
+{
+	global $torrent_dir;
+
+	$contents = multitracker_rewritten_torrent_file_contents($torrentid, $urls);
+	if ($contents === false) {
+		return false;
+	}
+
+	$path = rtrim((string)$torrent_dir, '/\\') . '/' . (int)$torrentid . '.torrent';
+	return file_put_contents($path, $contents) !== false;
 }
 
 function multitracker_render_details_block($torrentid)

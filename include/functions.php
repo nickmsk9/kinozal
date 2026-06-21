@@ -231,6 +231,11 @@ function sql_query($query)
     if ($result === false) {
         $error_file = $debug_file !== '' ? $debug_file : 'не определено';
         $error_line = $debug_line > 0 ? $debug_line : 'не определено';
+        $error_text = 'sql_query: ошибка MySQL [' . mysqli_errno($link) . ']: ' . mysqli_error($link);
+
+        if (function_exists('tracker_db_transaction_active') && tracker_db_transaction_active()) {
+            throw new RuntimeException($error_text . ' (' . $error_file . ':' . $error_line . ')');
+        }
 
         die(
             'sql_query: ошибка MySQL [' .
@@ -258,6 +263,52 @@ function sql_query($query)
     }
 
     return $result;
+}
+
+function tracker_db_transaction_active()
+{
+    global $tracker_db_transaction_level;
+    return !empty($tracker_db_transaction_level);
+}
+
+function tracker_db_transaction_begin()
+{
+    global $link, $tracker_db_transaction_level;
+
+    if (!$link instanceof mysqli) {
+        throw new RuntimeException('Нет подключения к базе данных.');
+    }
+    if (!empty($tracker_db_transaction_level)) {
+        throw new RuntimeException('Вложенные транзакции пока не поддерживаются.');
+    }
+    if (!mysqli_begin_transaction($link)) {
+        throw new RuntimeException('Не удалось начать транзакцию: ' . mysqli_error($link));
+    }
+    $tracker_db_transaction_level = 1;
+}
+
+function tracker_db_transaction_commit()
+{
+    global $link, $tracker_db_transaction_level;
+
+    if (empty($tracker_db_transaction_level)) {
+        return;
+    }
+    if (!mysqli_commit($link)) {
+        throw new RuntimeException('Не удалось завершить транзакцию: ' . mysqli_error($link));
+    }
+    $tracker_db_transaction_level = 0;
+}
+
+function tracker_db_transaction_rollback()
+{
+    global $link, $tracker_db_transaction_level;
+
+    if (empty($tracker_db_transaction_level)) {
+        return;
+    }
+    @mysqli_rollback($link);
+    $tracker_db_transaction_level = 0;
 }
 
 function tracker_debug_mode_enabled()
@@ -889,79 +940,131 @@ function gzip(): void
     ob_start();
 }
 
-function validip($ip) {
-	static $cache = array();
-	static $reserved_ranges = null;
-
-	$ip = (string)$ip;
-	if (array_key_exists($ip, $cache)) {
-		return $cache[$ip];
+function tracker_normalize_ip($ip)
+{
+	$ip = trim((string)$ip);
+	if ($ip === '') {
+		return '';
 	}
 
-    // Базовая проверка формата (корректный IPv4)
-    if (empty($ip) || !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-        $cache[$ip] = false;
-        return false;
-    }
+	if (preg_match('/^\[([^\]]+)\](?::\d+)?$/', $ip, $m)) {
+		$ip = $m[1];
+	} elseif (preg_match('/^(\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?$/', $ip, $m)) {
+		$ip = $m[1];
+	}
 
-    // Резервные диапазоны IANA (IPv4)
-    if ($reserved_ranges === null) {
-        $reserved_ranges = array(
-            array(ip2long('0.0.0.0'), ip2long('2.255.255.255')),
-            array(ip2long('10.0.0.0'), ip2long('10.255.255.255')),
-            array(ip2long('127.0.0.0'), ip2long('127.255.255.255')),
-            array(ip2long('169.254.0.0'), ip2long('169.254.255.255')),
-            array(ip2long('172.16.0.0'), ip2long('172.31.255.255')),
-            array(ip2long('192.0.2.0'), ip2long('192.0.2.255')),
-            array(ip2long('192.168.0.0'), ip2long('192.168.255.255')),
-            array(ip2long('255.255.255.0'), ip2long('255.255.255.255')),
-        );
-    }
-
-    $ipLong = ip2long($ip);
-    foreach ($reserved_ranges as $range) {
-        if ($ipLong >= $range[0] && $ipLong <= $range[1]) {
-            $cache[$ip] = false;
-            return false;
-        }
-    }
-
-    $cache[$ip] = true;
-    return true;
+	return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '';
 }
 
-function getip($trust_proxy_headers = false) {
-	static $cache = array();
-
-	$cache_key = $trust_proxy_headers ? 'trusted' : 'direct';
-	if (array_key_exists($cache_key, $cache)) {
-		return $cache[$cache_key];
+function tracker_ip_is_public($ip)
+{
+	$ip = tracker_normalize_ip($ip);
+	if ($ip === '') {
+		return false;
 	}
 
-    $ip = null;
+	return (bool)filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+}
 
-    // Опциональное доверие заголовкам прокси (только если явно включено)
-    if ($trust_proxy_headers) {
-        // Проверяем X-Forwarded-For (стандарт для прозрачных прокси)
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR']) && validip($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        }
-        // Альтернативный заголовок Client-Ip (используется некоторыми прокси)
-        elseif (!empty($_SERVER['HTTP_CLIENT_IP']) && validip($_SERVER['HTTP_CLIENT_IP'])) {
-            $ip = $_SERVER['HTTP_CLIENT_IP'];
-        }
-    }
+function validip($ip)
+{
+	return tracker_ip_is_public($ip);
+}
 
-    // Если заголовки не дали результат или доверие отключено — берём реальный IP подключения
-    if (empty($ip)) {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? getenv('REMOTE_ADDR');
-        if (empty($ip) || !validip($ip)) {
-            $ip = '0.0.0.0'; // безопасное значение по умолчанию
-        }
-    }
+function tracker_ip_equals($left, $right)
+{
+	$left = tracker_normalize_ip($left);
+	$right = tracker_normalize_ip($right);
+	if ($left === '' || $right === '') {
+		return false;
+	}
 
-    $cache[$cache_key] = $ip;
-    return $ip;
+	return inet_pton($left) === inet_pton($right);
+}
+
+function tracker_ipv4_in_cidr($ip, $cidr)
+{
+	$ip = tracker_normalize_ip($ip);
+	if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || strpos($cidr, '/') === false) {
+		return false;
+	}
+
+	list($network, $bits) = explode('/', $cidr, 2);
+	$network = tracker_normalize_ip($network);
+	$bits = (int)$bits;
+	if (!filter_var($network, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || $bits < 0 || $bits > 32) {
+		return false;
+	}
+
+	$mask = $bits === 0 ? 0 : (-1 << (32 - $bits));
+	return ((ip2long($ip) & $mask) === (ip2long($network) & $mask));
+}
+
+function tracker_trusted_proxy_list()
+{
+	global $trusted_proxy_ips;
+
+	$list = is_array($trusted_proxy_ips) ? $trusted_proxy_ips : array();
+	$env = (string)(getenv('KZ_TRUSTED_PROXIES') ?: '');
+	if ($env !== '') {
+		$list = array_merge($list, preg_split('/\s*,\s*/', $env, -1, PREG_SPLIT_NO_EMPTY));
+	}
+
+	return array_values(array_filter(array_map('trim', $list)));
+}
+
+function tracker_is_trusted_proxy($ip)
+{
+	$ip = tracker_normalize_ip($ip);
+	if ($ip === '') {
+		return false;
+	}
+
+	foreach (tracker_trusted_proxy_list() as $trusted) {
+		if ($trusted === '*') {
+			return true;
+		}
+		if (strpos($trusted, '/') !== false && tracker_ipv4_in_cidr($ip, $trusted)) {
+			return true;
+		}
+		if (tracker_ip_equals($ip, $trusted)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function tracker_forwarded_ip_from_header($value)
+{
+	foreach (preg_split('/\s*,\s*/', (string)$value, -1, PREG_SPLIT_NO_EMPTY) as $part) {
+		$ip = tracker_normalize_ip($part);
+		if ($ip !== '') {
+			return $ip;
+		}
+	}
+
+	return '';
+}
+
+function getip($trust_proxy_headers = null)
+{
+	$remote_ip = tracker_normalize_ip($_SERVER['REMOTE_ADDR'] ?? getenv('REMOTE_ADDR') ?: '');
+	$trust = $trust_proxy_headers;
+	if ($trust === null) {
+		$trust = !empty($GLOBALS['trust_proxy_headers']);
+	}
+
+	if ($trust && tracker_is_trusted_proxy($remote_ip)) {
+		foreach (array('HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'HTTP_CLIENT_IP') as $header) {
+			$ip = tracker_forwarded_ip_from_header($_SERVER[$header] ?? '');
+			if ($ip !== '') {
+				return $ip;
+			}
+		}
+	}
+
+	return $remote_ip !== '' ? $remote_ip : '0.0.0.0';
 }
 
 function autoclean() {
